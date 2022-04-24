@@ -7,17 +7,31 @@ import io.arex.replay.schedule.model.ReplayActionCaseItem;
  * @since 2021/9/16
  */
 public interface ReplaySender {
-    boolean isSupported(int sendType);
+    /**
+     * Indicate the instance should be working for the message content type,
+     * return true should be used,others skipped
+     */
+    boolean isSupported(int contentType);
 
+    /**
+     * Try to send the replay case to remote target host
+     */
     boolean send(ReplayActionCaseItem caseItem);
 
+    /**
+     * Try to send the request message to remote target host
+     */
     ReplaySendResult send(SenderParameters senderParameters);
 
+    /**
+     * Try to prepare the replay case remote dependency such as resume config files
+     */
     boolean prepareRemoteDependency(ReplayActionCaseItem caseItem);
 
     /**
-     * 对于Java服务而言，发布后首次调用会进行即时Compilation，会耗费较多资源，此时直接高并发回放失败率较高
-     * 此函数尝试发送一个不带ReplayID的CASE，用来触发掉此损耗
+     * Try to warm up the remote target service before sending
      */
-    default boolean activeRemoteService(ReplayActionCaseItem caseItem) { return true; }
+    default boolean activeRemoteService(ReplayActionCaseItem caseItem) {
+        return true;
+    }
 }

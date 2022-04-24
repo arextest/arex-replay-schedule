@@ -13,5 +13,5 @@ public interface DeploymentEnvironmentProvider {
 
     List<ServiceInstance> getActiveInstanceList(AppServiceDescriptor serviceDescriptor, String env);
 
-    ServiceInstance getActiveInstance(AppServiceDescriptor serviceDescriptor, String ip);
+    ServiceInstance getActiveInstance(AppServiceDescriptor serviceDescriptor, String host);
 }

@@ -13,15 +13,10 @@
         <spring.boot.version>2.6.3</spring.boot.version>
         <jmockit.version>1.37</jmockit.version>
         <lombok.version>1.18.2</lombok.version>
-        <compare-sdk.version>0.0.1-SNAPSHOT</compare-sdk.version>
+        <compare-sdk.version>0.0.1</compare-sdk.version>
 
         <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
-        <releases.repo>
-            http://maven.release.ctripcorp.com/nexus/content/repositories/flightrelease
-        </releases.repo>
-        <snapshots.repo>
-            http://maven.release.ctripcorp.com/nexus/content/repositories/flightsnapshot
-        </snapshots.repo>
+
         <!-- single jacoco.exec file relative to root directory of the project -->
         <jacoco.report.path>${project.basedir}/code-coverage/jacoco.exec</jacoco.report.path>
         <sonar.jacoco.reportPath>${jacoco.report.path}</sonar.jacoco.reportPath>
@@ -136,7 +131,7 @@
             <dependency>
                 <groupId>io.arex</groupId>
                 <artifactId>arex-report-model-api</artifactId>
-                <version>1.0.4-SNAPSHOT</version>
+                <version>0.0.1</version>
             </dependency>
             <dependency>
                 <groupId>io.arex</groupId>
