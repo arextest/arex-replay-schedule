@@ -20,6 +20,7 @@ code-coverage/
 *.iws
 *.iml
 *.ipr
+*.log
 
 ### NetBeans ###
 /nbproject/private/
