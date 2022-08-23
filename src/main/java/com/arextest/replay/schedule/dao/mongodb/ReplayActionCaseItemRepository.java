@@ -2,6 +2,7 @@ package com.arextest.replay.schedule.dao.mongodb;
 
 import com.arextest.replay.schedule.dao.RepositoryWriter;
 import com.arextest.replay.schedule.dao.mongodb.util.MongoHelper;
+import com.arextest.replay.schedule.model.CaseSendStatusType;
 import com.arextest.replay.schedule.model.ReplayActionCaseItem;
 import com.arextest.replay.schedule.model.converter.ReplayRunDetailsConverter;
 import com.arextest.replay.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
@@ -38,6 +39,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
     public List<ReplayActionCaseItem> waitingSendList(String planItemId, int pageSize) {
         Query query = Query.query(Criteria.where("planItemId").is(planItemId));
+        query.addCriteria(Criteria.where("sendStatus").is(CaseSendStatusType.WAIT_HANDLING));
         query.limit(pageSize);
         query.with(Sort.by(
                 Sort.Order.asc(DASH_ID),
@@ -69,6 +71,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
     public ReplayActionCaseItem lastOne(String planItemId) {
         Query query = Query.query(Criteria.where("planItemId").is(planItemId));
+        query.addCriteria(Criteria.where("sendStatus").is(CaseSendStatusType.WAIT_HANDLING));
         query.limit(1);
         query.with(Sort.by(
                 Sort.Order.desc(DASH_ID)
