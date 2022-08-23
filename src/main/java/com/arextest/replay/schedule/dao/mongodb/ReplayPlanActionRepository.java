@@ -13,6 +13,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -54,6 +55,7 @@ public class ReplayPlanActionRepository implements RepositoryWriter<ReplayAction
 
     public long queryRunningItemCount(String appId) {
         Query query = Query.query(Criteria.where("appId").is(appId));
+        query.addCriteria(Criteria.where("replayStatus").in(Arrays.asList(0, 1)));
         return mongoTemplate.count(query, ReplayPlanItemCollection.class);
     }
 
