@@ -62,7 +62,7 @@ public final class PlanContextCreator {
 
     private List<AppServiceDescriptor> addQmqDescriptor(List<AppServiceDescriptor> descriptorList, String appId) {
         AppServiceDescriptor qmqDescriptor = new AppServiceDescriptor();
-        qmqDescriptor.setId(0L);
+        qmqDescriptor.setId(null);
         qmqDescriptor.setAppId(appId);
         qmqDescriptor.setServiceName("QMQ");
         if (CollectionUtils.isEmpty(descriptorList)) {

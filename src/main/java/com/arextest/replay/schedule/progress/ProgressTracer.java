@@ -12,7 +12,7 @@ public interface ProgressTracer {
 
     void finishOne(ReplayActionCaseItem caseItem);
 
-    double finishPercent(long planId);
+    double finishPercent(String planId);
 
-    long lastUpdateTime(long planId);
+    long lastUpdateTime(String planId);
 }

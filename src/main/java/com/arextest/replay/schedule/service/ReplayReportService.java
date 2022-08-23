@@ -96,7 +96,7 @@ public final class ReplayReportService implements ComparisonWriter {
         LOGGER.info("initReport response:{}", response);
     }
 
-    public void pushActionStatus(long planId, ReplayStatusType statusType, long actionId) {
+    public void pushActionStatus(String planId, ReplayStatusType statusType, String actionId) {
         ChangeReplayStatusRequestType requestType = new ChangeReplayStatusRequestType();
         ChangeReplayStatusRequestType.ReplayItem replayItem = new ChangeReplayStatusRequestType.ReplayItem();
         replayItem.setPlanItemId(actionId);
@@ -109,7 +109,7 @@ public final class ReplayReportService implements ComparisonWriter {
                 statusType, response);
     }
 
-    public void pushPlanStatus(long planId, ReplayStatusType statusType) {
+    public void pushPlanStatus(String planId, ReplayStatusType statusType) {
         ChangeReplayStatusRequestType requestType = new ChangeReplayStatusRequestType();
         requestType.setPlanId(planId);
         requestType.setStatus(statusType.getValue());

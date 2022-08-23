@@ -15,9 +15,9 @@ import java.util.List;
  */
 @Data
 public class ReplayCompareResult {
-    private long planId;
-    private long planItemId;
-    private long operationId;
+    private String planId;
+    private String planItemId;
+    private String operationId;
     private String categoryName;
     private String operationName;
     private String serviceName;

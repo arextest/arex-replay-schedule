@@ -25,7 +25,7 @@ public final class PlanContext {
     private String appId;
 
 
-    public AppServiceOperationDescriptor findAppServiceOperationDescriptor(long operationId) {
+    public AppServiceOperationDescriptor findAppServiceOperationDescriptor(String operationId) {
         List<AppServiceOperationDescriptor> operationDescriptorList;
         for (AppServiceDescriptor appServiceDescriptor : appServiceDescriptorList) {
             operationDescriptorList = appServiceDescriptor.getOperationList();

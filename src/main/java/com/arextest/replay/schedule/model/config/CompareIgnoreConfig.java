@@ -9,7 +9,7 @@ import java.util.List;
  */
 @Data
 public class CompareIgnoreConfig {
-    private long operationId;
+    private String operationId;
     private int categoryType;
     private List<CompareConfigDetail> detailsList;
 }

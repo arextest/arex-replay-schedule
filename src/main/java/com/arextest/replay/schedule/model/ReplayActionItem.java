@@ -1,6 +1,7 @@
 package com.arextest.replay.schedule.model;
 
 import com.arextest.replay.schedule.common.SendSemaphoreLimiter;
+import com.arextest.replay.schedule.model.dao.mongodb.ReplayPlanItemCollection;
 import com.arextest.replay.schedule.model.deploy.ServiceInstance;
 import com.arextest.replay.schedule.model.deploy.ServiceInstanceOperation;
 import com.arextest.storage.model.enums.MockCategoryType;
@@ -12,6 +13,7 @@ import java.util.List;
 
 /**
  * @author jmo
+ * @see ReplayPlanItemCollection
  * @since 2021/9/15
  */
 @Data
@@ -19,9 +21,9 @@ public class ReplayActionItem {
     public final static int SOA_TRIGGER = 0;
     public final static int QMQ_TRIGGER = 1;
     private ReplayPlan parent;
-    private long id;
-    private long operationId;
-    private long planId;
+    private String id;
+    private String operationId;
+    private String planId;
     /**
      * example: applyRefund
      */
@@ -69,7 +71,7 @@ public class ReplayActionItem {
     private int replayCaseCount;
     private String appId;
 
-    public long getPlanId() {
+    public String getPlanId() {
         if (this.parent != null) {
             return this.parent.getId();
         }

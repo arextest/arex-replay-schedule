@@ -9,6 +9,6 @@ import java.util.List;
  */
 @Data
 public class OperationCaseInfo {
-    private Long operationId;
+    private String operationId;
     private List<String> replayIdList;
 }

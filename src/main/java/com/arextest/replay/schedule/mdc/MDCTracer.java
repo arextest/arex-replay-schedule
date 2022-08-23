@@ -35,6 +35,10 @@ public final class MDCTracer {
         add(PLAN_ID, planId);
     }
 
+    public static void addActionId(String actionId) {
+        MDC.put(PLAN_ID, actionId);
+    }
+
     public static void addActionId(long actionId) {
         add(ACTION_ID, actionId);
     }

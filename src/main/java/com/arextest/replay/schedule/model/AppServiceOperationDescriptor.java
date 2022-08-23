@@ -8,7 +8,7 @@ import lombok.Data;
  */
 @Data
 public class AppServiceOperationDescriptor {
-    private long id;
+    private String id;
     private AppServiceDescriptor parent;
     private String operationName;
     private int status;

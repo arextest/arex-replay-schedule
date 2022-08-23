@@ -1,5 +1,6 @@
 package com.arextest.replay.schedule.model;
 
+import com.arextest.replay.schedule.model.dao.mongodb.ReplayPlanCollection;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
@@ -9,12 +10,13 @@ import java.util.List;
 
 /**
  * @author jmo
+ * @see ReplayPlanCollection
  * @since 2021/9/15
  */
 @Data
 @ToString(of = {"id", "appId", "sourceEnv", "sourceHost", "targetEnv", "targetHost"})
 public class ReplayPlan {
-    private long id;
+    private String id;
     private String appId;
     private int replaySendMaxQps;
     @JsonIgnore
