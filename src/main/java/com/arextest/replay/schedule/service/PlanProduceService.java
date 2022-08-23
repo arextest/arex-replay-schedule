@@ -1,7 +1,7 @@
 package com.arextest.replay.schedule.service;
 
-import com.arextest.replay.schedule.dao.ReplayPlanActionRepository;
-import com.arextest.replay.schedule.dao.ReplayPlanRepository;
+import com.arextest.replay.schedule.dao.mongodb.ReplayPlanActionRepository;
+import com.arextest.replay.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.replay.schedule.mdc.MDCTracer;
 import com.arextest.replay.schedule.plan.PlanContext;
 import com.arextest.replay.schedule.plan.PlanContextCreator;

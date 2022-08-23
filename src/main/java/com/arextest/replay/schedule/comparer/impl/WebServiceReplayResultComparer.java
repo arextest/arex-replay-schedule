@@ -1,8 +1,6 @@
 package com.arextest.replay.schedule.comparer.impl;
 
 
-import com.arextest.replay.schedule.dao.ReplayActionCaseItemRepository;
-import com.arextest.replay.schedule.progress.ProgressTracer;
 import com.arextest.diff.model.CompareOptions;
 import com.arextest.diff.model.CompareResult;
 import com.arextest.diff.sdk.CompareSDK;
@@ -10,12 +8,14 @@ import com.arextest.replay.schedule.comparer.CompareConfigService;
 import com.arextest.replay.schedule.comparer.CompareItem;
 import com.arextest.replay.schedule.comparer.ComparisonWriter;
 import com.arextest.replay.schedule.comparer.ReplayResultComparer;
+import com.arextest.replay.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.replay.schedule.model.CaseSendStatusType;
 import com.arextest.replay.schedule.model.CompareProcessStatusType;
 import com.arextest.replay.schedule.model.ReplayActionCaseItem;
 import com.arextest.replay.schedule.model.ReplayActionItem;
 import com.arextest.replay.schedule.model.ReplayCompareResult;
 import com.arextest.replay.schedule.model.config.ReplayComparisonConfig;
+import com.arextest.replay.schedule.progress.ProgressTracer;
 import com.arextest.storage.model.replay.holder.ListResultHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;

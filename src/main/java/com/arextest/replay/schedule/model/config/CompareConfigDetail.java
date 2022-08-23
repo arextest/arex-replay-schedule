@@ -9,7 +9,7 @@ import java.util.List;
  */
 @Data
 public class CompareConfigDetail {
-    private Long id;
+    private String id;
     private String pathName;
     private List<String> pathValue;
 }

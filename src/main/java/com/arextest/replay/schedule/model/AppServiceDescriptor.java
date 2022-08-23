@@ -11,7 +11,7 @@ import java.util.List;
  */
 @Data
 public class AppServiceDescriptor {
-    private long id;
+    private String id;
     private String serviceKey;
     private String serviceName;
     private String appId;

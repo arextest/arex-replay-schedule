@@ -2,7 +2,7 @@ package com.arextest.replay.schedule.service;
 
 import com.arextest.replay.schedule.comparer.ComparisonWriter;
 import com.arextest.replay.schedule.comparer.ReplayResultComparer;
-import com.arextest.replay.schedule.dao.ReplayActionCaseItemRepository;
+import com.arextest.replay.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.replay.schedule.mdc.MDCTracer;
 import com.arextest.replay.schedule.progress.ProgressTracer;
 import com.arextest.replay.schedule.common.SendSemaphoreLimiter;

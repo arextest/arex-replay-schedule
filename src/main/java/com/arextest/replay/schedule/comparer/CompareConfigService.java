@@ -52,7 +52,7 @@ public final class CompareConfigService {
         }
         List<CompareIgnoreConfig> source = responseType.body;
         for (ReplayActionItem actionItem : plan.getReplayActionItemList()) {
-            long operationId = actionItem.getOperationId();
+            String operationId = actionItem.getOperationId();
             ReplayComparisonConfig config = build(source, operationId);
             String redisKey = key(actionItem.getId());
             String json = objectToJsonString(config);
@@ -62,12 +62,12 @@ public final class CompareConfigService {
         }
     }
 
-    private ReplayComparisonConfig build(List<CompareIgnoreConfig> source, long operation) {
+    private ReplayComparisonConfig build(List<CompareIgnoreConfig> source, String operation) {
         ReplayComparisonConfig replayComparisonConfig = newEmptyComparisonConfig();
-        long configOperationId;
+        String configOperationId;
         for (CompareIgnoreConfig config : source) {
             configOperationId = config.getOperationId();
-            if (configOperationId == operation || configOperationId == 0) {
+            if (configOperationId == operation || configOperationId == null) {
                 expandComparisonConfig(replayComparisonConfig, config);
             }
         }
@@ -115,7 +115,7 @@ public final class CompareConfigService {
         return StringUtils.EMPTY;
     }
 
-    private String key(long actionId) {
+    private String key(String actionId) {
         return CommonConstant.COMPARE_CONFIG_REDIS_KEY + actionId;
     }
 

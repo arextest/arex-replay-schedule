@@ -1,8 +1,8 @@
 package com.arextest.replay.schedule.progress.impl;
 
-import com.arextest.replay.schedule.dao.ReplayPlanActionRepository;
-import com.arextest.replay.schedule.dao.ReplayPlanRepository;
 import com.arextest.replay.schedule.comparer.CompareConfigService;
+import com.arextest.replay.schedule.dao.mongodb.ReplayPlanActionRepository;
+import com.arextest.replay.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.replay.schedule.model.ReplayActionItem;
 import com.arextest.replay.schedule.model.ReplayPlan;
 import com.arextest.replay.schedule.model.ReplayStatusType;
@@ -45,7 +45,7 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
     @Override
     public void onReplayPlanFinish(ReplayPlan replayPlan, ReplayStatusType reason) {
         replayPlan.setPlanFinishTime(new Date());
-        long planId = replayPlan.getId();
+        String planId = replayPlan.getId();
         boolean result = replayPlanRepository.finish(planId);
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
         replayReportService.pushPlanStatus(planId, reason);

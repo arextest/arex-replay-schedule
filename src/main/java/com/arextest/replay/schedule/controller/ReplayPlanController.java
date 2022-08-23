@@ -58,7 +58,7 @@ public class ReplayPlanController {
 
     @GetMapping("/progress")
     @ResponseBody
-    public CommonResponse progress(Long planId) {
+    public CommonResponse progress(String planId) {
         ProgressStatus progressStatus = new ProgressStatus();
         double percent = progressTracer.finishPercent(planId);
         long updateTime = progressTracer.lastUpdateTime(planId);

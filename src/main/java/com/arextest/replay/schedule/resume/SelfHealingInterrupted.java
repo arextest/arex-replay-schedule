@@ -1,9 +1,13 @@
 package com.arextest.replay.schedule.resume;
 
-import com.arextest.replay.schedule.dao.ReplayActionCaseItemRepository;
-import com.arextest.replay.schedule.dao.ReplayPlanActionRepository;
-import com.arextest.replay.schedule.dao.ReplayPlanRepository;
+import com.arextest.replay.schedule.dao.mongodb.ReplayActionCaseItemRepository;
+import com.arextest.replay.schedule.dao.mongodb.ReplayPlanActionRepository;
+import com.arextest.replay.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.replay.schedule.mdc.MDCTracer;
+import com.arextest.replay.schedule.model.AppServiceOperationDescriptor;
+import com.arextest.replay.schedule.model.ReplayActionCaseItem;
+import com.arextest.replay.schedule.model.ReplayActionItem;
+import com.arextest.replay.schedule.model.ReplayPlan;
 import com.arextest.replay.schedule.plan.PlanContext;
 import com.arextest.replay.schedule.plan.PlanContextCreator;
 import com.arextest.replay.schedule.progress.ProgressEvent;
@@ -11,10 +15,6 @@ import com.arextest.replay.schedule.progress.ProgressTracer;
 import com.arextest.replay.schedule.service.ConfigurationService;
 import com.arextest.replay.schedule.service.PlanConsumeService;
 import com.arextest.replay.schedule.service.PlanProduceService;
-import com.arextest.replay.schedule.model.AppServiceOperationDescriptor;
-import com.arextest.replay.schedule.model.ReplayActionCaseItem;
-import com.arextest.replay.schedule.model.ReplayActionItem;
-import com.arextest.replay.schedule.model.ReplayPlan;
 import com.arextest.replay.schedule.utils.ReplayParentBinder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -50,6 +50,7 @@ public class SelfHealingInterrupted {
     @Resource
     private PlanContextCreator planContextCreator;
 
+    // #TODO There is a problem here, Date and Duration types are compared
     public void resumeTimeout(Duration offsetDuration, Duration maxDuration) {
         List<ReplayPlan> planList = replayPlanRepository.timeoutPlanList(offsetDuration, maxDuration);
         if (CollectionUtils.isEmpty(planList)) {
@@ -57,7 +58,7 @@ public class SelfHealingInterrupted {
         }
         long durationMillis = offsetDuration.toMillis();
         for (ReplayPlan replayPlan : planList) {
-            long planId = replayPlan.getId();
+            String planId = replayPlan.getId();
             MDCTracer.addPlanId(planId);
             try {
                 if (isRunning(planId, durationMillis)) {
@@ -74,7 +75,7 @@ public class SelfHealingInterrupted {
     }
 
     private void doResume(ReplayPlan replayPlan) {
-        long planId = replayPlan.getId();
+        String planId = replayPlan.getId();
         List<ReplayActionItem> actionItems = replayPlanActionRepository.queryPlanActionList(planId);
         if (CollectionUtils.isEmpty(actionItems)) {
             LOGGER.warn("skip resume when the plan empty action list, plan id: {} mark to finish ", planId);
@@ -133,7 +134,7 @@ public class SelfHealingInterrupted {
         }
     }
 
-    private boolean isRunning(long planId, long timeoutMillis) {
+    private boolean isRunning(String planId, long timeoutMillis) {
         long now = System.currentTimeMillis();
         long lastUpdateTime = progressTracer.lastUpdateTime(planId);
         return (now - lastUpdateTime) < timeoutMillis;
