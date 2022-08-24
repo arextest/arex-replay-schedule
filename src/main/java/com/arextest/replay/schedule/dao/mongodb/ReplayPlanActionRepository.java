@@ -26,6 +26,13 @@ public class ReplayPlanActionRepository implements RepositoryWriter<ReplayAction
     @Autowired
     MongoTemplate mongoTemplate;
 
+    private static final String REPLAY_STATUS = "replayStatus";
+    private static final String REPLAY_BEGIN_TIME = "replayBeginTime";
+    private static final String REPLAY_FINISH_TIME = "replayFinishTime";
+    private static final String REPLAY_CASE_COUNT = "replayCaseCount";
+    private static final String PLAN_ID = "planId";
+    private static final String APP_ID ="appId";
+
     @Override
     public boolean save(ReplayActionItem actionItem) {
         ReplayPlanItemCollection replayPlanItemCollection = ReplayPlanItemConverter.INSTANCE.daoFromDto(actionItem);
@@ -39,23 +46,23 @@ public class ReplayPlanActionRepository implements RepositoryWriter<ReplayAction
     public boolean update(ReplayActionItem actionItem) {
         Query query = Query.query(Criteria.where(DASH_ID).is(actionItem.getId()));
         Update update = MongoHelper.getUpdate();
-        update.set("replayStatus", actionItem.getReplayStatus());
-        update.set("replayBeginTime", actionItem.getReplayBeginTime());
-        update.set("replayFinishTime", actionItem.getReplayFinishTime());
-        update.set("replayCaseCount", actionItem.getReplayCaseCount());
+        update.set(REPLAY_STATUS, actionItem.getReplayStatus());
+        update.set(REPLAY_BEGIN_TIME, actionItem.getReplayBeginTime());
+        update.set(REPLAY_FINISH_TIME, actionItem.getReplayFinishTime());
+        update.set(REPLAY_CASE_COUNT, actionItem.getReplayCaseCount());
         UpdateResult updateResult = mongoTemplate.updateMulti(query, update, ReplayPlanItemCollection.class);
         return updateResult.getModifiedCount() > 0;
     }
 
     public List<ReplayActionItem> queryPlanActionList(String planId) {
-        Query query = Query.query(Criteria.where("planId").is(planId));
+        Query query = Query.query(Criteria.where(PLAN_ID).is(planId));
         List<ReplayPlanItemCollection> replayPlanItemCollections = mongoTemplate.find(query, ReplayPlanItemCollection.class);
         return replayPlanItemCollections.stream().map(ReplayPlanItemConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
     }
 
     public long queryRunningItemCount(String appId) {
-        Query query = Query.query(Criteria.where("appId").is(appId));
-        query.addCriteria(Criteria.where("replayStatus").in(Arrays.asList(0, 1)));
+        Query query = Query.query(Criteria.where(APP_ID).is(appId));
+        query.addCriteria(Criteria.where(REPLAY_STATUS).in(Arrays.asList(0, 1)));
         return mongoTemplate.count(query, ReplayPlanItemCollection.class);
     }
 
