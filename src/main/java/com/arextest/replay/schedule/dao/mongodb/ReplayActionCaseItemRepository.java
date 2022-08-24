@@ -59,7 +59,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     public boolean updateSendResult(ReplayActionCaseItem replayActionCaseItem) {
         Query query = Query.query(Criteria.where(DASH_ID).is(replayActionCaseItem.getId()));
         Update update = MongoHelper.getUpdate();
-        MongoHelper.assertNull("update parameter is nul", replayActionCaseItem.getSourceResultId(),
+        MongoHelper.assertNull("update parameter is null", replayActionCaseItem.getSourceResultId(),
                 replayActionCaseItem.getTargetResultId());
         update.set(SEND_STATUS, replayActionCaseItem.getSendStatus());
         update.set(SOURCE_RESULT_ID, replayActionCaseItem.getSourceResultId());
