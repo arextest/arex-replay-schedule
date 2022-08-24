@@ -27,6 +27,13 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     @Autowired
     MongoTemplate mongoTemplate;
 
+    private static final String PLAN_ITEM_ID = "planItemId";
+    private static final String SEND_STATUS = "sendStatus";
+    private static final String REPLAY_DEPENDENCE = "replayDependence";
+    private static final String SOURCE_RESULT_ID = "sourceResultId";
+    private static final String TARGET_RESULT_ID = "targetResultId";
+    private static final String COMPARE_STATUS = "compareStatus";
+
     @Override
     public boolean save(ReplayActionCaseItem replayActionCaseItem) {
         ReplayRunDetailsCollection replayRunDetailsCollection = ReplayRunDetailsConverter.INSTANCE.daoFromDto(replayActionCaseItem);
@@ -38,12 +45,12 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     }
 
     public List<ReplayActionCaseItem> waitingSendList(String planItemId, int pageSize) {
-        Query query = Query.query(Criteria.where("planItemId").is(planItemId));
-        query.addCriteria(Criteria.where("sendStatus").is(CaseSendStatusType.WAIT_HANDLING.getValue()));
+        Query query = Query.query(Criteria.where(PLAN_ITEM_ID).is(planItemId));
+        query.addCriteria(Criteria.where(SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()));
         query.limit(pageSize);
         query.with(Sort.by(
                 Sort.Order.asc(DASH_ID),
-                Sort.Order.asc("replayDependence")
+                Sort.Order.asc(REPLAY_DEPENDENCE)
         ));
         List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query, ReplayRunDetailsCollection.class);
         return replayRunDetailsCollections.stream().map(ReplayRunDetailsConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
@@ -54,9 +61,9 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         Update update = MongoHelper.getUpdate();
         MongoHelper.assertNull("update parameter is nul", replayActionCaseItem.getSourceResultId(),
                 replayActionCaseItem.getTargetResultId());
-        update.set("sendStatus", replayActionCaseItem.getSendStatus());
-        update.set("sourceResultId", replayActionCaseItem.getSourceResultId());
-        update.set("targetResultId", replayActionCaseItem.getTargetResultId());
+        update.set(SEND_STATUS, replayActionCaseItem.getSendStatus());
+        update.set(SOURCE_RESULT_ID, replayActionCaseItem.getSourceResultId());
+        update.set(TARGET_RESULT_ID, replayActionCaseItem.getTargetResultId());
         UpdateResult updateResult = mongoTemplate.updateMulti(query, update, ReplayRunDetailsCollection.class);
         return updateResult.getModifiedCount() > 0;
     }
@@ -64,14 +71,14 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     public boolean updateCompareStatus(String id, int comparedStatus) {
         Query query = Query.query(Criteria.where(DASH_ID).is(id));
         Update update = MongoHelper.getUpdate();
-        update.set("compareStatus", comparedStatus);
+        update.set(COMPARE_STATUS, comparedStatus);
         UpdateResult updateResult = mongoTemplate.updateMulti(query, update, ReplayRunDetailsCollection.class);
         return updateResult.getModifiedCount() > 0;
     }
 
     public ReplayActionCaseItem lastOne(String planItemId) {
-        Query query = Query.query(Criteria.where("planItemId").is(planItemId));
-        query.addCriteria(Criteria.where("sendStatus").is(CaseSendStatusType.WAIT_HANDLING.getValue()));
+        Query query = Query.query(Criteria.where(PLAN_ITEM_ID).is(planItemId));
+        query.addCriteria(Criteria.where(SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()));
         query.limit(1);
         query.with(Sort.by(
                 Sort.Order.desc(DASH_ID)
