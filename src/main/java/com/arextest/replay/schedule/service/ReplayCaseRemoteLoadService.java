@@ -129,7 +129,13 @@ public class ReplayCaseRemoteLoadService {
         caseItem.setSourceResultId(StringUtils.EMPTY);
         caseItem.setTargetResultId(StringUtils.EMPTY);
         caseItem.setRequestMethod(mainEntry.getMethod());
-        caseItem.setRequestHeaders(mainEntry.getRequestHeaders());
+        if (StringUtils.isNotEmpty(mainEntry.getRequestHeaders())) {
+            try {
+                Map<String, String> requestHeaders = objectMapper.readValue(mainEntry.getRequestHeaders(), Map.class);
+                caseItem.setRequestHeaders(requestHeaders);
+            } catch (Exception e) {
+            }
+        }
         caseItem.setRequestPath(mainEntry.getPath());
         return caseItem;
     }
