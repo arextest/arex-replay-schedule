@@ -11,6 +11,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -33,7 +34,7 @@ public final class PlanContext {
                 continue;
             }
             for (AppServiceOperationDescriptor operationDescriptor : operationDescriptorList) {
-                if (operationId == operationDescriptor.getId()) {
+                if (Objects.equals(operationId, operationDescriptor.getId())) {
                     return operationDescriptor;
                 }
             }
