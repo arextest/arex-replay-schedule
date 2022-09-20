@@ -10,6 +10,5 @@ import java.util.List;
 @Data
 public class CompareIgnoreConfig {
     private String operationId;
-    private int categoryType;
     private List<CompareConfigDetail> detailsList;
 }

@@ -3,6 +3,7 @@ package com.arextest.replay.schedule.client;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -66,6 +67,16 @@ public final class HttpWepServiceApiClient {
     public <TResponse> TResponse get(String url, Map<String, ?> urlVariables, Class<TResponse> responseType) {
         try {
             return restTemplate.getForObject(url, responseType, urlVariables);
+        } catch (Throwable throwable) {
+            LOGGER.error("http get url: {} ,error: {} , urlVariables: {}", url, throwable.getMessage(), urlVariables,
+                    throwable);
+        }
+        return null;
+    }
+
+    public <TResponse> ResponseEntity<TResponse> get(String url, Map<String, ?> urlVariables, ParameterizedTypeReference<TResponse> responseType) {
+        try {
+            return restTemplate.exchange(url, HttpMethod.GET, null, responseType, urlVariables);
         } catch (Throwable throwable) {
             LOGGER.error("http get url: {} ,error: {} , urlVariables: {}", url, throwable.getMessage(), urlVariables,
                     throwable);

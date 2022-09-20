@@ -13,11 +13,16 @@ import java.util.Set;
 public class ReplayComparisonConfig {
     private List<String> ignoreTypeList;
     private List<String> ignoreKeyList;
+
     private Set<String> ignoreNodeList;
     private List<String> ignorePathList;
-    private List<String> inclusionList;
-    private Map<String, String> referenceList;
-    private Map<String, String> listKeyList;
+    private List<List<String>> exclusionList;
+    private List<List<String>> inclusionList;
+    // private Map<String, String> referenceList;
+    // private Map<String, String> listKeyList;
+
+    private Map<List<String>, List<String>> referenceMap;
+    private Map<List<String>, List<List<String>>> listSortMap;
     private Map<String, List<String>> decompressConfig;
 
     public final boolean checkIgnoreMockMessageType(String type) {
