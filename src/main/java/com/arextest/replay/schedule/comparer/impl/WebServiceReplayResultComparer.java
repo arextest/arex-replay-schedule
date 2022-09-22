@@ -251,10 +251,10 @@ public class WebServiceReplayResultComparer implements ReplayResultComparer {
 
     private CompareOptions buildCompareRequest(ReplayComparisonConfig compareConfig) {
         CompareOptions options = new CompareOptions();
-        options.putExclusions(compareConfig.getIgnorePathList());
+        options.putExclusions(compareConfig.getExclusionList());
         options.putInclusions(compareConfig.getInclusionList());
-        options.putListSortConfig(compareConfig.getListKeyList());
-        options.putReferenceConfig(compareConfig.getReferenceList());
+        options.putListSortConfig(compareConfig.getListSortMap());
+        options.putReferenceConfig(compareConfig.getReferenceMap());
         options.putDecompressConfig(compareConfig.getDecompressConfig());
         return options;
     }
