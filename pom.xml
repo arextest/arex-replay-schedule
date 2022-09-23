@@ -13,7 +13,7 @@
         <spring.boot.version>2.6.3</spring.boot.version>
         <jmockit.version>1.37</jmockit.version>
         <lombok.version>1.18.2</lombok.version>
-        <compare-sdk.version>0.1.1-SNAPSHOT</compare-sdk.version>
+        <compare-sdk.version>0.1.1</compare-sdk.version>
 
         <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
 
@@ -216,14 +216,6 @@
             <artifactId>compare-sdk</artifactId>
         </dependency>
     </dependencies>
-
-    <repositories>
-        <repository>
-            <id>ossrh</id>
-            <name>ossrh-name</name>
-            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-        </repository>
-    </repositories>
 
 
     <build>
