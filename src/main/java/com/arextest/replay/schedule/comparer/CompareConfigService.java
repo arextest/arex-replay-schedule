@@ -42,13 +42,13 @@ public final class CompareConfigService {
     @Resource
     private CacheProvider redisCacheProvider;
 
-    @Value("${arex.config.comparison.exclusions.url}")
+    @Value("${arex.report.config.comparison.exclusions.url}")
     private String configComparisonExclusionsUrl;
-    @Value("${arex.config.comparison.inclusions.url}")
+    @Value("${arex.report.config.comparison.inclusions.url}")
     private String configComparisonInclusionsUrl;
-    @Value("${arex.config.comparison.listsort.url}")
+    @Value("${arex.report.config.comparison.listsort.url}")
     private String configComparisonListSortUrl;
-    @Value("${arex.config.comparison.reference.url}")
+    @Value("${arex.report.config.comparison.reference.url}")
     private String configComparisonReferenceUrl;
 
     @Resource
