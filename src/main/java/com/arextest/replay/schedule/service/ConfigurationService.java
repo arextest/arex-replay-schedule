@@ -18,9 +18,9 @@ import java.util.Set;
 public final class ConfigurationService {
     @Resource
     private HttpWepServiceApiClient wepApiClientService;
-    @Value("${arex.config.application.url}")
+    @Value("${arex.report.config.application.url}")
     private String applicationUrl;
-    @Value("${arex.config.schedule.url}")
+    @Value("${arex.report.config.schedule.url}")
     private String scheduleUrl;
 
     public Application application(String appId) {

@@ -21,7 +21,7 @@ import java.util.List;
 public final class PlanContextCreator {
     @Resource
     private HttpWepServiceApiClient apiClient;
-    @Value("${arex.config.applicationService.url}")
+    @Value("${arex.report.config.applicationService.url}")
     private String applicationServiceUrl;
 
     public PlanContext createByAppId(String appId) {
