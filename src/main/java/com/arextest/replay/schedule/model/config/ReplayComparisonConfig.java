@@ -1,5 +1,6 @@
 package com.arextest.replay.schedule.model.config;
 
+import com.arextest.storage.model.enums.MockCategoryType;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -14,6 +15,7 @@ import lombok.Data;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -39,6 +41,10 @@ public class ReplayComparisonConfig {
     private Map<String, List<List<String>>> decompressConfig;
 
     public final boolean checkIgnoreMockMessageType(String type) {
+        // [b_yu] 2022-10-11 Dynamic type does not compare
+        if (Objects.equals(type, MockCategoryType.DYNAMIC.getDisplayName())) {
+            return true;
+        }
         return ignoreTypeList != null && ignoreTypeList.contains(type);
     }
 
