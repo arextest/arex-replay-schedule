@@ -45,6 +45,9 @@ public class ReplayComparisonConfig {
         if (Objects.equals(type, MockCategoryType.DYNAMIC.getDisplayName())) {
             return true;
         }
+        if (Objects.equals(type, MockCategoryType.REDIS.getDisplayName())) {
+            return true;
+        }
         return ignoreTypeList != null && ignoreTypeList.contains(type);
     }
 
@@ -58,10 +61,13 @@ public class ReplayComparisonConfig {
         }
     }
 
+
     private static class MapKeySerializerUtils extends JsonSerializer<List<String>> {
 
         @Override
-        public void serialize(List<String> stringList, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+        public void serialize(List<String> stringList,
+                JsonGenerator jsonGenerator,
+                SerializerProvider serializerProvider) throws IOException {
             ObjectMapper objectMapper = new ObjectMapper();
             String string = objectMapper.writeValueAsString(stringList);
             jsonGenerator.writeFieldName(string);
