@@ -78,7 +78,7 @@ final class DefaultHttpServletReplaySender extends AbstractReplaySender {
     }
 
     private boolean doSend(ReplayActionItem replayActionItem, ReplayActionCaseItem caseItem,
-                           Map<String, String> headers) {
+            Map<String, String> headers) {
         ServiceInstance instanceRunner = replayActionItem.getTargetInstance();
         if (instanceRunner == null) {
             return false;
@@ -126,22 +126,31 @@ final class DefaultHttpServletReplaySender extends AbstractReplaySender {
         return doSend(replayActionItem, caseItem, headers);
     }
 
-    private String contactUrl(String baseUrl, String operation) {
+    private String contactUrl(String baseUrl, String operation, HttpMethod method, String requestMessage) {
+        String result = null;
         if (StringUtils.endsWith(baseUrl, "/") || StringUtils.startsWith(operation, "/")) {
-            return baseUrl + operation;
+            result = baseUrl + operation;
         }
-        return baseUrl + "/" + operation;
+        result = baseUrl + "/" + operation;
+
+        if (method == HttpMethod.GET) {
+            result += "?" + requestMessage;
+        }
+        return result;
     }
 
     private ReplaySendResult doInvoke(SenderParameters senderParameters) {
-        String fullUrl = contactUrl(senderParameters.getUrl(), senderParameters.getOperation());
         String method = senderParameters.getMethod();
         HttpMethod httpMethod = HttpMethod.resolve(method);
+
         if (httpMethod == null) {
-            return ReplaySendResult.failed("not found request method:" + method, fullUrl);
+            return ReplaySendResult.failed("not found request method:" + method);
         }
+
         HttpHeaders httpHeaders = createRequestHeaders(senderParameters.getHeaders(), senderParameters.getFormat());
         String requestMessage = senderParameters.getMessage();
+        String fullUrl =
+                contactUrl(senderParameters.getUrl(), senderParameters.getOperation(), httpMethod, requestMessage);
         Class<?> responseType = String.class;
         final HttpEntity<?> httpEntity;
         if (shouldApplyHttpBody(httpMethod)) {
@@ -231,7 +240,7 @@ final class DefaultHttpServletReplaySender extends AbstractReplaySender {
     }
 
     private ReplaySendResult fromResult(Map<?, ?> requestHeaders, String url, Map<?, ?> responseHeaders,
-                                        Object responseBody) {
+            Object responseBody) {
         String body = encodeResponseAsString(responseBody);
         LOGGER.info("invoke result url:{} ,request header:{},response header:{}, body:{}", url, requestHeaders,
                 responseHeaders, body);
