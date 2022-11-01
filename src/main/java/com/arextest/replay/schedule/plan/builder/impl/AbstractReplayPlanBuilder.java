@@ -8,9 +8,12 @@ import com.arextest.replay.schedule.model.deploy.DeploymentVersion;
 import com.arextest.replay.schedule.model.deploy.ServiceInstance;
 import com.arextest.replay.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.replay.schedule.plan.PlanContext;
-import com.arextest.replay.schedule.service.ReplayCaseRemoteLoadService;
 import com.arextest.replay.schedule.plan.builder.BuildPlanValidateResult;
 import com.arextest.replay.schedule.plan.builder.ReplayPlanBuilder;
+import com.arextest.replay.schedule.service.ConfigurationService;
+import com.arextest.replay.schedule.service.ReplayActionItemPreprocessService;
+import com.arextest.replay.schedule.service.ReplayCaseRemoteLoadService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -19,7 +22,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.function.BiConsumer;
 
-import static com.arextest.replay.schedule.plan.builder.BuildPlanValidateResult.*;
+import static com.arextest.replay.schedule.plan.builder.BuildPlanValidateResult.APP_ID_NOT_FOUND_SERVICE;
+import static com.arextest.replay.schedule.plan.builder.BuildPlanValidateResult.REQUESTED_CASE_TIME_RANGE_UNSUPPORTED;
+import static com.arextest.replay.schedule.plan.builder.BuildPlanValidateResult.REQUESTED_SOURCE_ENV_UNAVAILABLE;
+import static com.arextest.replay.schedule.plan.builder.BuildPlanValidateResult.REQUESTED_TARGET_ENV_UNAVAILABLE;
+import static com.arextest.replay.schedule.plan.builder.BuildPlanValidateResult.UNSUPPORTED_CASE_SOURCE_TYPE;
 
 /**
  * @author jmo
@@ -32,6 +39,9 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
     private DeploymentEnvironmentProvider deploymentEnvironmentProvider;
     @Resource
     private ReplayCaseRemoteLoadService replayCaseRemoteLoadService;
+
+    @Resource
+    private ReplayActionItemPreprocessService replayActionItemPreprocessService;
 
 
     @Override
@@ -107,6 +117,11 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
             return fromDate.after(toDate);
         }
         return false;
+    }
+
+    @Override
+    public void preprocess(List<ReplayActionItem> replayActionItemList, PlanContext planContext) {
+        replayActionItemPreprocessService.addExclusionOperation(replayActionItemList, planContext.getAppId());
     }
 
 }
