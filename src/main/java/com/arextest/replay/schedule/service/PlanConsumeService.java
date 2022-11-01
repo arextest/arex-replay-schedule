@@ -48,7 +48,7 @@ public final class PlanConsumeService {
     @Resource
     private ProgressEvent progressEvent;
 
-    private static final String EXCLUDE_OPERATION_MAP = "excludeOperationMap";
+    private static final String X_AREX_EXCLUSION_OPERATIONS = "X-AREX-Exclusion-Operations";
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
         // TODO: remove block thread use async to load & send for all
@@ -222,7 +222,7 @@ public final class PlanConsumeService {
         }
         caseItemList.forEach(item -> {
             Map<String, String> tempMap = item.getRequestHeaders() == null ? new HashMap<>() : item.getRequestHeaders();
-            tempMap.put(EXCLUDE_OPERATION_MAP, replayActionItem.getExclusionOperationConfig());
+            tempMap.put(X_AREX_EXCLUSION_OPERATIONS, replayActionItem.getExclusionOperationConfig());
             item.setRequestHeaders(tempMap);
         });
     }
