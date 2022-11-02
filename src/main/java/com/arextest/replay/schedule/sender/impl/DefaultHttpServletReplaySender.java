@@ -1,16 +1,16 @@
 package com.arextest.replay.schedule.sender.impl;
 
-import com.arextest.replay.schedule.sender.ReplaySendResult;
-import com.arextest.storage.model.enums.MockCategoryType;
 import com.arextest.replay.schedule.client.HttpWepServiceApiClient;
+import com.arextest.replay.schedule.common.CommonConstant;
 import com.arextest.replay.schedule.model.ReplayActionCaseItem;
 import com.arextest.replay.schedule.model.ReplayActionItem;
 import com.arextest.replay.schedule.model.deploy.ServiceInstance;
+import com.arextest.replay.schedule.sender.ReplaySendResult;
 import com.arextest.replay.schedule.sender.ReplaySenderParameters;
 import com.arextest.replay.schedule.sender.SenderParameters;
+import com.arextest.storage.model.enums.MockCategoryType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.arextest.replay.schedule.common.CommonConstant;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -78,7 +78,7 @@ final class DefaultHttpServletReplaySender extends AbstractReplaySender {
     }
 
     private boolean doSend(ReplayActionItem replayActionItem, ReplayActionCaseItem caseItem,
-            Map<String, String> headers) {
+                           Map<String, String> headers) {
         ServiceInstance instanceRunner = replayActionItem.getTargetInstance();
         if (instanceRunner == null) {
             return false;
@@ -123,6 +123,10 @@ final class DefaultHttpServletReplaySender extends AbstractReplaySender {
         before(caseItem.getRecordId());
         headers.remove(CommonConstant.AREX_REPLAY_WARM_UP);
         headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
+        String exclusionOperationConfig = replayActionItem.getExclusionOperationConfig();
+        if (StringUtils.isNotEmpty(exclusionOperationConfig)) {
+            headers.put(CommonConstant.X_AREX_EXCLUSION_OPERATIONS, exclusionOperationConfig);
+        }
         return doSend(replayActionItem, caseItem, headers);
     }
 
@@ -240,7 +244,7 @@ final class DefaultHttpServletReplaySender extends AbstractReplaySender {
     }
 
     private ReplaySendResult fromResult(Map<?, ?> requestHeaders, String url, Map<?, ?> responseHeaders,
-            Object responseBody) {
+                                        Object responseBody) {
         String body = encodeResponseAsString(responseBody);
         LOGGER.info("invoke result url:{} ,request header:{},response header:{}, body:{}", url, requestHeaders,
                 responseHeaders, body);

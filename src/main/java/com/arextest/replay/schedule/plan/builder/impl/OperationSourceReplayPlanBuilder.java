@@ -7,9 +7,11 @@ import com.arextest.replay.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.replay.schedule.model.plan.OperationCaseInfo;
 import com.arextest.replay.schedule.plan.PlanContext;
 import com.arextest.replay.schedule.plan.builder.BuildPlanValidateResult;
+import com.arextest.replay.schedule.service.ReplayActionItemPreprocessService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +21,9 @@ import java.util.List;
  */
 @Component
 final class OperationSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
+
+    @Resource
+    private ReplayActionItemPreprocessService replayActionItemPreprocessService;
 
     @Override
     public boolean isSupported(BuildReplayPlanRequest request) {
@@ -39,7 +44,7 @@ final class OperationSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
     }
 
     @Override
-    public List<ReplayActionItem> buildReplayActionList(BuildReplayPlanRequest request, PlanContext planContext) {
+    List<ReplayActionItem> getReplayActionList(BuildReplayPlanRequest request, PlanContext planContext) {
         List<ReplayActionItem> replayActionItemList = new ArrayList<>();
         AppServiceOperationDescriptor operationDescriptor;
         for (OperationCaseInfo operationCaseInfo : request.getOperationCaseInfoList()) {
@@ -50,6 +55,7 @@ final class OperationSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
             ReplayActionItem replayActionItem = planContext.toReplayAction(operationDescriptor);
             replayActionItemList.add(replayActionItem);
         }
+        replayActionItemPreprocessService.addExclusionOperation(replayActionItemList, planContext.getAppId());
         return replayActionItemList;
     }
 }

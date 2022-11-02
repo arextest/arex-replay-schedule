@@ -70,6 +70,11 @@ public class ReplayActionItem {
     private ServiceInstanceOperation mappedInstanceOperation;
     private int replayCaseCount;
     private String appId;
+    /**
+     * the interfaces which don't use the mock when replaying
+     */
+    @JsonIgnore
+    private String exclusionOperationConfig;
 
     public String getPlanId() {
         if (this.parent != null) {

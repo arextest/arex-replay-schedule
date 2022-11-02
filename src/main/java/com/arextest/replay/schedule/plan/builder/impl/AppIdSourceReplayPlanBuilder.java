@@ -26,7 +26,7 @@ final class AppIdSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
     }
 
     @Override
-    public List<ReplayActionItem> buildReplayActionList(BuildReplayPlanRequest request, PlanContext planContext) {
+    List<ReplayActionItem> getReplayActionList(BuildReplayPlanRequest request, PlanContext planContext) {
         List<AppServiceOperationDescriptor> operationDescriptorList;
         List<ReplayActionItem> replayActionItemList = new ArrayList<>();
         for (AppServiceDescriptor appServiceDescriptor : planContext.getAppServiceDescriptorList()) {
