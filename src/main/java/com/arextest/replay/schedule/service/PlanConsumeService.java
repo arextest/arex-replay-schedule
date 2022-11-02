@@ -16,14 +16,11 @@ import com.arextest.replay.schedule.progress.ProgressTracer;
 import com.arextest.replay.schedule.utils.ReplayParentBinder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -47,8 +44,6 @@ public final class PlanConsumeService {
     private ProgressTracer progressTracer;
     @Resource
     private ProgressEvent progressEvent;
-
-    private static final String X_AREX_EXCLUSION_OPERATIONS = "X-AREX-Exclusion-Operations";
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
         // TODO: remove block thread use async to load & send for all
@@ -186,7 +181,6 @@ public final class PlanConsumeService {
                 size++;
             }
         }
-        preprocessReplayActionCaseItem(caseItemList, replayActionItem);
         replayActionCaseItemRepository.save(caseItemList);
         return size;
     }
@@ -208,22 +202,10 @@ public final class PlanConsumeService {
                 ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
                 size += caseItemList.size();
                 beginTimeMills = caseItemList.get(caseItemList.size() - 1).getRecordTime();
-                preprocessReplayActionCaseItem(caseItemList, replayActionItem);
                 replayActionCaseItemRepository.save(caseItemList);
             }
             replayActionItem.setLastRecordTime(beginTimeMills);
         }
         return size;
-    }
-
-    private void preprocessReplayActionCaseItem(List<ReplayActionCaseItem> caseItemList, ReplayActionItem replayActionItem) {
-        if (CollectionUtils.isEmpty(caseItemList) || StringUtils.isEmpty(replayActionItem.getExclusionOperationConfig())) {
-            return;
-        }
-        caseItemList.forEach(item -> {
-            Map<String, String> tempMap = item.getRequestHeaders() == null ? new HashMap<>() : item.getRequestHeaders();
-            tempMap.put(X_AREX_EXCLUSION_OPERATIONS, replayActionItem.getExclusionOperationConfig());
-            item.setRequestHeaders(tempMap);
-        });
     }
 }

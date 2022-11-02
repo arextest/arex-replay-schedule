@@ -17,8 +17,6 @@ public interface ReplayPlanBuilder {
 
     List<ReplayActionItem> buildReplayActionList(BuildReplayPlanRequest request, PlanContext planContext);
 
-    void preprocess(List<ReplayActionItem> replayActionItemList, PlanContext planContext);
-
     int buildReplayCaseCount(List<ReplayActionItem> actionItemList);
 
 }

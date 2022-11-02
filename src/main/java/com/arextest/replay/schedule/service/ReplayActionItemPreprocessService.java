@@ -35,9 +35,9 @@ public class ReplayActionItemPreprocessService {
         }
         try {
             String exclusionMapString = objectMapper.writeValueAsString(schedule.getExcludeOperationMap());
-            replayActionItemList.forEach(item -> {
-                item.setExclusionOperationConfig(exclusionMapString);
-            });
+            for (ReplayActionItem replayActionItem : replayActionItemList) {
+                replayActionItem.setExclusionOperationConfig(exclusionMapString);
+            }
         } catch (JsonProcessingException e) {
             LOGGER.warn("ReplayActionItemPreprocessService.addHeaders failed,message:{}", e.getMessage());
         }

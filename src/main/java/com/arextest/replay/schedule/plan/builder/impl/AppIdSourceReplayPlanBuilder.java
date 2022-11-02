@@ -7,9 +7,11 @@ import com.arextest.replay.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.replay.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.replay.schedule.plan.PlanContext;
 import com.arextest.replay.schedule.plan.builder.BuildPlanValidateResult;
+import com.arextest.replay.schedule.service.ReplayActionItemPreprocessService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +21,9 @@ import java.util.List;
  */
 @Component
 final class AppIdSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
+
+    @Resource
+    private ReplayActionItemPreprocessService replayActionItemPreprocessService;
 
     @Override
     public BuildPlanValidateResult validate(BuildReplayPlanRequest request, PlanContext planContext) {
@@ -44,6 +49,7 @@ final class AppIdSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
                 replayActionItemList.add(replayActionItem);
             }
         }
+        replayActionItemPreprocessService.addExclusionOperation(replayActionItemList, planContext.getAppId());
         return replayActionItemList;
     }
 

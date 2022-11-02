@@ -60,7 +60,6 @@ public class PlanProduceService {
         if (CollectionUtils.isEmpty(replayActionItemList)) {
             return CommonResponse.badResponse("appId:" + appId + " error: empty replay actions");
         }
-        planBuilder.preprocess(replayActionItemList, planContext);
         ReplayPlan replayPlan = build(request, planContext);
         replayPlan.setReplayActionItemList(replayActionItemList);
         ReplayParentBinder.setupReplayActionParent(replayActionItemList, replayPlan);
