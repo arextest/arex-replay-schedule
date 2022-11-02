@@ -161,14 +161,14 @@ public final class PlanConsumeService {
         List<ReplayActionCaseItem> caseItemList = replayActionItem.getCaseItemList();
         int size;
         if (CollectionUtils.isNotEmpty(caseItemList)) {
-            size = doFixedCaseSave(caseItemList, replayActionItem);
+            size = doFixedCaseSave(caseItemList);
         } else {
             size = doPagingLoadCaseSave(replayActionItem);
         }
         return size;
     }
 
-    private int doFixedCaseSave(List<ReplayActionCaseItem> caseItemList, ReplayActionItem replayActionItem) {
+    private int doFixedCaseSave(List<ReplayActionCaseItem> caseItemList) {
         int size = 0;
         for (int i = 0; i < caseItemList.size(); i++) {
             ReplayActionCaseItem caseItem = caseItemList.get(i);
