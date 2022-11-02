@@ -44,7 +44,7 @@ final class OperationSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
     }
 
     @Override
-    public List<ReplayActionItem> buildReplayActionList(BuildReplayPlanRequest request, PlanContext planContext) {
+    List<ReplayActionItem> getReplayActionList(BuildReplayPlanRequest request, PlanContext planContext) {
         List<ReplayActionItem> replayActionItemList = new ArrayList<>();
         AppServiceOperationDescriptor operationDescriptor;
         for (OperationCaseInfo operationCaseInfo : request.getOperationCaseInfoList()) {

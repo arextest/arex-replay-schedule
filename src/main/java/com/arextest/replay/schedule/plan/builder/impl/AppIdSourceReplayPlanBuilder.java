@@ -7,11 +7,9 @@ import com.arextest.replay.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.replay.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.replay.schedule.plan.PlanContext;
 import com.arextest.replay.schedule.plan.builder.BuildPlanValidateResult;
-import com.arextest.replay.schedule.service.ReplayActionItemPreprocessService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,16 +20,13 @@ import java.util.List;
 @Component
 final class AppIdSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
 
-    @Resource
-    private ReplayActionItemPreprocessService replayActionItemPreprocessService;
-
     @Override
     public BuildPlanValidateResult validate(BuildReplayPlanRequest request, PlanContext planContext) {
         return super.validate(request, planContext);
     }
 
     @Override
-    public List<ReplayActionItem> buildReplayActionList(BuildReplayPlanRequest request, PlanContext planContext) {
+    List<ReplayActionItem> getReplayActionList(BuildReplayPlanRequest request, PlanContext planContext) {
         List<AppServiceOperationDescriptor> operationDescriptorList;
         List<ReplayActionItem> replayActionItemList = new ArrayList<>();
         for (AppServiceDescriptor appServiceDescriptor : planContext.getAppServiceDescriptorList()) {
@@ -49,7 +44,6 @@ final class AppIdSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
                 replayActionItemList.add(replayActionItem);
             }
         }
-        replayActionItemPreprocessService.addExclusionOperation(replayActionItemList, planContext.getAppId());
         return replayActionItemList;
     }
 

@@ -123,8 +123,9 @@ final class DefaultHttpServletReplaySender extends AbstractReplaySender {
         before(caseItem.getRecordId());
         headers.remove(CommonConstant.AREX_REPLAY_WARM_UP);
         headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
-        if (caseItem.getParent() != null && StringUtils.isNotEmpty(caseItem.getParent().getExclusionOperationConfig())) {
-            headers.put(CommonConstant.X_AREX_EXCLUSION_OPERATIONS, caseItem.getParent().getExclusionOperationConfig());
+        String exclusionOperationConfig = replayActionItem.getExclusionOperationConfig();
+        if (StringUtils.isNotEmpty(exclusionOperationConfig)) {
+            headers.put(CommonConstant.X_AREX_EXCLUSION_OPERATIONS, exclusionOperationConfig);
         }
         return doSend(replayActionItem, caseItem, headers);
     }
