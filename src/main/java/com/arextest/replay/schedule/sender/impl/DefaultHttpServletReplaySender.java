@@ -10,6 +10,7 @@ import com.arextest.replay.schedule.sender.ReplaySenderParameters;
 import com.arextest.replay.schedule.sender.SenderParameters;
 import com.arextest.storage.model.enums.MockCategoryType;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
@@ -70,11 +71,18 @@ final class DefaultHttpServletReplaySender extends AbstractReplaySender {
         return doInvoke(senderParameters);
     }
 
-    private Map<String, String> newHeadersIfEmpty(Map<String, String> source) {
-        if (MapUtils.isEmpty(source)) {
+    private Map<String, String> newHeadersIfEmpty(String source) {
+        if (StringUtils.isEmpty(source)) {
             return new HashMap<>();
         }
-        return source;
+
+        Map<String, String> headerMap = new HashMap<>();
+        try {
+            headerMap = objectMapper.readValue(source, new TypeReference<Map<String, String>>() {});
+        } catch (JsonProcessingException e) {
+            LOGGER.error("convert header to Map error:{} ,source: {}", e.getMessage(), source);
+        }
+        return headerMap;
     }
 
     private boolean doSend(ReplayActionItem replayActionItem, ReplayActionCaseItem caseItem,
