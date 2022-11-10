@@ -31,7 +31,7 @@ public class ReplayRunDetailsCollection extends ModelBase {
     private String requestMessage;
     private String consumeGroup;
     private String requestMessageFormat;
-    private Map<String, String> requestHeaders;
+    private String requestHeaders;
     private String requestMethod;
     private String requestPath;
 

@@ -42,7 +42,7 @@ public class ReplayActionCaseItem {
     @JsonIgnore
     private String requestMessageFormat;
     @JsonIgnore
-    private Map<String, String> requestHeaders;
+    private String requestHeaders;
     @JsonIgnore
     private String requestMethod;
     @JsonIgnore

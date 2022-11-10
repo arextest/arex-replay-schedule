@@ -70,11 +70,18 @@ final class DefaultHttpServletReplaySender extends AbstractReplaySender {
         return doInvoke(senderParameters);
     }
 
-    private Map<String, String> newHeadersIfEmpty(Map<String, String> source) {
-        if (MapUtils.isEmpty(source)) {
+    @SuppressWarnings("unchecked")
+    private Map<String, String> newHeadersIfEmpty(String source) {
+        if (StringUtils.isEmpty(source)) {
             return new HashMap<>();
         }
-        return source;
+
+        try {
+            return objectMapper.readValue(source, Map.class);
+        } catch (JsonProcessingException e) {
+            LOGGER.error("convert header to Map error:{} ,source: {}", e.getMessage(), source);
+        }
+        return new HashMap<>();
     }
 
     private boolean doSend(ReplayActionItem replayActionItem, ReplayActionCaseItem caseItem,
