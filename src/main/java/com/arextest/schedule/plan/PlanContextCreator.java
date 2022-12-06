@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -34,7 +34,6 @@ public final class PlanContextCreator {
         }
         planContext.setAppId(appId);
         List<AppServiceDescriptor> appServiceDescriptorList = responseType.getBody();
-        appServiceDescriptorList = addQmqDescriptor(appServiceDescriptorList, appId);
         if (CollectionUtils.isEmpty(appServiceDescriptorList)) {
             return planContext;
         }
@@ -58,17 +57,5 @@ public final class PlanContextCreator {
         for (AppServiceOperationDescriptor operationDescriptor : operationList) {
             operationDescriptor.setParent(appServiceDescriptor);
         }
-    }
-
-    private List<AppServiceDescriptor> addQmqDescriptor(List<AppServiceDescriptor> descriptorList, String appId) {
-        AppServiceDescriptor qmqDescriptor = new AppServiceDescriptor();
-        qmqDescriptor.setId(null);
-        qmqDescriptor.setAppId(appId);
-        qmqDescriptor.setServiceName("QMQ");
-        if (CollectionUtils.isEmpty(descriptorList)) {
-            descriptorList = new ArrayList<>();
-        }
-        descriptorList.add(qmqDescriptor);
-        return descriptorList;
     }
 }

@@ -1,9 +1,11 @@
 package com.arextest.schedule.model.dao.mongodb;
 
+import com.arextest.model.mock.Mocker.Target;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 /**
  * Created by rchen9 on 20/8/18.
@@ -12,7 +14,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @Document("ReplayRunDetails")
 public class ReplayRunDetailsCollection extends ModelBase {
-
     private String planItemId;
     private String operationId;
     @NonNull
@@ -23,14 +24,8 @@ public class ReplayRunDetailsCollection extends ModelBase {
     private String sourceResultId;
     private int sendStatus;
     private int compareStatus;
-    private int caseType;
+    private String caseType;
     private long recordTime;
-    private String replayDependency;
-    private String requestMessage;
-    private String consumeGroup;
-    private String requestMessageFormat;
-    private String requestHeaders;
-    private String requestMethod;
-    private String requestPath;
-
+    @Field
+    private Target targetRequest;
 }

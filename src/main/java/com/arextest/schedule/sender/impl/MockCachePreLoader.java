@@ -1,7 +1,8 @@
 package com.arextest.schedule.sender.impl;
 
-import com.arextest.storage.model.replay.QueryMockCacheRequestType;
-import com.arextest.storage.model.replay.QueryMockCacheResponseType;
+import com.arextest.model.replay.QueryMockCacheRequestType;
+
+import com.arextest.model.replay.QueryMockCacheResponseType;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

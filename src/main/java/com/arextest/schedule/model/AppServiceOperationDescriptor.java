@@ -12,5 +12,5 @@ public class AppServiceOperationDescriptor {
     private AppServiceDescriptor parent;
     private String operationName;
     private int status;
-    private int operationType;
+    private String operationType;
 }

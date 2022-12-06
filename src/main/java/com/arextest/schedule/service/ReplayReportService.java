@@ -146,7 +146,7 @@ public final class ReplayReportService implements ComparisonWriter {
     @Override
     public boolean writeIncomparable(ReplayActionCaseItem caseItem, String remark) {
         com.arextest.diff.model.CompareResult sdkResult =
-                CompareSDK.fromException(caseItem.getRequestMessage(), null, remark);
+                CompareSDK.fromException(caseItem.requestMessage(), null, remark);
         ReplayCompareResult replayCompareResult = ReplayCompareResult.createFrom(caseItem, sdkResult);
         replayCompareResult.setDiffResultCode(sdkResult.getCode());
         return this.write(Collections.singletonList(replayCompareResult));

@@ -4,7 +4,7 @@ import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanItemCollection;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.deploy.ServiceInstanceOperation;
-import com.arextest.storage.model.enums.MockCategoryType;
+import com.arextest.model.mock.MockCategoryType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
@@ -46,8 +46,6 @@ public class ReplayActionItem {
     @JsonIgnore
     private SendSemaphoreLimiter sendRateLimiter;
     /**
-     * 初始待执行=0，执行中=1，执行结束=2
-     *
      * @see ReplayStatusType
      */
     @JsonIgnore
@@ -58,10 +56,9 @@ public class ReplayActionItem {
     private Date replayFinishTime;
 
     /**
-     * see defined {@link MockCategoryType}'s all main entry codeValue
-     * SOA=0，QMQ=1
+     * see defined {@link MockCategoryType} for all entry points
      */
-    private int actionType;
+    private String actionType;
     @JsonIgnore
     private ServiceInstance sourceInstance;
     @JsonIgnore

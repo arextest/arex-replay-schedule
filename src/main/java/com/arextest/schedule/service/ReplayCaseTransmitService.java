@@ -56,16 +56,16 @@ public class ReplayCaseTransmitService {
             return;
         }
         activeRemoteHost(sourceItemList);
-        Map<Integer, List<ReplayActionCaseItem>> versionGroupedResult = groupByDependencyVersion(sourceItemList);
+        Map<String, List<ReplayActionCaseItem>> versionGroupedResult = groupByDependencyVersion(sourceItemList);
         LOGGER.info("found replay send size of group: {}", versionGroupedResult.size());
         replayActionItem.getSendRateLimiter().reset();
-        for (Map.Entry<Integer, List<ReplayActionCaseItem>> versionEntry : versionGroupedResult.entrySet()) {
+        for (Map.Entry<String, List<ReplayActionCaseItem>> versionEntry : versionGroupedResult.entrySet()) {
             List<ReplayActionCaseItem> groupValues = versionEntry.getValue();
             if (replayActionItem.getSendRateLimiter().failBreak()) {
                 break;
             }
             try {
-                if (versionEntry.getKey() <= 0) {
+                if (StringUtils.isEmpty(versionEntry.getKey())) {
                     doSendValuesToRemoteHost(groupValues);
                 } else {
                     doSendWithDependencyToRemoteHost(groupValues);
@@ -87,7 +87,7 @@ public class ReplayCaseTransmitService {
             } else {
                 markAllSendStatus(groupValues, CaseSendStatusType.READY_DEPENDENCY_FAILED);
                 LOGGER.error("prepare remote dependency false, group key: {} marked failed ,action id:{}",
-                        groupValues.get(0).getReplayDependency(),
+                        groupValues.get(0).replayDependency(),
                         groupValues.get(0).getParent().getId());
             }
         } catch (Exception e) {
@@ -167,7 +167,7 @@ public class ReplayCaseTransmitService {
     }
 
     private boolean prepareRemoteDependency(ReplayActionCaseItem caseItem) {
-        String replayDependency = caseItem.getReplayDependency();
+        String replayDependency = caseItem.replayDependency();
         boolean prepareResult = false;
         ReplaySender replaySender = findReplaySender(caseItem);
         if (replaySender != null) {
@@ -226,15 +226,15 @@ public class ReplayCaseTransmitService {
 
     }
 
-    private Map<Integer, List<ReplayActionCaseItem>> groupByDependencyVersion(List<ReplayActionCaseItem> sourceItemList) {
+    private Map<String, List<ReplayActionCaseItem>> groupByDependencyVersion(List<ReplayActionCaseItem> sourceItemList) {
         if (this.skipDependencyGroupRequested(sourceItemList)) {
-            return Collections.singletonMap(getReplayDependencyKey(sourceItemList.get(0).getReplayDependency()),
+            return Collections.singletonMap(sourceItemList.get(0).replayDependency(),
                     sourceItemList);
         }
-        SortedMap<Integer, List<ReplayActionCaseItem>> groupResult = Maps.newTreeMap();
+        SortedMap<String, List<ReplayActionCaseItem>> groupResult = Maps.newTreeMap();
         for (ReplayActionCaseItem replayActionCaseItem : sourceItemList) {
             List<ReplayActionCaseItem> values =
-                    groupResult.computeIfAbsent(getReplayDependencyKey(replayActionCaseItem.getReplayDependency()),
+                    groupResult.computeIfAbsent(replayActionCaseItem.replayDependency(),
                             (key) -> new ArrayList<>());
             values.add(replayActionCaseItem);
         }
@@ -244,23 +244,11 @@ public class ReplayCaseTransmitService {
 
     private boolean skipDependencyGroupRequested(List<ReplayActionCaseItem> sourceItemList) {
         for (int i = 1; i < sourceItemList.size(); i++) {
-            if (!StringUtils.equals(sourceItemList.get(i).getReplayDependency(),
-                    sourceItemList.get(i - 1).getReplayDependency())) {
+            if (!StringUtils.equals(sourceItemList.get(i).replayDependency(),
+                    sourceItemList.get(i - 1).replayDependency())) {
                 return false;
             }
         }
         return true;
-    }
-
-    private int getReplayDependencyKey(String key) {
-        int intkey = -1;
-        try {
-            if (StringUtils.isNotBlank(key)) {
-                intkey = Integer.parseInt(key);
-            }
-        } catch (Exception e) {
-            LOGGER.error("get replay dependency key: {}", key);
-        }
-        return intkey;
     }
 }

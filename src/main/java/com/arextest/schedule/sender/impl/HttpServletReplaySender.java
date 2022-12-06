@@ -1,5 +1,6 @@
 package com.arextest.schedule.sender.impl;
 
+import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.ReplayActionCaseItem;
@@ -8,7 +9,7 @@ import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.ReplaySenderParameters;
 import com.arextest.schedule.sender.SenderParameters;
-import com.arextest.storage.model.enums.MockCategoryType;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -40,20 +41,20 @@ final class HttpServletReplaySender extends AbstractReplaySender {
     private static final Pattern BASE_64_PATTERN = Pattern.compile(PATTERN_STRING);
 
     @Override
-    public boolean isSupported(int sendType) {
-        return MockCategoryType.SERVLET_ENTRANCE.getCodeValue() == sendType;
+    public boolean isSupported(String category) {
+        return MockCategoryType.SERVLET.getName().equals(category);
     }
 
     @Override
     public boolean prepareRemoteDependency(ReplayActionCaseItem caseItem) {
-        Map<String, String> headers = newHeadersIfEmpty(caseItem.getRequestHeaders());
-        headers.put(CommonConstant.CONFIG_VERSION_HEADER_NAME, caseItem.getReplayDependency());
+        Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
+        headers.put(CommonConstant.CONFIG_VERSION_HEADER_NAME, caseItem.replayDependency());
         return doSend(caseItem.getParent(), caseItem, headers) || doSend(caseItem.getParent(), caseItem, headers);
     }
 
     @Override
     public boolean activeRemoteService(ReplayActionCaseItem caseItem) {
-        Map<String, String> headers = newHeadersIfEmpty(caseItem.getRequestHeaders());
+        Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
         headers.put(CommonConstant.AREX_REPLAY_WARM_UP, Boolean.TRUE.toString());
         return doSend(caseItem.getParent(), caseItem, headers);
     }
@@ -67,18 +68,12 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         return doInvoke(senderParameters);
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, String> newHeadersIfEmpty(String source) {
-        if (StringUtils.isEmpty(source)) {
+
+    private Map<String, String> newHeadersIfEmpty(Map<String, String> source) {
+        if (MapUtils.isEmpty(source)) {
             return new HashMap<>();
         }
-
-        try {
-            return objectMapper.readValue(source, Map.class);
-        } catch (JsonProcessingException e) {
-            LOGGER.error("convert header to Map error:{} ,source: {}", e.getMessage(), source);
-        }
-        return new HashMap<>();
+        return source;
     }
 
     private boolean doSend(ReplayActionItem replayActionItem, ReplayActionCaseItem caseItem,
@@ -87,21 +82,21 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         if (instanceRunner == null) {
             return false;
         }
-        String operationName = caseItem.getRequestPath();
+        String operationName = caseItem.requestPath();
         if (StringUtils.isEmpty(operationName)) {
             operationName = replayActionItem.getOperationName();
         }
         ReplaySendResult targetSendResult;
         ReplaySenderParameters senderParameter = new ReplaySenderParameters();
         senderParameter.setAppId(replayActionItem.getAppId());
-        senderParameter.setConsumeGroup(caseItem.getConsumeGroup());
-        senderParameter.setFormat(caseItem.getRequestMessageFormat());
-        senderParameter.setMessage(caseItem.getRequestMessage());
+        senderParameter.setConsumeGroup(caseItem.consumeGroup());
+        senderParameter.setFormat(caseItem.requestMessageFormat());
+        senderParameter.setMessage(caseItem.requestMessage());
         senderParameter.setOperation(operationName);
         senderParameter.setUrl(instanceRunner.getUrl());
         senderParameter.setSubEnv(instanceRunner.subEnv());
         senderParameter.setHeaders(headers);
-        senderParameter.setMethod(caseItem.getRequestMethod());
+        senderParameter.setMethod(caseItem.requestMethod());
         senderParameter.setRecordId(caseItem.getRecordId());
         targetSendResult = this.doInvoke(senderParameter);
         caseItem.setSendErrorMessage(targetSendResult.getRemark());
@@ -122,7 +117,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
 
     @Override
     public boolean send(ReplayActionCaseItem caseItem) {
-        Map<String, String> headers = newHeadersIfEmpty(caseItem.getRequestHeaders());
+        Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
         ReplayActionItem replayActionItem = caseItem.getParent();
         before(caseItem.getRecordId());
         headers.remove(CommonConstant.AREX_REPLAY_WARM_UP);
@@ -138,8 +133,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         String result = null;
         if (StringUtils.endsWith(baseUrl, "/") || StringUtils.startsWith(operation, "/")) {
             result = baseUrl + operation;
-        }
-        else{
+        } else {
             result = baseUrl + "/" + operation;
         }
 

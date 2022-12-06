@@ -11,7 +11,7 @@ public interface ReplaySender {
      * Indicate the instance should be working for the message content type,
      * return true should be used,others skipped
      */
-    boolean isSupported(int contentType);
+    boolean isSupported(String categoryType);
 
     /**
      * Try to send the replay case to remote target host

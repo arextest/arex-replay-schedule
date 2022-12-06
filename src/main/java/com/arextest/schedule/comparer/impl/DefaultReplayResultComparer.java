@@ -4,6 +4,7 @@ package com.arextest.schedule.comparer.impl;
 import com.arextest.diff.model.CompareOptions;
 import com.arextest.diff.model.CompareResult;
 import com.arextest.diff.sdk.CompareSDK;
+import com.arextest.schedule.comparer.CategoryComparisonHolder;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.comparer.CompareItem;
 import com.arextest.schedule.comparer.ComparisonWriter;
@@ -16,7 +17,7 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayCompareResult;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.progress.ProgressTracer;
-import com.arextest.storage.model.replay.holder.ListResultHolder;
+
 import lombok.AllArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
@@ -45,13 +46,13 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         try {
             ReplayComparisonConfig compareConfig = getCompareConfig(caseItem.getParent());
             List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
-            List<ListResultHolder<CompareItem>> waitCompareMap = buildWaitCompareList(caseItem);
+            List<CategoryComparisonHolder> waitCompareMap = buildWaitCompareList(caseItem);
             if (CollectionUtils.isEmpty(waitCompareMap)) {
                 caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.ERROR.getValue());
                 comparisonOutputWriter.writeIncomparable(caseItem, CaseSendStatusType.REPLAY_RESULT_NOT_FOUND.name());
                 return true;
             }
-            for (ListResultHolder<CompareItem> bindHolder : waitCompareMap) {
+            for (CategoryComparisonHolder bindHolder : waitCompareMap) {
                 if (compareConfig.checkIgnoreMockMessageType(bindHolder.getCategoryName())) {
                     continue;
                 }
@@ -69,7 +70,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
     }
 
-    private void compareReplayResult(ListResultHolder<CompareItem> bindHolder,
+    private void compareReplayResult(CategoryComparisonHolder bindHolder,
                                      ReplayComparisonConfig compareConfig, ReplayActionCaseItem caseItem,
                                      List<ReplayCompareResult> compareResultNewList) {
         List<CompareItem> recordList = bindHolder.getRecord();
@@ -128,21 +129,17 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
     }
 
-    private List<ListResultHolder<CompareItem>> buildWaitCompareList(ReplayActionCaseItem caseItem) {
-        boolean nonQmqReplaying = caseItem.getParent().getActionType() != ReplayActionItem.QMQ_TRIGGER;
-        String targetResultId = null;
-        String sourceResultId = null;
+    private List<CategoryComparisonHolder> buildWaitCompareList(ReplayActionCaseItem caseItem) {
+
+        String targetResultId = caseItem.getTargetResultId();
+        String sourceResultId = caseItem.getSourceResultId();
         final String recordId = caseItem.getRecordId();
-        if (nonQmqReplaying) {
-            targetResultId = caseItem.getTargetResultId();
-        }
-        if (StringUtils.isNotBlank(caseItem.getSourceResultId())) {
-            if (nonQmqReplaying) {
-                sourceResultId = caseItem.getSourceResultId();
-            }
-            List<ListResultHolder<CompareItem>> sourceResponse = sourceRemoteLoader.getReplayResult(recordId,
+
+        if (StringUtils.isNotBlank(sourceResultId)) {
+
+            List<CategoryComparisonHolder> sourceResponse = sourceRemoteLoader.getReplayResult(recordId,
                     sourceResultId);
-            List<ListResultHolder<CompareItem>> targetResponse = sourceRemoteLoader.getReplayResult(recordId,
+            List<CategoryComparisonHolder> targetResponse = sourceRemoteLoader.getReplayResult(recordId,
                     targetResultId);
             if (CollectionUtils.isEmpty(sourceResponse) || CollectionUtils.isEmpty(targetResponse)) {
                 LOGGER.warn("replay recordId:{} invalid response,source replayId:{} size:{},target replayId:{} size:{}",
@@ -154,20 +151,20 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         return sourceRemoteLoader.getReplayResult(recordId, targetResultId);
     }
 
-    private List<ListResultHolder<CompareItem>> buildWaitCompareList(List<ListResultHolder<CompareItem>> sourceResult,
-                                                                     List<ListResultHolder<CompareItem>> targetResultList) {
-        for (ListResultHolder<CompareItem> sourceResultHolder : sourceResult) {
+    private List<CategoryComparisonHolder> buildWaitCompareList(List<CategoryComparisonHolder> sourceResult,
+                                                                List<CategoryComparisonHolder> targetResultList) {
+        for (CategoryComparisonHolder sourceResultHolder : sourceResult) {
             int targetIndex = findResultByCategory(targetResultList, sourceResultHolder.getCategoryName());
             sourceResultHolder.setRecord(sourceResultHolder.getReplayResult());
             if (targetIndex == INDEX_NOT_FOUND) {
                 continue;
             }
-            ListResultHolder<CompareItem> targetResult = targetResultList.get(targetIndex);
+            CategoryComparisonHolder targetResult = targetResultList.get(targetIndex);
             sourceResultHolder.setReplayResult(targetResult.getReplayResult());
             targetResultList.remove(targetIndex);
         }
         if (CollectionUtils.isNotEmpty(targetResultList)) {
-            for (ListResultHolder<CompareItem> resultHolder : targetResultList) {
+            for (CategoryComparisonHolder resultHolder : targetResultList) {
                 resultHolder.setRecord(Collections.emptyList());
                 sourceResult.add(resultHolder);
             }
@@ -175,9 +172,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         return sourceResult;
     }
 
-    private int findResultByCategory(List<ListResultHolder<CompareItem>> source, String category) {
+    private int findResultByCategory(List<CategoryComparisonHolder> source, String category) {
         for (int i = 0; i < source.size(); i++) {
-            ListResultHolder<CompareItem> resultHolder = source.get(i);
+            CategoryComparisonHolder resultHolder = source.get(i);
             if (StringUtils.equals(resultHolder.getCategoryName(), category)) {
                 return i;
             }

@@ -1,24 +1,18 @@
 package com.arextest.schedule.comparer.impl;
 
-import com.arextest.schedule.common.CommonConstant;
+import com.arextest.model.constants.MockAttributeNames;
+import com.arextest.model.mock.AREXMocker;
+import com.arextest.model.mock.MockCategoryType;
+import com.arextest.model.mock.Mocker.Target;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.arextest.schedule.comparer.CompareItem;
-import com.arextest.storage.model.mocker.impl.ABtMocker;
-import com.arextest.storage.model.mocker.impl.DalResultMocker;
-import com.arextest.storage.model.mocker.impl.DatabaseMocker;
-import com.arextest.storage.model.mocker.impl.DynamicResultMocker;
-import com.arextest.storage.model.mocker.impl.HttpClientMocker;
-import com.arextest.storage.model.mocker.impl.HttpMocker;
-import com.arextest.storage.model.mocker.impl.MessageMocker;
-import com.arextest.storage.model.mocker.impl.QmqConsumerMocker;
-import com.arextest.storage.model.mocker.impl.QmqProducerMocker;
-import com.arextest.storage.model.mocker.impl.RedisMocker;
-import com.arextest.storage.model.mocker.impl.ServletMocker;
-import com.arextest.storage.model.mocker.impl.SoaExternalMocker;
-import com.arextest.storage.model.mocker.impl.SoaMainMocker;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 
 /**
  * @author jmo
@@ -27,101 +21,57 @@ import org.springframework.stereotype.Component;
 @Component
 final class PrepareCompareItemBuilder {
 
-    CompareItem build(Object instance) {
-        if (instance instanceof DatabaseMocker) {
-            return from((DatabaseMocker) instance);
+    CompareItem build(AREXMocker instance) {
+        MockCategoryType categoryType = instance.getCategoryType();
+        String operationKey = operationName(categoryType, instance.getTargetRequest());
+        if (StringUtils.isEmpty(operationKey)) {
+            operationKey = instance.getOperationName();
         }
-        if (instance instanceof ServletMocker) {
-            return from((ServletMocker) instance);
+        ObjectNode obj;
+        if (categoryType.isEntryPoint()) {
+            obj = this.buildAttributes(instance.getTargetResponse());
+        } else {
+            obj = this.buildAttributes(instance.getTargetRequest());
         }
-        if (instance instanceof HttpClientMocker) {
-            return from((HttpClientMocker) instance);
+        return new CompareItemImpl(operationKey, obj.toString());
+    }
+
+    private String operationName(MockCategoryType categoryType, Target target) {
+        if (Objects.equals(categoryType, MockCategoryType.DATABASE)) {
+            return target.attributeAsString(MockAttributeNames.DB_NAME);
         }
-        if (instance instanceof ABtMocker) {
-            return from((ABtMocker) instance);
+        if (Objects.equals(categoryType, MockCategoryType.SERVLET)) {
+            return target.attributeAsString(MockAttributeNames.SERVLET_PATH);
         }
-        if (instance instanceof DalResultMocker) {
-            return from((DalResultMocker) instance);
+        if (Objects.equals(categoryType, MockCategoryType.REDIS)) {
+            return target.attributeAsString(MockAttributeNames.CLUSTER_NAME);
         }
-        if (instance instanceof DynamicResultMocker) {
-            return from((DynamicResultMocker) instance);
-        }
-        if (instance instanceof QmqConsumerMocker) {
-            return from((MessageMocker) instance);
-        }
-        if (instance instanceof QmqProducerMocker) {
-            return from((MessageMocker) instance);
-        }
-        if (instance instanceof SoaExternalMocker) {
-            return from((SoaExternalMocker) instance);
-        }
-        if (instance instanceof SoaMainMocker) {
-            return from((SoaMainMocker) instance);
-        }
-        if (instance instanceof RedisMocker) {
-            return from((RedisMocker) instance);
-        }
-        if (instance instanceof HttpMocker) {
-            return from((HttpMocker) instance);
+        if (Objects.equals(categoryType, MockCategoryType.HTTP_CLIENT)) {
+            return target.attributeAsString(MockAttributeNames.URL);
         }
         return null;
     }
 
-    private CompareItem from(ABtMocker aBtMocker) {
-        return new CompareItemImpl(aBtMocker.getExpCode(), aBtMocker.getVersion());
-    }
-
-    private CompareItem from(DalResultMocker instance) {
+    private ObjectNode buildAttributes(Target target) {
         ObjectNode obj = JsonNodeFactory.instance.objectNode();
-        obj.put("database", instance.getDatabase());
-        obj.put("sql", instance.getSql());
-        obj.put("parameter", instance.getParameter());
-        return new CompareItemImpl(instance.getDatabase(), obj.toString());
-    }
-
-    private CompareItem from(DatabaseMocker instance) {
-        ObjectNode obj = JsonNodeFactory.instance.objectNode();
-        obj.put("database", instance.getDbName());
-        obj.put("sql", instance.getSql());
-        obj.put("parameter", instance.getParameters());
-        return new CompareItemImpl(instance.getDbName(), obj.toString());
-    }
-
-    private CompareItem from(DynamicResultMocker instance) {
-        ObjectNode obj = JsonNodeFactory.instance.objectNode();
-        obj.put("clazzName", instance.getClazzName());
-        obj.put("operation", instance.getOperation());
-        obj.put("operationKey", instance.getOperationKey());
-        String compareOperation = instance.getClazzName() + CommonConstant.DOT + instance.getOperation();
-        return new CompareItemImpl(compareOperation, obj.toString());
-    }
-
-    private CompareItem from(HttpClientMocker instance) {
-        return new CompareItemImpl(instance.getUrl(), StringUtils.EMPTY, StringUtils.EMPTY);
-    }
-
-    private CompareItem from(ServletMocker instance) {
-        return new CompareItemImpl(instance.getPath(), instance.getResponse(), instance.getPattern());
-    }
-
-    private CompareItem from(HttpMocker instance) {
-        return new CompareItemImpl(instance.getOperation(), instance.getRequest(), instance.getService());
-    }
-
-    private CompareItem from(MessageMocker instance) {
-        return new CompareItemImpl(instance.getSubject(), instance.getMsgBody());
-    }
-
-    private CompareItem from(SoaExternalMocker instance) {
-        return new CompareItemImpl(instance.getOperation(), instance.getRequest());
-    }
-
-    private CompareItem from(SoaMainMocker instance) {
-        return new CompareItemImpl(instance.getOperation(), instance.getResponse());
-    }
-
-    private CompareItem from(RedisMocker instance) {
-        return new CompareItemImpl(instance.getClusterName(), instance.getRedisKey());
+        if (target == null) {
+            return obj;
+        }
+        Map<String, Object> attributes = target.getAttributes();
+        if (attributes != null) {
+            for (Entry<String, Object> entry : attributes.entrySet()) {
+                Object value = entry.getValue();
+                if (value instanceof String) {
+                    obj.put(entry.getKey(), (String) value);
+                } else {
+                    obj.putPOJO(entry.getKey(), value);
+                }
+            }
+        }
+        if (StringUtils.isNotEmpty(target.getBody())) {
+            obj.put("body", target.getBody());
+        }
+        return obj;
     }
 
     private final static class CompareItemImpl implements CompareItem {

@@ -11,7 +11,7 @@ import java.util.Map;
  **/
 @Data
 public class DebugRequestItem implements SenderParameters {
-    private int requestType;
+    private String requestType;
     private String appId;
     private String url;
     private String operation;

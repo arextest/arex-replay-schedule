@@ -4,7 +4,7 @@ package com.arextest.schedule.model;
 import com.arextest.diff.model.CompareResult;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.model.log.LogEntity;
-import com.arextest.storage.model.enums.MockCategoryType;
+
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
@@ -48,12 +48,7 @@ public class ReplayCompareResult {
     public static ReplayCompareResult createFrom(ReplayActionCaseItem caseItem, CompareResult sdkResult) {
         ReplayCompareResult newResult = createFrom(caseItem);
         newResult.setOperationName(caseItem.getParent().getOperationName());
-        MockCategoryType mockCategoryType = MockCategoryType.of(caseItem.getCaseType());
-        if (mockCategoryType == null) {
-            newResult.setCategoryName(String.valueOf(caseItem.getCaseType()));
-        } else {
-            newResult.setCategoryName(mockCategoryType.getDisplayName());
-        }
+        newResult.setCategoryName(caseItem.getCaseType());
         newResult.setBaseMsg(sdkResult.getProcessedBaseMsg());
         newResult.setTestMsg(sdkResult.getProcessedTestMsg());
         newResult.setLogs(sdkResult.getLogs());

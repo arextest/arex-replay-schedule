@@ -31,9 +31,6 @@ public final class ReplayParentBinder {
             return;
         }
         for (ReplayActionCaseItem caseItem : sourceItemList) {
-            if (StringUtils.isEmpty(caseItem.getRequestMethod())) {
-                caseItem.setRequestMethod("POST");
-            }
             caseItem.setCaseType(parent.getActionType());
             caseItem.setParent(parent);
         }

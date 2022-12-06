@@ -1,11 +1,14 @@
 package com.arextest.schedule.comparer.impl;
 
+import com.arextest.model.mock.AREXMocker;
+import com.arextest.model.mock.MockCategoryType;
+import com.arextest.model.replay.QueryReplayResultRequestType;
+import com.arextest.model.replay.QueryReplayResultResponseType;
+import com.arextest.model.replay.holder.ListResultHolder;
+import com.arextest.model.response.ResponseStatusType;
+import com.arextest.schedule.comparer.CategoryComparisonHolder;
 import com.arextest.schedule.serialization.ZstdJacksonSerializer;
-import com.arextest.storage.model.enums.MockCategoryType;
-import com.arextest.storage.model.header.ResponseStatusType;
-import com.arextest.storage.model.replay.QueryReplayResultRequestType;
-import com.arextest.storage.model.replay.QueryReplayResultResponseType;
-import com.arextest.storage.model.replay.holder.ListResultHolder;
+
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.comparer.CompareItem;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +34,7 @@ public final class PrepareCompareSourceRemoteLoader {
     @Resource
     private PrepareCompareItemBuilder prepareCompareItemBuilder;
 
-    public List<ListResultHolder<CompareItem>> getReplayResult(String replayId, String resultId) {
+    public List<CategoryComparisonHolder> getReplayResult(String replayId, String resultId) {
         QueryReplayResultResponseType responseType = remoteLoad(replayId, resultId);
         return decodeResult(responseType);
     }
@@ -43,7 +46,7 @@ public final class PrepareCompareSourceRemoteLoader {
         return httpWepServiceApiClient.jsonPost(replayResultUrl, resultRequest, QueryReplayResultResponseType.class);
     }
 
-    private List<ListResultHolder<CompareItem>> decodeResult(QueryReplayResultResponseType replayResultResponseType) {
+    private List<CategoryComparisonHolder> decodeResult(QueryReplayResultResponseType replayResultResponseType) {
         if (replayResultResponseType == null) {
             return Collections.emptyList();
         }
@@ -55,42 +58,43 @@ public final class PrepareCompareSourceRemoteLoader {
             LOGGER.warn("query replay result has error response : {}", responseStatusType);
             return Collections.emptyList();
         }
-        List<ListResultHolder<String>> resultHolderList = replayResultResponseType.getResultHolderList();
+        List<ListResultHolder> resultHolderList = replayResultResponseType.getResultHolderList();
         if (CollectionUtils.isEmpty(resultHolderList)) {
             LOGGER.warn("query replay result has empty size");
             return Collections.emptyList();
         }
-        List<ListResultHolder<CompareItem>> decodedListResult = new ArrayList<>(resultHolderList.size());
+        List<CategoryComparisonHolder> decodedListResult = new ArrayList<>(resultHolderList.size());
         MockCategoryType categoryType;
-        Class<?> mockImplClass;
+
         for (int i = 0; i < resultHolderList.size(); i++) {
-            ListResultHolder<String> stringListResultHolder = resultHolderList.get(i);
-            categoryType = MockCategoryType.of(stringListResultHolder.getCategoryName());
-            if (categoryType == null) {
+            ListResultHolder stringListResultHolder = resultHolderList.get(i);
+            categoryType = stringListResultHolder.getCategoryType();
+            if (categoryType == null || categoryType.isSkipComparison()) {
                 continue;
             }
-            mockImplClass = categoryType.getMockImplClassType();
-            ListResultHolder<CompareItem> resultHolder = new ListResultHolder<>();
-            resultHolder.setCategoryName(categoryType.getDisplayName());
+
+            CategoryComparisonHolder resultHolder = new CategoryComparisonHolder();
+            resultHolder.setCategoryName(categoryType.getName());
             decodedListResult.add(resultHolder);
-            List<CompareItem> recordList = zstdDeserialize(stringListResultHolder.getRecord(),
-                    mockImplClass);
+            List<CompareItem> recordList = zstdDeserialize(stringListResultHolder.getRecord());
             resultHolder.setRecord(recordList);
-            List<CompareItem> replayResultList = zstdDeserialize(stringListResultHolder.getReplayResult(),
-                    mockImplClass);
+            List<CompareItem> replayResultList = zstdDeserialize(stringListResultHolder.getReplayResult());
             resultHolder.setReplayResult(replayResultList);
         }
         return decodedListResult;
     }
 
-    private List<CompareItem> zstdDeserialize(List<String> base64List, Class<?> clazz) {
+    private List<CompareItem> zstdDeserialize(List<String> base64List) {
         if (CollectionUtils.isEmpty(base64List)) {
             return Collections.emptyList();
         }
         List<CompareItem> decodedResult = new ArrayList<>(base64List.size());
         for (int i = 0; i < base64List.size(); i++) {
             String base64 = base64List.get(i);
-            Object source = zstdJacksonSerializer.deserialize(base64, clazz);
+            AREXMocker source = zstdJacksonSerializer.deserialize(base64, AREXMocker.class);
+            if (source == null) {
+                continue;
+            }
             CompareItem item = prepareCompareItemBuilder.build(source);
             if (item != null) {
                 decodedResult.add(item);

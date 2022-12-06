@@ -15,7 +15,7 @@ public class ReplaySenderFactory {
     @Resource
     private List<ReplaySender> replaySenderList;
 
-    public ReplaySender findReplaySender(int sendType) {
+    public ReplaySender findReplaySender(String sendType) {
         if (CollectionUtils.isEmpty(replaySenderList)) {
             return null;
         }
