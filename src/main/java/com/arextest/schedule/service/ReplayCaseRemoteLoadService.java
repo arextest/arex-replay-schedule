@@ -163,7 +163,7 @@ public class ReplayCaseRemoteLoadService {
         requestType.setBeginTime(parent.getCaseSourceFrom().getTime());
         requestType.setEndTime(parent.getCaseSourceTo().getTime());
         requestType.setOperation(replayActionItem.getOperationName());
-        requestType.setCategory(MockCategoryType.create(replayActionItem.getActionType()));
+        requestType.setCategory(MockCategoryType.createEntryPoint(replayActionItem.getActionType()));
         return requestType;
     }
 
