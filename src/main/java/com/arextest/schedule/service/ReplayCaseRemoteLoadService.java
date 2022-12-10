@@ -99,11 +99,7 @@ public class ReplayCaseRemoteLoadService {
         }
         ReplayActionCaseItem caseItem = new ReplayActionCaseItem();
         caseItem.setTargetRequest(targetRequest);
-        if(StringUtils.isBlank(mainEntry.getRecordId())){
-            caseItem.setRecordId(mainEntry.getId());
-        }else {
-            caseItem.setRecordId(mainEntry.getRecordId());
-        }
+        caseItem.setRecordId(mainEntry.getRecordId());
         caseItem.setRecordTime(mainEntry.getCreationTime());
         caseItem.setCaseType(mainEntry.getCategoryType().getName());
         caseItem.setSendStatus(CaseSendStatusType.WAIT_HANDLING.getValue());
