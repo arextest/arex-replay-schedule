@@ -78,7 +78,7 @@ public class PlanProduceService {
         }
         progressEvent.onReplayPlanCreated(replayPlan);
         planConsumeService.runAsyncConsume(replayPlan);
-        return CommonResponse.successResponse("create plan success！" + result.getRemark(), null);
+        return CommonResponse.successResponse("create plan success！" + result.getRemark(), replayPlan.getId());
     }
 
     private ReplayPlan build(BuildReplayPlanRequest request, PlanContext planContext) {
