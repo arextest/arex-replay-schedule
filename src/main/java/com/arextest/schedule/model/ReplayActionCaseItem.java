@@ -72,7 +72,7 @@ public class ReplayActionCaseItem {
     }
 
     public String requestPath() {
-        return requestAttribute(MockAttributeNames.SERVLET_PATH);
+        return requestAttribute(MockAttributeNames.REQUEST_PATH);
     }
 
     private String requestAttribute(String name) {

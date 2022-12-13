@@ -41,13 +41,10 @@ final class PrepareCompareItemBuilder {
             return target.attributeAsString(MockAttributeNames.DB_NAME);
         }
         if (Objects.equals(categoryType, MockCategoryType.SERVLET)) {
-            return target.attributeAsString(MockAttributeNames.SERVLET_PATH);
+            return target.attributeAsString(MockAttributeNames.REQUEST_PATH);
         }
         if (Objects.equals(categoryType, MockCategoryType.REDIS)) {
             return target.attributeAsString(MockAttributeNames.CLUSTER_NAME);
-        }
-        if (Objects.equals(categoryType, MockCategoryType.HTTP_CLIENT)) {
-            return target.attributeAsString(MockAttributeNames.URL);
         }
         return null;
     }
