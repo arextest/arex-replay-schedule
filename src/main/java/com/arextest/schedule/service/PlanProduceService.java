@@ -1,5 +1,6 @@
 package com.arextest.schedule.service;
 
+import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.MDCTracer;
@@ -21,8 +22,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
+
+import static com.arextest.schedule.common.CommonConstant.CREATE_PLAN_REDIS_EXPIRE;
 
 /**
  * Created by wang_yc on 2021/9/15
@@ -44,9 +48,14 @@ public class PlanProduceService {
     private ProgressEvent progressEvent;
     @Resource
     private ConfigurationService configurationService;
+    @Resource
+    private CacheProvider redisCacheProvider;
 
     public CommonResponse createPlan(BuildReplayPlanRequest request) {
         String appId = request.getAppId();
+        if (isCreating(appId)) {
+            return CommonResponse.badResponse("This appid is creating plan");
+        }
         ReplayPlanBuilder planBuilder = select(request);
         if (planBuilder == null) {
             return CommonResponse.badResponse("appId:" + appId + " unsupported replay planType : " + request.getReplayPlanType());
@@ -128,5 +137,26 @@ public class PlanProduceService {
             }
         }
         return null;
+    }
+
+    public Boolean isCreating(String appId) {
+        try {
+            byte[] key = String.format("schedule_creating_%s", appId).getBytes(StandardCharsets.UTF_8);
+            byte[] value = appId.getBytes(StandardCharsets.UTF_8);
+            Boolean result = redisCacheProvider.putIfAbsent(key, CREATE_PLAN_REDIS_EXPIRE,value);
+            return !result;
+        } catch (Exception e) {
+            LOGGER.error("isCreating error : {}", e.getMessage(), e);
+            return true;
+        }
+    }
+
+    public void removeCreating(String appId) {
+        try {
+            byte[] key = String.format("schedule_creating_%s", appId).getBytes(StandardCharsets.UTF_8);
+            redisCacheProvider.remove(key);
+        } catch (Exception e) {
+            LOGGER.error("removeCreating error : {}", e.getMessage(), e);
+        }
     }
 }

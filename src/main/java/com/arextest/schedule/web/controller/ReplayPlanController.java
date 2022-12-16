@@ -56,6 +56,7 @@ public class ReplayPlanController {
             return CommonResponse.badResponse("create plan error！" + e.getMessage());
         } finally {
             MDCTracer.clear();
+            planProduceService.removeCreating(request.getAppId());
         }
     }
 

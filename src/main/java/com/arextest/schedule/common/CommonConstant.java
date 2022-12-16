@@ -1,5 +1,7 @@
 package com.arextest.schedule.common;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * @author wyc王业超
  * @date 2020-09-20
@@ -17,5 +19,7 @@ public final class CommonConstant {
     public static final String DOT = ".";
     public static final String JSON_START = "{";
     public static final String X_AREX_EXCLUSION_OPERATIONS = "X-AREX-Exclusion-Operations";
+
+    public static final long CREATE_PLAN_REDIS_EXPIRE = TimeUnit.MINUTES.toSeconds(5);
 
 }
