@@ -228,13 +228,13 @@ public class ReplayCaseTransmitService {
 
     private Map<String, List<ReplayActionCaseItem>> groupByDependencyVersion(List<ReplayActionCaseItem> sourceItemList) {
         if (this.skipDependencyGroupRequested(sourceItemList)) {
-            return Collections.singletonMap(sourceItemList.get(0).replayDependency(),
+            return Collections.singletonMap(getReplayDependencyKey(sourceItemList.get(0).replayDependency()),
                     sourceItemList);
         }
         SortedMap<String, List<ReplayActionCaseItem>> groupResult = Maps.newTreeMap();
         for (ReplayActionCaseItem replayActionCaseItem : sourceItemList) {
             List<ReplayActionCaseItem> values =
-                    groupResult.computeIfAbsent(replayActionCaseItem.replayDependency(),
+                    groupResult.computeIfAbsent(getReplayDependencyKey(replayActionCaseItem.replayDependency()),
                             (key) -> new ArrayList<>());
             values.add(replayActionCaseItem);
         }
@@ -250,5 +250,17 @@ public class ReplayCaseTransmitService {
             }
         }
         return true;
+    }
+
+    private String getReplayDependencyKey(String key) {
+        String intkey = "";
+        try {
+            if (StringUtils.isNotBlank(key)) {
+                intkey = key;
+            }
+        } catch (Exception e) {
+            LOGGER.error("get replay dependency key: {}", key);
+        }
+        return intkey;
     }
 }
