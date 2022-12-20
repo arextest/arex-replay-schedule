@@ -7,5 +7,5 @@ import com.arextest.schedule.model.ReplayActionCaseItem;
  * @since 2021/9/16
  */
 public interface ReplayResultComparer {
-    boolean compare(ReplayActionCaseItem caseItem);
+    boolean compare(ReplayActionCaseItem caseItem, boolean useReplayId);
 }

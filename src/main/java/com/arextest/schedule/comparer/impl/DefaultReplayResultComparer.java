@@ -42,11 +42,11 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     private static final CompareSDK COMPARE_INSTANCE = new CompareSDK();
 
     @Override
-    public boolean compare(ReplayActionCaseItem caseItem) {
+    public boolean compare(ReplayActionCaseItem caseItem, boolean useReplayId) {
         try {
             ReplayComparisonConfig compareConfig = getCompareConfig(caseItem.getParent());
             List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
-            List<CategoryComparisonHolder> waitCompareMap = buildWaitCompareList(caseItem);
+            List<CategoryComparisonHolder> waitCompareMap = buildWaitCompareList(caseItem, useReplayId);
             if (CollectionUtils.isEmpty(waitCompareMap)) {
                 caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.ERROR.getValue());
                 comparisonOutputWriter.writeIncomparable(caseItem, CaseSendStatusType.REPLAY_RESULT_NOT_FOUND.name());
@@ -129,10 +129,13 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
     }
 
-    private List<CategoryComparisonHolder> buildWaitCompareList(ReplayActionCaseItem caseItem) {
-
-        String targetResultId = caseItem.getTargetResultId();
-        String sourceResultId = caseItem.getSourceResultId();
+    private List<CategoryComparisonHolder> buildWaitCompareList(ReplayActionCaseItem caseItem, boolean useReplayId) {
+        String targetResultId = null;
+        String sourceResultId = null;
+        if (useReplayId) {
+            targetResultId = caseItem.getTargetResultId();
+            sourceResultId = caseItem.getSourceResultId();
+        }
         final String recordId = caseItem.getRecordId();
 
         if (StringUtils.isNotBlank(sourceResultId)) {

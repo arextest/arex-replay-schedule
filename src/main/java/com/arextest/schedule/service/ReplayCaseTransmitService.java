@@ -150,7 +150,7 @@ public class ReplayCaseTransmitService {
             caseItem.setTargetResultId(StringUtils.EMPTY);
         }
         caseItem.setSendStatus(sendStatusType.getValue());
-        if (sendStatusType == CaseSendStatusType.SUCCESS && replayResultComparer.compare(caseItem)) {
+        if (sendStatusType == CaseSendStatusType.SUCCESS && replayResultComparer.compare(caseItem, true)) {
             replayActionCaseItemRepository.updateSendResult(caseItem);
         } else {
             doSendFailedAsFinish(caseItem, sendStatusType);
