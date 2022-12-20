@@ -65,9 +65,9 @@ final class PrepareCompareItemBuilder {
                 }
             }
         }
-        if (StringUtils.isNotEmpty(target.getBody())) {
-            obj.put("body", target.getBody());
-        }
+//        if (StringUtils.isNotEmpty(target.getBody())) {
+//            obj.put("body", target.getBody());
+//        }
         return obj;
     }
 
