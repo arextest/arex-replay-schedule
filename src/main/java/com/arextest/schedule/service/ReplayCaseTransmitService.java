@@ -1,5 +1,6 @@
 package com.arextest.schedule.service;
 
+import com.arextest.model.mock.Mocker;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
@@ -12,6 +13,8 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
 import com.arextest.schedule.common.CommonConstant;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -80,7 +83,7 @@ public class ReplayCaseTransmitService {
 
     private void doSendWithDependencyToRemoteHost(List<ReplayActionCaseItem> groupValues) {
         try {
-            ReplayActionCaseItem dependSource = groupValues.get(0);
+            ReplayActionCaseItem dependSource = cloneCaseItem(groupValues, 0);
             if (prepareRemoteDependency(dependSource)) {
                 Thread.sleep(CommonConstant.THREE_SECOND_MILLIS);
                 doSendValuesToRemoteHost(groupValues);
@@ -94,6 +97,31 @@ public class ReplayCaseTransmitService {
             LOGGER.error("do send with dependency to remote host error ,action id:{}",
                     groupValues.get(0).getParent().getId(), e);
         }
+    }
+
+    private ReplayActionCaseItem cloneCaseItem(List<ReplayActionCaseItem> groupValues, int index) {
+        ReplayActionCaseItem caseItem = new ReplayActionCaseItem();
+        ReplayActionCaseItem source = groupValues.get(index);
+        caseItem.setRecordId(source.getRecordId());
+        caseItem.setTargetResultId(source.getTargetResultId());
+        caseItem.setCaseType(source.getCaseType());
+        caseItem.setParent(source.getParent());
+        caseItem.setTargetRequest(cloneTargetRequest(source.getTargetRequest()));
+        caseItem.setSourceResultId(source.getSourceResultId());
+        caseItem.setPlanItemId(source.getPlanItemId());
+        return caseItem;
+    }
+
+    private Mocker.Target cloneTargetRequest(Mocker.Target targetRequest) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        Mocker.Target newTarget = null;
+        try {
+            String oldTargetRequest = objectMapper.writeValueAsString(targetRequest);
+            newTarget = objectMapper.readValue(oldTargetRequest, Mocker.Target.class);
+        } catch (JsonProcessingException e) {
+            LOGGER.error("cloneTargetRequest item error:{}", e.getMessage());
+        }
+        return newTarget;
     }
 
 
