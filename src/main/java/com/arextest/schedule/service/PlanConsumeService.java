@@ -208,7 +208,7 @@ public final class PlanConsumeService {
         while (beginTimeMills < endTimeMills) {
             List<ReplayActionCaseItem> caseItemList = caseRemoteLoadService.pagingLoad(beginTimeMills, endTimeMills,
                     replayActionItem);
-            if (CollectionUtils.isEmpty(caseItemList) || size > CommonConstant.OPERATION_MAX_CASE_COUNT) {
+            if (CollectionUtils.isEmpty(caseItemList) || size >= CommonConstant.OPERATION_MAX_CASE_COUNT) {
                 break;
             } else {
                 ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
