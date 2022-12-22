@@ -55,7 +55,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             List<CategoryComparisonHolder> waitCompareMap = buildWaitCompareList(caseItem, useReplayId);
             if (CollectionUtils.isEmpty(waitCompareMap)) {
                 if (!useReplayId) {
-                    return true;
+                    return comparisonOutputWriter.writeQmqCompareResult(caseItem);
                 }
                 caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.ERROR.getValue());
                 comparisonOutputWriter.writeIncomparable(caseItem, CaseSendStatusType.REPLAY_RESULT_NOT_FOUND.name());

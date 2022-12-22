@@ -1,21 +1,19 @@
 package com.arextest.schedule.service;
 
 
-import com.arextest.schedule.common.CommonConstant;
-import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.common.model.response.GenericResponseType;
 import com.arextest.common.model.response.Response;
+import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.sdk.CompareSDK;
-import com.arextest.schedule.client.HttpWepServiceApiClient;
-import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.ReplayCompareResult;
-import com.arextest.schedule.model.ReplayPlan;
-import com.arextest.schedule.model.ReplayStatusType;
+import com.arextest.model.mock.MockCategoryType;
 import com.arextest.report.model.api.contracts.ChangeReplayStatusRequestType;
 import com.arextest.report.model.api.contracts.PushCompareResultsRequestType;
 import com.arextest.report.model.api.contracts.ReportInitialRequestType;
 import com.arextest.report.model.api.contracts.common.CompareResult;
+import com.arextest.schedule.client.HttpWepServiceApiClient;
+import com.arextest.schedule.common.CommonConstant;
+import com.arextest.schedule.comparer.ComparisonWriter;
+import com.arextest.schedule.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -122,6 +120,7 @@ public final class ReplayReportService implements ComparisonWriter {
     @Override
     public boolean write(List<ReplayCompareResult> comparedResult) {
         if (CollectionUtils.isEmpty(comparedResult)) {
+            LOGGER.info("not write comparedResult");
             return true;
         }
         int comparedSize = comparedResult.size();
@@ -151,5 +150,36 @@ public final class ReplayReportService implements ComparisonWriter {
         ReplayCompareResult replayCompareResult = ReplayCompareResult.createFrom(caseItem, sdkResult);
         replayCompareResult.setDiffResultCode(sdkResult.getCode());
         return this.write(Collections.singletonList(replayCompareResult));
+    }
+
+    public boolean writeQmqCompareResult(ReplayActionCaseItem caseItem) {
+        if (caseItem == null) {
+            return true;
+        }
+        PushCompareResultsRequestType requestType = new PushCompareResultsRequestType();
+        List<CompareResult> results = new ArrayList<>();
+        results.add(toQMQCompareResult(caseItem));
+        requestType.setResults(results);
+        Response response = httpWepServiceApiClient.jsonPost(pushReplayCompareResultUrl, requestType,
+                GenericResponseType.class);
+        if (response == null || response.getResponseStatusType().hasError()) {
+            LOGGER.warn("writeQmqCompareResult to report result:{}", response);
+        }
+        return true;
+    }
+
+    private CompareResult toQMQCompareResult(ReplayActionCaseItem caseItem) {
+        CompareResult compareResult = new CompareResult();
+        ReplayActionItem parent = caseItem.getParent();
+        compareResult.setPlanId(parent.getPlanId());
+        compareResult.setOperationId(parent.getOperationId());
+        compareResult.setServiceName(parent.getServiceName());
+        compareResult.setCategoryName(MockCategoryType.Q_MESSAGE_CONSUMER.getName());
+        compareResult.setDiffResultCode(DiffResultCode.COMPARED_WITHOUT_DIFFERENCE);
+        compareResult.setOperationName(parent.getOperationName());
+        compareResult.setReplayId(caseItem.getTargetResultId());
+        compareResult.setRecordId(caseItem.getRecordId());
+        compareResult.setPlanItemId(caseItem.getPlanItemId());
+        return compareResult;
     }
 }

@@ -13,4 +13,6 @@ public interface ComparisonWriter {
     boolean writeIncomparable(ReplayActionCaseItem caseItem, String remark);
 
     boolean write(List<ReplayCompareResult> comparedResult);
+
+    boolean writeQmqCompareResult(ReplayActionCaseItem caseItem);
 }
