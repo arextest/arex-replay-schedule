@@ -40,6 +40,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     private final ReplayActionCaseItemRepository caseItemRepository;
     private static final int INDEX_NOT_FOUND = -1;
     private static final CompareSDK COMPARE_INSTANCE = new CompareSDK();
+    static {
+        COMPARE_INSTANCE.getGlobalOptions().putNameToLower(true).putNullEqualsEmpty(true);
+    }
 
     @Override
     public boolean compare(ReplayActionCaseItem caseItem, boolean useReplayId) {
@@ -48,6 +51,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
             List<CategoryComparisonHolder> waitCompareMap = buildWaitCompareList(caseItem, useReplayId);
             if (CollectionUtils.isEmpty(waitCompareMap)) {
+                if (!useReplayId) {
+                    return true;
+                }
                 caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.ERROR.getValue());
                 comparisonOutputWriter.writeIncomparable(caseItem, CaseSendStatusType.REPLAY_RESULT_NOT_FOUND.name());
                 return true;

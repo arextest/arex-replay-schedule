@@ -1,10 +1,12 @@
 package com.arextest.schedule.service;
 
+import com.arextest.common.cache.CacheProvider;
 import com.arextest.model.mock.Mocker;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
+import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.model.CaseSendStatusType;
@@ -22,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +33,8 @@ import java.util.SortedMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_KEY;
 
 /**
  * @author jmo
@@ -52,20 +57,29 @@ public class ReplayCaseTransmitService {
     private ReplaySenderFactory senderFactory;
     @Resource
     private ComparisonWriter comparisonWriter;
+    @Resource
+    private CacheProvider redisCacheProvider;
+    @Resource
+    private ProgressEvent progressEvent;
 
-    public void send(ReplayActionItem replayActionItem) {
+    public boolean send(ReplayActionItem replayActionItem) {
         List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
         if (CollectionUtils.isEmpty(sourceItemList)) {
-            return;
+            return false;
         }
         activeRemoteHost(sourceItemList);
         Map<String, List<ReplayActionCaseItem>> versionGroupedResult = groupByDependencyVersion(sourceItemList);
         LOGGER.info("found replay send size of group: {}", versionGroupedResult.size());
         replayActionItem.getSendRateLimiter().reset();
+        byte[] cancelKey = getCancelKey(replayActionItem.getPlanId());
         for (Map.Entry<String, List<ReplayActionCaseItem>> versionEntry : versionGroupedResult.entrySet()) {
             List<ReplayActionCaseItem> groupValues = versionEntry.getValue();
             if (replayActionItem.getSendRateLimiter().failBreak()) {
                 break;
+            }
+            if (isCancelled(cancelKey)) {
+                progressEvent.onActionCancelled(replayActionItem);
+                return true;
             }
             try {
                 if (StringUtils.isEmpty(versionEntry.getKey())) {
@@ -79,6 +93,19 @@ public class ReplayCaseTransmitService {
                 markAllSendStatus(groupValues, CaseSendStatusType.EXCEPTION_FAILED);
             }
         }
+        return false;
+    }
+
+    private byte[] getCancelKey(String planId) {
+        return (STOP_PLAN_REDIS_KEY + planId).getBytes(StandardCharsets.UTF_8);
+    }
+
+    private boolean isCancelled(byte[] rediskey) {
+        byte[] bytes = redisCacheProvider.get(rediskey);
+        if (bytes == null) {
+            return false;
+        }
+        return true;
     }
 
     private void doSendWithDependencyToRemoteHost(List<ReplayActionCaseItem> groupValues) {
