@@ -1,6 +1,7 @@
 package com.arextest.schedule.service;
 
 
+import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.common.model.response.GenericResponseType;
 import com.arextest.common.model.response.Response;
@@ -86,7 +87,7 @@ public final class ReplayReportService implements ComparisonWriter {
             reportItem.setOperationName(actionItem.getOperationName());
             reportItem.setServiceName(actionItem.getServiceKey());
             reportItem.setPlanItemId(actionItem.getId());
-            reportItem.setTotalCaseCount(actionItem.getReplayCaseCount());
+            reportItem.setTotalCaseCount(Math.min(CommonConstant.OPERATION_MAX_CASE_COUNT, actionItem.getReplayCaseCount()));
             reportItemList.add(reportItem);
         }
         requestType.setReportItemList(reportItemList);

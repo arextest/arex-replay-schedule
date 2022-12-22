@@ -60,6 +60,13 @@ public class ReplayPlanController {
         }
     }
 
+    @GetMapping("/api/stopPlan")
+    @ResponseBody
+    public CommonResponse stopPlan(String planId) {
+        planProduceService.stopPlan(planId);
+        return CommonResponse.successResponse("success", null);
+    }
+
     @GetMapping("/progress")
     @ResponseBody
     public CommonResponse progress(String planId) {

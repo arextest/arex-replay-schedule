@@ -26,4 +26,6 @@ public interface ProgressEvent {
     void onActionCaseLoaded(ReplayActionItem actionItem);
 
     void onActionInterrupted(ReplayActionItem actionItem);
+
+    void onActionCancelled(ReplayActionItem actionItem);
 }

@@ -26,7 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 
-import static com.arextest.schedule.common.CommonConstant.CREATE_PLAN_REDIS_EXPIRE;
+import static com.arextest.schedule.common.CommonConstant.*;
 
 /**
  * Created by wang_yc on 2021/9/15
@@ -157,6 +157,15 @@ public class PlanProduceService {
             redisCacheProvider.remove(key);
         } catch (Exception e) {
             LOGGER.error("removeCreating error : {}", e.getMessage(), e);
+        }
+    }
+
+    public void stopPlan(String planId) {
+        try {
+            String redisKey = STOP_PLAN_REDIS_KEY + planId;
+            redisCacheProvider.putIfAbsent(redisKey.getBytes(StandardCharsets.UTF_8), STOP_PLAN_REDIS_EXPIRE, planId.getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            LOGGER.error("stopPlan error, planId: {}, message: {}", planId, e.getMessage());
         }
     }
 }

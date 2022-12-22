@@ -58,7 +58,7 @@ public class ReplayCaseRemoteLoadService {
             if (responseType == null || responseType.getResponseStatusType().hasError()) {
                 return EMPTY_SIZE;
             }
-            return (int) responseType.getCount();
+            return Math.min(CommonConstant.OPERATION_MAX_CASE_COUNT, (int) responseType.getCount());
         } catch (Exception e) {
             LOGGER.error("query case count error,request: {} ", replayActionItem.getId(), e);
         }

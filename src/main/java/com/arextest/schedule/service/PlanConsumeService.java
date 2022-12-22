@@ -104,6 +104,7 @@ public final class PlanConsumeService {
         sendRateLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
         sendRateLimiter.setSendMaxRate(replayPlan.getReplaySendMaxQps());
         boolean isInterrupted = false;
+        boolean isCancelled = false;
         for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
             MDCTracer.addActionId(replayActionItem.getId());
             if (replayActionItem.finished()) {
@@ -114,6 +115,10 @@ public final class PlanConsumeService {
                 progressEvent.onActionComparisonFinish(replayActionItem);
                 continue;
             }
+            if (isCancelled) {
+                progressEvent.onActionCancelled(replayActionItem);
+                continue;
+            }
             if (isInterrupted) {
                 progressEvent.onActionInterrupted(replayActionItem);
                 continue;
@@ -122,7 +127,10 @@ public final class PlanConsumeService {
                 progressEvent.onActionBeforeSend(replayActionItem);
             }
             replayActionItem.setSendRateLimiter(sendRateLimiter);
-            sendByPaging(replayActionItem);
+            isCancelled = sendByPaging(replayActionItem);
+            if (isCancelled) {
+                continue;
+            }
             isInterrupted = sendRateLimiter.failBreak();
             if (isInterrupted) {
                 progressEvent.onActionInterrupted(replayActionItem);
@@ -130,8 +138,8 @@ public final class PlanConsumeService {
             }
             progressEvent.onActionAfterSend(replayActionItem);
         }
-        if (isInterrupted) {
-            progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
+        if (isInterrupted || isCancelled) {
+            progressEvent.onReplayPlanFinish(replayPlan, isInterrupted ? ReplayStatusType.FAIL_INTERRUPTED : ReplayStatusType.CANCELLED);
             LOGGER.info("The plan was interrupted, plan id:{} ,appId: {} ", replayPlan.getId(),
                     replayPlan.getAppId());
             return;
@@ -140,7 +148,7 @@ public final class PlanConsumeService {
                 replayPlan.getAppId());
     }
 
-    private void sendByPaging(ReplayActionItem replayActionItem) {
+    private boolean sendByPaging(ReplayActionItem replayActionItem) {
         List<ReplayActionCaseItem> sourceItemList;
         while (true) {
             sourceItemList = replayActionCaseItemRepository.waitingSendList(replayActionItem.getId(),
@@ -150,11 +158,15 @@ public final class PlanConsumeService {
                 break;
             }
             ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
-            replayCaseTransmitService.send(replayActionItem);
+            boolean isCanceled = replayCaseTransmitService.send(replayActionItem);
+            if (isCanceled) {
+                return true;
+            }
             if (replayActionItem.getSendRateLimiter().failBreak()) {
                 break;
             }
         }
+        return false;
     }
 
     private int streamingCaseItemSave(ReplayActionItem replayActionItem) {

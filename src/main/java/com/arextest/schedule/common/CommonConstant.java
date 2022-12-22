@@ -21,5 +21,7 @@ public final class CommonConstant {
     public static final String X_AREX_EXCLUSION_OPERATIONS = "X-AREX-Exclusion-Operations";
 
     public static final long CREATE_PLAN_REDIS_EXPIRE = TimeUnit.MINUTES.toSeconds(5);
+    public static final long STOP_PLAN_REDIS_EXPIRE = TimeUnit.DAYS.toDays(1);
+    public static final String STOP_PLAN_REDIS_KEY = "arex.stop.plan.";
 
 }
