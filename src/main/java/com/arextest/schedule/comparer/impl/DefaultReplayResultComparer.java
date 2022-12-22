@@ -10,6 +10,7 @@ import com.arextest.schedule.comparer.CompareItem;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
+import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.CompareProcessStatusType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
@@ -47,6 +48,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     @Override
     public boolean compare(ReplayActionCaseItem caseItem, boolean useReplayId) {
         try {
+            MDCTracer.addPlanId(caseItem.getParent().getPlanId());
+            MDCTracer.addPlanItemId(caseItem.getPlanItemId());
             ReplayComparisonConfig compareConfig = getCompareConfig(caseItem.getParent());
             List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
             List<CategoryComparisonHolder> waitCompareMap = buildWaitCompareList(caseItem, useReplayId);
@@ -69,10 +72,12 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.ERROR.getValue());
             comparisonOutputWriter.writeIncomparable(caseItem, throwable.getMessage());
             LOGGER.error("compare case result error:{} ,case item: {}", throwable.getMessage(), caseItem, throwable);
+            MDCTracer.clear();
             // don't send again
             return true;
         } finally {
             progressTracer.finishOne(caseItem);
+            MDCTracer.clear();
         }
     }
 

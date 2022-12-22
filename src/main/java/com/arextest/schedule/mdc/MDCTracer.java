@@ -13,6 +13,8 @@ public final class MDCTracer {
     private static final String ACTION_ID = "actionId";
     private static final String DETAIL_ID = "detailId";
 
+    private static final String PLAN_ITEM_ID = "planItemId";
+
     private MDCTracer() {
 
     }
@@ -29,6 +31,10 @@ public final class MDCTracer {
 
     public static void addPlanId(String planId) {
         MDC.put(PLAN_ID, planId);
+    }
+
+    public static void addPlanItemId(String planItemId) {
+        MDC.put(PLAN_ITEM_ID, planItemId);
     }
 
     public static void addPlanId(long planId) {
