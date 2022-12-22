@@ -137,4 +137,13 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         actionItem.setReplayFinishTime(now);
         updateReplayActionStatus(actionItem, ReplayStatusType.CANCELLED, null);
     }
+
+    public void onActionCancelled(ReplayActionItem actionItem) {
+        final Date now = new Date();
+        if (actionItem.getReplayBeginTime() == null) {
+            actionItem.setReplayBeginTime(now);
+        }
+        actionItem.setReplayFinishTime(now);
+        updateReplayActionStatus(actionItem, ReplayStatusType.CANCELLED);
+    }
 }
