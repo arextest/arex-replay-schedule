@@ -58,7 +58,10 @@ public class ReplayPlanRepository implements RepositoryField {
 
     public List<ReplayPlan> timeoutPlanList(Duration offsetDuration, Duration maxDuration) {
         Query query = Query.query(Criteria.where(PLAN_FINISH_TIME).is(null));
-        query.addCriteria(Criteria.where(PLAN_CREATE_TIME).gte(offsetDuration).lte(maxDuration));
+        long now = System.currentTimeMillis();
+        long from = now - offsetDuration.toMillis();
+        long to = from - maxDuration.toMillis();
+        query.addCriteria(Criteria.where(PLAN_CREATE_TIME).gte(new Date(to)).lte(new Date(from)));
         List<ReplayPlanCollection> replayPlanCollections = mongoTemplate.find(query, ReplayPlanCollection.class);
         return replayPlanCollections.stream().map(ReplayPlanConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
     }
