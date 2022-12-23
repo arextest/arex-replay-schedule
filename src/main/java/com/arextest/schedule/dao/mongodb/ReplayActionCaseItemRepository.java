@@ -3,6 +3,7 @@ package com.arextest.schedule.dao.mongodb;
 import com.arextest.schedule.dao.RepositoryWriter;
 import com.arextest.schedule.dao.mongodb.util.MongoHelper;
 import com.arextest.schedule.model.CaseSendStatusType;
+import com.arextest.schedule.model.CompareProcessStatusType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.converter.ReplayRunDetailsConverter;
 import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
@@ -46,7 +47,15 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
     public List<ReplayActionCaseItem> waitingSendList(String planItemId, int pageSize) {
         Query query = Query.query(Criteria.where(PLAN_ITEM_ID).is(planItemId));
-        query.addCriteria(Criteria.where(SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()));
+        query.addCriteria(
+                new Criteria().orOperator(
+                        Criteria.where(SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()),
+                        new Criteria().andOperator(
+                                Criteria.where(SEND_STATUS).is(CaseSendStatusType.SUCCESS.getValue()),
+                                Criteria.where(COMPARE_STATUS).is(CompareProcessStatusType.WAIT_HANDLING.getValue())
+                        )
+                )
+        );
         query.limit(pageSize);
         query.with(Sort.by(
                 Sort.Order.asc(DASH_ID),
@@ -78,7 +87,16 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
     public ReplayActionCaseItem lastOne(String planItemId) {
         Query query = Query.query(Criteria.where(PLAN_ITEM_ID).is(planItemId));
-        query.addCriteria(Criteria.where(SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()));
+
+        query.addCriteria(
+                new Criteria().orOperator(
+                                Criteria.where(SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()),
+                        new Criteria().andOperator(
+                                Criteria.where(SEND_STATUS).is(CaseSendStatusType.SUCCESS.getValue()),
+                                Criteria.where(COMPARE_STATUS).is(CompareProcessStatusType.WAIT_HANDLING.getValue())
+                        )
+                )
+        );
         query.limit(1);
         query.with(Sort.by(
                 Sort.Order.desc(DASH_ID)

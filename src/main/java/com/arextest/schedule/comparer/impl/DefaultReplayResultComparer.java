@@ -76,6 +76,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             // don't send again
             return true;
         } finally {
+            caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.PASS.getValue());
             progressTracer.finishOne(caseItem);
             MDCTracer.clear();
         }
