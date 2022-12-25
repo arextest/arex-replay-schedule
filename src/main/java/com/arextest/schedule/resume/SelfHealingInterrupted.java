@@ -8,6 +8,9 @@ import com.arextest.schedule.model.AppServiceOperationDescriptor;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.model.AppServiceDescriptor;
+import com.arextest.schedule.model.deploy.DeploymentEnvironmentProvider;
+import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.progress.ProgressEvent;
@@ -49,6 +52,8 @@ public class SelfHealingInterrupted {
     private PlanProduceService planProduceService;
     @Resource
     private PlanContextCreator planContextCreator;
+    @Resource
+    private DeploymentEnvironmentProvider deploymentEnvironmentProvider;
 
     // #TODO There is a problem here, Date and Duration types are compared
     public void resumeTimeout(Duration offsetDuration, Duration maxDuration) {
@@ -111,6 +116,9 @@ public class SelfHealingInterrupted {
                 );
                 continue;
             }
+            AppServiceDescriptor appServiceDescriptor = operationDescriptor.getParent();
+            List<ServiceInstance> activeInstanceList = deploymentEnvironmentProvider.getActiveInstanceList(appServiceDescriptor, replayPlan.getTargetHost());
+            appServiceDescriptor.setTargetActiveInstanceList(activeInstanceList);
             planContext.fillReplayAction(actionItem, operationDescriptor);
         }
     }

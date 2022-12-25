@@ -38,7 +38,7 @@ public final class DefaultDeploymentEnvironmentProviderImpl implements Deploymen
     public List<ServiceInstance> getActiveInstanceList(AppServiceDescriptor serviceDescriptor, String env) {
         ServiceInstance serviceInstance = parse(env);
         if (serviceInstance != null) {
-            return Collections.singletonList(parse(env));
+            return Collections.singletonList(serviceInstance);
         }
         return Collections.emptyList();
     }
