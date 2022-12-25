@@ -119,6 +119,7 @@ public class SelfHealingInterrupted {
             AppServiceDescriptor appServiceDescriptor = operationDescriptor.getParent();
             List<ServiceInstance> activeInstanceList = deploymentEnvironmentProvider.getActiveInstanceList(appServiceDescriptor, replayPlan.getTargetHost());
             appServiceDescriptor.setTargetActiveInstanceList(activeInstanceList);
+            
             planContext.fillReplayAction(actionItem, operationDescriptor);
         }
     }
