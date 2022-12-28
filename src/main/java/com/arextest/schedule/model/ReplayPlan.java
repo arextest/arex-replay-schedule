@@ -21,9 +21,9 @@ public class ReplayPlan {
     private int replaySendMaxQps;
     @JsonIgnore
     private String planName;
-    @JsonIgnore
+//    @JsonIgnore
     private String sourceEnv;
-    @JsonIgnore
+//    @JsonIgnore
     private String targetEnv;
     @JsonIgnore
     private String sourceHost;
