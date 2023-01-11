@@ -23,7 +23,7 @@ final class PrepareCompareItemBuilder {
 
     CompareItem build(AREXMocker instance) {
         MockCategoryType categoryType = instance.getCategoryType();
-        String operationKey = operationName(categoryType, instance.getTargetRequest());
+        String operationKey = operationName(categoryType, instance);
         if (StringUtils.isEmpty(operationKey)) {
             operationKey = instance.getOperationName();
         }
@@ -36,12 +36,13 @@ final class PrepareCompareItemBuilder {
         return new CompareItemImpl(operationKey, body);
     }
 
-    private String operationName(MockCategoryType categoryType, Target target) {
+    private String operationName(MockCategoryType categoryType, AREXMocker instance) {
+        Target target = instance.getTargetRequest();
         if (Objects.equals(categoryType, MockCategoryType.DATABASE)) {
             return target.attributeAsString(MockAttributeNames.DB_NAME);
         }
         if (Objects.equals(categoryType, MockCategoryType.SERVLET)) {
-            return target.attributeAsString(MockAttributeNames.REQUEST_PATH);
+            return instance.getOperationName();
         }
         if (Objects.equals(categoryType, MockCategoryType.REDIS)) {
             return target.attributeAsString(MockAttributeNames.CLUSTER_NAME);
