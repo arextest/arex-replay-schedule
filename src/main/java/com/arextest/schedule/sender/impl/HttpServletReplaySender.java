@@ -129,16 +129,12 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         return doSend(replayActionItem, caseItem, headers);
     }
 
-    private String contactUrl(String baseUrl, String operation, HttpMethod method, String requestMessage) {
+    private String contactUrl(String baseUrl, String operation) {
         String result = null;
         if (StringUtils.endsWith(baseUrl, "/") || StringUtils.startsWith(operation, "/")) {
             result = baseUrl + operation;
         } else {
             result = baseUrl + "/" + operation;
-        }
-
-        if (method == HttpMethod.GET) {
-            result += "?" + requestMessage;
         }
         return result;
     }
@@ -154,7 +150,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         HttpHeaders httpHeaders = createRequestHeaders(senderParameters.getHeaders(), senderParameters.getFormat());
         String requestMessage = senderParameters.getMessage();
         String fullUrl =
-                contactUrl(senderParameters.getUrl(), senderParameters.getOperation(), httpMethod, requestMessage);
+                contactUrl(senderParameters.getUrl(), senderParameters.getOperation());
         Class<?> responseType = String.class;
         final HttpEntity<?> httpEntity;
         if (shouldApplyHttpBody(httpMethod)) {
