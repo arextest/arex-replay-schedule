@@ -27,13 +27,13 @@ final class PrepareCompareItemBuilder {
         if (StringUtils.isEmpty(operationKey)) {
             operationKey = instance.getOperationName();
         }
-        String body;
+        ObjectNode obj;
         if (categoryType.isEntryPoint()) {
-            body = Objects.isNull(instance.getTargetResponse()) ? null : instance.getTargetResponse().getBody();
+            obj = this.buildAttributes(instance.getTargetResponse());
         } else {
-            body = Objects.isNull(instance.getTargetRequest()) ? null : instance.getTargetRequest().getBody();
+            obj = this.buildAttributes(instance.getTargetRequest());
         }
-        return new CompareItemImpl(operationKey, body);
+        return new CompareItemImpl(operationKey, obj.toString());
     }
 
     private String operationName(MockCategoryType categoryType, Target target) {
