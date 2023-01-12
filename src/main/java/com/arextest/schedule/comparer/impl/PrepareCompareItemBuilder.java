@@ -40,9 +40,6 @@ final class PrepareCompareItemBuilder {
         if (Objects.equals(categoryType, MockCategoryType.DATABASE)) {
             return target.attributeAsString(MockAttributeNames.DB_NAME);
         }
-        if (Objects.equals(categoryType, MockCategoryType.SERVLET)) {
-            return target.attributeAsString(MockAttributeNames.REQUEST_PATH);
-        }
         if (Objects.equals(categoryType, MockCategoryType.REDIS)) {
             return target.attributeAsString(MockAttributeNames.CLUSTER_NAME);
         }
