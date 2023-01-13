@@ -14,6 +14,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -52,6 +54,17 @@ public class ReplayComparisonConfig {
         return ignoreTypeList != null && ignoreTypeList.contains(type);
     }
 
+    public void fillIgnoreBodyInDatabase() {
+        List<String> list = Collections.singletonList("body");
+        if (exclusionList == null) {
+            exclusionList = new HashSet<List<String>>() {{
+                add(list);
+            }};
+        } else {
+            exclusionList.add(list);
+        }
+    }
+
     private static class MapKeyDeserializerUtils extends KeyDeserializer {
 
         @Override
@@ -67,8 +80,8 @@ public class ReplayComparisonConfig {
 
         @Override
         public void serialize(List<String> stringList,
-                JsonGenerator jsonGenerator,
-                SerializerProvider serializerProvider) throws IOException {
+                              JsonGenerator jsonGenerator,
+                              SerializerProvider serializerProvider) throws IOException {
             ObjectMapper objectMapper = new ObjectMapper();
             String string = objectMapper.writeValueAsString(stringList);
             jsonGenerator.writeFieldName(string);

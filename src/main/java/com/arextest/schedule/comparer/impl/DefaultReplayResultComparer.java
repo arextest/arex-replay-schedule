@@ -4,6 +4,7 @@ package com.arextest.schedule.comparer.impl;
 import com.arextest.diff.model.CompareOptions;
 import com.arextest.diff.model.CompareResult;
 import com.arextest.diff.sdk.CompareSDK;
+import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.comparer.CategoryComparisonHolder;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.comparer.CompareItem;
@@ -18,9 +19,7 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayCompareResult;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.progress.ProgressTracer;
-
 import lombok.AllArgsConstructor;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -29,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -41,6 +41,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     private final ReplayActionCaseItemRepository caseItemRepository;
     private static final int INDEX_NOT_FOUND = -1;
     private static final CompareSDK COMPARE_INSTANCE = new CompareSDK();
+
     static {
         COMPARE_INSTANCE.getGlobalOptions().putNameToLower(true).putNullEqualsEmpty(true);
     }
@@ -64,6 +65,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             for (CategoryComparisonHolder bindHolder : waitCompareMap) {
                 if (compareConfig.checkIgnoreMockMessageType(bindHolder.getCategoryName())) {
                     continue;
+                }
+                if (Objects.equals(bindHolder.getCategoryName(), MockCategoryType.DATABASE.getName())) {
+                    compareConfig.fillIgnoreBodyInDatabase();
                 }
                 compareReplayResult(bindHolder, compareConfig, caseItem, replayCompareResults);
             }
