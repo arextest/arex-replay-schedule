@@ -5,10 +5,11 @@ import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker.Target;
 import com.arextest.schedule.comparer.CompareItem;
-import com.arextest.schedule.comparer.sqlparse.SqlParseUtil;
+import com.arextest.schedule.comparer.sqlparse.SqlParseHandler;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -21,6 +22,9 @@ import java.util.Objects;
  */
 @Component
 final class PrepareCompareItemBuilder {
+
+    @Autowired
+    SqlParseHandler sqlParseHandler;
 
     CompareItem build(AREXMocker instance) {
         MockCategoryType categoryType = instance.getCategoryType();
@@ -90,7 +94,7 @@ final class PrepareCompareItemBuilder {
         }
         if (StringUtils.isNotEmpty(target.getBody())) {
             obj.put("body", target.getBody());
-            obj.put("parsedBody", SqlParseUtil.sqlParse(target.getBody()));
+            obj.put("parsedBody", sqlParseHandler.sqlParse(target.getBody()));
         }
         return obj;
     }

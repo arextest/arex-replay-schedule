@@ -2,9 +2,9 @@ package com.arextest.schedule.comparer.sqlparse.action;
 
 import com.arextest.schedule.comparer.sqlparse.Parse;
 import com.arextest.schedule.comparer.sqlparse.constants.Constants;
-import com.arextest.schedule.comparer.sqlparse.select.utils.JoinParseUtil;
 import com.arextest.schedule.comparer.sqlparse.select.ArexExpressionVisitorAdapter;
 import com.arextest.schedule.comparer.sqlparse.select.ArexOrderByVisitorAdapter;
+import com.arextest.schedule.comparer.sqlparse.select.utils.JoinParseUtil;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -14,13 +14,24 @@ import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.Join;
 import net.sf.jsqlparser.statement.select.Limit;
 import net.sf.jsqlparser.statement.select.OrderByElement;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 /**
  * Created by rchen9 on 2023/1/6.
  */
+
+@Component
 public class DeleteParse implements Parse<Delete> {
+    @Override
+    public boolean support(String simpleName) {
+        if ("Delete".equals(simpleName)) {
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public Object parse(Delete parseObj) {
         ObjectNode sqlObject = JsonNodeFactory.instance.objectNode();

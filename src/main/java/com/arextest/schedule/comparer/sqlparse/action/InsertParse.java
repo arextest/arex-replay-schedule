@@ -7,13 +7,23 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.insert.Insert;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 /**
  * Created by rchen9 on 2023/1/6.
  */
+@Component
 public class InsertParse implements Parse<Insert> {
+    @Override
+    public boolean support(String simpleName) {
+        if ("Insert".equals(simpleName)) {
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public Object parse(Insert parseObj) {
         ObjectNode sqlObject = JsonNodeFactory.instance.objectNode();

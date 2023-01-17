@@ -17,13 +17,23 @@ import net.sf.jsqlparser.statement.select.Limit;
 import net.sf.jsqlparser.statement.select.OrderByElement;
 import net.sf.jsqlparser.statement.update.Update;
 import net.sf.jsqlparser.statement.update.UpdateSet;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 /**
  * Created by rchen9 on 2023/1/6.
  */
+@Component
 public class UpdateParse implements Parse<Update> {
+    @Override
+    public boolean support(String simpleName) {
+        if ("Update".equals(simpleName)) {
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public Object parse(Update parseObj) {
         ObjectNode sqlObject = JsonNodeFactory.instance.objectNode();

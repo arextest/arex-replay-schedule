@@ -7,11 +7,21 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectBody;
+import org.springframework.stereotype.Component;
 
 /**
  * Created by rchen9 on 2023/1/6.
  */
+@Component
 public class SelectParse implements Parse<Select> {
+    @Override
+    public boolean support(String simpleName) {
+        if ("Select".equals(simpleName)) {
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public Object parse(Select parseObj) {
         ObjectNode sqlObject = JsonNodeFactory.instance.objectNode();
