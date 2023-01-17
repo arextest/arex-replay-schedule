@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.FromItem;
 import net.sf.jsqlparser.statement.select.Join;
 import net.sf.jsqlparser.statement.select.Limit;
@@ -27,8 +28,8 @@ import java.util.List;
 @Component
 public class UpdateParse implements Parse<Update> {
     @Override
-    public boolean support(String simpleName) {
-        if ("Update".equals(simpleName)) {
+    public boolean support(Statement statement) {
+        if (statement instanceof Update) {
             return true;
         }
         return false;

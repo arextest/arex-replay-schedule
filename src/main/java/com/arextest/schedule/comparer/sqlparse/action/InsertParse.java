@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.insert.Insert;
 import org.springframework.stereotype.Component;
 
@@ -17,8 +18,8 @@ import java.util.List;
 @Component
 public class InsertParse implements Parse<Insert> {
     @Override
-    public boolean support(String simpleName) {
-        if ("Insert".equals(simpleName)) {
+    public boolean support(Statement statement) {
+        if (statement instanceof Insert) {
             return true;
         }
         return false;

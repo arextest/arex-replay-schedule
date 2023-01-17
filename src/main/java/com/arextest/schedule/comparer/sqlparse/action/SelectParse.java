@@ -5,6 +5,7 @@ import com.arextest.schedule.comparer.sqlparse.constants.Constants;
 import com.arextest.schedule.comparer.sqlparse.select.ArexSelectVisitorAdapter;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectBody;
 import org.springframework.stereotype.Component;
@@ -15,8 +16,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class SelectParse implements Parse<Select> {
     @Override
-    public boolean support(String simpleName) {
-        if ("Select".equals(simpleName)) {
+    public boolean support(Statement statement) {
+        if (statement instanceof Select) {
             return true;
         }
         return false;

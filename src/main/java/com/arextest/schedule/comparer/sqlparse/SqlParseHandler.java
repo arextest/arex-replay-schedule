@@ -26,7 +26,7 @@ public class SqlParseHandler {
         ObjectNode sqlObj = JsonNodeFactory.instance.objectNode();
         try {
             Statement statement = CCJSqlParserUtil.parse(sql);
-            Parse parse = selectPare(statement.getClass().getSimpleName());
+            Parse parse = selectPare(statement);
             sqlObj = (ObjectNode) parse.parse(statement);
         } catch (Throwable throwable) {
             sqlObj.put(ORIGINAL_SQL, sql);
@@ -35,9 +35,9 @@ public class SqlParseHandler {
         return sqlObj;
     }
 
-    private Parse selectPare(String simpleName) {
+    private Parse selectPare(Statement statement) {
         for (Parse parse : sqlParseList) {
-            if (parse.support(simpleName)) {
+            if (parse.support(statement)) {
                 return parse;
             }
         }

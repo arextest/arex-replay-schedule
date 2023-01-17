@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.Join;
 import net.sf.jsqlparser.statement.select.Limit;
@@ -25,8 +26,8 @@ import java.util.List;
 @Component
 public class DeleteParse implements Parse<Delete> {
     @Override
-    public boolean support(String simpleName) {
-        if ("Delete".equals(simpleName)) {
+    public boolean support(Statement statement) {
+        if (statement instanceof Delete) {
             return true;
         }
         return false;
