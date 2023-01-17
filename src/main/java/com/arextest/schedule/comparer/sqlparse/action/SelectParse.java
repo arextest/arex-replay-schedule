@@ -14,7 +14,6 @@ import net.sf.jsqlparser.statement.select.SelectBody;
 public class SelectParse implements Parse<Select> {
     @Override
     public Object parse(Select parseObj) {
-        // JSONObject sqlObject = new JSONObject();
         ObjectNode sqlObject = JsonNodeFactory.instance.objectNode();
         sqlObject.put(Constants.ACTION, Constants.SELECT);
         SelectBody selectBody = parseObj.getSelectBody();

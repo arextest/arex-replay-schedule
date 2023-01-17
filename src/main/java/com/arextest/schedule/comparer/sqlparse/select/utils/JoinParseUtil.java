@@ -16,7 +16,6 @@ import java.util.List;
  */
 public class JoinParseUtil {
     public static ObjectNode parse(Join parseObj) {
-        // JSONObject res = new JSONObject();
         ObjectNode res = JsonNodeFactory.instance.objectNode();
 
         // join type parse
@@ -31,7 +30,6 @@ public class JoinParseUtil {
         // onExpressions parse
         Collection<Expression> onExpressions = parseObj.getOnExpressions();
         if (onExpressions != null && !onExpressions.isEmpty()) {
-            // JSONObject onObj = new JSONObject();
             ObjectNode onObj = JsonNodeFactory.instance.objectNode();
             onExpressions.forEach(item -> {
                 onObj.put(item.toString(), Constants.EMPTY);
@@ -42,7 +40,6 @@ public class JoinParseUtil {
         // usingColumns parse
         List<Column> usingColumns = parseObj.getUsingColumns();
         if (usingColumns != null && !usingColumns.isEmpty()) {
-            // JSONObject usingObj = new JSONObject();
             ObjectNode usingObj = JsonNodeFactory.instance.objectNode();
             usingColumns.forEach(item -> {
                 usingObj.put(item.toString(), Constants.EMPTY);

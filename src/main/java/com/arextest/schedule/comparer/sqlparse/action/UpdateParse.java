@@ -2,10 +2,10 @@ package com.arextest.schedule.comparer.sqlparse.action;
 
 import com.arextest.schedule.comparer.sqlparse.Parse;
 import com.arextest.schedule.comparer.sqlparse.constants.Constants;
-import com.arextest.schedule.comparer.sqlparse.select.ArexFromItemVisitorAdapter;
-import com.arextest.schedule.comparer.sqlparse.select.utils.JoinParseUtil;
 import com.arextest.schedule.comparer.sqlparse.select.ArexExpressionVisitorAdapter;
+import com.arextest.schedule.comparer.sqlparse.select.ArexFromItemVisitorAdapter;
 import com.arextest.schedule.comparer.sqlparse.select.ArexOrderByVisitorAdapter;
+import com.arextest.schedule.comparer.sqlparse.select.utils.JoinParseUtil;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -26,7 +26,6 @@ import java.util.List;
 public class UpdateParse implements Parse<Update> {
     @Override
     public Object parse(Update parseObj) {
-        // JSONObject sqlObject = new JSONObject();
         ObjectNode sqlObject = JsonNodeFactory.instance.objectNode();
         sqlObject.put(Constants.ACTION, Constants.UPDATE);
 
@@ -95,7 +94,7 @@ public class UpdateParse implements Parse<Update> {
 
         // limit parse
         Limit limit = parseObj.getLimit();
-        if (limit != null){
+        if (limit != null) {
             sqlObject.put(Constants.LIMIT, limit.toString());
         }
         return sqlObject;
