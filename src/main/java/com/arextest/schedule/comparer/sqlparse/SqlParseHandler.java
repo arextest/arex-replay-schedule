@@ -2,6 +2,7 @@ package com.arextest.schedule.comparer.sqlparse;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import java.util.List;
 /**
  * Created by rchen9 on 2023/1/12.
  */
+@Slf4j
 @Component
 public class SqlParseHandler {
 
@@ -28,6 +30,7 @@ public class SqlParseHandler {
             sqlObj = (ObjectNode) parse.parse(statement);
         } catch (Throwable throwable) {
             sqlObj.put(ORIGINAL_SQL, sql);
+            LOGGER.warn("sqlParse has exception, sql:{}", sql);
         }
         return sqlObj;
     }
