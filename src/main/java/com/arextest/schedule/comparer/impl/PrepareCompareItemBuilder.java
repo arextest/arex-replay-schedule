@@ -4,9 +4,10 @@ import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker.Target;
+import com.arextest.schedule.comparer.CompareItem;
+import com.arextest.schedule.comparer.sqlparse.SqlParseUtil;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.arextest.schedule.comparer.CompareItem;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -30,6 +31,9 @@ final class PrepareCompareItemBuilder {
         ObjectNode obj;
         if (categoryType.isEntryPoint()) {
             obj = this.buildAttributes(instance.getTargetResponse());
+        } else if (Objects.equals(categoryType.getName(), MockCategoryType.DATABASE.getName())) {
+            // when the mock type is database, parse the field of "body"
+            obj = this.buildAttributesAndParseBody(instance.getTargetRequest());
         } else {
             obj = this.buildAttributes(instance.getTargetRequest());
         }
@@ -64,6 +68,29 @@ final class PrepareCompareItemBuilder {
         }
         if (StringUtils.isNotEmpty(target.getBody())) {
             obj.put("body", target.getBody());
+        }
+        return obj;
+    }
+
+    private ObjectNode buildAttributesAndParseBody(Target target) {
+        ObjectNode obj = JsonNodeFactory.instance.objectNode();
+        if (target == null) {
+            return obj;
+        }
+        Map<String, Object> attributes = target.getAttributes();
+        if (attributes != null) {
+            for (Entry<String, Object> entry : attributes.entrySet()) {
+                Object value = entry.getValue();
+                if (value instanceof String) {
+                    obj.put(entry.getKey(), (String) value);
+                } else {
+                    obj.putPOJO(entry.getKey(), value);
+                }
+            }
+        }
+        if (StringUtils.isNotEmpty(target.getBody())) {
+            obj.put("body", target.getBody());
+            obj.put("parsedBody", SqlParseUtil.sqlParse(target.getBody()));
         }
         return obj;
     }

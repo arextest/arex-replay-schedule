@@ -130,6 +130,12 @@
                 <artifactId>arex-common</artifactId>
                 <version>0.1.0</version>
             </dependency>
+            <!--sqlParse-->
+            <dependency>
+                <groupId>com.github.jsqlparser</groupId>
+                <artifactId>jsqlparser</artifactId>
+                <version>4.5</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -202,6 +208,10 @@
         <dependency>
             <groupId>com.arextest</groupId>
             <artifactId>compare-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jsqlparser</groupId>
+            <artifactId>jsqlparser</artifactId>
         </dependency>
     </dependencies>
 
