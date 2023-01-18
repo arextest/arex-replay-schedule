@@ -26,7 +26,7 @@ public class InsertParse implements Parse<Insert> {
     }
 
     @Override
-    public Object parse(Insert parseObj) {
+    public ObjectNode parse(Insert parseObj) {
         ObjectNode sqlObject = JsonNodeFactory.instance.objectNode();
         sqlObject.put(Constants.ACTION, Constants.INSERT);
 

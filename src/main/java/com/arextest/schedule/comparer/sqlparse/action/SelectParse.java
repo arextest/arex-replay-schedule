@@ -24,7 +24,7 @@ public class SelectParse implements Parse<Select> {
     }
 
     @Override
-    public Object parse(Select parseObj) {
+    public ObjectNode parse(Select parseObj) {
         ObjectNode sqlObject = JsonNodeFactory.instance.objectNode();
         sqlObject.put(Constants.ACTION, Constants.SELECT);
         SelectBody selectBody = parseObj.getSelectBody();

@@ -34,7 +34,7 @@ public class DeleteParse implements Parse<Delete> {
     }
 
     @Override
-    public Object parse(Delete parseObj) {
+    public ObjectNode parse(Delete parseObj) {
         ObjectNode sqlObject = JsonNodeFactory.instance.objectNode();
         sqlObject.put(Constants.ACTION, Constants.DELETE);
 

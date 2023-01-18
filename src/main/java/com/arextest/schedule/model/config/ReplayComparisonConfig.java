@@ -26,6 +26,9 @@ import java.util.Set;
  */
 @Data
 public class ReplayComparisonConfig {
+
+    private static List<String> ignoreInDataBaseMocker = Collections.singletonList("body");
+
     // ignore according to type
     private List<String> ignoreTypeList;
     // ignore according to interface
@@ -55,13 +58,11 @@ public class ReplayComparisonConfig {
     }
 
     public void fillIgnoreBodyInDatabase() {
-        List<String> list = Collections.singletonList("body");
         if (exclusionList == null) {
-            exclusionList = new HashSet<List<String>>() {{
-                add(list);
-            }};
+            exclusionList = new HashSet<>();
+            exclusionList.add(ignoreInDataBaseMocker);
         } else {
-            exclusionList.add(list);
+            exclusionList.add(ignoreInDataBaseMocker);
         }
     }
 

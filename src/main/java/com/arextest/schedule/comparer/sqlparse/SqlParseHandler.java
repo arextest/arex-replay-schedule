@@ -27,7 +27,7 @@ public class SqlParseHandler {
         try {
             Statement statement = CCJSqlParserUtil.parse(sql);
             Parse parse = selectPare(statement);
-            sqlObj = (ObjectNode) parse.parse(statement);
+            sqlObj = parse.parse(statement);
         } catch (Throwable throwable) {
             sqlObj.put(ORIGINAL_SQL, sql);
             LOGGER.warn("sqlParse has exception, sql:{}", sql);

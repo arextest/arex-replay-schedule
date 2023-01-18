@@ -36,7 +36,7 @@ public class UpdateParse implements Parse<Update> {
     }
 
     @Override
-    public Object parse(Update parseObj) {
+    public ObjectNode parse(Update parseObj) {
         ObjectNode sqlObject = JsonNodeFactory.instance.objectNode();
         sqlObject.put(Constants.ACTION, Constants.UPDATE);
 
