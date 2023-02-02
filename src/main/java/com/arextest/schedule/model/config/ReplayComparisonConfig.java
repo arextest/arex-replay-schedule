@@ -27,8 +27,6 @@ import java.util.Set;
 @Data
 public class ReplayComparisonConfig {
 
-    private static List<String> ignoreInDataBaseMocker = Collections.singletonList("body");
-
     // ignore according to type
     private List<String> ignoreTypeList;
     // ignore according to interface
@@ -55,15 +53,6 @@ public class ReplayComparisonConfig {
             return true;
         }
         return ignoreTypeList != null && ignoreTypeList.contains(type);
-    }
-
-    public void fillIgnoreBodyInDatabase() {
-        if (exclusionList == null) {
-            exclusionList = new HashSet<>();
-            exclusionList.add(ignoreInDataBaseMocker);
-        } else {
-            exclusionList.add(ignoreInDataBaseMocker);
-        }
     }
 
     private static class MapKeyDeserializerUtils extends KeyDeserializer {
