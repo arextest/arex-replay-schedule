@@ -3,7 +3,6 @@ package com.arextest.schedule.comparer.impl;
 
 import com.arextest.diff.model.CompareOptions;
 import com.arextest.diff.model.CompareResult;
-import com.arextest.diff.model.enumeration.CategoryType;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.comparer.CategoryComparisonHolder;
@@ -259,7 +258,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
 
     private CompareOptions buildCompareRequest(String category, ReplayComparisonConfig compareConfig) {
         CompareOptions options = new CompareOptions();
-        options.putCategoryType(convertCategoryType(category));
+        options.putCategoryType(category);
         // todo: the switch of "sqlBodyParse" and "onlyCompareCoincidentColumn"
         //  need get from ReplayComparisonConfig
         options.putSqlBodyParse(true);
@@ -274,13 +273,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             options.putExclusions(ignoreInDataBaseMocker);
         }
         return options;
-    }
-
-    private int convertCategoryType(String category) {
-        if (Objects.equals(category, MockCategoryType.DATABASE.getName())) {
-            return CategoryType.DATABASE;
-        }
-        return CategoryType.NORMAL;
     }
 
 }
