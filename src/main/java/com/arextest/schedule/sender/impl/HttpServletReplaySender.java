@@ -9,22 +9,19 @@ import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.ReplaySenderParameters;
 import com.arextest.schedule.sender.SenderParameters;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -78,8 +75,8 @@ final class HttpServletReplaySender extends AbstractReplaySender {
 
     private boolean doSend(ReplayActionItem replayActionItem, ReplayActionCaseItem caseItem,
                            Map<String, String> headers) {
-        ServiceInstance instanceRunner = replayActionItem.getTargetInstance();
-        if (instanceRunner == null) {
+        List<ServiceInstance> instanceRunner = replayActionItem.getTargetInstance();
+        if (CollectionUtils.isEmpty(instanceRunner)) {
             return false;
         }
         String operationName = caseItem.requestPath();
@@ -93,8 +90,8 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         senderParameter.setFormat(caseItem.requestMessageFormat());
         senderParameter.setMessage(caseItem.requestMessage());
         senderParameter.setOperation(operationName);
-        senderParameter.setUrl(instanceRunner.getUrl());
-        senderParameter.setSubEnv(instanceRunner.subEnv());
+        senderParameter.setUrl(instanceRunner.get(0).getUrl());
+        senderParameter.setSubEnv(instanceRunner.get(0).subEnv());
         senderParameter.setHeaders(headers);
         senderParameter.setMethod(caseItem.requestMethod());
         senderParameter.setRecordId(caseItem.getRecordId());
@@ -107,7 +104,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
             return targetSendResult.success();
         }
         // the sourceHost sending
-        senderParameter.setUrl(instanceRunner.getUrl());
+        senderParameter.setUrl(instanceRunner.get(0).getUrl());
         ReplaySendResult sourceSendResult = this.doInvoke(senderParameter);
         caseItem.setSourceResultId(sourceSendResult.getTraceId());
         caseItem.setSendStatus(sourceSendResult.getStatusType().getValue());
