@@ -6,7 +6,6 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
-import com.arextest.schedule.service.PlanFinishService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -34,8 +33,6 @@ final class RedisProgressTracerImpl implements ProgressTracer {
     private ProgressEvent progressEvent;
     @Resource
     private CacheProvider redisCacheProvider;
-    @Resource
-    private PlanFinishService planFinishService;
 
     @Override
     public void initTotal(ReplayPlan replayPlan) {
@@ -105,7 +102,6 @@ final class RedisProgressTracerImpl implements ProgressTracer {
             Long finished = doWithRetry(() -> redisCacheProvider.incrValue(toPlanFinishKeyBytes(planId)));
             if (finished != null && finished == replayPlan.getCaseTotalCount()) {
                 progressEvent.onReplayPlanFinish(replayPlan);
-                planFinishService.onPlanFinishEvent(replayPlan);
             }
         } catch (Throwable throwable) {
 
