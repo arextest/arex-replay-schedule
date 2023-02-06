@@ -26,4 +26,6 @@ public final class CommonConstant {
     public static final String STOP_PLAN_REDIS_KEY = "arex.stop.plan.";
     public static final long DEFAULT_COUNT = 1L;
 
+    public static final String SOAPROVIDER = "SOAProvider";
+
 }

@@ -27,11 +27,7 @@ import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -66,12 +62,14 @@ public class ReplayCaseTransmitService {
     @Resource
     private MetricService metricService;
 
-    public boolean send(ReplayActionItem replayActionItem) {
+    public boolean send(ReplayActionItem replayActionItem, boolean isFirst) {
         List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
         if (CollectionUtils.isEmpty(sourceItemList)) {
             return false;
         }
-        activeRemoteHost(sourceItemList);
+        if (isFirst) {
+            activeRemoteHost(sourceItemList);
+        }
         Map<String, List<ReplayActionCaseItem>> versionGroupedResult = groupByDependencyVersion(sourceItemList);
         LOGGER.info("found replay send size of group: {}", versionGroupedResult.size());
         replayActionItem.getSendRateLimiter().reset();
@@ -247,7 +245,7 @@ public class ReplayCaseTransmitService {
     private void activeRemoteHost(List<ReplayActionCaseItem> sourceItemList) {
         try {
             for (int i = 0; i < ACTIVE_SERVICE_RETRY_COUNT && i < sourceItemList.size(); i++) {
-                ReplayActionCaseItem caseItem = sourceItemList.get(i);
+                ReplayActionCaseItem caseItem = cloneCaseItem(sourceItemList, i);
                 ReplaySender replaySender = findReplaySender(caseItem);
                 if (replaySender == null) {
                     continue;
