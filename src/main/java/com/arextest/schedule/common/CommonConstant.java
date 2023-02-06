@@ -28,4 +28,6 @@ public final class CommonConstant {
 
     public static final String SOAPROVIDER = "SOAProvider";
 
+    public static final String SOAPROVIDER = "SOAProvider";
+
 }
