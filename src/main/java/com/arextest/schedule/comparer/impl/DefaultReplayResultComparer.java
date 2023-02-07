@@ -4,6 +4,7 @@ package com.arextest.schedule.comparer.impl;
 import com.arextest.diff.model.CompareOptions;
 import com.arextest.diff.model.CompareResult;
 import com.arextest.diff.sdk.CompareSDK;
+import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.comparer.CategoryComparisonHolder;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.comparer.CompareItem;
@@ -18,9 +19,7 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayCompareResult;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.progress.ProgressTracer;
-
 import lombok.AllArgsConstructor;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -29,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -41,6 +41,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     private final ReplayActionCaseItemRepository caseItemRepository;
     private static final int INDEX_NOT_FOUND = -1;
     private static final CompareSDK COMPARE_INSTANCE = new CompareSDK();
+
+    private static List<String> ignoreInDataBaseMocker = Collections.singletonList("body");
+
     static {
         COMPARE_INSTANCE.getGlobalOptions().putNameToLower(true).putNullEqualsEmpty(true);
     }
@@ -120,7 +123,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 for (int i = 0; i < recordContentGroupList.size(); i++) {
                     String source = recordContentGroupList.get(i);
                     String target = resultContentGroupList.get(i);
-                    CompareResult comparedResult = compareProcess(source, target, compareConfig);
+                    CompareResult comparedResult = compareProcess(category, source, target, compareConfig);
                     ReplayCompareResult resultNew = ReplayCompareResult.createFrom(caseItem);
                     mergeResult(key, category, resultNew, comparedResult);
                     compareResultNewList.add(resultNew);
@@ -131,8 +134,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
     }
 
-    private CompareResult compareProcess(String record, String result, ReplayComparisonConfig compareConfig) {
-        CompareOptions options = buildCompareRequest(compareConfig);
+    private CompareResult compareProcess(String category, String record, String result,
+                                         ReplayComparisonConfig compareConfig) {
+        CompareOptions options = buildCompareRequest(category, compareConfig);
         try {
             return COMPARE_INSTANCE.compare(record, result, options);
         } catch (Throwable e) {
@@ -220,7 +224,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             if (ignoreKeyList.contains(operation)) {
                 continue;
             }
-            CompareResult comparedResult = compareProcess(item.getCompareContent(), null, compareConfig);
+            CompareResult comparedResult = compareProcess(category, item.getCompareContent(), null, compareConfig);
             ReplayCompareResult resultItem = ReplayCompareResult.createFrom(caseItem);
             mergeResult(operation, category, resultItem, comparedResult);
             resultItem.setServiceName(item.getCompareService());
@@ -240,7 +244,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             if (ignoreKeyList.contains(operation)) {
                 continue;
             }
-            CompareResult comparedResult = compareProcess(null, item.getCompareContent(), compareConfig);
+            CompareResult comparedResult = compareProcess(category, null, item.getCompareContent(), compareConfig);
             ReplayCompareResult resultItem = ReplayCompareResult.createFrom(caseItem);
             mergeResult(operation, category, resultItem, comparedResult);
             resultItem.setServiceName(item.getCompareService());
@@ -252,13 +256,22 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         return compareConfigService.loadConfig(actionItem);
     }
 
-    private CompareOptions buildCompareRequest(ReplayComparisonConfig compareConfig) {
+    private CompareOptions buildCompareRequest(String category, ReplayComparisonConfig compareConfig) {
         CompareOptions options = new CompareOptions();
+        options.putCategoryType(category);
+        // todo: the switch of "sqlBodyParse" and "onlyCompareCoincidentColumn"
+        //  need get from ReplayComparisonConfig
+        options.putSqlBodyParse(true);
+        options.putOnlyCompareCoincidentColumn(true);
         options.putExclusions(compareConfig.getExclusionList());
         options.putInclusions(compareConfig.getInclusionList());
         options.putListSortConfig(compareConfig.getListSortMap());
         options.putReferenceConfig(compareConfig.getReferenceMap());
         options.putDecompressConfig(compareConfig.getDecompressConfig());
+
+        if (Objects.equals(category, MockCategoryType.DATABASE.getName())) {
+            options.putExclusions(ignoreInDataBaseMocker);
+        }
         return options;
     }
 
