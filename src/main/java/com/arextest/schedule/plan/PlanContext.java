@@ -115,16 +115,17 @@ public final class PlanContext {
         replayActionItem.setServiceKey(serviceDescriptor.getServiceKey());
         replayActionItem.setServiceName(serviceDescriptor.getServiceName());
         replayActionItem.setOperationId(operationDescriptor.getId());
-        replayActionItem.setMappedInstanceOperation(this.findActiveOperation(shortOperationName, activeInstances.get(0)));
+        replayActionItem.setMappedInstanceOperation(this.findActiveOperation(shortOperationName, activeInstances));
     }
 
-    private ServiceInstanceOperation findActiveOperation(String operation, ServiceInstance activeInstance) {
-        if (activeInstance != null) {
-            List<ServiceInstanceOperation> operationList = activeInstance.getOperationList();
-            for (ServiceInstanceOperation serviceInstanceOperation : operationList) {
-                if (StringUtils.equals(operation, serviceInstanceOperation.getName())) {
-                    return serviceInstanceOperation;
-                }
+    private ServiceInstanceOperation findActiveOperation(String operation, List<ServiceInstance> activeInstances) {
+        if (CollectionUtils.isEmpty(activeInstances)) {
+            return null;
+        }
+        List<ServiceInstanceOperation> operationList = activeInstances.get(0).getOperationList();
+        for (ServiceInstanceOperation serviceInstanceOperation : operationList) {
+            if (StringUtils.equals(operation, serviceInstanceOperation.getName())) {
+                return serviceInstanceOperation;
             }
         }
         return null;

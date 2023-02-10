@@ -27,7 +27,6 @@ public class ReplayActionItem {
     /**
      * example: applyRefund
      */
-    @JsonIgnore
     private String operationName;
     /**
      * example: RefundPaymentService
@@ -50,7 +49,7 @@ public class ReplayActionItem {
      */
     @JsonIgnore
     private int replayStatus;
-    @JsonIgnore
+
     private Date replayBeginTime;
     @JsonIgnore
     private Date replayFinishTime;
