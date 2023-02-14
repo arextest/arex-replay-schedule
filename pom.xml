@@ -128,7 +128,7 @@
             <dependency>
                 <groupId>com.arextest</groupId>
                 <artifactId>arex-common</artifactId>
-                <version>0.1.0</version>
+                <version>0.1.2</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -202,6 +202,10 @@
         <dependency>
             <groupId>com.arextest</groupId>
             <artifactId>compare-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-mongodb4</artifactId>
         </dependency>
     </dependencies>
 
@@ -408,8 +412,8 @@
             <id>jar-local</id>
             <properties>
                 <packagingType>jar</packagingType>
-                <releases.repo></releases.repo>
-                <snapshots.repo></snapshots.repo>
+                <releases.repo>http://maven.release.ctripcorp.com/nexus/content/repositories/flightrelease</releases.repo>
+                <snapshots.repo>http://maven.release.ctripcorp.com/nexus/content/repositories/flightsnapshot</snapshots.repo>
             </properties>
             <build>
                 <resources>
