@@ -412,8 +412,8 @@
             <id>jar-local</id>
             <properties>
                 <packagingType>jar</packagingType>
-                <releases.repo>http://maven.release.ctripcorp.com/nexus/content/repositories/flightrelease</releases.repo>
-                <snapshots.repo>http://maven.release.ctripcorp.com/nexus/content/repositories/flightsnapshot</snapshots.repo>
+                <releases.repo></releases.repo>
+                <snapshots.repo></snapshots.repo>
             </properties>
             <build>
                 <resources>
