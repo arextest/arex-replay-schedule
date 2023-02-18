@@ -80,7 +80,7 @@ public class PlanProduceService {
         replayPlan.setPlanCreateMillis(planCreateMillis);
         replayPlan.setReplayActionItemList(replayActionItemList);
         ReplayParentBinder.setupReplayActionParent(replayActionItemList, replayPlan);
-        int planCaseCount = planBuilder.buildReplayCaseCount(replayActionItemList);
+        int planCaseCount = planBuilder.buildReplayCaseCount(replayActionItemList, replayPlan.getCaseCountLimit());
         if (planCaseCount == 0) {
             return CommonResponse.badResponse("loaded empty case,try change time range submit again ");
         }
@@ -135,6 +135,7 @@ public class PlanProduceService {
         ConfigurationService.ScheduleConfiguration schedule = configurationService.schedule(appId);
         if (schedule != null) {
             replayPlan.setReplaySendMaxQps(schedule.getSendMaxQps());
+            replayPlan.setCaseCountLimit(schedule.getCaseCountLimit());
         }
         if (request.getCaseCountLimit() <= 0) {
             replayPlan.setCaseCountLimit(OPERATION_MAX_CASE_COUNT);

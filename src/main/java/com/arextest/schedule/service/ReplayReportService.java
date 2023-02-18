@@ -11,7 +11,6 @@ import com.arextest.web.model.contract.contracts.PushCompareResultsRequestType;
 import com.arextest.web.model.contract.contracts.ReportInitialRequestType;
 import com.arextest.web.model.contract.contracts.common.CompareResult;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
-import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.model.*;
 import lombok.extern.slf4j.Slf4j;

@@ -107,7 +107,7 @@ public final class PlanContext {
         final String operationName = operationDescriptor.getOperationName();
         String operationType = operationDescriptor.getOperationType();
         String shortOperationName = getShortOperationName(operationType, operationName);
-        List<ServiceInstance> activeInstances = findActiveInstances(serviceDescriptor, shortOperationName);
+        List<ServiceInstance> activeInstances = findActiveInstances(serviceDescriptor, shortOperationName, operationType);
         replayActionItem.setTargetInstance(activeInstances);
         replayActionItem.setOperationName(operationName);
         replayActionItem.setSourceInstance(serviceDescriptor.getSourceActiveInstanceList());
@@ -123,6 +123,9 @@ public final class PlanContext {
             return null;
         }
         List<ServiceInstanceOperation> operationList = activeInstances.get(0).getOperationList();
+        if (CollectionUtils.isEmpty(operationList)) {
+            return null;
+        }
         for (ServiceInstanceOperation serviceInstanceOperation : operationList) {
             if (StringUtils.equals(operation, serviceInstanceOperation.getName())) {
                 return serviceInstanceOperation;
@@ -139,9 +142,12 @@ public final class PlanContext {
         return operationName;
     }
 
-    private List<ServiceInstance> findActiveInstances(AppServiceDescriptor serviceDescriptor, String operationName) {
-        List<ServiceInstance> newTargetInstanceList = Lists.newArrayList();
+    private List<ServiceInstance> findActiveInstances(AppServiceDescriptor serviceDescriptor, String operationName, String operationType) {
         List<ServiceInstance> targetActiveInstanceList = serviceDescriptor.getTargetActiveInstanceList();
+        if (operationType.equals(MockCategoryType.SERVLET.getName())) {
+            return targetActiveInstanceList;
+        }
+        List<ServiceInstance> newTargetInstanceList = Lists.newArrayList();
         for (ServiceInstance instance : targetActiveInstanceList) {
             List<ServiceInstanceOperation> operationList = instance.getOperationList();
             if (CollectionUtils.isEmpty(operationList)) {
