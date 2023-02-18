@@ -92,12 +92,12 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
     }
 
     @Override
-    public int buildReplayCaseCount(List<ReplayActionItem> actionItemList) {
+    public int buildReplayCaseCount(List<ReplayActionItem> actionItemList, Integer caseCountLimit) {
         int sum = 0;
         int actionCount;
         for (int i = 0; i < actionItemList.size(); i++) {
             ReplayActionItem actionItem = actionItemList.get(i);
-            actionCount = queryCaseCount(actionItem);
+            actionCount = queryCaseCount(actionItem, caseCountLimit);
             actionItem.setReplayCaseCount(actionCount);
             sum += actionCount;
         }
@@ -106,8 +106,8 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
 
     abstract List<ReplayActionItem> getReplayActionList(BuildReplayPlanRequest request, PlanContext planContext);
 
-    int queryCaseCount(ReplayActionItem actionItem) {
-        return replayCaseRemoteLoadService.queryCaseCount(actionItem);
+    int queryCaseCount(ReplayActionItem actionItem, Integer caseCountLimit) {
+        return replayCaseRemoteLoadService.queryCaseCount(actionItem, caseCountLimit);
     }
 
     boolean unsupportedCaseTimeRange(BuildReplayPlanRequest request) {

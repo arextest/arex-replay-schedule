@@ -203,17 +203,22 @@ public final class PlanConsumeService {
         }
         long endTimeMills = replayPlan.getCaseSourceTo().getTime();
         int size = 0;
+        int maxCount = replayPlan.getCaseCountLimit();
+        int pageSize = maxCount;
         while (beginTimeMills < endTimeMills) {
             List<ReplayActionCaseItem> caseItemList = caseRemoteLoadService.pagingLoad(beginTimeMills, endTimeMills,
-                    replayActionItem);
-            if (CollectionUtils.isEmpty(caseItemList) || size >= CommonConstant.OPERATION_MAX_CASE_COUNT) {
+                    replayActionItem, pageSize);
+            if (CollectionUtils.isEmpty(caseItemList)) {
                 break;
-            } else {
-                ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
-                size += caseItemList.size();
-                beginTimeMills = caseItemList.get(caseItemList.size() - 1).getRecordTime();
-                replayActionCaseItemRepository.save(caseItemList);
             }
+            ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
+            size += caseItemList.size();
+            beginTimeMills = caseItemList.get(caseItemList.size() - 1).getRecordTime();
+            replayActionCaseItemRepository.save(caseItemList);
+            if (size >= maxCount) {
+                break;
+            }
+            pageSize = maxCount - size;
             replayActionItem.setLastRecordTime(beginTimeMills);
         }
         return size;

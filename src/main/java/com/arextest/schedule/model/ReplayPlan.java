@@ -59,5 +59,6 @@ public class ReplayPlan {
     private List<ReplayActionItem> replayActionItemList;
     @JsonIgnore
     private String appName;
+    private Integer caseCountLimit;
 
 }
