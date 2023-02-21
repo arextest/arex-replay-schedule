@@ -135,7 +135,7 @@ public class PlanProduceService {
         ConfigurationService.ScheduleConfiguration schedule = configurationService.schedule(appId);
         if (schedule != null) {
             replayPlan.setReplaySendMaxQps(schedule.getSendMaxQps());
-            replayPlan.setCaseCountLimit(schedule.getCaseCountLimit());
+            replayPlan.setCaseCountLimit(schedule.getCaseCountLimit() == null ? OPERATION_MAX_CASE_COUNT : schedule.getCaseCountLimit());
         }
         if (request.getCaseCountLimit() <= 0) {
             replayPlan.setCaseCountLimit(OPERATION_MAX_CASE_COUNT);

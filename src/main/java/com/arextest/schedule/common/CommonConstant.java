@@ -30,4 +30,8 @@ public final class CommonConstant {
 
     public static final String SOAPROVIDER = "SOAProvider";
 
+    public static final String REMOTE_SEND = "remoteSend";
+    public static final String PREPARE_REMOTE_SEND = "prepareRemoteSend";
+    public static final String QUERY_SEND = "querySend";
+
 }
