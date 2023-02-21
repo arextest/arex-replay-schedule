@@ -5,30 +5,19 @@ import com.arextest.diff.model.CompareOptions;
 import com.arextest.diff.model.CompareResult;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.model.mock.MockCategoryType;
-import com.arextest.schedule.comparer.CategoryComparisonHolder;
-import com.arextest.schedule.comparer.CompareConfigService;
-import com.arextest.schedule.comparer.CompareItem;
-import com.arextest.schedule.comparer.ComparisonWriter;
-import com.arextest.schedule.comparer.ReplayResultComparer;
+import com.arextest.schedule.comparer.*;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.model.CaseSendStatusType;
-import com.arextest.schedule.model.CompareProcessStatusType;
-import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.ReplayCompareResult;
+import com.arextest.schedule.model.*;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.progress.ProgressTracer;
+import com.arextest.schedule.service.ConsoleLogService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -41,6 +30,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     private final ReplayActionCaseItemRepository caseItemRepository;
     private static final int INDEX_NOT_FOUND = -1;
     private static final CompareSDK COMPARE_INSTANCE = new CompareSDK();
+    private final ConsoleLogService consoleLogService;
 
     private static List<String> ignoreInDataBaseMocker = Collections.singletonList("body");
 
@@ -50,6 +40,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
 
     @Override
     public boolean compare(ReplayActionCaseItem caseItem, boolean useReplayId) {
+        long beginTime = System.currentTimeMillis();
         try {
             MDCTracer.addPlanId(caseItem.getParent().getPlanId());
             MDCTracer.addPlanItemId(caseItem.getPlanItemId());
@@ -81,6 +72,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         } finally {
             caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.PASS.getValue());
             progressTracer.finishOne(caseItem);
+            consoleLogService.onConsoleLogEvent(System.currentTimeMillis() - beginTime, LogType.COMPARE.getValue(), caseItem.getParent().getPlanId(),
+                    caseItem.getPlanItemId());
             MDCTracer.clear();
         }
     }

@@ -39,6 +39,8 @@ public class ReplayCaseRemoteLoadService {
     private String replayCaseUrl;
     @Resource
     private ObjectMapper objectMapper;
+    @Resource
+    private ConsoleLogService consoleLogService;
 
 
     public int queryCaseCount(ReplayActionItem replayActionItem, Integer caseCountLimit) {
@@ -109,9 +111,11 @@ public class ReplayCaseRemoteLoadService {
         PagedResponseType responseType;
         long beginTime = System.currentTimeMillis();
         responseType = wepApiClientService.jsonPost(replayCaseUrl, requestType, PagedResponseType.class);
+        long timeUsed = System.currentTimeMillis() - beginTime;
+        consoleLogService.onConsoleLogEvent(timeUsed, LogType.FIND_CASE.getValue(), replayActionItem.getPlanId(), replayActionItem.getId());
         LOGGER.info("get replay case app id:{},time used:{} ms, operation:{}",
                 requestType.getAppId(),
-                System.currentTimeMillis() - beginTime, requestType.getOperation()
+                timeUsed, requestType.getOperation()
         );
         if (badResponse(responseType)) {
             try {

@@ -60,6 +60,8 @@ public final class PlanConsumeService {
     }
 
     private void saveActionCaseToSend(ReplayPlan replayPlan) {
+        MDCTracer.addPlanId(replayPlan.getId());
+        MDCTracer.addAppId(replayPlan.getAppId());
         int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());
         if (planSavedCaseSize != replayPlan.getCaseTotalCount()) {
             LOGGER.info("update the plan TotalCount, plan id:{} ,appId: {} , size: {} -> {}", replayPlan.getId(),

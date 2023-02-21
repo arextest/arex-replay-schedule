@@ -37,6 +37,8 @@ public final class ReplayReportService implements ComparisonWriter {
     private String pushReplayCompareResultUrl;
     @Value("${arex.report.push.replayStatus.url}")
     private String pushReplayStatusUrl;
+    @Resource
+    private ConsoleLogService consoleLogService;
 
     public void initReportInfo(ReplayPlan replayPlan) {
         ReportInitialRequestType requestType = new ReportInitialRequestType();
@@ -134,8 +136,11 @@ public final class ReplayReportService implements ComparisonWriter {
             results.add(requestResult);
         }
         requestType.setResults(results);
+        long beginTime = System.currentTimeMillis();
         Response response = httpWepServiceApiClient.jsonPost(pushReplayCompareResultUrl, requestType,
                 GenericResponseType.class);
+        consoleLogService.onConsoleLogEvent(System.currentTimeMillis() - beginTime, LogType.PUSH_COMPARE.getValue(),
+                comparedResult.get(0).getPlanId(), comparedResult.get(0).getPlanItemId());
         if (response == null || response.getResponseStatusType().hasError()) {
             LOGGER.warn("push replay compared result to report size: {}, result:{}", comparedSize, response);
         }
