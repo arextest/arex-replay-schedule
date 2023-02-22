@@ -2,6 +2,7 @@ package com.arextest.schedule.service;
 
 
 import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.sender.ReplaySendResult;
 
 import java.util.Map;
@@ -11,7 +12,7 @@ import java.util.Map;
  */
 public interface ConsoleLogListener {
 
-    void consoleLogAction(long timeUsed, String planId, String planItemId, String type);
+    void consoleLogAction(long timeUsed, String type, String planItemId, ReplayActionItem replayActionItem);
 
     boolean isSupported(String logType);
 

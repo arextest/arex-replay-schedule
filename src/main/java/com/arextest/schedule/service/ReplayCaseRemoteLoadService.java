@@ -112,7 +112,7 @@ public class ReplayCaseRemoteLoadService {
         long beginTime = System.currentTimeMillis();
         responseType = wepApiClientService.jsonPost(replayCaseUrl, requestType, PagedResponseType.class);
         long timeUsed = System.currentTimeMillis() - beginTime;
-        consoleLogService.onConsoleLogEvent(timeUsed, LogType.FIND_CASE.getValue(), replayActionItem.getPlanId(), replayActionItem.getId());
+        consoleLogService.onConsoleLogEvent(timeUsed, LogType.FIND_CASE.getValue(), null, replayActionItem);
         LOGGER.info("get replay case app id:{},time used:{} ms, operation:{}",
                 requestType.getAppId(),
                 timeUsed, requestType.getOperation()

@@ -27,16 +27,15 @@ final class PrepareCompareItemBuilder {
         if (StringUtils.isEmpty(operationKey)) {
             operationKey = instance.getOperationName();
         }
-        ObjectNode obj;
+        String body;
         if (categoryType.isEntryPoint()) {
-            obj = this.buildAttributes(instance.getTargetResponse());
+            body = Objects.isNull(instance.getTargetResponse()) ? null : instance.getTargetResponse().getBody();
         } else if (Objects.equals(categoryType.getName(), MockCategoryType.DATABASE.getName())) {
-            // when the mock type is database, parse the field of "body"
-            obj = this.buildAttributesAndParseBody(instance.getTargetRequest());
+            body = this.buildAttributes(instance.getTargetRequest()).toString();
         } else {
-            obj = this.buildAttributes(instance.getTargetRequest());
+            body = Objects.isNull(instance.getTargetRequest()) ? null : instance.getTargetRequest().getBody();
         }
-        return new CompareItemImpl(operationKey, obj.toString());
+        return new CompareItemImpl(operationKey, body);
     }
 
     private String operationName(MockCategoryType categoryType, Target target) {
@@ -50,28 +49,6 @@ final class PrepareCompareItemBuilder {
     }
 
     private ObjectNode buildAttributes(Target target) {
-        ObjectNode obj = JsonNodeFactory.instance.objectNode();
-        if (target == null) {
-            return obj;
-        }
-        Map<String, Object> attributes = target.getAttributes();
-        if (attributes != null) {
-            for (Entry<String, Object> entry : attributes.entrySet()) {
-                Object value = entry.getValue();
-                if (value instanceof String) {
-                    obj.put(entry.getKey(), (String) value);
-                } else {
-                    obj.putPOJO(entry.getKey(), value);
-                }
-            }
-        }
-        if (StringUtils.isNotEmpty(target.getBody())) {
-            obj.put("body", target.getBody());
-        }
-        return obj;
-    }
-
-    private ObjectNode buildAttributesAndParseBody(Target target) {
         ObjectNode obj = JsonNodeFactory.instance.objectNode();
         if (target == null) {
             return obj;

@@ -61,7 +61,11 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 }
                 compareReplayResult(bindHolder, compareConfig, caseItem, replayCompareResults);
             }
-            return comparisonOutputWriter.write(replayCompareResults);
+            long writeBeginTime = System.currentTimeMillis();
+            boolean write = comparisonOutputWriter.write(replayCompareResults);
+            consoleLogService.onConsoleLogEvent(System.currentTimeMillis() - writeBeginTime, LogType.PUSH_COMPARE.getValue(),
+                    caseItem.getPlanItemId(), caseItem.getParent());
+            return write;
         } catch (Throwable throwable) {
             caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.ERROR.getValue());
             comparisonOutputWriter.writeIncomparable(caseItem, throwable.getMessage());
@@ -72,8 +76,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         } finally {
             caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.PASS.getValue());
             progressTracer.finishOne(caseItem);
-            consoleLogService.onConsoleLogEvent(System.currentTimeMillis() - beginTime, LogType.COMPARE.getValue(), caseItem.getParent().getPlanId(),
-                    caseItem.getPlanItemId());
+            consoleLogService.onConsoleLogEvent(System.currentTimeMillis() - beginTime, LogType.COMPARE.getValue(), null, caseItem.getParent());
             MDCTracer.clear();
         }
     }

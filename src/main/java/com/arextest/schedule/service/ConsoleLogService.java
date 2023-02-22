@@ -1,6 +1,7 @@
 package com.arextest.schedule.service;
 
 import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.sender.ReplaySendResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -23,13 +24,13 @@ public class ConsoleLogService {
         this.consoleLogListeners = consoleLogListeners;
     }
 
-    public void onConsoleLogEvent(long timeUsed, String logType, String planId, String planItemId) {
+    public void onConsoleLogEvent(long timeUsed, String logType, String planItemId, ReplayActionItem replayActionItem) {
         ConsoleLogListener listener = find(logType);
         if (listener == null) {
             LOGGER.warn("Could not found consoleLogEvent for {}", logType);
             return;
         }
-        listener.consoleLogAction(timeUsed, planId, planItemId, logType);
+        listener.consoleLogAction(timeUsed, logType, planItemId, replayActionItem);
     }
 
     public void consoleLogAndWriteEvent(long timeUsed, String logType, String sendType, ReplaySendResult targetSendResult,

@@ -95,8 +95,7 @@ public class ReplayCaseTransmitService {
                 markAllSendStatus(groupValues, CaseSendStatusType.EXCEPTION_FAILED);
             }
         }
-        consoleLogService.onConsoleLogEvent(System.currentTimeMillis() - beginTime, LogType.PREPARE_DEPENDENCY.getValue(),
-                replayActionItem.getPlanId(), replayActionItem.getId());
+        consoleLogService.onConsoleLogEvent(System.currentTimeMillis() - beginTime, LogType.PREPARE_DEPENDENCY.getValue(), null, replayActionItem);
         return false;
     }
 
