@@ -130,13 +130,6 @@ public class PlanProduceService {
             replayPlan.setCaseRecordVersion(replayApp.getAgentExtVersion());
             replayPlan.setAppName(replayApp.getAppName());
         }
-        ConfigurationService.ScheduleConfiguration schedule = configurationService.schedule(appId);
-        if (schedule != null) {
-            replayPlan.setReplaySendMaxQps(schedule.getSendMaxQps());
-            replayPlan.setCaseCountLimit(schedule.getCaseCountLimit() == null ? OPERATION_MAX_CASE_COUNT : schedule.getCaseCountLimit());
-        } else {
-            replayPlan.setCaseCountLimit(OPERATION_MAX_CASE_COUNT);
-        }
         scheduleConfigurationService.buildReplayConfiguration(replayPlan);
         return replayPlan;
     }
