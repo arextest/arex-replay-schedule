@@ -7,6 +7,7 @@ import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.deploy.ServiceInstance;
+import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.ReplaySenderParameters;
 import com.arextest.schedule.sender.SenderParameters;
@@ -81,7 +82,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         if (StringUtils.isBlank(senderParameters.getUrl())) {
             return ReplaySendResult.failed("url is null or empty");
         }
-        before(senderParameters.getRecordId());
+        before(senderParameters.getRecordId(), BuildReplayPlanType.BY_APP_ID.getValue());
         return doInvoke(senderParameters);
     }
 
@@ -149,7 +150,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
     public boolean send(ReplayActionCaseItem caseItem) {
         Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
         ReplayActionItem replayActionItem = caseItem.getParent();
-        before(caseItem.getRecordId());
+        before(caseItem.getRecordId(), replayActionItem.getParent().getReplayPlanType());
         headers.remove(CommonConstant.AREX_REPLAY_WARM_UP);
         headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
         String exclusionOperationConfig = replayActionItem.getExclusionOperationConfig();

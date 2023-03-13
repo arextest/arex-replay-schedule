@@ -15,7 +15,9 @@ public enum LogType {
     PREPARE_DEPENDENCY("prepareDependency", true),
     DOSEND("doSend", false),
     COMPARE("compare", true),
-    PUSH_COMPARE("pushCompare", true);
+    PUSH_COMPARE("pushCompare", true),
+    STATICS_FAIL_REASON("staticsFailReason", false),
+    ;
 
     @Getter
     final String value;
