@@ -64,11 +64,12 @@ public class ReplayCaseRemoteLoadService {
         return EMPTY_SIZE;
     }
 
-    public ReplayActionCaseItem viewReplayLoad(ReplayActionCaseItem caseItem) {
+    public ReplayActionCaseItem viewReplayLoad(ReplayActionCaseItem caseItem, String sourceProvider) {
         try {
             ViewRecordRequestType viewReplayCaseRequest = new ViewRecordRequestType();
             viewReplayCaseRequest.setRecordId(caseItem.getRecordId());
             viewReplayCaseRequest.setCategoryType(caseItem.getCaseType());
+            viewReplayCaseRequest.setSourceProvider(sourceProvider);
             ViewRecordResponseType responseType = wepApiClientService.jsonPost(viewRecordUrl,
                     viewReplayCaseRequest,
                     ViewRecordResponseType.class);

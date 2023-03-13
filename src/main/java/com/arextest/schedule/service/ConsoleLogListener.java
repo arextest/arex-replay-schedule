@@ -12,12 +12,18 @@ import java.util.Map;
  */
 public interface ConsoleLogListener {
 
-    void consoleLogAction(long timeUsed, String type, String planItemId, ReplayActionItem replayActionItem);
+    void consoleLogAction(long timeUsed, String logType, String planItemId, ReplayActionItem replayActionItem);
 
     boolean isSupported(String logType);
 
-    void consoleLogAndWriteAction(long timeUsed, String type, ReplaySendResult targetSendResult, ReplayActionCaseItem caseItem);
+    void consoleLogAndWriteAction(long timeUsed, String logType, ReplaySendResult targetSendResult, ReplayActionCaseItem caseItem);
 
     String generateMessageId(Map<String, String> headers, String url);
+
+    void staticsFailReason(ReplayActionCaseItem caseItem, int failType);
+
+    void staticsFailSize(String planId, long compareFailCount, int failType);
+
+    void recordCancelReason(String planId, String remark);
 
 }

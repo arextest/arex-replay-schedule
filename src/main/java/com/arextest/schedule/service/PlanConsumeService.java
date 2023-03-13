@@ -20,6 +20,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import static com.arextest.schedule.common.CommonConstant.PINNED;
+
 /**
  * @author jmo
  * @since 2021/9/15
@@ -191,9 +193,10 @@ public final class PlanConsumeService {
 
     private int doFixedCaseSave(List<ReplayActionCaseItem> caseItemList) {
         int size = 0;
+        String sourceProvider = PINNED;
         for (int i = 0; i < caseItemList.size(); i++) {
             ReplayActionCaseItem caseItem = caseItemList.get(i);
-            ReplayActionCaseItem viewReplay = caseRemoteLoadService.viewReplayLoad(caseItem);
+            ReplayActionCaseItem viewReplay = caseRemoteLoadService.viewReplayLoad(caseItem, sourceProvider);
             if (viewReplay == null) {
                 caseItem.setSendStatus(CaseSendStatusType.REPLAY_CASE_NOT_FOUND.getValue());
             } else {
