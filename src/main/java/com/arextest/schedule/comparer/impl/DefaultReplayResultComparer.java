@@ -159,21 +159,21 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
     }
 
-    private void arraySort(List<CompareItem> recordContentList, List<CompareItem> resultCompareItems,
-                           List<String> recordContentGroupList, List<String> resultContentGroupList) {
-        Map<String, List<CompareItem>> resultMapFromKey =
-                resultCompareItems.stream().collect(Collectors.groupingBy(CompareItem::getKey));
-        for (CompareItem recordCompareItem: recordContentList) {
-            String key = recordCompareItem.getKey();
-            if (resultMapFromKey.containsKey(key)) {
-                List<CompareItem> compareItems = resultMapFromKey.get(key);
-                for (CompareItem compareItem : compareItems) {
-                    recordContentGroupList.add(recordCompareItem.getCompareContent());
-                    resultContentGroupList.add(compareItem.getCompareContent());
-                }
-            }
-        }
-    }
+//    private void arraySort(List<CompareItem> recordContentList, List<CompareItem> resultCompareItems,
+//                           List<String> recordContentGroupList, List<String> resultContentGroupList) {
+//        Map<String, List<CompareItem>> resultMapFromKey =
+//                resultCompareItems.stream().collect(Collectors.groupingBy(CompareItem::getKey));
+//        for (CompareItem recordCompareItem: recordContentList) {
+//            String key = recordCompareItem.getKey();
+//            if (resultMapFromKey.containsKey(key)) {
+//                List<CompareItem> compareItems = resultMapFromKey.get(key);
+//                for (CompareItem compareItem : compareItems) {
+//                    recordContentGroupList.add(recordCompareItem.getCompareContent());
+//                    resultContentGroupList.add(compareItem.getCompareContent());
+//                }
+//            }
+//        }
+//    }
 
     private CompareResult compareProcess(String category, String record, String result,
                                          ReplayComparisonConfig compareConfig) {
