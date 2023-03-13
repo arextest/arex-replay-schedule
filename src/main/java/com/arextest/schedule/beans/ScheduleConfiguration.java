@@ -1,8 +1,8 @@
 package com.arextest.schedule.beans;
 
-import com.arextest.schedule.service.DeployedEnvironmentService;
 import com.arextest.schedule.service.ScheduleConfigurationListener;
 import com.arextest.schedule.service.ScheduleConfigurationService;
+import com.arextest.schedule.service.ScheduleConfigurationServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -15,7 +15,7 @@ import java.util.List;
  */
 @Slf4j
 @Configuration
-@ConditionalOnMissingBean(DeployedEnvironmentService.class)
+@ConditionalOnMissingBean(ScheduleConfigurationServiceImpl.class)
 public class ScheduleConfiguration {
     @Bean
     public ScheduleConfigurationService scheduleConfigurationService(
