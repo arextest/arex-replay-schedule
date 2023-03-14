@@ -1,21 +1,20 @@
 package com.arextest.schedule.service;
 
+import com.arextest.common.model.response.GenericResponseType;
+import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.model.CaseSendStatusType;
-import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.ReplayPlan;
-import com.arextest.schedule.model.ReplayStatusType;
+import com.arextest.schedule.model.*;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -44,10 +43,30 @@ public final class PlanConsumeService {
     private ProgressTracer progressTracer;
     @Resource
     private ProgressEvent progressEvent;
+    @Resource
+    private HttpWepServiceApiClient httpWepServiceApiClient;
+    @Resource
+    RecordVersionUrlProvider defaultRecordVersionProvider;
+
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
+        replayPlan.setRecordVersion(fillRecordVersion(replayPlan.getAppId(),replayPlan.getCaseSourceType()));
         // TODO: remove block thread use async to load & send for all
         preloadExecutorService.execute(new ReplayActionLoadingRunnableImpl(replayPlan));
+    }
+    public String fillRecordVersion(String appId,int caseSourceType) {
+        String recordVersionUrl = defaultRecordVersionProvider.getRecordVersionUrl(caseSourceType);
+        if (StringUtils.isNotEmpty(recordVersionUrl)) {
+            GenericResponseType<QueryRecordVersionResponse> recordVersionResponse = httpWepServiceApiClient.get(recordVersionUrl, ConfigurationService.appIdUrlVariable(appId),
+                    GenericResponseType.class);
+            if (null != recordVersionResponse
+                    && null != recordVersionResponse.getBody()
+                    && StringUtils.isNotEmpty(recordVersionResponse.getBody().getRecordVersion())) {
+                LOGGER.info("fill recordVersion case app id:{},", appId);
+                return recordVersionResponse.getBody().getRecordVersion();
+            }
+        }
+        return StringUtils.EMPTY;
     }
 
     private final class ReplayActionLoadingRunnableImpl extends AbstractTracedRunnable {
