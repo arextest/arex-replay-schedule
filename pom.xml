@@ -6,7 +6,7 @@
     <packaging>${packagingType}</packaging>
     <groupId>com.arextest</groupId>
     <artifactId>arex-schedule-web-api</artifactId>
-    <version>1.0.19</version>
+    <version>1.0.20</version>
     <name>${project.groupId}:${project.artifactId}</name>
     <description>AREX schedule is used for replay.</description>
     <url>https://github.com/arextest/arex-replay-schedule</url>
@@ -16,7 +16,7 @@
         <spring.boot.version>2.6.3</spring.boot.version>
         <jmockit.version>1.37</jmockit.version>
         <lombok.version>1.18.2</lombok.version>
-        <compare-sdk.version>0.1.4</compare-sdk.version>
+        <compare-sdk.version>0.1.5</compare-sdk.version>
         <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
 
         <!-- single jacoco.exec file relative to root directory of the project -->
@@ -118,7 +118,7 @@
             <dependency>
                 <groupId>com.arextest</groupId>
                 <artifactId>arex-model</artifactId>
-                <version>1.0.2</version>
+                <version>1.0.4-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.arextest</groupId>
@@ -128,7 +128,7 @@
             <dependency>
                 <groupId>com.arextest</groupId>
                 <artifactId>arex-common</artifactId>
-                <version>0.1.0</version>
+                <version>0.1.2</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -202,6 +202,10 @@
         <dependency>
             <groupId>com.arextest</groupId>
             <artifactId>compare-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-mongodb4</artifactId>
         </dependency>
     </dependencies>
 
@@ -292,48 +296,25 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-                <version>3.0.1</version>
-                <executions>
-                    <execution>
-                        <id>sign-artifacts</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>sign</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.6.13</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <serverId>ossrh</serverId>
-                    <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
     <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-        </snapshotRepository>
         <repository>
-            <id>ossrh</id>
-            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <id>releases</id>
+            <url>${releases.repo}</url>
         </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <url>${snapshots.repo}</url>
+        </snapshotRepository>
     </distributionManagement>
     <profiles>
         <profile>
             <id>war</id>
             <properties>
                 <packagingType>war</packagingType>
+                <releases.repo>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</releases.repo>
+                <snapshots.repo>https://s01.oss.sonatype.org/content/repositories/snapshots/</snapshots.repo>
             </properties>
             <activation>
                 <activeByDefault>true</activeByDefault>
@@ -345,6 +326,31 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
                     </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.0.1</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.13</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -352,6 +358,62 @@
             <id>jar</id>
             <properties>
                 <packagingType>jar</packagingType>
+                <releases.repo>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</releases.repo>
+                <snapshots.repo>https://s01.oss.sonatype.org/content/repositories/snapshots/</snapshots.repo>
+            </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>arex-replay-schedule</directory>
+                        <excludes>
+                            <exclude>**/application*.properties</exclude>
+                        </excludes>
+                    </resource>
+                </resources>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/WebSpringBootServletInitializer.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.0.1</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.13</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>jar-local</id>
+            <properties>
+                <packagingType>jar</packagingType>
+                <releases.repo></releases.repo>
+                <snapshots.repo></snapshots.repo>
             </properties>
             <build>
                 <resources>

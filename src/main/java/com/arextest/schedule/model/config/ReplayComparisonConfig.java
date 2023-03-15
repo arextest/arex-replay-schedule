@@ -24,6 +24,7 @@ import java.util.Set;
  */
 @Data
 public class ReplayComparisonConfig {
+
     // ignore according to type
     private List<String> ignoreTypeList;
     // ignore according to interface
@@ -67,8 +68,8 @@ public class ReplayComparisonConfig {
 
         @Override
         public void serialize(List<String> stringList,
-                JsonGenerator jsonGenerator,
-                SerializerProvider serializerProvider) throws IOException {
+                              JsonGenerator jsonGenerator,
+                              SerializerProvider serializerProvider) throws IOException {
             ObjectMapper objectMapper = new ObjectMapper();
             String string = objectMapper.writeValueAsString(stringList);
             jsonGenerator.writeFieldName(string);
