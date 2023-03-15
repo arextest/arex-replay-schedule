@@ -12,6 +12,7 @@ public interface ProgressEvent {
     void onReplayPlanCreated(ReplayPlan replayPlan);
 
     default void onReplayPlanFinish(ReplayPlan replayPlan) {
+
         this.onReplayPlanFinish(replayPlan, ReplayStatusType.FINISHED);
     }
 
