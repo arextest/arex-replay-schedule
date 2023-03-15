@@ -15,11 +15,19 @@
                 <TimeBasedTriggeringPolicy/>
             </Policies>
         </RollingFile>
+        <NoSql name="Mongo4">
+            <MongoDb4 capped="true" collectionSize="104857600"
+                      connection="${sys:mongo.uri}.logs"
+            />
+        </NoSql>
     </Appenders>
 
     <Loggers>
         <Root level="info">
             <AppenderRef ref="RollingFile"/>
         </Root>
+        <Logger name="com.arextest.schedule" level="INFO">
+            <AppenderRef ref="Mongo4"/>
+        </Logger>
     </Loggers>
 </Configuration>
