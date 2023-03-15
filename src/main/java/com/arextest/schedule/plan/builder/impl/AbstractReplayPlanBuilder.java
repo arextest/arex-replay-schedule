@@ -3,13 +3,13 @@ package com.arextest.schedule.plan.builder.impl;
 import com.arextest.schedule.model.AppServiceDescriptor;
 import com.arextest.schedule.model.CaseSourceEnvType;
 import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.deploy.DeploymentEnvironmentProvider;
 import com.arextest.schedule.model.deploy.DeploymentVersion;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.builder.BuildPlanValidateResult;
 import com.arextest.schedule.plan.builder.ReplayPlanBuilder;
+import com.arextest.schedule.service.DeployedEnvironmentService;
 import com.arextest.schedule.service.ReplayActionItemPreprocessService;
 import com.arextest.schedule.service.ReplayCaseRemoteLoadService;
 import org.apache.commons.collections4.CollectionUtils;
@@ -28,7 +28,7 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
     static final int APP_SUSPENDED_STATUS = -1;
     private final static String DEFAULT_PRO_SOURCE_ENV = "pro";
     @Resource
-    private DeploymentEnvironmentProvider deploymentEnvironmentProvider;
+    private DeployedEnvironmentService deployedEnvironmentService;
     @Resource
     private ReplayCaseRemoteLoadService replayCaseRemoteLoadService;
     @Resource
@@ -54,7 +54,7 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
             return BuildPlanValidateResult.create(BuildPlanValidateResult.REQUESTED_TARGET_ENV_UNAVAILABLE, "requested target env unable load" +
                     " active instance");
         }
-        DeploymentVersion deploymentVersion = deploymentEnvironmentProvider.getVersion(appId, env);
+        DeploymentVersion deploymentVersion = deployedEnvironmentService.getVersionEvent(appId, env);
         planContext.setTargetVersion(deploymentVersion);
         env = request.getSourceEnv();
         if (StringUtils.isNotBlank(env) && !StringUtils.equals(DEFAULT_PRO_SOURCE_ENV, env)) {
@@ -62,7 +62,7 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
                 return BuildPlanValidateResult.create(BuildPlanValidateResult.REQUESTED_SOURCE_ENV_UNAVAILABLE,
                         "requested source env unable load active instance");
             }
-            deploymentVersion = deploymentEnvironmentProvider.getVersion(appId, env);
+            deploymentVersion = deployedEnvironmentService.getVersionEvent(appId, env);
             planContext.setSourceVersion(deploymentVersion);
         }
         return BuildPlanValidateResult.createSuccess();
@@ -75,7 +75,7 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
         AppServiceDescriptor appServiceDescriptor;
         for (int i = 0; i < descriptorList.size(); i++) {
             appServiceDescriptor = descriptorList.get(i);
-            instanceList = deploymentEnvironmentProvider.getActiveInstanceList(appServiceDescriptor, env);
+            instanceList = deployedEnvironmentService.getActiveInstanceListEvent(appServiceDescriptor, env);
             if (CollectionUtils.isNotEmpty(instanceList)) {
                 hasInstance = true;
             }
@@ -92,12 +92,12 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
     }
 
     @Override
-    public int buildReplayCaseCount(List<ReplayActionItem> actionItemList) {
+    public int buildReplayCaseCount(List<ReplayActionItem> actionItemList, Integer caseCountLimit) {
         int sum = 0;
         int actionCount;
         for (int i = 0; i < actionItemList.size(); i++) {
             ReplayActionItem actionItem = actionItemList.get(i);
-            actionCount = queryCaseCount(actionItem);
+            actionCount = queryCaseCount(actionItem, caseCountLimit);
             actionItem.setReplayCaseCount(actionCount);
             sum += actionCount;
         }
@@ -106,8 +106,8 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
 
     abstract List<ReplayActionItem> getReplayActionList(BuildReplayPlanRequest request, PlanContext planContext);
 
-    int queryCaseCount(ReplayActionItem actionItem) {
-        return replayCaseRemoteLoadService.queryCaseCount(actionItem);
+    int queryCaseCount(ReplayActionItem actionItem, Integer caseCountLimit) {
+        return replayCaseRemoteLoadService.queryCaseCount(actionItem, caseCountLimit);
     }
 
     boolean unsupportedCaseTimeRange(BuildReplayPlanRequest request) {

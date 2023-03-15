@@ -11,7 +11,6 @@ import com.arextest.report.model.api.contracts.PushCompareResultsRequestType;
 import com.arextest.report.model.api.contracts.ReportInitialRequestType;
 import com.arextest.report.model.api.contracts.common.CompareResult;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
-import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.model.*;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +37,8 @@ public final class ReplayReportService implements ComparisonWriter {
     private String pushReplayCompareResultUrl;
     @Value("${arex.report.push.replayStatus.url}")
     private String pushReplayStatusUrl;
+    @Resource
+    private ConsoleLogService consoleLogService;
 
     public void initReportInfo(ReplayPlan replayPlan) {
         ReportInitialRequestType requestType = new ReportInitialRequestType();
@@ -85,7 +86,7 @@ public final class ReplayReportService implements ComparisonWriter {
             reportItem.setOperationName(actionItem.getOperationName());
             reportItem.setServiceName(actionItem.getServiceKey());
             reportItem.setPlanItemId(actionItem.getId());
-            reportItem.setTotalCaseCount(Math.min(CommonConstant.OPERATION_MAX_CASE_COUNT, actionItem.getReplayCaseCount()));
+            reportItem.setTotalCaseCount(actionItem.getReplayCaseCount());
             reportItemList.add(reportItem);
         }
         requestType.setReportItemList(reportItemList);
