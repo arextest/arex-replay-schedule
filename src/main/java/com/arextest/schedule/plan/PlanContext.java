@@ -135,7 +135,7 @@ public final class PlanContext {
     }
 
     private String getShortOperationName(String operationType, String operationName) {
-        if (operationType.equals(SOAPROVIDER)) {
+        if (operationType.equals(SOAPROVIDER) || operationType.equals(MockCategoryType.DUBBO_PROVIDER.getName())) {
             String[] split = operationName.split("\\.");
             operationName = split[split.length - 1];
         }
