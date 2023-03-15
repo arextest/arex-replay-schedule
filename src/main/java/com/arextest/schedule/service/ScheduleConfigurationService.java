@@ -26,6 +26,7 @@ public final class ScheduleConfigurationService {
         }
         for (ScheduleConfigurationListener provider : this.scheduleConfigurationListeners) {
             provider.buildReplayConfigurationEvent(replayPlan);
+            break;
         }
     }
 
