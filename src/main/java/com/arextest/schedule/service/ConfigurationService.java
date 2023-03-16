@@ -47,6 +47,7 @@ public final class ConfigurationService {
         private Set<String> targetEnv;
         private Map<String, Set<String>> excludeOperationMap;
         private Integer sendMaxQps;
+        private Integer caseCountLimit;
 
     }
 

@@ -2,6 +2,7 @@ package com.arextest.schedule.model;
 
 import lombok.Data;
 
+
 import java.util.List;
 
 /**
@@ -11,11 +12,13 @@ import java.util.List;
 @Data
 public class QueryRecordVersionResponse {
 
-    private List<ApplicationInstance> body;
 
+    private List<ApplicationInstance> body;
+    
     @Data
     public static class ApplicationInstance{
         private String appId;
         private String recordVersion;
-    }
+  }
+
 }

@@ -1,9 +1,11 @@
 package com.arextest.schedule.service;
 
+import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.model.CaseSendStatusType;
+import com.arextest.schedule.model.FailReasonType;
+import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.sender.ReplaySender;
 import lombok.Setter;
@@ -22,6 +24,8 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
     private transient ReplayActionCaseItem caseItem;
     private transient CountDownLatch groupSentLatch;
     private transient SendSemaphoreLimiter limiter;
+    private transient ConsoleLogService consoleLogService;
+
     private transient final ReplayCaseTransmitService transmitService;
 
     AsyncSendCaseTaskRunnable(ReplayCaseTransmitService transmitService) {
@@ -43,6 +47,9 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
                     throwable.getMessage(), throwable);
             transmitService.updateSendResult(caseItem, CaseSendStatusType.EXCEPTION_FAILED);
         } finally {
+            if (!success) {
+                consoleLogService.staticsFailDetailReasonEvent(caseItem, FailReasonType.SEND_FAIL.getValue(), LogType.STATICS_FAIL_REASON.getValue());
+            }
             groupSentLatch.countDown();
             limiter.release(success);
             MDCTracer.removeDetailId();

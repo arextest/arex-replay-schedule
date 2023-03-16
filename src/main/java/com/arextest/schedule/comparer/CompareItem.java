@@ -10,4 +10,6 @@ public interface CompareItem {
     String getCompareOperation();
 
     String getCompareService();
+
+//    String getKey();
 }
