@@ -48,8 +48,7 @@ public final class PlanConsumeService {
     @Resource
     private HttpWepServiceApiClient httpWepServiceApiClient;
     @Resource
-    RecordVersionUrlProvider defaultRecordVersionProvider;
-
+    private ReportRecordVersionService reportRecordVersionService;
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
         replayPlan.setRecordVersion(fillRecordVersion(replayPlan.getAppId(),replayPlan.getCaseSourceType()));
@@ -67,6 +66,26 @@ public final class PlanConsumeService {
                 LOGGER.info("fill recordVersion case app id:{},", appId);
                 return recordVersionResponse.getBody().getRecordVersion();
             }
+        }
+        return StringUtils.EMPTY;
+    }
+
+    private String fillRecordVersion(String appId, int caseSourceType) {
+        try {
+            String recordVersionUrl = reportRecordVersionService.getRecordVersionUrl(caseSourceType);
+            if (StringUtils.isNotEmpty(recordVersionUrl)) {
+                GenericResponseType<List<QueryRecordVersionResponse>> recordVersionResponse = httpWepServiceApiClient.get(recordVersionUrl, ConfigurationService.appIdUrlVariable(appId),
+                        GenericResponseType.class);
+                if (null != recordVersionResponse
+                        && null != recordVersionResponse.getBody()
+                        && CollectionUtils.isNotEmpty(recordVersionResponse.getBody())
+                        && StringUtils.isNotEmpty(recordVersionResponse.getBody().get(0).getRecordVersion())) {
+                    LOGGER.info("filled recordVersion app id:{} version :{},", appId, recordVersionResponse.getBody().get(0).getRecordVersion());
+                    return recordVersionResponse.getBody().get(0).getRecordVersion();
+                }
+            }
+        } catch (Throwable e) {
+            LOGGER.error("filling recordVersion error app id:{},", appId, e);
         }
         return StringUtils.EMPTY;
     }
