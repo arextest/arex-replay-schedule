@@ -2,6 +2,7 @@ package com.arextest.schedule.beans;
 
 import com.arextest.schedule.service.RecordVersionUrlProvider;
 import com.arextest.schedule.service.ReportRecordVersionService;
+import com.arextest.schedule.service.DefaultRecordVersionUrlProviderImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -20,5 +21,4 @@ public class ReportRecordVersionConfiguration {
     @Bean
     public ReportRecordVersionService defaultRecordVersionProvider(List<RecordVersionUrlProvider> recordVersionUrlProviderList){
         return new ReportRecordVersionService(recordVersionUrlProviderList);
-    }
 }
