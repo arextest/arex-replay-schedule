@@ -1,7 +1,6 @@
 package com.arextest.schedule.model;
 
 import com.arextest.model.constants.MockAttributeNames;
-import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker.Target;
 import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -39,6 +38,8 @@ public class ReplayActionCaseItem {
     private long recordTime;
     @JsonIgnore
     private Target targetRequest;
+    @JsonIgnore
+    private String messageId;
 
     public String replayDependency() {
         return requestAttribute(MockAttributeNames.CONFIG_BATCH_NO);

@@ -17,7 +17,7 @@ import java.util.List;
 @ConditionalOnMissingBean(DeployedEnvironmentService.class)
 public class DeployedEnvironmentConfiguration {
     @Bean
-    public DeployedEnvironmentService planFinishService(
+    public DeployedEnvironmentService deployedEnvironmentService(
             List<DeploymentEnvironmentProvider> deploymentEnvironmentProviders
     ) {
         return new DeployedEnvironmentService(deploymentEnvironmentProviders);

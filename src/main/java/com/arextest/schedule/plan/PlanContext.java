@@ -107,7 +107,7 @@ public final class PlanContext {
         final String operationName = operationDescriptor.getOperationName();
         String operationType = operationDescriptor.getOperationType();
         String shortOperationName = getShortOperationName(operationType, operationName);
-        List<ServiceInstance> activeInstances = findActiveInstances(serviceDescriptor, shortOperationName);
+        List<ServiceInstance> activeInstances = findActiveInstances(serviceDescriptor, shortOperationName, operationType);
         replayActionItem.setTargetInstance(activeInstances);
         replayActionItem.setOperationName(operationName);
         replayActionItem.setSourceInstance(serviceDescriptor.getSourceActiveInstanceList());
@@ -115,32 +115,39 @@ public final class PlanContext {
         replayActionItem.setServiceKey(serviceDescriptor.getServiceKey());
         replayActionItem.setServiceName(serviceDescriptor.getServiceName());
         replayActionItem.setOperationId(operationDescriptor.getId());
-        replayActionItem.setMappedInstanceOperation(this.findActiveOperation(shortOperationName, activeInstances.get(0)));
+        replayActionItem.setMappedInstanceOperation(this.findActiveOperation(shortOperationName, activeInstances));
     }
 
-    private ServiceInstanceOperation findActiveOperation(String operation, ServiceInstance activeInstance) {
-        if (activeInstance != null) {
-            List<ServiceInstanceOperation> operationList = activeInstance.getOperationList();
-            for (ServiceInstanceOperation serviceInstanceOperation : operationList) {
-                if (StringUtils.equals(operation, serviceInstanceOperation.getName())) {
-                    return serviceInstanceOperation;
-                }
+    private ServiceInstanceOperation findActiveOperation(String operation, List<ServiceInstance> activeInstances) {
+        if (CollectionUtils.isEmpty(activeInstances)) {
+            return null;
+        }
+        List<ServiceInstanceOperation> operationList = activeInstances.get(0).getOperationList();
+        if (CollectionUtils.isEmpty(operationList)) {
+            return null;
+        }
+        for (ServiceInstanceOperation serviceInstanceOperation : operationList) {
+            if (StringUtils.equals(operation, serviceInstanceOperation.getName())) {
+                return serviceInstanceOperation;
             }
         }
         return null;
     }
 
     private String getShortOperationName(String operationType, String operationName) {
-        if (operationType.equals(SOAPROVIDER)) {
+        if (operationType.equals(SOAPROVIDER) || operationType.equals(MockCategoryType.DUBBO_PROVIDER.getName())) {
             String[] split = operationName.split("\\.");
             operationName = split[split.length - 1];
         }
         return operationName;
     }
 
-    private List<ServiceInstance> findActiveInstances(AppServiceDescriptor serviceDescriptor, String operationName) {
-        List<ServiceInstance> newTargetInstanceList = Lists.newArrayList();
+    private List<ServiceInstance> findActiveInstances(AppServiceDescriptor serviceDescriptor, String operationName, String operationType) {
         List<ServiceInstance> targetActiveInstanceList = serviceDescriptor.getTargetActiveInstanceList();
+        if (operationType.equals(MockCategoryType.SERVLET.getName())) {
+            return targetActiveInstanceList;
+        }
+        List<ServiceInstance> newTargetInstanceList = Lists.newArrayList();
         for (ServiceInstance instance : targetActiveInstanceList) {
             List<ServiceInstanceOperation> operationList = instance.getOperationList();
             if (CollectionUtils.isEmpty(operationList)) {

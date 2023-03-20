@@ -4,23 +4,14 @@ package com.arextest.schedule.service;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker.Target;
-import com.arextest.model.replay.PagedRequestType;
-import com.arextest.model.replay.PagedResponseType;
-import com.arextest.model.replay.QueryCaseCountResponseType;
-import com.arextest.model.replay.ViewRecordRequestType;
-import com.arextest.model.replay.ViewRecordResponseType;
-import com.arextest.schedule.common.CommonConstant;
+import com.arextest.model.replay.*;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
-import com.arextest.schedule.model.CaseSendStatusType;
-import com.arextest.schedule.model.CompareProcessStatusType;
-import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.common.CommonConstant;
+import com.arextest.schedule.model.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -48,28 +39,31 @@ public class ReplayCaseRemoteLoadService {
     private String replayCaseUrl;
     @Resource
     private ObjectMapper objectMapper;
+    @Resource
+    private ConsoleLogService consoleLogService;
 
 
-    public int queryCaseCount(ReplayActionItem replayActionItem) {
+    public int queryCaseCount(ReplayActionItem replayActionItem, Integer caseCountLimit) {
         try {
-            PagedRequestType request = buildPagingSearchCaseRequest(replayActionItem);
+            PagedRequestType request = buildPagingSearchCaseRequest(replayActionItem, caseCountLimit);
             QueryCaseCountResponseType responseType =
                     wepApiClientService.jsonPost(countByRangeUrl, request, QueryCaseCountResponseType.class);
             if (responseType == null || responseType.getResponseStatusType().hasError()) {
                 return EMPTY_SIZE;
             }
-            return Math.min(CommonConstant.OPERATION_MAX_CASE_COUNT, (int) responseType.getCount());
+            return Math.min(caseCountLimit, (int) responseType.getCount());
         } catch (Exception e) {
             LOGGER.error("query case count error,request: {} ", replayActionItem.getId(), e);
         }
         return EMPTY_SIZE;
     }
 
-    public ReplayActionCaseItem viewReplayLoad(ReplayActionCaseItem caseItem) {
+    public ReplayActionCaseItem viewReplayLoad(ReplayActionCaseItem caseItem, String sourceProvider) {
         try {
             ViewRecordRequestType viewReplayCaseRequest = new ViewRecordRequestType();
             viewReplayCaseRequest.setRecordId(caseItem.getRecordId());
             viewReplayCaseRequest.setCategoryType(caseItem.getCaseType());
+            viewReplayCaseRequest.setSourceProvider(sourceProvider);
             ViewRecordResponseType responseType = wepApiClientService.jsonPost(viewRecordUrl,
                     viewReplayCaseRequest,
                     ViewRecordResponseType.class);
@@ -111,16 +105,18 @@ public class ReplayCaseRemoteLoadService {
     }
 
     public List<ReplayActionCaseItem> pagingLoad(long beginTimeMills, long endTimeMills,
-                                                 ReplayActionItem replayActionItem) {
-        PagedRequestType requestType = buildPagingSearchCaseRequest(replayActionItem);
+                                                 ReplayActionItem replayActionItem, int caseCountLimit) {
+        PagedRequestType requestType = buildPagingSearchCaseRequest(replayActionItem, caseCountLimit);
         requestType.setBeginTime(beginTimeMills);
         requestType.setEndTime(endTimeMills);
         PagedResponseType responseType;
         long beginTime = System.currentTimeMillis();
         responseType = wepApiClientService.jsonPost(replayCaseUrl, requestType, PagedResponseType.class);
+        long timeUsed = System.currentTimeMillis() - beginTime;
+        consoleLogService.onConsoleLogEvent(timeUsed, LogType.FIND_CASE.getValue(), null, replayActionItem);
         LOGGER.info("get replay case app id:{},time used:{} ms, operation:{}",
                 requestType.getAppId(),
-                System.currentTimeMillis() - beginTime, requestType.getOperation()
+                timeUsed, requestType.getOperation()
         );
         if (badResponse(responseType)) {
             try {
@@ -154,11 +150,11 @@ public class ReplayCaseRemoteLoadService {
         return caseItemList;
     }
 
-    private PagedRequestType buildPagingSearchCaseRequest(ReplayActionItem replayActionItem) {
+    private PagedRequestType buildPagingSearchCaseRequest(ReplayActionItem replayActionItem, Integer caseCountLimit) {
         ReplayPlan parent = replayActionItem.getParent();
         PagedRequestType requestType = new PagedRequestType();
         requestType.setAppId(parent.getAppId());
-        requestType.setPageSize(CommonConstant.MAX_PAGE_SIZE);
+        requestType.setPageSize(Math.min(CommonConstant.MAX_PAGE_SIZE, caseCountLimit));
         requestType.setEnv(parent.getCaseSourceType());
         requestType.setBeginTime(parent.getCaseSourceFrom().getTime());
         requestType.setEndTime(parent.getCaseSourceTo().getTime());

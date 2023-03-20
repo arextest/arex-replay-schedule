@@ -1,5 +1,7 @@
 package com.arextest.schedule.service;
 
+import com.arextest.common.model.response.GenericResponseType;
+import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
@@ -12,12 +14,15 @@ import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+
+import static com.arextest.schedule.common.CommonConstant.PINNED;
 
 /**
  * @author jmo
@@ -40,10 +45,49 @@ public final class PlanConsumeService {
     private ProgressTracer progressTracer;
     @Resource
     private ProgressEvent progressEvent;
+    @Resource
+    private HttpWepServiceApiClient httpWepServiceApiClient;
+    @Resource
+    private ReportRecordVersionService reportRecordVersionService;
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
+        replayPlan.setRecordVersion(fillRecordVersion(replayPlan.getAppId(),replayPlan.getCaseSourceType()));
         // TODO: remove block thread use async to load & send for all
         preloadExecutorService.execute(new ReplayActionLoadingRunnableImpl(replayPlan));
+    }
+    public String fillRecordVersion(String appId,int caseSourceType) {
+        String recordVersionUrl = defaultRecordVersionProvider.getRecordVersionUrl(caseSourceType);
+        if (StringUtils.isNotEmpty(recordVersionUrl)) {
+            GenericResponseType<QueryRecordVersionResponse> recordVersionResponse = httpWepServiceApiClient.get(recordVersionUrl, ConfigurationService.appIdUrlVariable(appId),
+                    GenericResponseType.class);
+            if (null != recordVersionResponse
+                    && null != recordVersionResponse.getBody()
+                    && StringUtils.isNotEmpty(recordVersionResponse.getBody().getRecordVersion())) {
+                LOGGER.info("fill recordVersion case app id:{},", appId);
+                return recordVersionResponse.getBody().getRecordVersion();
+            }
+        }
+        return StringUtils.EMPTY;
+    }
+
+    private String fillRecordVersion(String appId, int caseSourceType) {
+        try {
+            String recordVersionUrl = reportRecordVersionService.getRecordVersionUrl(caseSourceType);
+            if (StringUtils.isNotEmpty(recordVersionUrl)) {
+                GenericResponseType<List<QueryRecordVersionResponse>> recordVersionResponse = httpWepServiceApiClient.get(recordVersionUrl, ConfigurationService.appIdUrlVariable(appId),
+                        GenericResponseType.class);
+                if (null != recordVersionResponse
+                        && null != recordVersionResponse.getBody()
+                        && CollectionUtils.isNotEmpty(recordVersionResponse.getBody())
+                        && StringUtils.isNotEmpty(recordVersionResponse.getBody().get(0).getRecordVersion())) {
+                    LOGGER.info("filled recordVersion app id:{} version :{},", appId, recordVersionResponse.getBody().get(0).getRecordVersion());
+                    return recordVersionResponse.getBody().get(0).getRecordVersion();
+                }
+            }
+        } catch (Throwable e) {
+            LOGGER.error("filling recordVersion error app id:{},", appId, e);
+        }
+        return StringUtils.EMPTY;
     }
 
     private final class ReplayActionLoadingRunnableImpl extends AbstractTracedRunnable {
@@ -60,6 +104,8 @@ public final class PlanConsumeService {
     }
 
     private void saveActionCaseToSend(ReplayPlan replayPlan) {
+        MDCTracer.addPlanId(replayPlan.getId());
+        MDCTracer.addAppId(replayPlan.getAppId());
         int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());
         if (planSavedCaseSize != replayPlan.getCaseTotalCount()) {
             LOGGER.info("update the plan TotalCount, plan id:{} ,appId: {} , size: {} -> {}", replayPlan.getId(),
@@ -180,9 +226,10 @@ public final class PlanConsumeService {
 
     private int doFixedCaseSave(List<ReplayActionCaseItem> caseItemList) {
         int size = 0;
+        String sourceProvider = PINNED;
         for (int i = 0; i < caseItemList.size(); i++) {
             ReplayActionCaseItem caseItem = caseItemList.get(i);
-            ReplayActionCaseItem viewReplay = caseRemoteLoadService.viewReplayLoad(caseItem);
+            ReplayActionCaseItem viewReplay = caseRemoteLoadService.viewReplayLoad(caseItem, sourceProvider);
             if (viewReplay == null) {
                 caseItem.setSendStatus(CaseSendStatusType.REPLAY_CASE_NOT_FOUND.getValue());
             } else {
@@ -203,17 +250,22 @@ public final class PlanConsumeService {
         }
         long endTimeMills = replayPlan.getCaseSourceTo().getTime();
         int size = 0;
+        int maxCount = replayPlan.getCaseCountLimit();
+        int pageSize = maxCount;
         while (beginTimeMills < endTimeMills) {
             List<ReplayActionCaseItem> caseItemList = caseRemoteLoadService.pagingLoad(beginTimeMills, endTimeMills,
-                    replayActionItem);
-            if (CollectionUtils.isEmpty(caseItemList) || size >= CommonConstant.OPERATION_MAX_CASE_COUNT) {
+                    replayActionItem, pageSize);
+            if (CollectionUtils.isEmpty(caseItemList)) {
                 break;
-            } else {
-                ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
-                size += caseItemList.size();
-                beginTimeMills = caseItemList.get(caseItemList.size() - 1).getRecordTime();
-                replayActionCaseItemRepository.save(caseItemList);
             }
+            ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
+            size += caseItemList.size();
+            beginTimeMills = caseItemList.get(caseItemList.size() - 1).getRecordTime();
+            replayActionCaseItemRepository.save(caseItemList);
+            if (size >= maxCount) {
+                break;
+            }
+            pageSize = maxCount - size;
             replayActionItem.setLastRecordTime(beginTimeMills);
         }
         return size;
