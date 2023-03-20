@@ -118,7 +118,7 @@
             <dependency>
                 <groupId>com.arextest</groupId>
                 <artifactId>arex-model</artifactId>
-                <version>1.0.2</version>
+                <version>1.0.4-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.arextest</groupId>
@@ -128,7 +128,7 @@
             <dependency>
                 <groupId>com.arextest</groupId>
                 <artifactId>arex-common</artifactId>
-                <version>0.1.0</version>
+                <version>0.1.2</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -202,6 +202,10 @@
         <dependency>
             <groupId>com.arextest</groupId>
             <artifactId>compare-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-mongodb4</artifactId>
         </dependency>
     </dependencies>
 
