@@ -1,9 +1,11 @@
 package com.arextest.schedule.service;
 
 import com.arextest.common.cache.CacheProvider;
+import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.MDCTracer;
+import com.arextest.schedule.model.QueryRecordVersionResponse;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.progress.ProgressEvent;
@@ -50,6 +52,10 @@ public class PlanProduceService {
     private ConfigurationService configurationService;
     @Resource
     private CacheProvider redisCacheProvider;
+    @Resource
+    private HttpWepServiceApiClient httpWepServiceApiClient;
+    @Resource
+    private ReportRecordVersionService reportRecordVersionService;
 
     public CommonResponse createPlan(BuildReplayPlanRequest request) {
         long planCreateMillis = System.currentTimeMillis();
@@ -121,8 +127,9 @@ public class PlanProduceService {
         ConfigurationService.Application replayApp = configurationService.application(appId);
         if (replayApp != null) {
             replayPlan.setArexCordVersion(replayApp.getAgentVersion());
-            replayPlan.setArexExtVersion(replayApp.getAgentExtVersion());
-            replayPlan.setCaseRecordVersion(replayApp.getAgentExtVersion());
+            String recordVersion = fillRecordVersion(replayPlan.getAppId(), replayPlan.getCaseSourceType());
+            replayPlan.setArexExtVersion(recordVersion);
+            replayPlan.setCaseRecordVersion(recordVersion);
             replayPlan.setAppName(replayApp.getAppName());
         }
         ConfigurationService.ScheduleConfiguration schedule = configurationService.schedule(appId);
@@ -174,5 +181,24 @@ public class PlanProduceService {
         } catch (Exception e) {
             LOGGER.error("stopPlan error, planId: {}, message: {}", planId, e.getMessage());
         }
+    }
+
+    private String fillRecordVersion(String appId, int caseSourceType) {
+        try {
+            String recordVersionUrl = reportRecordVersionService.getRecordVersionUrl(caseSourceType);
+            if (StringUtils.isNotEmpty(recordVersionUrl)) {
+                QueryRecordVersionResponse recordVersionResponse = httpWepServiceApiClient.get(recordVersionUrl, ConfigurationService.appIdUrlVariable(appId),
+                        QueryRecordVersionResponse.class);
+                if (null != recordVersionResponse
+                        && CollectionUtils.isNotEmpty(recordVersionResponse.getBody())
+                        && StringUtils.isNotEmpty(recordVersionResponse.getBody().get(0).getRecordVersion())) {
+                    LOGGER.info("filled recordVersion app id:{} version :{},", appId, recordVersionResponse.getBody().get(0).getRecordVersion());
+                    return recordVersionResponse.getBody().get(0).getRecordVersion();
+                }
+            }
+        } catch (Throwable e) {
+            LOGGER.error("filling recordVersion error app id:{},", appId, e);
+        }
+        return StringUtils.EMPTY;
     }
 }
