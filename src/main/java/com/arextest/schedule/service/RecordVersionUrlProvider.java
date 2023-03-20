@@ -2,7 +2,7 @@ package com.arextest.schedule.service;
 
 /**
  * @author: sldu
- * @date: 2023/3/15 11:30
+ * @date: 2023/3/20 11:39
  **/
 public interface RecordVersionUrlProvider {
 
