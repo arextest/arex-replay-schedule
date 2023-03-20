@@ -1,7 +1,5 @@
 package com.arextest.schedule.service;
 
-import com.arextest.common.model.response.GenericResponseType;
-import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
@@ -14,7 +12,6 @@ import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -45,35 +42,11 @@ public final class PlanConsumeService {
     private ProgressTracer progressTracer;
     @Resource
     private ProgressEvent progressEvent;
-    @Resource
-    private HttpWepServiceApiClient httpWepServiceApiClient;
-    @Resource
-    private ReportRecordVersionService reportRecordVersionService;
-    
-    public void runAsyncConsume(ReplayPlan replayPlan) {
-        replayPlan.setRecordVersion(fillRecordVersion(replayPlan.getAppId(), replayPlan.getCaseSourceType()));
 
+
+    public void runAsyncConsume(ReplayPlan replayPlan) {
         // TODO: remove block thread use async to load & send for all
         preloadExecutorService.execute(new ReplayActionLoadingRunnableImpl(replayPlan));
-    }
- 
-    private String fillRecordVersion(String appId, int caseSourceType) {
-        try {
-            String recordVersionUrl = reportRecordVersionService.getRecordVersionUrl(caseSourceType);
-            if (StringUtils.isNotEmpty(recordVersionUrl)) {
-                QueryRecordVersionResponse recordVersionResponse = httpWepServiceApiClient.get(recordVersionUrl, ConfigurationService.appIdUrlVariable(appId),
-                        QueryRecordVersionResponse.class);
-                if (null != recordVersionResponse
-                        && CollectionUtils.isNotEmpty(recordVersionResponse.getBody())
-                        && StringUtils.isNotEmpty(recordVersionResponse.getBody().get(0).getRecordVersion())) {
-                    LOGGER.info("filled recordVersion app id:{} version :{},", appId, recordVersionResponse.getBody().get(0).getRecordVersion());
-                    return recordVersionResponse.getBody().get(0).getRecordVersion();
-                }
-            }
-        } catch (Throwable e) {
-            LOGGER.error("filling recordVersion error app id:{},", appId, e);
-        }
-        return StringUtils.EMPTY;
     }
 
     private final class ReplayActionLoadingRunnableImpl extends AbstractTracedRunnable {
