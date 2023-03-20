@@ -6,11 +6,7 @@ import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.model.CaseSendStatusType;
-import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.ReplayPlan;
-import com.arextest.schedule.model.ReplayStatusType;
+import com.arextest.schedule.model.*;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.utils.ReplayParentBinder;
@@ -150,6 +146,7 @@ public final class PlanConsumeService {
 
     private boolean sendByPaging(ReplayActionItem replayActionItem) {
         List<ReplayActionCaseItem> sourceItemList;
+        boolean isFirst = true;
         while (true) {
             sourceItemList = replayActionCaseItemRepository.waitingSendList(replayActionItem.getId(),
                     CommonConstant.MAX_PAGE_SIZE);
@@ -158,10 +155,11 @@ public final class PlanConsumeService {
                 break;
             }
             ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
-            boolean isCanceled = replayCaseTransmitService.send(replayActionItem);
+            boolean isCanceled = replayCaseTransmitService.send(replayActionItem, isFirst);
             if (isCanceled) {
                 return true;
             }
+            isFirst = false;
             if (replayActionItem.getSendRateLimiter().failBreak()) {
                 break;
             }

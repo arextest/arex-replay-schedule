@@ -24,4 +24,6 @@ public final class CommonConstant {
     public static final long STOP_PLAN_REDIS_EXPIRE = TimeUnit.DAYS.toSeconds(1);
     public static final String STOP_PLAN_REDIS_KEY = "arex.stop.plan.";
 
+    public static final String SOAPROVIDER = "SOAProvider";
+
 }

@@ -2,19 +2,19 @@ package com.arextest.schedule.service;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.model.mock.Mocker;
+import com.arextest.schedule.common.CommonConstant;
+import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.progress.ProgressEvent;
-import com.arextest.schedule.progress.ProgressTracer;
-import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.progress.ProgressEvent;
+import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
-import com.arextest.schedule.common.CommonConstant;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
@@ -25,11 +25,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -62,12 +58,14 @@ public class ReplayCaseTransmitService {
     @Resource
     private ProgressEvent progressEvent;
 
-    public boolean send(ReplayActionItem replayActionItem) {
+    public boolean send(ReplayActionItem replayActionItem, boolean isFirst) {
         List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
         if (CollectionUtils.isEmpty(sourceItemList)) {
             return false;
         }
-        activeRemoteHost(sourceItemList);
+        if (isFirst) {
+            activeRemoteHost(sourceItemList);
+        }
         Map<String, List<ReplayActionCaseItem>> versionGroupedResult = groupByDependencyVersion(sourceItemList);
         LOGGER.info("found replay send size of group: {}", versionGroupedResult.size());
         replayActionItem.getSendRateLimiter().reset();
@@ -236,7 +234,7 @@ public class ReplayCaseTransmitService {
     private void activeRemoteHost(List<ReplayActionCaseItem> sourceItemList) {
         try {
             for (int i = 0; i < ACTIVE_SERVICE_RETRY_COUNT && i < sourceItemList.size(); i++) {
-                ReplayActionCaseItem caseItem = sourceItemList.get(i);
+                ReplayActionCaseItem caseItem = cloneCaseItem(sourceItemList, i);
                 ReplaySender replaySender = findReplaySender(caseItem);
                 if (replaySender == null) {
                     continue;
