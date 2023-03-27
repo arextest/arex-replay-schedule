@@ -160,10 +160,6 @@ public class ReplayCaseRemoteLoadService {
         requestType.setEndTime(parent.getCaseSourceTo().getTime());
         requestType.setOperation(replayActionItem.getOperationName());
         requestType.setCategory(MockCategoryType.createEntryPoint(replayActionItem.getActionType()));
-        String recordVersion = replayActionItem.getParent().getCaseRecordVersion();
-        if (StringUtils.isNotEmpty(recordVersion)) {
-            requestType.setRecordVersion(recordVersion);
-        }
         return requestType;
     }
 

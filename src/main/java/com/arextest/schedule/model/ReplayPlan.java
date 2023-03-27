@@ -65,8 +65,6 @@ public class ReplayPlan {
     private List<ReplayActionItem> replayActionItemList;
     @JsonIgnore
     private String appName;
-    @JsonIgnore
-    private String recordVersion;
     private Integer caseCountLimit;
 
 }

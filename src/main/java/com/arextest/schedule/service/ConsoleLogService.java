@@ -70,15 +70,6 @@ public class ConsoleLogService {
         listener.recordCancelReason(planId, remark);
     }
 
-    public void staticsFailSizeEvent(String planId, long compareFailCount, int failType, String logType) {
-        ConsoleLogListener listener = find(logType);
-        if (listener == null) {
-            LOGGER.warn("Could not found consoleLogEvent for {}", logType);
-            return;
-        }
-        listener.staticsFailSize(planId, compareFailCount, failType);
-    }
-
     private ConsoleLogListener find(String logType) {
         if (CollectionUtils.isNotEmpty(this.consoleLogListeners)) {
             for (ConsoleLogListener listener : this.consoleLogListeners) {

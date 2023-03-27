@@ -22,8 +22,6 @@ public interface ConsoleLogListener {
 
     void staticsFailReason(ReplayActionCaseItem caseItem, int failType);
 
-    void staticsFailSize(String planId, long compareFailCount, int failType);
-
     void recordCancelReason(String planId, String remark);
 
 }
