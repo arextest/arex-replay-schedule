@@ -6,11 +6,10 @@ import com.arextest.model.replay.QueryReplayResultRequestType;
 import com.arextest.model.replay.QueryReplayResultResponseType;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.model.response.ResponseStatusType;
-import com.arextest.schedule.comparer.CategoryComparisonHolder;
-import com.arextest.schedule.serialization.ZstdJacksonSerializer;
-
 import com.arextest.schedule.client.HttpWepServiceApiClient;
+import com.arextest.schedule.comparer.CategoryComparisonHolder;
 import com.arextest.schedule.comparer.CompareItem;
+import com.arextest.schedule.serialization.ZstdJacksonSerializer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,7 +19,6 @@ import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 
 @Slf4j
@@ -70,7 +68,7 @@ public final class PrepareCompareSourceRemoteLoader {
         for (int i = 0; i < resultHolderList.size(); i++) {
             ListResultHolder stringListResultHolder = resultHolderList.get(i);
             categoryType = stringListResultHolder.getCategoryType();
-            if (categoryType == null || categoryType.isSkipComparison() || checkDecodeType(categoryType)) {
+            if (categoryType == null || categoryType.isSkipComparison()) {
                 continue;
             }
 
@@ -83,13 +81,6 @@ public final class PrepareCompareSourceRemoteLoader {
             resultHolder.setReplayResult(replayResultList);
         }
         return decodedListResult;
-    }
-
-    public boolean checkDecodeType(MockCategoryType type) {
-        if (Objects.equals(type, MockCategoryType.Q_MESSAGE_CONSUMER)) {
-            return true;
-        }
-        return false;
     }
 
     private List<CompareItem> zstdDeserialize(List<String> base64List) {
