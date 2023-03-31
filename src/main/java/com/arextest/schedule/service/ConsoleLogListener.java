@@ -1,10 +1,12 @@
 package com.arextest.schedule.service;
 
 
+import com.arextest.schedule.comparer.CategoryComparisonHolder;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.sender.ReplaySendResult;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -24,4 +26,5 @@ public interface ConsoleLogListener {
 
     void recordCancelReason(String planId, String remark);
 
+    void recordComparison(ReplayActionCaseItem caseItem, List<CategoryComparisonHolder> replayResult);
 }

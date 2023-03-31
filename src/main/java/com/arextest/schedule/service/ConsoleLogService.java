@@ -1,5 +1,6 @@
 package com.arextest.schedule.service;
 
+import com.arextest.schedule.comparer.CategoryComparisonHolder;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.sender.ReplaySendResult;
@@ -81,4 +82,12 @@ public class ConsoleLogService {
         return null;
     }
 
+    public void recordComparisonEvent(ReplayActionCaseItem caseItem, List<CategoryComparisonHolder> replayResult, String logType) {
+        ConsoleLogListener listener = find(logType);
+        if (listener == null) {
+            LOGGER.warn("Could not found consoleLogEvent for {}", logType);
+            return;
+        }
+        listener.recordComparison(caseItem, replayResult);
+    }
 }

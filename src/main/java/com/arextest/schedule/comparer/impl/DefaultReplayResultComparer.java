@@ -3,7 +3,6 @@ package com.arextest.schedule.comparer.impl;
 
 import com.arextest.diff.model.CompareOptions;
 import com.arextest.diff.model.CompareResult;
-import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.comparer.*;
@@ -21,8 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.arextest.schedule.common.CommonConstant.*;
-
 @Slf4j
 @AllArgsConstructor
 public class DefaultReplayResultComparer implements ReplayResultComparer {
@@ -36,6 +33,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     private final ConsoleLogService consoleLogService;
 
     private static List<String> ignoreInDataBaseMocker = Collections.singletonList("body");
+    private static long EMPTY_TIME = 0l;
 
     static {
         COMPARE_INSTANCE.getGlobalOptions().putNameToLower(true).putNullEqualsEmpty(true);
@@ -51,9 +49,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
             List<CategoryComparisonHolder> waitCompareMap = buildWaitCompareList(caseItem, useReplayId);
             if (CollectionUtils.isEmpty(waitCompareMap)) {
-                if (!useReplayId) {
-                    return comparisonOutputWriter.writeQmqCompareResult(caseItem);
-                }
                 caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.ERROR.getValue());
                 comparisonOutputWriter.writeIncomparable(caseItem, CaseSendStatusType.REPLAY_RESULT_NOT_FOUND.name());
                 caseItem.setSendStatus(CaseSendStatusType.REPLAY_RESULT_NOT_FOUND.getValue());
@@ -67,20 +62,17 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 compareReplayResult(bindHolder, compareConfig, caseItem, replayCompareResults);
             }
             long writeBeginTime = System.currentTimeMillis();
+            if (CollectionUtils.isEmpty(replayCompareResults) && !useReplayId) {
+                return comparisonOutputWriter.writeQmqCompareResult(caseItem);
+            }
             boolean write = comparisonOutputWriter.write(replayCompareResults);
             long timeUsed = System.currentTimeMillis() - writeBeginTime;
             consoleLogService.onConsoleLogEvent(timeUsed, LogType.PUSH_COMPARE.getValue(), caseItem.getPlanItemId(), caseItem.getParent());
-            long compareFailCount =
-                    replayCompareResults.stream().filter(result -> result.getDiffResultCode() != DiffResultCode.COMPARED_WITHOUT_DIFFERENCE).count();
-            if (compareFailCount > 0l) {
-                consoleLogService.staticsFailSizeEvent(replayCompareResults.get(0).getPlanId(), ONE_FAIL_SIZE, FailReasonType.COMPARE_FAIL.getValue(),
-                        LogType.STATICS_FAIL_REASON.getValue());
-            }
             return write;
         } catch (Throwable throwable) {
             caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.ERROR.getValue());
             comparisonOutputWriter.writeIncomparable(caseItem, throwable.getMessage());
-            caseItem.setSendErrorMessage(truncateMessage(throwable.getMessage()));
+            caseItem.setSendErrorMessage(throwable.getMessage());
             consoleLogService.staticsFailDetailReasonEvent(caseItem, FailReasonType.OTHER.getValue(), LogType.STATICS_FAIL_REASON.getValue());
             LOGGER.error("compare case result error:{} ,case item: {}", throwable.getMessage(), caseItem, throwable);
             MDCTracer.clear();
@@ -92,10 +84,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             consoleLogService.onConsoleLogEvent(System.currentTimeMillis() - beginTime, LogType.COMPARE.getValue(), null, caseItem.getParent());
             MDCTracer.clear();
         }
-    }
-
-    private String truncateMessage(String message) {
-        return message.substring(START_INDEX, END_INDEX);
     }
 
     private void compareReplayResult(CategoryComparisonHolder bindHolder,
@@ -128,30 +116,23 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             }
             List<CompareItem> recordContentList = stringListEntry.getValue();
             if (resultMap.containsKey(key)) {
-                List<String> recordContentGroupList =
-                        recordContentList.stream().map(CompareItem::getCompareContent).collect(Collectors.toList());
-                List<String> resultContentGroupList =
-                        resultMap.get(key).stream().map(CompareItem::getCompareContent).collect(Collectors.toList());
-                CompareSDK.arraySort(recordContentGroupList, resultContentGroupList);
-//                List<String> recordContentGroupList = Lists.newArrayList();
-//                List<String> resultContentGroupList = Lists.newArrayList();
-//                List<CompareItem> resultCompareItems = resultMap.get(key);
-//                if (StringUtils.isEmpty(recordContentList.get(0).getKey())) {
-//                    recordContentGroupList =
-//                            recordContentList.stream().map(CompareItem::getCompareContent).collect(Collectors.toList());
-//                    resultContentGroupList =
-//                            resultCompareItems.stream().map(CompareItem::getCompareContent).collect(Collectors.toList());
-//                    CompareSDK.arraySort(recordContentGroupList, resultContentGroupList);
-//                } else {
-//                    arraySort(recordContentList, resultCompareItems, recordContentGroupList, resultContentGroupList);
-//                }
-                for (int i = 0; i < recordContentGroupList.size(); i++) {
-                    String source = recordContentGroupList.get(i);
-                    String target = resultContentGroupList.get(i);
-                    CompareResult comparedResult = compareProcess(category, source, target, compareConfig);
+                List<CompareItem> recordCompareGroupList = new ArrayList<>();
+                List<CompareItem> resultCompareGroupList = new ArrayList<>();
+                List<CompareItem> missReplayContentList = new ArrayList<>();
+                List<CompareItem> missRecordContentList = new ArrayList<>();
+                arraySort(recordContentList, resultMap.get(key), recordCompareGroupList, resultCompareGroupList,
+                            missReplayContentList, missRecordContentList);
+                for (int i = 0; i < recordCompareGroupList.size(); i++) {
+                    CompareItem source = recordCompareGroupList.get(i);
+                    CompareItem target = resultCompareGroupList.get(i);
+                    CompareResult comparedResult = compareProcess(category, source.getCompareContent(), target.getCompareContent(), compareConfig);
                     ReplayCompareResult resultNew = ReplayCompareResult.createFrom(caseItem);
-                    mergeResult(key, category, resultNew, comparedResult);
+                    mergeResult(key, category, resultNew, comparedResult, source.getCompareCreateTime(), target.getCompareCreateTime());
                     compareResultNewList.add(resultNew);
+                }
+                if (CollectionUtils.isNotEmpty(missReplayContentList) || CollectionUtils.isNotEmpty(missRecordContentList)) {
+                    addMissReplayResult(category, compareConfig, missReplayContentList, caseItem, compareResultNewList);
+                    addMissRecordResult(category, compareConfig, missRecordContentList, caseItem, compareResultNewList);
                 }
                 continue;
             }
@@ -159,21 +140,34 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
     }
 
-//    private void arraySort(List<CompareItem> recordContentList, List<CompareItem> resultCompareItems,
-//                           List<String> recordContentGroupList, List<String> resultContentGroupList) {
-//        Map<String, List<CompareItem>> resultMapFromKey =
-//                resultCompareItems.stream().collect(Collectors.groupingBy(CompareItem::getKey));
-//        for (CompareItem recordCompareItem: recordContentList) {
-//            String key = recordCompareItem.getKey();
-//            if (resultMapFromKey.containsKey(key)) {
-//                List<CompareItem> compareItems = resultMapFromKey.get(key);
-//                for (CompareItem compareItem : compareItems) {
-//                    recordContentGroupList.add(recordCompareItem.getCompareContent());
-//                    resultContentGroupList.add(compareItem.getCompareContent());
-//                }
-//            }
-//        }
-//    }
+    private void arraySort(List<CompareItem> recordContentList, List<CompareItem> resultCompareItems,
+                           List<CompareItem> recordContentGroupList, List<CompareItem> resultContentGroupList,
+                           List<CompareItem> missReplayContentList, List<CompareItem> missRecordContentList) {
+        CompareItem compareItem = resultCompareItems.get(0);
+        if (StringUtils.isEmpty(compareItem.getCompareKey())) {
+            recordContentGroupList.add(recordContentList.get(0));
+            resultContentGroupList.add(compareItem);
+            return;
+        }
+        Map<String, List<CompareItem>> resultMapFromKey =
+                resultCompareItems.stream().collect(Collectors.groupingBy(CompareItem::getCompareKey));
+        for (CompareItem recordCompareItem : recordContentList) {
+            String key = recordCompareItem.getCompareKey();
+            if (resultMapFromKey.containsKey(key)) {
+                List<CompareItem> compareItems = resultMapFromKey.get(key);
+                for (int i = 0; i < compareItems.size(); i++) {
+                    if (i == 0) {
+                        recordContentGroupList.add(recordCompareItem);
+                        resultContentGroupList.add(compareItems.get(i));
+                    } else {
+                        missRecordContentList.add(compareItems.get(i));
+                    }
+                }
+            } else {
+                missReplayContentList.add(recordCompareItem);
+            }
+        }
+    }
 
     private CompareResult compareProcess(String category, String record, String result,
                                          ReplayComparisonConfig compareConfig) {
@@ -208,7 +202,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             }
             return buildWaitCompareList(sourceResponse, targetResponse);
         }
-        return sourceRemoteLoader.getReplayResult(recordId, targetResultId);
+        List<CategoryComparisonHolder> replayResult = sourceRemoteLoader.getReplayResult(recordId, targetResultId);
+        consoleLogService.recordComparisonEvent(caseItem, replayResult, LogType.COMPARE.getValue());
+        return replayResult;
     }
 
     private List<CategoryComparisonHolder> buildWaitCompareList(List<CategoryComparisonHolder> sourceResult,
@@ -243,13 +239,15 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     }
 
     private void mergeResult(String operation, String category, ReplayCompareResult diffResult,
-                             CompareResult sdkResult) {
+                             CompareResult sdkResult, long recordTime, long replayTime) {
         diffResult.setOperationName(operation);
         diffResult.setCategoryName(category);
         diffResult.setBaseMsg(sdkResult.getProcessedBaseMsg());
         diffResult.setTestMsg(sdkResult.getProcessedTestMsg());
         diffResult.setLogs(sdkResult.getLogs());
         diffResult.setDiffResultCode(sdkResult.getCode());
+        diffResult.setRecordTime(recordTime);
+        diffResult.setReplayTime(replayTime);
     }
 
     private void addMissReplayResult(String category, ReplayComparisonConfig compareConfig,
@@ -267,7 +265,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             }
             CompareResult comparedResult = compareProcess(category, item.getCompareContent(), null, compareConfig);
             ReplayCompareResult resultItem = ReplayCompareResult.createFrom(caseItem);
-            mergeResult(operation, category, resultItem, comparedResult);
+            mergeResult(operation, category, resultItem, comparedResult, item.getCompareCreateTime(), EMPTY_TIME);
             resultItem.setServiceName(item.getCompareService());
             resultList.add(resultItem);
         }
@@ -287,7 +285,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             }
             CompareResult comparedResult = compareProcess(category, null, item.getCompareContent(), compareConfig);
             ReplayCompareResult resultItem = ReplayCompareResult.createFrom(caseItem);
-            mergeResult(operation, category, resultItem, comparedResult);
+            mergeResult(operation, category, resultItem, comparedResult, EMPTY_TIME, item.getCompareCreateTime());
             resultItem.setServiceName(item.getCompareService());
             resultList.add(resultItem);
         }
