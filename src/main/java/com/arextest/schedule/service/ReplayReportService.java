@@ -35,8 +35,8 @@ public final class ReplayReportService implements ComparisonWriter {
     private String pushReplayCompareResultUrl;
     @Value("${arex.report.push.replayStatus.url}")
     private String pushReplayStatusUrl;
-    @Resource
-    private ConsoleLogService consoleLogService;
+
+    private static final String CASE_COUNT_LIMIT_NAME = "caseCountLimit";
 
     private static final String CASE_COUNT_LIMIT_NAME = "caseCountLimit";
 
