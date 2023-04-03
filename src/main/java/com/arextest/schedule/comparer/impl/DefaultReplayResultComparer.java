@@ -120,8 +120,15 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 List<CompareItem> resultCompareGroupList = new ArrayList<>();
                 List<CompareItem> missReplayContentList = new ArrayList<>();
                 List<CompareItem> missRecordContentList = new ArrayList<>();
-                arraySort(recordContentList, resultMap.get(key), recordCompareGroupList, resultCompareGroupList,
+                List<CompareItem> compareItems = resultMap.get(key);
+                boolean entryCategory = StringUtils.isEmpty(compareItems.get(0).getCompareKey());
+                if (entryCategory) {
+                    recordCompareGroupList.add(recordContentList.get(0));
+                    resultCompareGroupList.add(compareItems.get(0));
+                } else {
+                    arraySort(recordContentList, compareItems, recordCompareGroupList, resultCompareGroupList,
                             missReplayContentList, missRecordContentList);
+                }
                 for (int i = 0; i < recordCompareGroupList.size(); i++) {
                     CompareItem source = recordCompareGroupList.get(i);
                     CompareItem target = resultCompareGroupList.get(i);
@@ -130,7 +137,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                     mergeResult(key, category, resultNew, comparedResult, source.getCompareCreateTime(), target.getCompareCreateTime());
                     compareResultNewList.add(resultNew);
                 }
-                if (CollectionUtils.isNotEmpty(missReplayContentList) || CollectionUtils.isNotEmpty(missRecordContentList)) {
+                if (!entryCategory && (CollectionUtils.isNotEmpty(missReplayContentList) ||
+                        CollectionUtils.isNotEmpty(missRecordContentList))) {
                     addMissReplayResult(category, compareConfig, missReplayContentList, caseItem, compareResultNewList);
                     addMissRecordResult(category, compareConfig, missRecordContentList, caseItem, compareResultNewList);
                 }
@@ -143,12 +151,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     private void arraySort(List<CompareItem> recordContentList, List<CompareItem> resultCompareItems,
                            List<CompareItem> recordContentGroupList, List<CompareItem> resultContentGroupList,
                            List<CompareItem> missReplayContentList, List<CompareItem> missRecordContentList) {
-        CompareItem compareItem = resultCompareItems.get(0);
-        if (StringUtils.isEmpty(compareItem.getCompareKey())) {
-            recordContentGroupList.add(recordContentList.get(0));
-            resultContentGroupList.add(compareItem);
-            return;
-        }
         Map<String, List<CompareItem>> resultMapFromKey =
                 resultCompareItems.stream().collect(Collectors.groupingBy(CompareItem::getCompareKey));
         for (CompareItem recordCompareItem : recordContentList) {
