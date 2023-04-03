@@ -54,8 +54,6 @@ public class PlanProduceService {
     private CacheProvider redisCacheProvider;
     @Resource
     private ConsoleLogService consoleLogService;
-    @Resource
-    private ScheduleConfigurationService scheduleConfigurationService;
 
     public CommonResponse createPlan(BuildReplayPlanRequest request) {
         String appId = request.getAppId();
@@ -78,7 +76,7 @@ public class PlanProduceService {
         ReplayPlan replayPlan = build(request, planContext);
         replayPlan.setReplayActionItemList(replayActionItemList);
         ReplayParentBinder.setupReplayActionParent(replayActionItemList, replayPlan);
-        int planCaseCount = planBuilder.buildReplayCaseCount(replayActionItemList, replayPlan.getCaseCountLimit());
+        int planCaseCount = planBuilder.buildReplayCaseCount(replayActionItemList);
         if (planCaseCount == 0) {
             return CommonResponse.badResponse("loaded empty case,try change time range submit again ");
         }
@@ -130,7 +128,15 @@ public class PlanProduceService {
             replayPlan.setCaseRecordVersion(replayApp.getAgentExtVersion());
             replayPlan.setAppName(replayApp.getAppName());
         }
-        scheduleConfigurationService.buildReplayConfiguration(replayPlan);
+        ConfigurationService.ScheduleConfiguration schedule = configurationService.schedule(replayPlan.getAppId());
+        if (schedule != null) {
+            replayPlan.setReplaySendMaxQps(schedule.getSendMaxQps());
+        }
+        if (request.getCaseCountLimit() <= 0) {
+            replayPlan.setCaseCountLimit(OPERATION_MAX_CASE_COUNT);
+        } else {
+            replayPlan.setCaseCountLimit(request.getCaseCountLimit());
+        }
         return replayPlan;
     }
 

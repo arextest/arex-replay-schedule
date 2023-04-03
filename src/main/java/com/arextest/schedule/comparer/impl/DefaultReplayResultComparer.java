@@ -33,7 +33,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     private final ConsoleLogService consoleLogService;
 
     private static List<String> ignoreInDataBaseMocker = Collections.singletonList("body");
-    private static long EMPTY_TIME = 0l;
+    private static long MAX_TIME = Long.MAX_VALUE;
 
     static {
         COMPARE_INSTANCE.getGlobalOptions().putNameToLower(true).putNullEqualsEmpty(true);
@@ -267,7 +267,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             }
             CompareResult comparedResult = compareProcess(category, item.getCompareContent(), null, compareConfig);
             ReplayCompareResult resultItem = ReplayCompareResult.createFrom(caseItem);
-            mergeResult(operation, category, resultItem, comparedResult, item.getCompareCreateTime(), EMPTY_TIME);
+            mergeResult(operation, category, resultItem, comparedResult, item.getCompareCreateTime(), MAX_TIME);
             resultItem.setServiceName(item.getCompareService());
             resultList.add(resultItem);
         }
@@ -287,7 +287,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             }
             CompareResult comparedResult = compareProcess(category, null, item.getCompareContent(), compareConfig);
             ReplayCompareResult resultItem = ReplayCompareResult.createFrom(caseItem);
-            mergeResult(operation, category, resultItem, comparedResult, EMPTY_TIME, item.getCompareCreateTime());
+            mergeResult(operation, category, resultItem, comparedResult, MAX_TIME, item.getCompareCreateTime());
             resultItem.setServiceName(item.getCompareService());
             resultList.add(resultItem);
         }

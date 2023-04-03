@@ -43,8 +43,9 @@ public class ReplayCaseRemoteLoadService {
     private ConsoleLogService consoleLogService;
 
 
-    public int queryCaseCount(ReplayActionItem replayActionItem, Integer caseCountLimit) {
+    public int queryCaseCount(ReplayActionItem replayActionItem) {
         try {
+            int caseCountLimit = replayActionItem.getParent().getCaseCountLimit();
             PagedRequestType request = buildPagingSearchCaseRequest(replayActionItem, caseCountLimit);
             QueryCaseCountResponseType responseType =
                     wepApiClientService.jsonPost(countByRangeUrl, request, QueryCaseCountResponseType.class);

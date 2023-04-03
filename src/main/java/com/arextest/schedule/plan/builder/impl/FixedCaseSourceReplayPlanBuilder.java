@@ -81,7 +81,7 @@ final class FixedCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
     }
 
     @Override
-    int queryCaseCount(ReplayActionItem actionItem, Integer caseCountLimit) {
+    int queryCaseCount(ReplayActionItem actionItem) {
         return actionItem.getCaseItemList().size();
     }
 }
