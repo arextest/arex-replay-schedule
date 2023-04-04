@@ -2,19 +2,19 @@ package com.arextest.schedule.service;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.model.mock.Mocker;
+import com.arextest.schedule.common.CommonConstant;
+import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.progress.ProgressEvent;
-import com.arextest.schedule.progress.ProgressTracer;
-import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.progress.ProgressEvent;
+import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
-import com.arextest.schedule.common.CommonConstant;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
@@ -184,6 +184,7 @@ public class ReplayCaseTransmitService {
             } catch (Throwable throwable) {
                 groupSentLatch.countDown();
                 semaphore.release(false);
+                replayActionCaseItem.buildParentErrorMessage(throwable.getMessage());
                 LOGGER.error("send group to remote host error:{} ,case item id:{}", throwable.getMessage(),
                         replayActionCaseItem.getId(), throwable);
                 doSendFailedAsFinish(replayActionCaseItem, CaseSendStatusType.EXCEPTION_FAILED);

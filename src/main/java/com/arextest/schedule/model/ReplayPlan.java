@@ -60,4 +60,7 @@ public class ReplayPlan {
     @JsonIgnore
     private String appName;
 
+    @JsonIgnore
+    private String errorMessage;
+
 }

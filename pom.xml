@@ -122,8 +122,8 @@
             </dependency>
             <dependency>
                 <groupId>com.arextest</groupId>
-                <artifactId>arex-report-model-api</artifactId>
-                <version>0.1.1</version>
+                <artifactId>arex-web-model-contract</artifactId>
+                <version>0.0.0.1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.arextest</groupId>
@@ -193,7 +193,7 @@
         </dependency>
         <dependency>
             <groupId>com.arextest</groupId>
-            <artifactId>arex-report-model-api</artifactId>
+            <artifactId>arex-web-model-contract</artifactId>
         </dependency>
         <dependency>
             <groupId>com.arextest</groupId>

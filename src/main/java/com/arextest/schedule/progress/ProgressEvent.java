@@ -17,6 +17,8 @@ public interface ProgressEvent {
 
     void onReplayPlanFinish(ReplayPlan replayPlan, ReplayStatusType reason);
 
+    void onReplayPlanInterrupt(ReplayPlan replayPlan, ReplayStatusType reason);
+
     void onActionComparisonFinish(ReplayActionItem actionItem);
 
     void onActionBeforeSend(ReplayActionItem actionItem);

@@ -6,10 +6,10 @@ import com.arextest.common.model.response.Response;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.model.mock.MockCategoryType;
-import com.arextest.report.model.api.contracts.ChangeReplayStatusRequestType;
-import com.arextest.report.model.api.contracts.PushCompareResultsRequestType;
-import com.arextest.report.model.api.contracts.ReportInitialRequestType;
-import com.arextest.report.model.api.contracts.common.CompareResult;
+import com.arextest.web.model.contract.contracts.ChangeReplayStatusRequestType;
+import com.arextest.web.model.contract.contracts.PushCompareResultsRequestType;
+import com.arextest.web.model.contract.contracts.ReportInitialRequestType;
+import com.arextest.web.model.contract.contracts.common.CompareResult;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.comparer.ComparisonWriter;
@@ -95,23 +95,25 @@ public final class ReplayReportService implements ComparisonWriter {
         LOGGER.info("initReport response:{}", response);
     }
 
-    public void pushActionStatus(String planId, ReplayStatusType statusType, String actionId) {
+    public void pushActionStatus(String planId, ReplayStatusType statusType, String actionId, String errorMessage) {
         ChangeReplayStatusRequestType requestType = new ChangeReplayStatusRequestType();
         ChangeReplayStatusRequestType.ReplayItem replayItem = new ChangeReplayStatusRequestType.ReplayItem();
         replayItem.setPlanItemId(actionId);
         replayItem.setStatus(statusType.getValue());
         requestType.setPlanId(planId);
         requestType.setItems(Collections.singletonList(replayItem));
+        requestType.setErrorMessage(errorMessage);
         Object response = httpWepServiceApiClient.jsonPost(pushReplayStatusUrl, requestType,
                 GenericResponseType.class);
         LOGGER.info("push action status actionId: {},status: {}, result:{}", actionId,
                 statusType, response);
     }
 
-    public void pushPlanStatus(String planId, ReplayStatusType statusType) {
+    public void pushPlanStatus(String planId, ReplayStatusType statusType, String errorMessage) {
         ChangeReplayStatusRequestType requestType = new ChangeReplayStatusRequestType();
         requestType.setPlanId(planId);
         requestType.setStatus(statusType.getValue());
+        requestType.setErrorMessage(errorMessage);
         Object response = httpWepServiceApiClient.jsonPost(pushReplayStatusUrl, requestType,
                 GenericResponseType.class);
         LOGGER.info("push plan status planId: {},status: {}, result:{}", planId, statusType, response);
