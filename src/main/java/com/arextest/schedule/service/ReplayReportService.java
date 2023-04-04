@@ -100,9 +100,9 @@ public final class ReplayReportService implements ComparisonWriter {
         ChangeReplayStatusRequestType.ReplayItem replayItem = new ChangeReplayStatusRequestType.ReplayItem();
         replayItem.setPlanItemId(actionId);
         replayItem.setStatus(statusType.getValue());
+        replayItem.setErrorMessage(errorMessage);
         requestType.setPlanId(planId);
         requestType.setItems(Collections.singletonList(replayItem));
-        requestType.setErrorMessage(errorMessage);
         Object response = httpWepServiceApiClient.jsonPost(pushReplayStatusUrl, requestType,
                 GenericResponseType.class);
         LOGGER.info("push action status actionId: {},status: {}, result:{}", actionId,
