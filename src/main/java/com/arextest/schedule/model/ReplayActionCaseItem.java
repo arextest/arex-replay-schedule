@@ -94,10 +94,10 @@ public class ReplayActionCaseItem {
 
     public void buildParentErrorMessage(String otherErrorMessage) {
         this.parent.setErrorMessage(
-                Strings.isEmpty(this.sendErrorMessage) ? this.sendErrorMessage : otherErrorMessage
+                Strings.isNotEmpty(this.sendErrorMessage) ? this.sendErrorMessage : otherErrorMessage
         );
         this.parent.getParent().setErrorMessage(
-                Strings.isEmpty(this.sendErrorMessage) ? this.sendErrorMessage : otherErrorMessage
+                Strings.isNotEmpty(this.sendErrorMessage) ? this.sendErrorMessage : otherErrorMessage
         );
     }
 }
