@@ -6,7 +6,7 @@
     <packaging>${packagingType}</packaging>
     <groupId>com.arextest</groupId>
     <artifactId>arex-schedule-web-api</artifactId>
-    <version>1.0.20</version>
+    <version>1.0.21</version>
     <name>${project.groupId}:${project.artifactId}</name>
     <description>AREX schedule is used for replay.</description>
     <url>https://github.com/arextest/arex-replay-schedule</url>
@@ -123,7 +123,7 @@
             <dependency>
                 <groupId>com.arextest</groupId>
                 <artifactId>arex-web-model-contract</artifactId>
-                <version>0.0.0.1-SNAPSHOT</version>
+                <version>0.2.7.1</version>
             </dependency>
             <dependency>
                 <groupId>com.arextest</groupId>
