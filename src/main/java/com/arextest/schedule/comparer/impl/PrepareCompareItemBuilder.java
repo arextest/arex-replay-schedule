@@ -27,18 +27,15 @@ final class PrepareCompareItemBuilder {
         if (StringUtils.isEmpty(operationKey)) {
             operationKey = instance.getOperationName();
         }
-        long compareCreateTime = instance.getCreationTime();
         String body;
-        String compareKey = instance.getId();
         if (categoryType.isEntryPoint()) {
             body = Objects.isNull(instance.getTargetResponse()) ? null : instance.getTargetResponse().getBody();
-            compareKey = null;
         } else if (Objects.equals(categoryType.getName(), MockCategoryType.DATABASE.getName())) {
             body = this.buildAttributes(instance.getTargetRequest()).toString();
         } else {
             body = Objects.isNull(instance.getTargetRequest()) ? null : instance.getTargetRequest().getBody();
         }
-        return new CompareItemImpl(operationKey, body, compareKey, compareCreateTime);
+        return new CompareItemImpl(operationKey, body);
     }
 
     private String operationName(MockCategoryType categoryType, Target target) {
@@ -77,19 +74,15 @@ final class PrepareCompareItemBuilder {
         private final String compareMessage;
         private final String compareOperation;
         private final String compareService;
-        private final String compareKey;
-        private final long compareCreateTime;
 
-        private CompareItemImpl(String compareOperation, String compareMessage, String compareKey, long compareCreateTime) {
-            this(compareOperation, compareMessage, null, compareKey, compareCreateTime);
+        private CompareItemImpl(String compareOperation, String compareMessage) {
+            this(compareOperation, compareMessage, null);
         }
 
-        private CompareItemImpl(String compareOperation, String compareMessage, String compareService, String compareKey,long compareCreateTime) {
+        private CompareItemImpl(String compareOperation, String compareMessage, String compareService) {
             this.compareMessage = compareMessage;
             this.compareOperation = compareOperation;
             this.compareService = compareService;
-            this.compareKey = compareKey;
-            this.compareCreateTime = compareCreateTime;
         }
 
         @Override
@@ -105,16 +98,6 @@ final class PrepareCompareItemBuilder {
         @Override
         public String getCompareService() {
             return compareService;
-        }
-
-        @Override
-        public String getCompareKey() {
-            return compareKey;
-        }
-
-        @Override
-        public long getCompareCreateTime() {
-            return compareCreateTime;
         }
     }
 }

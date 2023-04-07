@@ -4,7 +4,12 @@ package com.arextest.schedule.service;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker.Target;
-import com.arextest.model.replay.*;
+import com.arextest.model.replay.PagedRequestType;
+import com.arextest.model.replay.PagedResponseType;
+import com.arextest.model.replay.QueryCaseCountResponseType;
+import com.arextest.model.replay.ViewRecordRequestType;
+import com.arextest.model.replay.ViewRecordResponseType;
+import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.*;
@@ -12,6 +17,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -151,7 +157,7 @@ public class ReplayCaseRemoteLoadService {
         return caseItemList;
     }
 
-    private PagedRequestType buildPagingSearchCaseRequest(ReplayActionItem replayActionItem, Integer caseCountLimit) {
+    private PagedRequestType buildPagingSearchCaseRequest(ReplayActionItem replayActionItem, int caseCountLimit) {
         ReplayPlan parent = replayActionItem.getParent();
         PagedRequestType requestType = new PagedRequestType();
         requestType.setAppId(parent.getAppId());

@@ -36,7 +36,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     private static long MAX_TIME = Long.MAX_VALUE;
 
     static {
-        COMPARE_INSTANCE.getGlobalOptions().putNameToLower(true).putNullEqualsEmpty(true);
+        COMPARE_INSTANCE.getGlobalOptions().putNameToLower(true).putNullEqualsEmpty(true).putIgnoredTimePrecision(1000);
     }
 
     @Override

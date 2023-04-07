@@ -1,9 +1,9 @@
 package com.arextest.schedule.service;
 
 import com.arextest.common.utils.CompressionUtils;
-import com.arextest.schedule.model.ReplayCompareResult;
 import com.arextest.web.model.contract.contracts.common.CompareResult;
 import com.arextest.web.model.contract.contracts.common.NodeEntity;
+import com.arextest.schedule.model.ReplayCompareResult;
 import org.apache.commons.collections4.CollectionUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
