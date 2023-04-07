@@ -6,7 +6,7 @@ import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
-import org.apache.logging.log4j.util.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
 
@@ -94,10 +94,10 @@ public class ReplayActionCaseItem {
 
     public void buildParentErrorMessage(String otherErrorMessage) {
         this.parent.setErrorMessage(
-                Strings.isNotEmpty(this.sendErrorMessage) ? this.sendErrorMessage : otherErrorMessage
+                StringUtils.isNotEmpty(this.sendErrorMessage) ? this.sendErrorMessage : otherErrorMessage
         );
         this.parent.getParent().setErrorMessage(
-                Strings.isNotEmpty(this.sendErrorMessage) ? this.sendErrorMessage : otherErrorMessage
+                StringUtils.isNotEmpty(this.sendErrorMessage) ? this.sendErrorMessage : otherErrorMessage
         );
     }
 }
