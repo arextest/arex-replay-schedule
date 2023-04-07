@@ -52,13 +52,14 @@ public class ReplayCaseRemoteLoadService {
 
     public int queryCaseCount(ReplayActionItem replayActionItem) {
         try {
-            PagedRequestType request = buildPagingSearchCaseRequest(replayActionItem);
+            int caseCountLimit = replayActionItem.getParent().getCaseCountLimit();
+            PagedRequestType request = buildPagingSearchCaseRequest(replayActionItem, caseCountLimit);
             QueryCaseCountResponseType responseType =
                     wepApiClientService.jsonPost(countByRangeUrl, request, QueryCaseCountResponseType.class);
             if (responseType == null || responseType.getResponseStatusType().hasError()) {
                 return EMPTY_SIZE;
             }
-            return Math.min(CommonConstant.OPERATION_MAX_CASE_COUNT, (int) responseType.getCount());
+            return Math.min(caseCountLimit, (int) responseType.getCount());
         } catch (Exception e) {
             LOGGER.error("query case count error,request: {} ", replayActionItem.getId(), e);
         }
@@ -111,8 +112,8 @@ public class ReplayCaseRemoteLoadService {
     }
 
     public List<ReplayActionCaseItem> pagingLoad(long beginTimeMills, long endTimeMills,
-                                                 ReplayActionItem replayActionItem) {
-        PagedRequestType requestType = buildPagingSearchCaseRequest(replayActionItem);
+                                                 ReplayActionItem replayActionItem, int caseCountLimit) {
+        PagedRequestType requestType = buildPagingSearchCaseRequest(replayActionItem, caseCountLimit);
         requestType.setBeginTime(beginTimeMills);
         requestType.setEndTime(endTimeMills);
         PagedResponseType responseType;
@@ -154,11 +155,11 @@ public class ReplayCaseRemoteLoadService {
         return caseItemList;
     }
 
-    private PagedRequestType buildPagingSearchCaseRequest(ReplayActionItem replayActionItem) {
+    private PagedRequestType buildPagingSearchCaseRequest(ReplayActionItem replayActionItem, int caseCountLimit) {
         ReplayPlan parent = replayActionItem.getParent();
         PagedRequestType requestType = new PagedRequestType();
         requestType.setAppId(parent.getAppId());
-        requestType.setPageSize(CommonConstant.MAX_PAGE_SIZE);
+        requestType.setPageSize(Math.min(CommonConstant.MAX_PAGE_SIZE, caseCountLimit));
         requestType.setEnv(parent.getCaseSourceType());
         requestType.setBeginTime(parent.getCaseSourceFrom().getTime());
         requestType.setEndTime(parent.getCaseSourceTo().getTime());

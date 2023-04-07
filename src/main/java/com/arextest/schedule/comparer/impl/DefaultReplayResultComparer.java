@@ -45,7 +45,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     private static List<String> ignoreInDataBaseMocker = Collections.singletonList("body");
 
     static {
-        COMPARE_INSTANCE.getGlobalOptions().putNameToLower(true).putNullEqualsEmpty(true);
+        COMPARE_INSTANCE.getGlobalOptions().putNameToLower(true).putNullEqualsEmpty(true).putIgnoredTimePrecision(1000);
     }
 
     @Override

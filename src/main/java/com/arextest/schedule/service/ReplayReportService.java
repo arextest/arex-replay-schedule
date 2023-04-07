@@ -6,10 +6,10 @@ import com.arextest.common.model.response.Response;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.model.mock.MockCategoryType;
-import com.arextest.report.model.api.contracts.ChangeReplayStatusRequestType;
-import com.arextest.report.model.api.contracts.PushCompareResultsRequestType;
-import com.arextest.report.model.api.contracts.ReportInitialRequestType;
-import com.arextest.report.model.api.contracts.common.CompareResult;
+import com.arextest.web.model.contract.contracts.ChangeReplayStatusRequestType;
+import com.arextest.web.model.contract.contracts.PushCompareResultsRequestType;
+import com.arextest.web.model.contract.contracts.ReportInitialRequestType;
+import com.arextest.web.model.contract.contracts.common.CompareResult;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.comparer.ComparisonWriter;
@@ -20,9 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by wang_yc on 2021/10/19
@@ -39,12 +37,17 @@ public final class ReplayReportService implements ComparisonWriter {
     @Value("${arex.report.push.replayStatus.url}")
     private String pushReplayStatusUrl;
 
+    private static final String CASE_COUNT_LIMIT_NAME = "caseCountLimit";
+
     public void initReportInfo(ReplayPlan replayPlan) {
         ReportInitialRequestType requestType = new ReportInitialRequestType();
         requestType.setPlanId(replayPlan.getId());
         requestType.setPlanName(replayPlan.getPlanName());
         requestType.setCreator(replayPlan.getOperator());
         requestType.setTotalCaseCount(replayPlan.getCaseTotalCount());
+        Map<String, Object> customTags = new HashMap<>();
+        customTags.put(CASE_COUNT_LIMIT_NAME, replayPlan.getCaseCountLimit());
+        requestType.setCustomTags(customTags);
         // for case env
         ReportInitialRequestType.CaseSourceEnvironment caseSourceEnv;
         caseSourceEnv = new ReportInitialRequestType.CaseSourceEnvironment();
