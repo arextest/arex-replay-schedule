@@ -116,31 +116,18 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             }
             List<CompareItem> recordContentList = stringListEntry.getValue();
             if (resultMap.containsKey(key)) {
-                List<CompareItem> recordCompareGroupList = new ArrayList<>();
-                List<CompareItem> resultCompareGroupList = new ArrayList<>();
-                List<CompareItem> missReplayContentList = new ArrayList<>();
-                List<CompareItem> missRecordContentList = new ArrayList<>();
-                List<CompareItem> compareItems = resultMap.get(key);
-                boolean entryCategory = StringUtils.isEmpty(compareItems.get(0).getCompareKey());
-                if (entryCategory) {
-                    recordCompareGroupList.add(recordContentList.get(0));
-                    resultCompareGroupList.add(compareItems.get(0));
-                } else {
-                    arraySort(recordContentList, compareItems, recordCompareGroupList, resultCompareGroupList,
-                            missReplayContentList, missRecordContentList);
-                }
-                for (int i = 0; i < recordCompareGroupList.size(); i++) {
-                    CompareItem source = recordCompareGroupList.get(i);
-                    CompareItem target = resultCompareGroupList.get(i);
-                    CompareResult comparedResult = compareProcess(category, source.getCompareContent(), target.getCompareContent(), compareConfig);
+                List<String> recordContentGroupList =
+                        recordContentList.stream().map(CompareItem::getCompareContent).collect(Collectors.toList());
+                List<String> resultContentGroupList =
+                        resultMap.get(key).stream().map(CompareItem::getCompareContent).collect(Collectors.toList());
+                CompareSDK.arraySort(recordContentGroupList, resultContentGroupList);
+                for (int i = 0; i < recordContentGroupList.size(); i++) {
+                    String source = recordContentGroupList.get(i);
+                    String target = resultContentGroupList.get(i);
+                    CompareResult comparedResult = compareProcess(category, source, target, compareConfig);
                     ReplayCompareResult resultNew = ReplayCompareResult.createFrom(caseItem);
-                    mergeResult(key, category, resultNew, comparedResult, source.getCompareCreateTime(), target.getCompareCreateTime());
+                    mergeResult(key, category, resultNew, comparedResult);
                     compareResultNewList.add(resultNew);
-                }
-                if (!entryCategory && (CollectionUtils.isNotEmpty(missReplayContentList) ||
-                        CollectionUtils.isNotEmpty(missRecordContentList))) {
-                    addMissReplayResult(category, compareConfig, missReplayContentList, caseItem, compareResultNewList);
-                    addMissRecordResult(category, compareConfig, missRecordContentList, caseItem, compareResultNewList);
                 }
                 continue;
             }
@@ -148,28 +135,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
     }
 
-    private void arraySort(List<CompareItem> recordContentList, List<CompareItem> resultCompareItems,
-                           List<CompareItem> recordContentGroupList, List<CompareItem> resultContentGroupList,
-                           List<CompareItem> missReplayContentList, List<CompareItem> missRecordContentList) {
-        Map<String, List<CompareItem>> resultMapFromKey =
-                resultCompareItems.stream().collect(Collectors.groupingBy(CompareItem::getCompareKey));
-        for (CompareItem recordCompareItem : recordContentList) {
-            String key = recordCompareItem.getCompareKey();
-            if (resultMapFromKey.containsKey(key)) {
-                List<CompareItem> compareItems = resultMapFromKey.get(key);
-                for (int i = 0; i < compareItems.size(); i++) {
-                    if (i == 0) {
-                        recordContentGroupList.add(recordCompareItem);
-                        resultContentGroupList.add(compareItems.get(i));
-                    } else {
-                        missRecordContentList.add(compareItems.get(i));
-                    }
-                }
-            } else {
-                missReplayContentList.add(recordCompareItem);
-            }
-        }
-    }
 
     private CompareResult compareProcess(String category, String record, String result,
                                          ReplayComparisonConfig compareConfig) {
@@ -241,15 +206,13 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     }
 
     private void mergeResult(String operation, String category, ReplayCompareResult diffResult,
-                             CompareResult sdkResult, long recordTime, long replayTime) {
+                             CompareResult sdkResult) {
         diffResult.setOperationName(operation);
         diffResult.setCategoryName(category);
         diffResult.setBaseMsg(sdkResult.getProcessedBaseMsg());
         diffResult.setTestMsg(sdkResult.getProcessedTestMsg());
         diffResult.setLogs(sdkResult.getLogs());
         diffResult.setDiffResultCode(sdkResult.getCode());
-        diffResult.setRecordTime(recordTime);
-        diffResult.setReplayTime(replayTime);
     }
 
     private void addMissReplayResult(String category, ReplayComparisonConfig compareConfig,
@@ -267,7 +230,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             }
             CompareResult comparedResult = compareProcess(category, item.getCompareContent(), null, compareConfig);
             ReplayCompareResult resultItem = ReplayCompareResult.createFrom(caseItem);
-            mergeResult(operation, category, resultItem, comparedResult, item.getCompareCreateTime(), MAX_TIME);
+            mergeResult(operation, category, resultItem, comparedResult);
             resultItem.setServiceName(item.getCompareService());
             resultList.add(resultItem);
         }
@@ -287,7 +250,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             }
             CompareResult comparedResult = compareProcess(category, null, item.getCompareContent(), compareConfig);
             ReplayCompareResult resultItem = ReplayCompareResult.createFrom(caseItem);
-            mergeResult(operation, category, resultItem, comparedResult, MAX_TIME, item.getCompareCreateTime());
+            mergeResult(operation, category, resultItem, comparedResult);
             resultItem.setServiceName(item.getCompareService());
             resultList.add(resultItem);
         }
