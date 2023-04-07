@@ -11,7 +11,4 @@ public interface CompareItem {
 
     String getCompareService();
 
-    String getCompareKey();
-
-    long getCompareCreateTime();
 }
