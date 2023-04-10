@@ -20,9 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by wang_yc on 2021/10/19
@@ -39,12 +37,17 @@ public final class ReplayReportService implements ComparisonWriter {
     @Value("${arex.report.push.replayStatus.url}")
     private String pushReplayStatusUrl;
 
+    private static final String CASE_COUNT_LIMIT_NAME = "caseCountLimit";
+
     public void initReportInfo(ReplayPlan replayPlan) {
         ReportInitialRequestType requestType = new ReportInitialRequestType();
         requestType.setPlanId(replayPlan.getId());
         requestType.setPlanName(replayPlan.getPlanName());
         requestType.setCreator(replayPlan.getOperator());
         requestType.setTotalCaseCount(replayPlan.getCaseTotalCount());
+        Map<String, Object> customTags = new HashMap<>();
+        customTags.put(CASE_COUNT_LIMIT_NAME, replayPlan.getCaseCountLimit());
+        requestType.setCustomTags(customTags);
         // for case env
         ReportInitialRequestType.CaseSourceEnvironment caseSourceEnv;
         caseSourceEnv = new ReportInitialRequestType.CaseSourceEnvironment();
@@ -85,7 +88,7 @@ public final class ReplayReportService implements ComparisonWriter {
             reportItem.setOperationName(actionItem.getOperationName());
             reportItem.setServiceName(actionItem.getServiceKey());
             reportItem.setPlanItemId(actionItem.getId());
-            reportItem.setTotalCaseCount(Math.min(CommonConstant.OPERATION_MAX_CASE_COUNT, actionItem.getReplayCaseCount()));
+            reportItem.setTotalCaseCount(actionItem.getReplayCaseCount());
             reportItemList.add(reportItem);
         }
         requestType.setReportItemList(reportItemList);
