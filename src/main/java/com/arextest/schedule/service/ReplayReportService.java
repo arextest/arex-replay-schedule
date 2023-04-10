@@ -88,7 +88,7 @@ public final class ReplayReportService implements ComparisonWriter {
             reportItem.setOperationName(actionItem.getOperationName());
             reportItem.setServiceName(actionItem.getServiceKey());
             reportItem.setPlanItemId(actionItem.getId());
-            reportItem.setTotalCaseCount(Math.min(CommonConstant.OPERATION_MAX_CASE_COUNT, actionItem.getReplayCaseCount()));
+            reportItem.setTotalCaseCount(actionItem.getReplayCaseCount());
             reportItemList.add(reportItem);
         }
         requestType.setReportItemList(reportItemList);
