@@ -94,4 +94,7 @@ public class ReplayActionItem {
     public boolean finished() {
         return replayStatus == ReplayStatusType.FINISHED.getValue();
     }
+
+    @JsonIgnore
+    private String errorMessage;
 }

@@ -138,9 +138,15 @@ public final class PlanConsumeService {
             }
             progressEvent.onActionAfterSend(replayActionItem);
         }
-        if (isInterrupted || isCancelled) {
-            progressEvent.onReplayPlanFinish(replayPlan, isInterrupted ? ReplayStatusType.FAIL_INTERRUPTED : ReplayStatusType.CANCELLED);
+        if (isInterrupted) {
+            progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
             LOGGER.info("The plan was interrupted, plan id:{} ,appId: {} ", replayPlan.getId(),
+                    replayPlan.getAppId());
+            return;
+        }
+        if (isCancelled) {
+            progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.CANCELLED);
+            LOGGER.info("The plan was isCancelled, plan id:{} ,appId: {} ", replayPlan.getId(),
                     replayPlan.getAppId());
             return;
         }
