@@ -200,6 +200,13 @@ public final class PlanConsumeService {
         return size;
     }
 
+    /**
+     * Paging query storage's recording data.
+     * if caseCountLimit > CommonConstant.MAX_PAGE_SIZE, Calculate the latest pageSize and recycle pagination queries
+     * <p>
+     * else if caseCountLimit < CommonConstant.MAX_PAGE_SIZE or recording data size < request page size,
+     * Only need to query once by page
+     */
     private int doPagingLoadCaseSave(ReplayActionItem replayActionItem) {
         final ReplayPlan replayPlan = replayActionItem.getParent();
         long beginTimeMills = replayActionItem.getLastRecordTime();
@@ -207,25 +214,24 @@ public final class PlanConsumeService {
             beginTimeMills = replayPlan.getCaseSourceFrom().getTime();
         }
         long endTimeMills = replayPlan.getCaseSourceTo().getTime();
-        int size = 0;
-        int maxCount = replayPlan.getCaseCountLimit();
-        int pageSize = maxCount;
+        int totalSize = 0;
+        int caseCountLimit = replayPlan.getCaseCountLimit();
+        int pageSize = Math.min(caseCountLimit, CommonConstant.MAX_PAGE_SIZE);
         while (beginTimeMills < endTimeMills) {
             List<ReplayActionCaseItem> caseItemList = caseRemoteLoadService.pagingLoad(beginTimeMills, endTimeMills,
-                    replayActionItem, pageSize);
+                    replayActionItem, caseCountLimit - totalSize);
             if (CollectionUtils.isEmpty(caseItemList)) {
                 break;
             }
             ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
-            size += caseItemList.size();
+            totalSize += caseItemList.size();
             beginTimeMills = caseItemList.get(caseItemList.size() - 1).getRecordTime();
             replayActionCaseItemRepository.save(caseItemList);
-            if (size >= maxCount) {
+            if (totalSize >= caseCountLimit || caseItemList.size() < pageSize) {
                 break;
             }
-            pageSize = maxCount - size;
             replayActionItem.setLastRecordTime(beginTimeMills);
         }
-        return size;
+        return totalSize;
     }
 }
