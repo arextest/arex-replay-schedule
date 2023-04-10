@@ -207,7 +207,8 @@ public final class PlanConsumeService {
      * Paging query storage's recording data.
      * if caseCountLimit > CommonConstant.MAX_PAGE_SIZE, Calculate the latest pageSize and recycle pagination queries
      * <p>
-     * else if caseCountLimit < CommonConstant.MAX_PAGE_SIZE, Only need to query once by page
+     * else if caseCountLimit < CommonConstant.MAX_PAGE_SIZE or recording data size < paginate query data size,
+     * Only need to query once by page
      */
     private int doPagingLoadCaseSave(ReplayActionItem replayActionItem) {
         final ReplayPlan replayPlan = replayActionItem.getParent();
