@@ -98,11 +98,12 @@ public final class ReplayReportService implements ComparisonWriter {
         LOGGER.info("initReport response:{}", response);
     }
 
-    public void pushActionStatus(String planId, ReplayStatusType statusType, String actionId) {
+    public void pushActionStatus(String planId, ReplayStatusType statusType, String actionId, String errorMessage) {
         ChangeReplayStatusRequestType requestType = new ChangeReplayStatusRequestType();
         ChangeReplayStatusRequestType.ReplayItem replayItem = new ChangeReplayStatusRequestType.ReplayItem();
         replayItem.setPlanItemId(actionId);
         replayItem.setStatus(statusType.getValue());
+        replayItem.setErrorMessage(errorMessage);
         requestType.setPlanId(planId);
         requestType.setItems(Collections.singletonList(replayItem));
         Object response = httpWepServiceApiClient.jsonPost(pushReplayStatusUrl, requestType,
@@ -111,10 +112,11 @@ public final class ReplayReportService implements ComparisonWriter {
                 statusType, response);
     }
 
-    public void pushPlanStatus(String planId, ReplayStatusType statusType) {
+    public void pushPlanStatus(String planId, ReplayStatusType statusType, String errorMessage) {
         ChangeReplayStatusRequestType requestType = new ChangeReplayStatusRequestType();
         requestType.setPlanId(planId);
         requestType.setStatus(statusType.getValue());
+        requestType.setErrorMessage(errorMessage);
         Object response = httpWepServiceApiClient.jsonPost(pushReplayStatusUrl, requestType,
                 GenericResponseType.class);
         LOGGER.info("push plan status planId: {},status: {}, result:{}", planId, statusType, response);
