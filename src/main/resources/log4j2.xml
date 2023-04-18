@@ -17,8 +17,11 @@
         </RollingFile>
         <NoSql name="Mongo4">
             <MongoDb4 capped="true" collectionSize="104857600"
-                      connection="${sys:mongo.uri}.logs"
-            />
+                      connection="${sys:mongo.uri}.logs"/>
+            <codec>
+                <class>org.apache.logging.log4j.mongodb4.MongoDb4DocumentObject</class>
+                <includes>logger,message</includes>
+            </codec>
         </NoSql>
     </Appenders>
 
