@@ -11,11 +11,7 @@ import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.ViewRecordResponseType;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
-import com.arextest.schedule.model.CaseSendStatusType;
-import com.arextest.schedule.model.CompareProcessStatusType;
-import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.model.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +44,8 @@ public class ReplayCaseRemoteLoadService {
     private String replayCaseUrl;
     @Resource
     private ObjectMapper objectMapper;
-
+    @Resource
+    private ConsoleLogService consoleLogService;
 
     public int queryCaseCount(ReplayActionItem replayActionItem) {
         try {
@@ -119,10 +116,13 @@ public class ReplayCaseRemoteLoadService {
         PagedResponseType responseType;
         long beginTime = System.currentTimeMillis();
         responseType = wepApiClientService.jsonPost(replayCaseUrl, requestType, PagedResponseType.class);
+        long timeUsed = System.currentTimeMillis() - beginTime;
         LOGGER.info("get replay case app id:{},time used:{} ms, operation:{}",
                 requestType.getAppId(),
-                System.currentTimeMillis() - beginTime, requestType.getOperation()
+                timeUsed, requestType.getOperation()
         );
+        consoleLogService.onConsoleLogTimeEvent(LogType.LOAD_CASE_TIME.getValue(), replayActionItem.getPlanId(),
+                replayActionItem.getAppId(), timeUsed);
         if (badResponse(responseType)) {
             try {
                 LOGGER.warn("get replay case is empty,request:{} , response:{}",

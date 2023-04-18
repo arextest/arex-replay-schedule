@@ -70,7 +70,7 @@ public final class PrepareCompareSourceRemoteLoader {
         for (int i = 0; i < resultHolderList.size(); i++) {
             ListResultHolder stringListResultHolder = resultHolderList.get(i);
             categoryType = stringListResultHolder.getCategoryType();
-            if (categoryType == null || categoryType.isSkipComparison() || checkDecodeType(categoryType)) {
+            if (categoryType == null || categoryType.isSkipComparison()) {
                 continue;
             }
 
@@ -83,13 +83,6 @@ public final class PrepareCompareSourceRemoteLoader {
             resultHolder.setReplayResult(replayResultList);
         }
         return decodedListResult;
-    }
-
-    public boolean checkDecodeType(MockCategoryType type) {
-        if (Objects.equals(type, MockCategoryType.Q_MESSAGE_CONSUMER)) {
-            return true;
-        }
-        return false;
     }
 
     private List<CompareItem> zstdDeserialize(List<String> base64List) {

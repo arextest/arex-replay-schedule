@@ -65,4 +65,7 @@ public class ReplayPlan {
     @JsonIgnore
     private String errorMessage;
 
+    private long planCreateMills;
+    private long executionStartMillis;
+
 }

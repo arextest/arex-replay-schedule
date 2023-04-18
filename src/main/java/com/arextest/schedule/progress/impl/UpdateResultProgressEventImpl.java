@@ -3,10 +3,12 @@ package com.arextest.schedule.progress.impl;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
+import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.progress.ProgressEvent;
+import com.arextest.schedule.service.ConsoleLogService;
 import com.arextest.schedule.service.ReplayReportService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -29,6 +31,11 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
     private ReplayReportService replayReportService;
     @Resource
     private CompareConfigService compareConfigService;
+    @Resource
+    private ConsoleLogService consoleLogService;
+
+    public static final long DEFAULT_COUNT = 1L;
+
 
     @Override
     public void onReplayPlanCreated(ReplayPlan replayPlan) {
@@ -58,6 +65,7 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         boolean result = replayPlanRepository.finish(planId);
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
         replayReportService.pushPlanStatus(planId, reason, replayPlan.getErrorMessage());
+        consoleLogService.onConsoleLogCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
     }
 
     @Override
@@ -104,6 +112,8 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         }
         actionItem.setReplayFinishTime(now);
         updateReplayActionStatus(actionItem, ReplayStatusType.FAIL_INTERRUPTED, actionItem.getErrorMessage());
+        consoleLogService.onConsoleLogCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), actionItem.getPlanId(), actionItem.getAppId(),
+                actionItem.getCaseItemList().size());
     }
 
     public void onActionCancelled(ReplayActionItem actionItem) {

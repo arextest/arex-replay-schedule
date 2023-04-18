@@ -52,6 +52,7 @@ public class PlanProduceService {
     private CacheProvider redisCacheProvider;
 
     public CommonResponse createPlan(BuildReplayPlanRequest request) {
+        long planCreateMillis = System.currentTimeMillis();
         String appId = request.getAppId();
         if (isCreating(appId)) {
             return CommonResponse.badResponse("This appid is creating plan");
@@ -85,6 +86,7 @@ public class PlanProduceService {
         if (!replayPlanActionRepository.save(replayActionItemList)) {
             return CommonResponse.badResponse("save replay action error, " + replayPlan.toString());
         }
+        replayPlan.setPlanCreateMills(planCreateMillis);
         progressEvent.onReplayPlanCreated(replayPlan);
         planConsumeService.runAsyncConsume(replayPlan);
         return CommonResponse.successResponse("create plan success！" + result.getRemark(), replayPlan.getId());

@@ -9,6 +9,7 @@ import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSendStatusType;
+import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.progress.ProgressEvent;
@@ -61,6 +62,8 @@ public class ReplayCaseTransmitService {
     private CacheProvider redisCacheProvider;
     @Resource
     private ProgressEvent progressEvent;
+    @Resource
+    private ConsoleLogService consoleLogService;
 
     public boolean send(ReplayActionItem replayActionItem) {
         List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
@@ -72,6 +75,7 @@ public class ReplayCaseTransmitService {
         LOGGER.info("found replay send size of group: {}", versionGroupedResult.size());
         replayActionItem.getSendRateLimiter().reset();
         byte[] cancelKey = getCancelKey(replayActionItem.getPlanId());
+        long switchVersionStartMills = System.currentTimeMillis();
         for (Map.Entry<String, List<ReplayActionCaseItem>> versionEntry : versionGroupedResult.entrySet()) {
             List<ReplayActionCaseItem> groupValues = versionEntry.getValue();
             if (replayActionItem.getSendRateLimiter().failBreak()) {
@@ -93,6 +97,8 @@ public class ReplayCaseTransmitService {
                 markAllSendStatus(groupValues, CaseSendStatusType.EXCEPTION_FAILED);
             }
         }
+        consoleLogService.onConsoleLogTimeEvent(LogType.SWITCH_DEPENDENCY_VERSION_TIME.getValue(), replayActionItem.getPlanId(),
+                replayActionItem.getAppId(), System.currentTimeMillis() - switchVersionStartMills);
         return false;
     }
 
