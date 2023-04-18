@@ -5,7 +5,6 @@ import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CommonResponse;
-import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.deploy.DeploymentVersion;
@@ -56,6 +55,7 @@ public class PlanProduceService {
     private ConsoleLogService consoleLogService;
 
     public CommonResponse createPlan(BuildReplayPlanRequest request) {
+        long planCreateMillis = System.currentTimeMillis();
         String appId = request.getAppId();
         if (isCreating(appId, request.getTargetEnv())) {
             return CommonResponse.badResponse("This appid is creating plan");
@@ -89,6 +89,7 @@ public class PlanProduceService {
         if (!replayPlanActionRepository.save(replayActionItemList)) {
             return CommonResponse.badResponse("save replay action error, " + replayPlan.toString());
         }
+        replayPlan.setPlanCreateMills(planCreateMillis);
         progressEvent.onReplayPlanCreated(replayPlan);
         planConsumeService.runAsyncConsume(replayPlan);
         return CommonResponse.successResponse("create plan success！" + result.getRemark(), replayPlan.getId());
@@ -178,7 +179,6 @@ public class PlanProduceService {
         try {
             String redisKey = STOP_PLAN_REDIS_KEY + planId;
             redisCacheProvider.putIfAbsent(redisKey.getBytes(StandardCharsets.UTF_8), STOP_PLAN_REDIS_EXPIRE, planId.getBytes(StandardCharsets.UTF_8));
-            consoleLogService.recordCancelReasonEvent(planId, remark, LogType.STATICS_FAIL_REASON.getValue());
         } catch (Exception e) {
             LOGGER.error("stopPlan error, planId: {}, message: {}", planId, e.getMessage());
         }

@@ -41,9 +41,10 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
 
     @Override
     public boolean compare(ReplayActionCaseItem caseItem, boolean useReplayId) {
-        long beginTime = System.currentTimeMillis();
+        long compareStartMills = System.currentTimeMillis();
+        String planId = caseItem.getParent().getPlanId();
         try {
-            MDCTracer.addPlanId(caseItem.getParent().getPlanId());
+            MDCTracer.addPlanId(planId);
             MDCTracer.addPlanItemId(caseItem.getPlanItemId());
             ReplayComparisonConfig compareConfig = getCompareConfig(caseItem.getParent());
             List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
@@ -52,7 +53,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.ERROR.getValue());
                 comparisonOutputWriter.writeIncomparable(caseItem, CaseSendStatusType.REPLAY_RESULT_NOT_FOUND.name());
                 caseItem.setSendStatus(CaseSendStatusType.REPLAY_RESULT_NOT_FOUND.getValue());
-                consoleLogService.staticsFailDetailReasonEvent(caseItem, FailReasonType.OTHER.getValue(), LogType.STATICS_FAIL_REASON.getValue());
                 return true;
             }
             for (CategoryComparisonHolder bindHolder : waitCompareMap) {
@@ -61,19 +61,13 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 }
                 compareReplayResult(bindHolder, compareConfig, caseItem, replayCompareResults);
             }
-            long writeBeginTime = System.currentTimeMillis();
             if (CollectionUtils.isEmpty(replayCompareResults) && !useReplayId) {
                 return comparisonOutputWriter.writeQmqCompareResult(caseItem);
             }
-            boolean write = comparisonOutputWriter.write(replayCompareResults);
-            long timeUsed = System.currentTimeMillis() - writeBeginTime;
-            consoleLogService.onConsoleLogEvent(timeUsed, LogType.PUSH_COMPARE.getValue(), caseItem.getPlanItemId(), caseItem.getParent());
-            return write;
+            return comparisonOutputWriter.write(replayCompareResults);
         } catch (Throwable throwable) {
             caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.ERROR.getValue());
             comparisonOutputWriter.writeIncomparable(caseItem, throwable.getMessage());
-            caseItem.setSendErrorMessage(throwable.getMessage());
-            consoleLogService.staticsFailDetailReasonEvent(caseItem, FailReasonType.OTHER.getValue(), LogType.STATICS_FAIL_REASON.getValue());
             LOGGER.error("compare case result error:{} ,case item: {}", throwable.getMessage(), caseItem, throwable);
             MDCTracer.clear();
             // don't send again
@@ -81,7 +75,11 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         } finally {
             caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.PASS.getValue());
             progressTracer.finishOne(caseItem);
-            consoleLogService.onConsoleLogEvent(System.currentTimeMillis() - beginTime, LogType.COMPARE.getValue(), null, caseItem.getParent());
+            long compareEndMills = System.currentTimeMillis();
+            consoleLogService.onConsoleLogTimeEvent(LogType.COMPARE.getValue(), planId, caseItem.getParent().getAppId(),
+                    compareEndMills - compareStartMills);
+            consoleLogService.onConsoleLogTimeEvent(LogType.CASE_EXECUTION_TIME.getValue(), planId, caseItem.getParent().getAppId(),
+                    compareEndMills - caseItem.getParent().getParent().getExecutionStartMillis());
             MDCTracer.clear();
         }
     }
@@ -124,7 +122,10 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 for (int i = 0; i < recordContentGroupList.size(); i++) {
                     String source = recordContentGroupList.get(i);
                     String target = resultContentGroupList.get(i);
+                    long compareSdkStartMills = System.currentTimeMillis();
                     CompareResult comparedResult = compareProcess(category, source, target, compareConfig);
+                    consoleLogService.onConsoleCompareLogEvent(LogType.COMPARE_SDK.getValue(), caseItem.getParent().getPlanId(),
+                            caseItem.getParent().getAppId(), source, System.currentTimeMillis() - compareSdkStartMills);
                     ReplayCompareResult resultNew = ReplayCompareResult.createFrom(caseItem);
                     mergeResult(key, category, resultNew, comparedResult);
                     compareResultNewList.add(resultNew);
@@ -170,6 +171,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             return buildWaitCompareList(sourceResponse, targetResponse);
         }
         List<CategoryComparisonHolder> replayResult = sourceRemoteLoader.getReplayResult(recordId, targetResultId);
+        //todo record the QMessage replay log,  which will be optimized for removal later.
         consoleLogService.recordComparisonEvent(caseItem, replayResult, LogType.COMPARE.getValue());
         return replayResult;
     }

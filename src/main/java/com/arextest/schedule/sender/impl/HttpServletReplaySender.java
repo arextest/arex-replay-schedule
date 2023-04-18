@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static com.arextest.schedule.common.CommonConstant.*;
-
 
 @Slf4j
 @Component
@@ -57,8 +55,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         boolean allSuccess = true;
         for (int i = 0; i < instanceSize; i++) {
             caseItem.setId(i + "");
-            boolean prepareSuccess = doSend(caseItem.getParent(), caseItem, headers, PREPARE_REMOTE_SEND) || doSend(caseItem.getParent(), caseItem,
-                    headers, PREPARE_REMOTE_SEND);
+            boolean prepareSuccess = doSend(caseItem.getParent(), caseItem, headers) || doSend(caseItem.getParent(), caseItem, headers);
             allSuccess = allSuccess && prepareSuccess;
         }
         return allSuccess;
@@ -72,7 +69,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         boolean allSuccess = true;
         for (int i = 0; i < instanceSize; i++) {
             caseItem.setId(i + "");
-            allSuccess = allSuccess & doSend(caseItem.getParent(), caseItem, headers, REMOTE_SEND);
+            allSuccess = allSuccess & doSend(caseItem.getParent(), caseItem, headers);
         }
         return allSuccess;
     }
@@ -95,7 +92,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
     }
 
     private boolean doSend(ReplayActionItem replayActionItem, ReplayActionCaseItem caseItem,
-                           Map<String, String> headers, String sendType) {
+                           Map<String, String> headers) {
         ServiceInstance instanceRunner = getServiceInstance(caseItem, replayActionItem.getTargetInstance());
         if (instanceRunner == null) {
             return false;
@@ -116,12 +113,12 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         senderParameter.setHeaders(headers);
         senderParameter.setMethod(caseItem.requestMethod());
         senderParameter.setRecordId(caseItem.getRecordId());
-        String messageId = consoleLogService.generateMessageIdEvent(headers, instanceRunner.getUrl(), LogType.DOSEND.getValue());
-        long startTime = System.currentTimeMillis();
+        long sendStartMills = System.currentTimeMillis();
+        //todo get messageId from transaction and we will optimize it later.
+        String messageId = consoleLogService.generateMessageIdEvent(headers, instanceRunner.getUrl(), LogType.DO_SEND.getValue());
         targetSendResult = this.doInvoke(senderParameter);
-        long timeUsed = System.currentTimeMillis() - startTime;
         caseItem.setMessageId(messageId);
-        consoleLogService.consoleLogAndWriteEvent(timeUsed, LogType.DOSEND.getValue(), sendType, targetSendResult, caseItem);
+        consoleLogService.onConsoleSendLogEvent(LogType.DO_SEND.getValue(), targetSendResult, caseItem, System.currentTimeMillis() - sendStartMills);
         caseItem.setSendErrorMessage(targetSendResult.getRemark());
         caseItem.setTargetResultId(targetSendResult.getTraceId());
         caseItem.setSendStatus(targetSendResult.getStatusType().getValue());
@@ -157,7 +154,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         if (StringUtils.isNotEmpty(exclusionOperationConfig)) {
             headers.put(CommonConstant.X_AREX_EXCLUSION_OPERATIONS, exclusionOperationConfig);
         }
-        return doSend(replayActionItem, caseItem, headers, QUERY_SEND);
+        return doSend(replayActionItem, caseItem, headers);
     }
 
     private String contactUrl(String baseUrl, String operation) {

@@ -42,6 +42,8 @@ public final class PlanConsumeService {
     private ProgressTracer progressTracer;
     @Resource
     private ProgressEvent progressEvent;
+    @Resource
+    private ConsoleLogService consoleLogService;
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
         // TODO: remove block thread use async to load & send for all
@@ -62,6 +64,10 @@ public final class PlanConsumeService {
     }
 
     private void saveActionCaseToSend(ReplayPlan replayPlan) {
+        long executionStartMillis = System.currentTimeMillis();
+        consoleLogService.onConsoleLogTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(),
+                executionStartMillis - replayPlan.getPlanCreateMills());
+        replayPlan.setExecutionStartMillis(executionStartMillis);
         MDCTracer.addPlanId(replayPlan.getId());
         MDCTracer.addAppId(replayPlan.getAppId());
         int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());

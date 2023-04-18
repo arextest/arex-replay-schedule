@@ -8,7 +8,10 @@ import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.model.*;
+import com.arextest.schedule.model.CaseSendStatusType;
+import com.arextest.schedule.model.LogType;
+import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySender;
@@ -70,7 +73,7 @@ public class ReplayCaseTransmitService {
         LOGGER.info("found replay send size of group: {}", versionGroupedResult.size());
         replayActionItem.getSendRateLimiter().reset();
         byte[] cancelKey = getCancelKey(replayActionItem.getPlanId());
-        long beginTime = System.currentTimeMillis();
+        long switchVersionStartMills = System.currentTimeMillis();
         for (Map.Entry<String, List<ReplayActionCaseItem>> versionEntry : versionGroupedResult.entrySet()) {
             List<ReplayActionCaseItem> groupValues = versionEntry.getValue();
             if (replayActionItem.getSendRateLimiter().failBreak()) {
@@ -92,7 +95,8 @@ public class ReplayCaseTransmitService {
                 markAllSendStatus(groupValues, CaseSendStatusType.EXCEPTION_FAILED);
             }
         }
-        consoleLogService.onConsoleLogEvent(System.currentTimeMillis() - beginTime, LogType.PREPARE_DEPENDENCY.getValue(), null, replayActionItem);
+        consoleLogService.onConsoleLogTimeEvent(LogType.SWITCH_DEPENDENCY_VERSION_TIME.getValue(), replayActionItem.getPlanId(),
+                replayActionItem.getAppId(), System.currentTimeMillis() - switchVersionStartMills);
         return false;
     }
 
@@ -116,8 +120,6 @@ public class ReplayCaseTransmitService {
                 doSendValuesToRemoteHost(groupValues);
             } else {
                 markAllSendStatus(groupValues, CaseSendStatusType.READY_DEPENDENCY_FAILED);
-                consoleLogService.staticsFailDetailReasonEvent(dependSource, FailReasonType.SEND_FAIL.getValue(),
-                        LogType.STATICS_FAIL_REASON.getValue());
                 LOGGER.error("prepare remote dependency false, group key: {} marked failed ,action id:{}",
                         groupValues.get(0).replayDependency(),
                         groupValues.get(0).getParent().getId());
@@ -190,7 +192,6 @@ public class ReplayCaseTransmitService {
                 LOGGER.error("send group to remote host error:{} ,case item id:{}", throwable.getMessage(),
                         replayActionCaseItem.getId(), throwable);
                 doSendFailedAsFinish(replayActionCaseItem, CaseSendStatusType.EXCEPTION_FAILED);
-                consoleLogService.staticsFailDetailReasonEvent(caseItem, FailReasonType.OTHER.getValue(), LogType.STATICS_FAIL_REASON.getValue());
             }
         }
         MDCTracer.removeDetailId();

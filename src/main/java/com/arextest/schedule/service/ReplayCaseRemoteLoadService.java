@@ -4,12 +4,7 @@ package com.arextest.schedule.service;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker.Target;
-import com.arextest.model.replay.PagedRequestType;
-import com.arextest.model.replay.PagedResponseType;
-import com.arextest.model.replay.QueryCaseCountResponseType;
-import com.arextest.model.replay.ViewRecordRequestType;
-import com.arextest.model.replay.ViewRecordResponseType;
-import com.arextest.schedule.common.CommonConstant;
+import com.arextest.model.replay.*;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.*;
@@ -17,7 +12,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -120,11 +114,12 @@ public class ReplayCaseRemoteLoadService {
         long beginTime = System.currentTimeMillis();
         responseType = wepApiClientService.jsonPost(replayCaseUrl, requestType, PagedResponseType.class);
         long timeUsed = System.currentTimeMillis() - beginTime;
-        consoleLogService.onConsoleLogEvent(timeUsed, LogType.FIND_CASE.getValue(), null, replayActionItem);
         LOGGER.info("get replay case app id:{},time used:{} ms, operation:{}",
                 requestType.getAppId(),
                 timeUsed, requestType.getOperation()
         );
+        consoleLogService.onConsoleLogTimeEvent(LogType.LOAD_CASE_TIME.getValue(), replayActionItem.getPlanId(),
+                replayActionItem.getAppId(), timeUsed);
         if (badResponse(responseType)) {
             try {
                 LOGGER.warn("get replay case is empty,request:{} , response:{}",

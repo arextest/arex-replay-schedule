@@ -2,46 +2,50 @@ package com.arextest.schedule.model;
 
 import lombok.Getter;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
-
 /**
- * @author jmo
- * @since 2021/10/8
+ * created by xinyuan_wang on 2023/4/17
  */
 public enum LogType {
-    FIND_CASE("findCase", true),
-    PREPARE_DEPENDENCY("prepareDependency", true),
-    DOSEND("doSend", false),
-    COMPARE("compare", true),
-    PUSH_COMPARE("pushCompare", true),
-    STATICS_FAIL_REASON("staticsFailReason", false),
-    ;
+    /**
+     * task execution delay
+     */
+    PLAN_EXECUTION_DELAY("planExecutionDelay"),
+    /**
+     * task execution time
+     */
+    PLAN_EXECUTION_TIME("planExecutionTime"),
+    /**
+     * task exception number
+     */
+    PLAN_EXCEPTION_NUMBER("planExceptionNumber"),
+    /**
+     * number of execution cases
+     */
+    CASE_EXECUTION_NUMBER("planExecutionDelay"),
+    /**
+     * case execution time
+     */
+    CASE_EXECUTION_TIME("caseExecutionTime"),
+    /**
+     * case exception number
+     */
+    CASE_EXCEPTION_NUMBER("caseExceptionNumber"),
+    /**
+     * paging load case time
+     */
+    LOAD_CASE_TIME("loadCaseTime"),
+    /**
+     * switch dependency version time
+     */
+    SWITCH_DEPENDENCY_VERSION_TIME("switchDependencyVersion"),
+    COMPARE("compare"),
+    DO_SEND("doSend"),
+    COMPARE_SDK("compareSdkTime");
 
     @Getter
     final String value;
-    @Getter
-    final boolean defaultLog;
 
-    private final static Map<String, LogType> MAP = asMap(LogType::getValue);
-
-    LogType(String value, boolean defaultLog) {
+    LogType(String value) {
         this.value = value;
-        this.defaultLog = defaultLog;
-    }
-
-    private static <K> Map<K, LogType> asMap(Function<LogType, K> keySelector) {
-        LogType[] values = values();
-        Map<K, LogType> mapResult = new HashMap<>(values.length);
-        for (int i = 0; i < values.length; i++) {
-            LogType type = values[i];
-            mapResult.put(keySelector.apply(type), type);
-        }
-        return mapResult;
-    }
-
-    public static LogType of(String value) {
-        return MAP.get(value);
     }
 }
