@@ -93,6 +93,7 @@ public class PlanProduceService {
         if (!replayPlanActionRepository.save(replayActionItemList)) {
             return CommonResponse.badResponse("save replay action error, " + replayPlan.toString());
         }
+        replayPlan.setPlanCreateMills(planCreateMillis);
         progressEvent.onReplayPlanCreated(replayPlan);
         planConsumeService.runAsyncConsume(replayPlan);
         return CommonResponse.successResponse("create plan success！" + result.getRemark(), replayPlan.getId());
