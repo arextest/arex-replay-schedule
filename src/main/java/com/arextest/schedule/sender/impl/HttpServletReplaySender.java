@@ -115,7 +115,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         senderParameter.setRecordId(caseItem.getRecordId());
         long sendStartMills = System.currentTimeMillis();
         //todo get messageId from transaction and we will optimize it later.
-        String messageId = consoleLogService.generateMessageIdEvent(headers, instanceRunner.getUrl(), LogType.DO_SEND.getValue());
+        String messageId = consoleLogService.generateMessageIdEvent(headers, instanceRunner.getUrl());
         targetSendResult = this.doInvoke(senderParameter);
         caseItem.setMessageId(messageId);
         consoleLogService.onConsoleSendLogEvent(LogType.DO_SEND.getValue(), targetSendResult, caseItem, System.currentTimeMillis() - sendStartMills);

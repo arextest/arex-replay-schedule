@@ -76,9 +76,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.PASS.getValue());
             progressTracer.finishOne(caseItem);
             long compareEndMills = System.currentTimeMillis();
-            consoleLogService.onConsoleLogTimeEvent(LogType.COMPARE.getValue(), planId, caseItem.getParent().getAppId(),
+            consoleLogService.onConsoleLogTimeEvent(LogType.COMPARE.getValue(), planId, caseItem.getParent().getAppId(), null,
                     compareEndMills - compareStartMills);
-            consoleLogService.onConsoleLogTimeEvent(LogType.CASE_EXECUTION_TIME.getValue(), planId, caseItem.getParent().getAppId(),
+            consoleLogService.onConsoleLogTimeEvent(LogType.CASE_EXECUTION_TIME.getValue(), planId, caseItem.getParent().getAppId(), null,
                     compareEndMills - caseItem.getParent().getParent().getExecutionStartMillis());
             MDCTracer.clear();
         }
@@ -124,7 +124,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                     String target = resultContentGroupList.get(i);
                     long compareSdkStartMills = System.currentTimeMillis();
                     CompareResult comparedResult = compareProcess(category, source, target, compareConfig);
-                    consoleLogService.onConsoleCompareLogEvent(LogType.COMPARE_SDK.getValue(), caseItem.getParent().getPlanId(),
+                    consoleLogService.onConsoleLogTimeEvent(LogType.COMPARE_SDK.getValue(), caseItem.getParent().getPlanId(),
                             caseItem.getParent().getAppId(), source, System.currentTimeMillis() - compareSdkStartMills);
                     ReplayCompareResult resultNew = ReplayCompareResult.createFrom(caseItem);
                     mergeResult(key, category, resultNew, comparedResult);
@@ -172,7 +172,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
         List<CategoryComparisonHolder> replayResult = sourceRemoteLoader.getReplayResult(recordId, targetResultId);
         //todo record the QMessage replay log,  which will be optimized for removal later.
-        consoleLogService.recordComparisonEvent(caseItem, replayResult, LogType.COMPARE.getValue());
+        consoleLogService.recordComparisonEvent(caseItem, replayResult);
         return replayResult;
     }
 

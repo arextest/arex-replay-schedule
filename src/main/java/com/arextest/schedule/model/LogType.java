@@ -7,39 +7,44 @@ import lombok.Getter;
  */
 public enum LogType {
     /**
-     * task execution delay
-     */
-    PLAN_EXECUTION_DELAY("planExecutionDelay"),
-    /**
      * task execution time
      */
     PLAN_EXECUTION_TIME("planExecutionTime"),
     /**
-     * task exception number
+     * the time from the creation of the task to the actual execution of the task
+     */
+    PLAN_EXECUTION_DELAY("planExecutionDelay"),
+    /**
+     * number of abnormal task terminations
      */
     PLAN_EXCEPTION_NUMBER("planExceptionNumber"),
-    /**
-     * number of execution cases
-     */
-    CASE_EXECUTION_NUMBER("planExecutionDelay"),
     /**
      * case execution time
      */
     CASE_EXECUTION_TIME("caseExecutionTime"),
     /**
-     * case exception number
+     * number of abnormal case terminations
      */
     CASE_EXCEPTION_NUMBER("caseExceptionNumber"),
     /**
-     * paging load case time
+     * time spent pulling cases from the data service.
      */
     LOAD_CASE_TIME("loadCaseTime"),
     /**
      * switch dependency version time
      */
     SWITCH_DEPENDENCY_VERSION_TIME("switchDependencyVersion"),
+    /**
+     * how long it took to compare the recorded and playback data of the case.
+     */
     COMPARE("compare"),
+    /**
+     * case send request time. eg: com.arextest.schedule.sender.impl.HttpServletReplaySender#doInvoke(com.arextest.schedule.sender.SenderParameters)
+     */
     DO_SEND("doSend"),
+    /**
+     * compare sdk request time. eg: COMPARE_INSTANCE.compare(record, result, options)
+     */
     COMPARE_SDK("compareSdkTime");
 
     @Getter

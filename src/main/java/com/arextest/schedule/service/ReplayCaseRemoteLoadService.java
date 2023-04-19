@@ -119,7 +119,7 @@ public class ReplayCaseRemoteLoadService {
                 timeUsed, requestType.getOperation()
         );
         consoleLogService.onConsoleLogTimeEvent(LogType.LOAD_CASE_TIME.getValue(), replayActionItem.getPlanId(),
-                replayActionItem.getAppId(), timeUsed);
+                replayActionItem.getAppId(), null, timeUsed);
         if (badResponse(responseType)) {
             try {
                 LOGGER.warn("get replay case is empty,request:{} , response:{}",
