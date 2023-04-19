@@ -21,8 +21,6 @@ public interface ConsoleLogListener {
 
     void consoleCompareLogAction(String logType, String planId, String appId, String request, long timeUsed);
 
-    boolean isSupported(String logType);
-
     String generateMessageId(Map<String, String> headers, String url);
 
     void recordComparison(ReplayActionCaseItem caseItem, List<CategoryComparisonHolder> replayResult);

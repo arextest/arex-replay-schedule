@@ -28,7 +28,7 @@ public class ConsoleLogService {
      * logging time
      */
     public void onConsoleLogTimeEvent(String logType, String planId, String appId, long timeUsed) {
-        ConsoleLogListener listener = find(logType);
+        ConsoleLogListener listener = find();
 
         if (listener == null) {
             LOGGER.warn("Could not found consoleLogEvent for {}", logType);
@@ -42,7 +42,7 @@ public class ConsoleLogService {
      * logging count
      */
     public void onConsoleLogCountEvent(String logType, String planId, String appId, long count) {
-        ConsoleLogListener listener = find(logType);
+        ConsoleLogListener listener = find();
         if (listener == null) {
             LOGGER.warn("Could not found consoleLogEvent for {}", logType);
             return;
@@ -55,7 +55,7 @@ public class ConsoleLogService {
      * record send log and invoke time
      */
     public void onConsoleSendLogEvent(String logType, ReplaySendResult targetSendResult, ReplayActionCaseItem caseItem, long timeUsed) {
-        ConsoleLogListener listener = find(logType);
+        ConsoleLogListener listener = find();
         if (listener == null) {
             LOGGER.warn("Could not found consoleLogEvent for {}", logType);
             return;
@@ -68,7 +68,7 @@ public class ConsoleLogService {
      * the time taken to record the compare sdk
      */
     public void onConsoleCompareLogEvent(String logType, String planId, String appId, String request, long timeUsed) {
-        ConsoleLogListener listener = find(logType);
+        ConsoleLogListener listener = find();
         if (listener == null) {
             LOGGER.warn("Could not found consoleLogEvent for {}", logType);
             return;
@@ -81,7 +81,7 @@ public class ConsoleLogService {
      * get cat log from url and headers
      */
     public String generateMessageIdEvent(Map<String, String> headers, String url, String type) {
-        ConsoleLogListener listener = find(type);
+        ConsoleLogListener listener = find();
         if (listener == null) {
             LOGGER.warn("Could not found consoleLogEvent for {}", type);
             return null;
@@ -89,12 +89,10 @@ public class ConsoleLogService {
         return listener.generateMessageId(headers, url);
     }
 
-    private ConsoleLogListener find(String logType) {
+    private ConsoleLogListener find() {
         if (CollectionUtils.isNotEmpty(this.consoleLogListeners)) {
             for (ConsoleLogListener listener : this.consoleLogListeners) {
-                if (listener.isSupported(logType)) {
-                    return listener;
-                }
+                return listener;
             }
         }
         return null;
@@ -104,7 +102,7 @@ public class ConsoleLogService {
      * todo record the QMessage replay log,  which will be optimized for removal later.
      */
     public void recordComparisonEvent(ReplayActionCaseItem caseItem, List<CategoryComparisonHolder> replayResult, String logType) {
-        ConsoleLogListener listener = find(logType);
+        ConsoleLogListener listener = find();
         if (listener == null) {
             LOGGER.warn("Could not found consoleLogEvent for {}", logType);
             return;
