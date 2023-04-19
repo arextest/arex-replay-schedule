@@ -185,6 +185,7 @@ public class ReplayCaseTransmitService {
             } catch (Throwable throwable) {
                 groupSentLatch.countDown();
                 semaphore.release(false);
+                replayActionCaseItem.buildParentErrorMessage(throwable.getMessage());
                 LOGGER.error("send group to remote host error:{} ,case item id:{}", throwable.getMessage(),
                         replayActionCaseItem.getId(), throwable);
                 doSendFailedAsFinish(replayActionCaseItem, CaseSendStatusType.EXCEPTION_FAILED);

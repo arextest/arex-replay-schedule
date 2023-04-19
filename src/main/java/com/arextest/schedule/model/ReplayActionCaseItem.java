@@ -6,6 +6,7 @@ import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
 
@@ -92,4 +93,13 @@ public class ReplayActionCaseItem {
 
     @JsonIgnore
     private String sendErrorMessage;
+
+    public void buildParentErrorMessage(String otherErrorMessage) {
+        this.parent.setErrorMessage(
+                StringUtils.isNotEmpty(this.sendErrorMessage) ? this.sendErrorMessage : otherErrorMessage
+        );
+        this.parent.getParent().setErrorMessage(
+                StringUtils.isNotEmpty(this.sendErrorMessage) ? this.sendErrorMessage : otherErrorMessage
+        );
+    }
 }
