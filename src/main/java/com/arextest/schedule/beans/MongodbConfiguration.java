@@ -5,11 +5,14 @@ import com.arextest.model.mock.Mocker;
 import com.arextest.model.mock.Mocker.Target;
 import com.mongodb.MongoClientSettings;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.mongodb4.MongoDb4DocumentObject;
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
+import org.bson.Document;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
+import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
@@ -21,6 +24,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
+import org.springframework.data.mongodb.CodecRegistryProvider;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
@@ -34,6 +38,7 @@ import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 
 @Slf4j
@@ -60,7 +65,8 @@ public class MongodbConfiguration {
     public MongoTemplate mongoTemplate(MongoDatabaseFactory mongoDatabaseFactory) {
         DbRefResolver dbRefResolver = new DefaultDbRefResolver(mongoDatabaseFactory);
         MappingMongoConverter converter = new MappingMongoConverter(dbRefResolver, new MongoMappingContext());
-
+        CodecProvider provider = new MongoDb4DocumentObjectCodecProvider();
+        converter.setCodecRegistryProvider(() -> CodecRegistries.fromProviders(provider));
         converter.setCustomConversions(customConversions());
         converter.setTypeMapper(new DefaultMongoTypeMapper(null));
         converter.afterPropertiesSet();
@@ -100,6 +106,7 @@ public class MongodbConfiguration {
                     CodecRegistries.fromCodecs(new CompressionCodecImpl<>(Mocker.Target.class));
             final CodecRegistry customPojo = CodecRegistries.fromProviders(compressionCodecRegistry, PojoCodecProvider
                     .builder().automatic(true).build());
+
             return CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
                     customPojo);
 
@@ -129,4 +136,49 @@ public class MongodbConfiguration {
             }
         }
     }
+
+
+    public class MongoDb4DocumentObjectCodecProvider implements CodecProvider {
+        @Override
+        public <T> Codec<T> get(Class<T> clazz, CodecRegistry registry) {
+            if (MongoDb4DocumentObject.class.equals(clazz))
+                return (Codec<T>) new MongoDb4DocumentObjectCodec(registry);
+            return null;
+        }
+
+        private class MongoDb4DocumentObjectCodec implements Codec<MongoDb4DocumentObject> {
+
+            private final Codec<Document> documentCodec;
+
+            public MongoDb4DocumentObjectCodec(CodecRegistry registry) {
+                documentCodec = registry.get(Document.class);
+            }
+
+            @Override
+            public MongoDb4DocumentObject decode(BsonReader reader, DecoderContext decoderContext) {
+                Document document = documentCodec.decode(reader, decoderContext);
+                MongoDb4DocumentObject mongoDb4DocumentObject = new MongoDb4DocumentObject();
+                for (Map.Entry<String, Object> entry : document.entrySet()) {
+                    mongoDb4DocumentObject.set(entry.getKey(), entry.getValue());
+                }
+                return mongoDb4DocumentObject;
+            }
+
+            @Override
+            public void encode(BsonWriter writer, MongoDb4DocumentObject value, EncoderContext encoderContext) {
+                documentCodec.encode(writer, value.unwrap(), encoderContext);
+            }
+
+            @Override
+            public Class<MongoDb4DocumentObject> getEncoderClass() {
+                return MongoDb4DocumentObject.class;
+            }
+        }
+
+
+    }
+
+
+
+
 }
