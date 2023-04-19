@@ -54,29 +54,37 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         String planId = replayPlan.getId();
         boolean result = replayPlanRepository.finish(planId);
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
-        replayReportService.pushPlanStatus(planId, reason);
-        if (ReplayStatusType.FAIL_INTERRUPTED.equals(reason)) {
-            consoleLogService.onConsoleLogCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
-        }
+        replayReportService.pushPlanStatus(planId, reason, null);
+    }
+
+    @Override
+    public void onReplayPlanInterrupt(ReplayPlan replayPlan, ReplayStatusType reason) {
+        replayPlan.setPlanFinishTime(new Date());
+        String planId = replayPlan.getId();
+        boolean result = replayPlanRepository.finish(planId);
+        LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
+        replayReportService.pushPlanStatus(planId, reason, replayPlan.getErrorMessage());
+        consoleLogService.onConsoleLogCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
     }
 
     @Override
     public void onActionComparisonFinish(ReplayActionItem actionItem) {
         actionItem.setReplayFinishTime(new Date());
-        updateReplayActionStatus(actionItem, ReplayStatusType.FINISHED);
+        updateReplayActionStatus(actionItem, ReplayStatusType.FINISHED, null);
     }
 
     @Override
     public void onActionBeforeSend(ReplayActionItem actionItem) {
         actionItem.setReplayBeginTime(new Date());
-        updateReplayActionStatus(actionItem, ReplayStatusType.RUNNING);
+        updateReplayActionStatus(actionItem, ReplayStatusType.RUNNING, null);
     }
 
-    private void updateReplayActionStatus(ReplayActionItem actionItem, ReplayStatusType replayStatusType) {
+    private void updateReplayActionStatus(ReplayActionItem actionItem, ReplayStatusType replayStatusType, String errorMessage) {
         actionItem.setReplayStatus(replayStatusType.getValue());
         replayPlanActionRepository.update(actionItem);
         LOGGER.info("update the replay action send status: {}, action id:{}", replayStatusType, actionItem.getId());
-        replayReportService.pushActionStatus(actionItem.getPlanId(), replayStatusType, actionItem.getId());
+        replayReportService.pushActionStatus(actionItem.getPlanId(),
+                replayStatusType, actionItem.getId(), errorMessage);
     }
 
     @Override
@@ -102,7 +110,7 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
             actionItem.setReplayBeginTime(now);
         }
         actionItem.setReplayFinishTime(now);
-        updateReplayActionStatus(actionItem, ReplayStatusType.FAIL_INTERRUPTED);
+        updateReplayActionStatus(actionItem, ReplayStatusType.FAIL_INTERRUPTED, actionItem.getErrorMessage());
         consoleLogService.onConsoleLogCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), actionItem.getPlanId(), actionItem.getAppId(),
                 actionItem.getCaseItemList().size());
     }
@@ -113,6 +121,6 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
             actionItem.setReplayBeginTime(now);
         }
         actionItem.setReplayFinishTime(now);
-        updateReplayActionStatus(actionItem, ReplayStatusType.CANCELLED);
+        updateReplayActionStatus(actionItem, ReplayStatusType.CANCELLED, null);
     }
 }

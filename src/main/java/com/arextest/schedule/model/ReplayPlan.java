@@ -67,6 +67,10 @@ public class ReplayPlan {
     private String appName;
     @JsonIgnore
     private int caseCountLimit;
+
+    @JsonIgnore
+    private String errorMessage;
+
     private long planCreateMills;
     private long executionStartMillis;
 }

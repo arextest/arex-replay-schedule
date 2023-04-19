@@ -37,23 +37,17 @@ public class ReplayPlanController {
     @Resource
     private DebugRequestService debugRequestService;
 
-    @PostMapping("/api/createPlan")
+
+    @PostMapping(value = "/api/createPlan")
     @ResponseBody
-    public CommonResponse createPlan(@RequestBody BuildReplayPlanRequest request) {
-        if (request == null) {
-            return CommonResponse.badResponse("The request empty not allowed");
-        }
-        try {
-            MDCTracer.addAppId(request.getAppId());
-            fillOptionalValueIfRequestMissed(request);
-            return planProduceService.createPlan(request);
-        } catch (Throwable e) {
-            LOGGER.error("create plan error: {} , request: {}", e.getMessage(), request, e);
-            return CommonResponse.badResponse("create plan error！" + e.getMessage());
-        } finally {
-            planProduceService.removeCreating(request.getAppId(), request.getTargetEnv());
-            MDCTracer.clear();
-        }
+    public CommonResponse createPlanPost(@RequestBody BuildReplayPlanRequest request) {
+        return createPlan(request);
+    }
+
+    @GetMapping(value = "/api/createPlan")
+    @ResponseBody
+    public CommonResponse createPlanGet(BuildReplayPlanRequest request) {
+        return createPlan(request);
     }
 
     @GetMapping("/api/stopPlan")
@@ -109,6 +103,23 @@ public class ReplayPlanController {
         }
         if (StringUtils.isBlank(request.getPlanName())) {
             request.setPlanName(request.getAppId() + "_" + new SimpleDateFormat("MMdd_HH:mm").format(toDate));
+        }
+    }
+
+    private CommonResponse createPlan(BuildReplayPlanRequest request) {
+        if (request == null) {
+            return CommonResponse.badResponse("The request empty not allowed");
+        }
+        try {
+            MDCTracer.addAppId(request.getAppId());
+            fillOptionalValueIfRequestMissed(request);
+            return planProduceService.createPlan(request);
+        } catch (Throwable e) {
+            LOGGER.error("create plan error: {} , request: {}", e.getMessage(), request, e);
+            return CommonResponse.badResponse("create plan error！" + e.getMessage());
+        } finally {
+            MDCTracer.clear();
+            planProduceService.removeCreating(request.getAppId(), request.getTargetEnv());
         }
     }
 }
