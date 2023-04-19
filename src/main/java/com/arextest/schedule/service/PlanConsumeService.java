@@ -63,7 +63,7 @@ public final class PlanConsumeService {
 
     private void saveActionCaseToSend(ReplayPlan replayPlan) {
         long executionStartMillis = System.currentTimeMillis();
-        consoleLogService.onConsoleLogTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(),
+        consoleLogService.onConsoleLogTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
                 executionStartMillis - replayPlan.getPlanCreateMills());
         replayPlan.setExecutionStartMillis(executionStartMillis);
         int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());

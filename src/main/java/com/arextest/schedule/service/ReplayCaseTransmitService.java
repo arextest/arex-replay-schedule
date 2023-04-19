@@ -236,7 +236,7 @@ public class ReplayCaseTransmitService {
         LOGGER.info("prepare remote dependency version: {} , result: {} , {} -> {}", replayDependency, prepareResult,
                 caseItem.getParent().getServiceName(), caseItem.getParent().getOperationName());
         consoleLogService.onConsoleLogTimeEvent(LogType.SWITCH_DEPENDENCY_VERSION_TIME.getValue(), caseItem.getParent().getPlanId(),
-                caseItem.getParent().getAppId(), System.currentTimeMillis() - switchVersionStartMills);
+                caseItem.getParent().getAppId(), null, System.currentTimeMillis() - switchVersionStartMills);
         return prepareResult;
     }
 

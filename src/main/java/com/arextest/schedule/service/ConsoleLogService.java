@@ -12,7 +12,7 @@ import java.util.Map;
 
 
 /**
- * Created by wang_yc on 2021/9/15
+ * Created by xinyuan_wang on 2023/4/19
  */
 @Service
 @Slf4j
@@ -25,24 +25,24 @@ public class ConsoleLogService {
     }
 
     /**
-     * logging time
+     * record request time
      */
-    public void onConsoleLogTimeEvent(String logType, String planId, String appId, long timeUsed) {
-        ConsoleLogListener listener = find(logType);
+    public void onConsoleLogTimeEvent(String logType, String planId, String appId, String request, long timeUsed) {
+        ConsoleLogListener listener = find();
 
         if (listener == null) {
             LOGGER.warn("Could not found consoleLogEvent for {}", logType);
             return;
         }
 
-        listener.consoleTimeLogAction(logType, planId, appId, timeUsed);
+        listener.consoleTimeLogAction(logType, planId, appId, request, timeUsed);
     }
 
     /**
      * logging count
      */
     public void onConsoleLogCountEvent(String logType, String planId, String appId, long count) {
-        ConsoleLogListener listener = find(logType);
+        ConsoleLogListener listener = find();
         if (listener == null) {
             LOGGER.warn("Could not found consoleLogEvent for {}", logType);
             return;
@@ -52,10 +52,10 @@ public class ConsoleLogService {
     }
 
     /**
-     * record send log and invoke time
+     * record send log info and invoke time
      */
     public void onConsoleSendLogEvent(String logType, ReplaySendResult targetSendResult, ReplayActionCaseItem caseItem, long timeUsed) {
-        ConsoleLogListener listener = find(logType);
+        ConsoleLogListener listener = find();
         if (listener == null) {
             LOGGER.warn("Could not found consoleLogEvent for {}", logType);
             return;
@@ -65,36 +65,21 @@ public class ConsoleLogService {
     }
 
     /**
-     * the time taken to record the compare sdk
+     * get log message id from url and headers
      */
-    public void onConsoleCompareLogEvent(String logType, String planId, String appId, String request, long timeUsed) {
-        ConsoleLogListener listener = find(logType);
+    public String generateMessageIdEvent(Map<String, String> headers, String url) {
+        ConsoleLogListener listener = find();
         if (listener == null) {
-            LOGGER.warn("Could not found consoleLogEvent for {}", logType);
-            return;
-        }
-
-        listener.consoleCompareLogAction(logType, planId, appId, request, timeUsed);
-    }
-
-    /**
-     * get cat log from url and headers
-     */
-    public String generateMessageIdEvent(Map<String, String> headers, String url, String type) {
-        ConsoleLogListener listener = find(type);
-        if (listener == null) {
-            LOGGER.warn("Could not found consoleLogEvent for {}", type);
+            LOGGER.warn("generateMessageId could not found consoleLogEvent");
             return null;
         }
         return listener.generateMessageId(headers, url);
     }
 
-    private ConsoleLogListener find(String logType) {
+    private ConsoleLogListener find() {
         if (CollectionUtils.isNotEmpty(this.consoleLogListeners)) {
             for (ConsoleLogListener listener : this.consoleLogListeners) {
-                if (listener.isSupported(logType)) {
-                    return listener;
-                }
+                return listener;
             }
         }
         return null;
@@ -103,10 +88,10 @@ public class ConsoleLogService {
     /**
      * todo record the QMessage replay log,  which will be optimized for removal later.
      */
-    public void recordComparisonEvent(ReplayActionCaseItem caseItem, List<CategoryComparisonHolder> replayResult, String logType) {
-        ConsoleLogListener listener = find(logType);
+    public void recordComparisonEvent(ReplayActionCaseItem caseItem, List<CategoryComparisonHolder> replayResult) {
+        ConsoleLogListener listener = find();
         if (listener == null) {
-            LOGGER.warn("Could not found consoleLogEvent for {}", logType);
+            LOGGER.warn("recordComparisonEvent could not found consoleLogEvent");
             return;
         }
         listener.recordComparison(caseItem, replayResult);
