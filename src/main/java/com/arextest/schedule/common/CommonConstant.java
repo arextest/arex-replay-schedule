@@ -24,4 +24,12 @@ public final class CommonConstant {
     public static final long STOP_PLAN_REDIS_EXPIRE = TimeUnit.DAYS.toSeconds(1);
     public static final String STOP_PLAN_REDIS_KEY = "arex.stop.plan.";
 
+    public static final String SOAPROVIDER = "SOAProvider";
+
+    public static final String REMOTE_SEND = "remoteSend";
+    public static final String PREPARE_REMOTE_SEND = "prepareRemoteSend";
+    public static final String QUERY_SEND = "querySend";
+    public static final String PINNED = "Pinned";
+    public static final String CAT_ID = "catId";
+
 }

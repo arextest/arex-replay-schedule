@@ -22,6 +22,7 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
     private transient ReplayActionCaseItem caseItem;
     private transient CountDownLatch groupSentLatch;
     private transient SendSemaphoreLimiter limiter;
+
     private transient final ReplayCaseTransmitService transmitService;
 
     AsyncSendCaseTaskRunnable(ReplayCaseTransmitService transmitService) {

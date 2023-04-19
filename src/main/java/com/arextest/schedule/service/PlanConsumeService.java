@@ -6,11 +6,7 @@ import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.model.CaseSendStatusType;
-import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.ReplayPlan;
-import com.arextest.schedule.model.ReplayStatusType;
+import com.arextest.schedule.model.*;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.utils.ReplayParentBinder;
@@ -22,6 +18,8 @@ import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+
+import static com.arextest.schedule.common.CommonConstant.PINNED;
 
 /**
  * @author jmo
@@ -44,6 +42,8 @@ public final class PlanConsumeService {
     private ProgressTracer progressTracer;
     @Resource
     private ProgressEvent progressEvent;
+    @Resource
+    private ConsoleLogService consoleLogService;
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
         // TODO: remove block thread use async to load & send for all
@@ -64,6 +64,12 @@ public final class PlanConsumeService {
     }
 
     private void saveActionCaseToSend(ReplayPlan replayPlan) {
+        long executionStartMillis = System.currentTimeMillis();
+        consoleLogService.onConsoleLogTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(),
+                executionStartMillis - replayPlan.getPlanCreateMills());
+        replayPlan.setExecutionStartMillis(executionStartMillis);
+        MDCTracer.addPlanId(replayPlan.getId());
+        MDCTracer.addAppId(replayPlan.getAppId());
         int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());
         if (planSavedCaseSize != replayPlan.getCaseTotalCount()) {
             LOGGER.info("update the plan TotalCount, plan id:{} ,appId: {} , size: {} -> {}", replayPlan.getId(),
@@ -156,6 +162,7 @@ public final class PlanConsumeService {
 
     private boolean sendByPaging(ReplayActionItem replayActionItem) {
         List<ReplayActionCaseItem> sourceItemList;
+        boolean isFirst = true;
         while (true) {
             sourceItemList = replayActionCaseItemRepository.waitingSendList(replayActionItem.getId(),
                     CommonConstant.MAX_PAGE_SIZE);
@@ -164,10 +171,11 @@ public final class PlanConsumeService {
                 break;
             }
             ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
-            boolean isCanceled = replayCaseTransmitService.send(replayActionItem);
+            boolean isCanceled = replayCaseTransmitService.send(replayActionItem, isFirst);
             if (isCanceled) {
                 return true;
             }
+            isFirst = false;
             if (replayActionItem.getSendRateLimiter().failBreak()) {
                 break;
             }
@@ -188,9 +196,10 @@ public final class PlanConsumeService {
 
     private int doFixedCaseSave(List<ReplayActionCaseItem> caseItemList) {
         int size = 0;
+        String sourceProvider = PINNED;
         for (int i = 0; i < caseItemList.size(); i++) {
             ReplayActionCaseItem caseItem = caseItemList.get(i);
-            ReplayActionCaseItem viewReplay = caseRemoteLoadService.viewReplayLoad(caseItem);
+            ReplayActionCaseItem viewReplay = caseRemoteLoadService.viewReplayLoad(caseItem, sourceProvider);
             if (viewReplay == null) {
                 caseItem.setSendStatus(CaseSendStatusType.REPLAY_CASE_NOT_FOUND.getValue());
             } else {
