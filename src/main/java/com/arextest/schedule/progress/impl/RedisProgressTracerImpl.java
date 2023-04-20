@@ -106,6 +106,7 @@ final class RedisProgressTracerImpl implements ProgressTracer {
             Long finished = doWithRetry(() -> redisCacheProvider.incrValue(toPlanFinishKeyBytes(planId)));
             if (finished != null && finished == replayPlan.getCaseTotalCount()) {
                 progressEvent.onReplayPlanFinish(replayPlan);
+                LOGGER.info("console log PLAN_EXECUTION_TIME: {} , {}, {}", replayPlan.getPlanCreateMills(), System.currentTimeMillis(), System.currentTimeMillis() - replayPlan.getPlanCreateMills());
                 consoleLogService.onConsoleLogTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
                         System.currentTimeMillis() - replayPlan.getPlanCreateMills());
             }

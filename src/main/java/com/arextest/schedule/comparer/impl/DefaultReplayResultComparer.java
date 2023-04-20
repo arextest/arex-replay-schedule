@@ -76,8 +76,10 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.PASS.getValue());
             progressTracer.finishOne(caseItem);
             long compareEndMills = System.currentTimeMillis();
+            LOGGER.info("console log COMPARE: {} , {}, {}", compareStartMills, compareEndMills, compareEndMills - compareStartMills);
             consoleLogService.onConsoleLogTimeEvent(LogType.COMPARE.getValue(), planId, caseItem.getParent().getAppId(), null,
                     compareEndMills - compareStartMills);
+            LOGGER.info("console log CASE_EXECUTION_TIME: {} , {}, {}", caseItem.getParent().getParent().getExecutionStartMillis(), compareEndMills, compareEndMills - caseItem.getParent().getParent().getExecutionStartMillis());
             consoleLogService.onConsoleLogTimeEvent(LogType.CASE_EXECUTION_TIME.getValue(), planId, caseItem.getParent().getAppId(), null,
                     compareEndMills - caseItem.getParent().getParent().getExecutionStartMillis());
             MDCTracer.clear();
