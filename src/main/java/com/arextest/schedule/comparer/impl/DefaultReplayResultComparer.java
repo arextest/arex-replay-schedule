@@ -265,7 +265,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         options.putCategoryType(category);
         // todo: the switch of "sqlBodyParse" and "onlyCompareCoincidentColumn"
         //  need get from ReplayComparisonConfig
-        options.putSqlBodyParse(true);
+        options.putSelectIgnoreCompare(true);
         options.putOnlyCompareCoincidentColumn(true);
         options.putExclusions(compareConfig.getExclusionList());
         options.putInclusions(compareConfig.getInclusionList());
