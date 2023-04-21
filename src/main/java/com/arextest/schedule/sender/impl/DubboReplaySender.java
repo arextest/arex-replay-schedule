@@ -90,10 +90,11 @@ public class DubboReplaySender extends AbstractReplaySender {
     private ReplaySendResult fromDubboResult(Map<?, ?> requestHeaders, String url, Object result) {
         String body = encodeResponseAsString(result);
         HttpHeaders responseHeaders = new HttpHeaders();
-
+        String traceId = null;
         Map<String, String> attachments = RpcContext.getServerContext().getAttachments();
         if (MapUtils.isNotEmpty(attachments)) {
             attachments.forEach(responseHeaders::add);
+            traceId = attachments.get(CommonConstant.AREX_REPLAY_ID);
         }
         LOGGER.info("invoke result url:{}, request header:{}, response header:{}, body:{}", url, requestHeaders,
                 responseHeaders, body);
@@ -103,7 +104,7 @@ public class DubboReplaySender extends AbstractReplaySender {
         if (responseHeaders.isEmpty()) {
             return ReplaySendResult.failed("dubbo replay error,review log find more details", url);
         }
-        String traceId = attachments.get(CommonConstant.AREX_REPLAY_ID);
+
         if (StringUtils.isEmpty(traceId)) {
             return ReplaySendResult.failed("Could not fetch replay result id from the headers of dubbo response", url);
         }
