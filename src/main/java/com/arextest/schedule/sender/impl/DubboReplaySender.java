@@ -10,6 +10,8 @@ import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.SenderParameters;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.dubbo.config.ApplicationConfig;
@@ -89,21 +91,19 @@ public class DubboReplaySender extends AbstractReplaySender {
         String body = encodeResponseAsString(result);
         HttpHeaders responseHeaders = new HttpHeaders();
 
+        Map<String, String> attachments = RpcContext.getServerContext().getAttachments();
+        if (MapUtils.isNotEmpty(attachments)) {
+            attachments.forEach(responseHeaders::add);
+        }
         LOGGER.info("invoke result url:{}, request header:{}, response header:{}, body:{}", url, requestHeaders,
                 responseHeaders, body);
-        if (responseHeaders.isEmpty()) {
-            return ReplaySendResult.failed("dubbo replay error,review log find more details", url);
-        }
         if (!isReplayRequest(requestHeaders)) {
             return ReplaySendResult.success(StringUtils.EMPTY, StringUtils.EMPTY, url);
         }
-
-        Map<String, String> attachments = RpcContext.getServerContext().getAttachments();
-        String traceId = null;
-        if (attachments != null) {
-            attachments.forEach(responseHeaders::add);
-            traceId = attachments.get(CommonConstant.AREX_REPLAY_ID);
+        if (responseHeaders.isEmpty()) {
+            return ReplaySendResult.failed("dubbo replay error,review log find more details", url);
         }
+        String traceId = attachments.get(CommonConstant.AREX_REPLAY_ID);
         if (StringUtils.isEmpty(traceId)) {
             return ReplaySendResult.failed("Could not fetch replay result id from the headers of dubbo response", url);
         }
