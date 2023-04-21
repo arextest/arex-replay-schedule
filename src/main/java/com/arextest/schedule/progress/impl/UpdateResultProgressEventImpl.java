@@ -16,6 +16,8 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.util.Date;
 
+import static com.arextest.schedule.common.CommonConstant.DEFAULT_COUNT;
+
 /**
  * @author jmo
  * @since 2021/10/11
@@ -33,8 +35,6 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
     private CompareConfigService compareConfigService;
     @Resource
     private ConsoleLogService consoleLogService;
-
-    public static final long DEFAULT_COUNT = 1L;
 
     @Override
     public void onReplayPlanCreated(ReplayPlan replayPlan) {
@@ -111,8 +111,6 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         }
         actionItem.setReplayFinishTime(now);
         updateReplayActionStatus(actionItem, ReplayStatusType.FAIL_INTERRUPTED, actionItem.getErrorMessage());
-        consoleLogService.onConsoleLogCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), actionItem.getPlanId(), actionItem.getAppId(),
-                actionItem.getCaseItemList().size());
     }
 
     public void onActionCancelled(ReplayActionItem actionItem) {
