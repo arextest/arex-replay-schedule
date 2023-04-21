@@ -84,10 +84,6 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
         return !hasInstance;
     }
 
-    // private boolean checkEnv(String env){
-    //
-    // }
-
     @Override
     public List<ReplayActionItem> buildReplayActionList(BuildReplayPlanRequest request, PlanContext planContext) {
         List<ReplayActionItem> replayActionItemList = getReplayActionList(request, planContext);

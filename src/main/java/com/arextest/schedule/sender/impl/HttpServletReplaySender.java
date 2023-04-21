@@ -35,7 +35,6 @@ final class HttpServletReplaySender extends AbstractReplaySender {
     @Resource
     private HttpWepServiceApiClient httpWepServiceApiClient;
 
-
     private static final String PATTERN_STRING = "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$";
     private static final Pattern BASE_64_PATTERN = Pattern.compile(PATTERN_STRING);
 
@@ -218,7 +217,6 @@ final class HttpServletReplaySender extends AbstractReplaySender {
     }
 
 
-
     private ReplaySendResult fromHttpResult(Map<?, ?> requestHeaders, String url, ResponseEntity<?> responseEntity) {
         HttpHeaders responseHeaders = null;
         Object responseBody = null;
@@ -246,7 +244,6 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         }
         return ReplaySendResult.success(resultId, StringUtils.EMPTY, url);
     }
-
 
 
     private String replayResultId(Map<?, ?> responseHeaders) {

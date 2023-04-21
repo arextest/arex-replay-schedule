@@ -8,10 +8,10 @@ import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.SenderParameters;
-import com.arextest.schedule.utils.Tuple;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.dubbo.config.ApplicationConfig;
 import org.apache.dubbo.config.ReferenceConfig;
 import org.apache.dubbo.rpc.RpcContext;
@@ -61,17 +61,20 @@ public class DubboReplaySender extends AbstractReplaySender {
     }
 
     private boolean doSend(ReplayActionCaseItem caseItem, Map<String, String> headers) {
+        ImmutablePair<String, String> interfaceNameAndMethod =
+                getInterfaceNameAndMethod(caseItem.getParent().getOperationName());
+        if (interfaceNameAndMethod == null) {
+            return false;
+        }
 
         String url = caseItem.getParent().getTargetInstance().getUrl();
-        Tuple<String, String> interfaceNameAndMethod =
-                getInterfaceNameAndMethod(caseItem.getParent().getOperationName());
         RpcContext.getServiceContext().setAttachments(headers);
-        GenericService genericService = getReferenceConfig(url, interfaceNameAndMethod.x);
+        GenericService genericService = getReferenceConfig(url, interfaceNameAndMethod.getLeft());
         if (genericService == null) {
             return false;
         }
         DubboParameters dubboParameters = getDubboParameters(caseItem);
-        Object result = genericService.$invoke(interfaceNameAndMethod.y,
+        Object result = genericService.$invoke(interfaceNameAndMethod.getRight(),
                 dubboParameters.getParameterTypes().toArray(new String[0]),
                 dubboParameters.getParameters().toArray());
         ReplaySendResult targetSendResult = fromDubboResult(headers, url, result);
@@ -84,21 +87,23 @@ public class DubboReplaySender extends AbstractReplaySender {
 
     private ReplaySendResult fromDubboResult(Map<?, ?> requestHeaders, String url, Object result) {
         String body = encodeResponseAsString(result);
-        Map<String, String> attachments = RpcContext.getServerContext().getAttachments();
         HttpHeaders responseHeaders = new HttpHeaders();
-        if (attachments != null) {
-            attachments.forEach(responseHeaders::add);
-        }
-        LOGGER.info("invoke result url:{} ,request header:{},response header:{}, body:{}", url, requestHeaders,
+
+        LOGGER.info("invoke result url:{}, request header:{}, response header:{}, body:{}", url, requestHeaders,
                 responseHeaders, body);
-        if (responseHeaders == null) {
+        if (responseHeaders.isEmpty()) {
             return ReplaySendResult.failed("dubbo replay error,review log find more details", url);
         }
         if (!isReplayRequest(requestHeaders)) {
             return ReplaySendResult.success(StringUtils.EMPTY, StringUtils.EMPTY, url);
         }
 
-        String traceId = attachments.get(CommonConstant.AREX_REPLAY_ID);
+        Map<String, String> attachments = RpcContext.getServerContext().getAttachments();
+        String traceId = null;
+        if (attachments != null) {
+            attachments.forEach(responseHeaders::add);
+            traceId = attachments.get(CommonConstant.AREX_REPLAY_ID);
+        }
         if (StringUtils.isEmpty(traceId)) {
             return ReplaySendResult.failed("Could not fetch replay result id from the headers of dubbo response", url);
         }
@@ -106,7 +111,7 @@ public class DubboReplaySender extends AbstractReplaySender {
         return ReplaySendResult.success(traceId, StringUtils.EMPTY, url);
     }
 
-    private Tuple<String, String> getInterfaceNameAndMethod(String operationName) {
+    private ImmutablePair<String, String> getInterfaceNameAndMethod(String operationName) {
         if (StringUtils.isEmpty(operationName)) {
             return null;
         }
@@ -114,7 +119,7 @@ public class DubboReplaySender extends AbstractReplaySender {
         if (lastDotIndex == -1) {
             return null;
         }
-        return new Tuple<>(operationName.substring(0, lastDotIndex), operationName.substring(lastDotIndex + 1));
+        return ImmutablePair.of(operationName.substring(0, lastDotIndex), operationName.substring(lastDotIndex + 1));
     }
 
     private GenericService getReferenceConfig(String url, String interfaceName) {
@@ -184,7 +189,7 @@ public class DubboReplaySender extends AbstractReplaySender {
     }
 
     @Data
-    private class DubboParameters {
+    private static class DubboParameters {
         private List<String> parameterTypes;
         private List<Object> parameters;
     }
