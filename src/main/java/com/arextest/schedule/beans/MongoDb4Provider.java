@@ -82,7 +82,6 @@ public final class MongoDb4Provider implements NoSqlProvider<MongoDb4Connection>
 
     private static final Logger LOGGER = StatusLogger.getLogger();
 
-    // @formatter:off
     private static final CodecRegistry CODEC_REGISTRIES = CodecRegistries.fromRegistries(
             CodecRegistries.fromCodecs(new Codec<MongoDb4DocumentObject>() {
                 private Codec<Document> documentCodec = new DocumentCodec();
@@ -109,7 +108,6 @@ public final class MongoDb4Provider implements NoSqlProvider<MongoDb4Connection>
             }),
             MongoClientSettings.getDefaultCodecRegistry(),
             CodecRegistries.fromCodecs(MongoDb4LevelCodec.INSTANCE));
-    // @formatter:on
 
     // TODO Where does this number come from?
     private static final int DEFAULT_COLLECTION_SIZE = 536_870_912;
@@ -127,24 +125,14 @@ public final class MongoDb4Provider implements NoSqlProvider<MongoDb4Connection>
 
     private MongoDb4Provider(final String connectionStringSource, final boolean isCapped,
             final Integer collectionSize) {
-        // LOGGER.debug("Creating ConnectionString {}...", connectionStringSource);
         this.connectionString = new ConnectionString(connectionStringSource);
-        // LOGGER.debug("Created ConnectionString {}", connectionString);
-        // LOGGER.debug("Creating MongoClientSettings...");
-        // @formatter:off
         final MongoClientSettings settings = MongoClientSettings.builder()
                 .applyConnectionString(this.connectionString)
                 .codecRegistry(CODEC_REGISTRIES)
                 .build();
-        // @formatter:on
-        // LOGGER.debug("Created MongoClientSettings {}", settings);
-        // LOGGER.debug("Creating MongoClient {}...", settings);
         this.mongoClient = MongoClients.create(settings);
-        // LOGGER.debug("Created MongoClient {}", mongoClient);
         String databaseName = this.connectionString.getDatabase();
-        // LOGGER.debug("Getting MongoDatabase {}...", databaseName);
         this.mongoDatabase = this.mongoClient.getDatabase(databaseName);
-        // LOGGER.debug("Got MongoDatabase {}", mongoDatabase);
         this.isCapped = isCapped;
         this.collectionSize = collectionSize;
     }
