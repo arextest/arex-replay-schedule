@@ -31,5 +31,6 @@ public final class CommonConstant {
     public static final String QUERY_SEND = "querySend";
     public static final String PINNED = "Pinned";
     public static final String CAT_ID = "catId";
+    public static final long DEFAULT_COUNT = 1L;
 
 }

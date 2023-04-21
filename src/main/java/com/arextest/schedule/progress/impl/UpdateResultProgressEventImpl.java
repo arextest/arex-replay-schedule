@@ -55,6 +55,8 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         boolean result = replayPlanRepository.finish(planId);
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
         replayReportService.pushPlanStatus(planId, reason, null);
+        consoleLogService.onConsoleLogTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
+                System.currentTimeMillis() - replayPlan.getPlanCreateMills());
     }
 
     @Override
@@ -65,6 +67,8 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
         replayReportService.pushPlanStatus(planId, reason, replayPlan.getErrorMessage());
         consoleLogService.onConsoleLogCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
+        consoleLogService.onConsoleLogTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
+                System.currentTimeMillis() - replayPlan.getPlanCreateMills());
     }
 
     @Override
