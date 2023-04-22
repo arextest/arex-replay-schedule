@@ -70,7 +70,6 @@ public final class PlanConsumeService {
         LOGGER.info("console type PLAN_EXECUTION_DELAY {} ", planExecutionWatch.getTotalTimeMillis());
         metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
                 planExecutionWatch.getTotalTimeMillis());
-        planExecutionWatch.start(LogType.PLAN_EXECUTION_TIME.getValue());
         StopWatch caseExecutionWatch = new StopWatch();
         caseExecutionWatch.start(LogType.CASE_EXECUTION_TIME.getValue());
         MDCTracer.addPlanId(replayPlan.getId());
