@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
@@ -60,7 +61,7 @@ public class ReplayCaseTransmitService {
     @Resource
     private ProgressEvent progressEvent;
     @Resource
-    private ConsoleLogService consoleLogService;
+    private MetricService metricService;
 
     public boolean send(ReplayActionItem replayActionItem, boolean isFirst) {
         List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
@@ -121,7 +122,7 @@ public class ReplayCaseTransmitService {
                 LOGGER.error("prepare remote dependency false, group key: {} marked failed ,action id:{}",
                         groupValues.get(0).replayDependency(),
                         groupValues.get(0).getParent().getId());
-                consoleLogService.onConsoleLogCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), dependSource.getParent().getPlanId(),
+                metricService.recordCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), dependSource.getParent().getPlanId(),
                         dependSource.getParent().getAppId(), groupValues.size());
             }
         } catch (Exception e) {
@@ -183,13 +184,13 @@ public class ReplayCaseTransmitService {
                 taskRunnable.setReplaySender(replaySender);
                 taskRunnable.setGroupSentLatch(groupSentLatch);
                 taskRunnable.setLimiter(semaphore);
-                taskRunnable.setConsoleLogService(consoleLogService);
+                taskRunnable.setMetricService(metricService);
                 sendExecutorService.execute(taskRunnable);
                 LOGGER.info("submit replay sending success");
             } catch (Throwable throwable) {
                 groupSentLatch.countDown();
                 semaphore.release(false);
-                consoleLogService.onConsoleLogCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), replayActionCaseItem.getParent().getPlanId(),
+                metricService.recordCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), replayActionCaseItem.getParent().getPlanId(),
                         replayActionCaseItem.getParent().getAppId(), DEFAULT_COUNT);
                 replayActionCaseItem.buildParentErrorMessage(throwable.getMessage());
                 LOGGER.error("send group to remote host error:{} ,case item id:{}", throwable.getMessage(),
@@ -230,7 +231,8 @@ public class ReplayCaseTransmitService {
     }
 
     public boolean prepareRemoteDependency(ReplayActionCaseItem caseItem) {
-        long switchVersionStartMills = System.currentTimeMillis();
+        StopWatch watch = new StopWatch();
+        watch.start(LogType.SWITCH_DEPENDENCY_VERSION_TIME.getValue());
         String replayDependency = caseItem.replayDependency();
         boolean prepareResult = false;
         ReplaySender replaySender = findReplaySender(caseItem);
@@ -239,8 +241,10 @@ public class ReplayCaseTransmitService {
         }
         LOGGER.info("prepare remote dependency version: {} , result: {} , {} -> {}", replayDependency, prepareResult,
                 caseItem.getParent().getServiceName(), caseItem.getParent().getOperationName());
-        consoleLogService.onConsoleLogTimeEvent(LogType.SWITCH_DEPENDENCY_VERSION_TIME.getValue(), caseItem.getParent().getPlanId(),
-                caseItem.getParent().getAppId(), null, System.currentTimeMillis() - switchVersionStartMills);
+        watch.stop();
+        LOGGER.info("console type SWITCH_DEPENDENCY_VERSION_TIME {} ", watch.getTotalTimeMillis());
+        metricService.recordTimeEvent(LogType.SWITCH_DEPENDENCY_VERSION_TIME.getValue(), caseItem.getParent().getPlanId(),
+                caseItem.getParent().getAppId(), null, watch.getTotalTimeMillis());
         return prepareResult;
     }
 

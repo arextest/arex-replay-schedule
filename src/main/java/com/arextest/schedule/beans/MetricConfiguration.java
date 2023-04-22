@@ -1,7 +1,7 @@
 package com.arextest.schedule.beans;
 
-import com.arextest.schedule.service.ConsoleLogListener;
-import com.arextest.schedule.service.ConsoleLogService;
+import com.arextest.schedule.service.MetricListener;
+import com.arextest.schedule.service.MetricService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -16,12 +16,12 @@ import java.util.List;
  */
 @Slf4j
 @Configuration
-@ConditionalOnMissingBean(ConsoleLogService.class)
-public class ConsoleLogConfiguration {
+@ConditionalOnMissingBean(MetricService.class)
+public class MetricConfiguration {
     @Bean
-    public ConsoleLogService consoleLogService(
-            List<ConsoleLogListener> consoleLogListeners
+    public MetricService metricService(
+            List<MetricListener> metricListeners
     ) {
-        return new ConsoleLogService(consoleLogListeners);
+        return new MetricService(metricListeners);
     }
 }

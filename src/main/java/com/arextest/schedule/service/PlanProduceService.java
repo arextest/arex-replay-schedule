@@ -5,6 +5,7 @@ import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CommonResponse;
+import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.deploy.DeploymentVersion;
@@ -20,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
@@ -51,11 +53,10 @@ public class PlanProduceService {
     private ConfigurationService configurationService;
     @Resource
     private CacheProvider redisCacheProvider;
-    @Resource
-    private ConsoleLogService consoleLogService;
 
     public CommonResponse createPlan(BuildReplayPlanRequest request) {
-        long planCreateMillis = System.currentTimeMillis();
+        StopWatch planExecutionWatch = new StopWatch();
+        planExecutionWatch.start(LogType.PLAN_EXECUTION_DELAY.getValue());
         String appId = request.getAppId();
         if (isCreating(appId, request.getTargetEnv())) {
             return CommonResponse.badResponse("This appid is creating plan");
@@ -74,7 +75,7 @@ public class PlanProduceService {
             return CommonResponse.badResponse("appId:" + appId + " error: empty replay actions");
         }
         ReplayPlan replayPlan = build(request, planContext);
-        replayPlan.setPlanCreateMills(planCreateMillis);
+        replayPlan.setPlanExecutionWatch(planExecutionWatch);
         replayPlan.setReplayActionItemList(replayActionItemList);
         ReplayParentBinder.setupReplayActionParent(replayActionItemList, replayPlan);
         int planCaseCount = planBuilder.buildReplayCaseCount(replayActionItemList);

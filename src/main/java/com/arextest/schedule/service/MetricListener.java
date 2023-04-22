@@ -13,22 +13,22 @@ import java.util.Map;
  * <p>
  * expose the entrance for use by the successor.
  */
-public interface ConsoleLogListener {
+public interface MetricListener {
 
     /**
      * record request time by log type, for compare sdk type, q request may be required.
      */
-    void consoleTimeLogAction(String logType, String planId, String appId, String request, long timeUsed);
+    void recordTimeAction(String logType, String planId, String appId, String request, long timeUsed);
 
     /**
      * logging count by log type.
      */
-    void consoleCountLogAction(String logType, String planId, String appId, long count);
+    void recordCountAction(String logType, String planId, String appId, long count);
 
     /**
      * record send log info and invoke time by log type.
      */
-    void consoleSendLogAction(String logType, ReplaySendResult targetSendResult, ReplayActionCaseItem caseItem, long timeUsed);
+    void recordSendLogAction(String logType, ReplaySendResult targetSendResult, ReplayActionCaseItem caseItem, long timeUsed);
 
     String generateMessageId(Map<String, String> headers, String url);
 

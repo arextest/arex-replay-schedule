@@ -18,6 +18,7 @@ import com.arextest.schedule.utils.ReplayParentBinder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.time.Duration;
@@ -76,8 +77,9 @@ public class SelfHealingInterrupted {
     }
 
     private void doResume(ReplayPlan replayPlan) {
-        long planCreateMillis = System.currentTimeMillis();
-        replayPlan.setPlanCreateMills(planCreateMillis);
+        StopWatch watch = new StopWatch();
+        watch.start(LogType.PLAN_EXECUTION_TIME.getValue());
+        replayPlan.setPlanExecutionWatch(watch);
         String planId = replayPlan.getId();
         List<ReplayActionItem> actionItems = replayPlanActionRepository.queryPlanActionList(planId);
         if (CollectionUtils.isEmpty(actionItems)) {

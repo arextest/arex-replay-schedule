@@ -25,7 +25,7 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
     private transient ReplayActionCaseItem caseItem;
     private transient CountDownLatch groupSentLatch;
     private transient SendSemaphoreLimiter limiter;
-    private transient ConsoleLogService consoleLogService;
+    private transient MetricService metricService;
 
     private transient final ReplayCaseTransmitService transmitService;
 
@@ -56,7 +56,7 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
                     t != null ? t.getMessage() : CaseSendStatusType.EXCEPTION_FAILED.name()
             );
             if (!success) {
-                consoleLogService.onConsoleLogCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), caseItem.getParent().getPlanId(),
+                metricService.recordCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), caseItem.getParent().getPlanId(),
                         caseItem.getParent().getAppId(), DEFAULT_COUNT);
             }
             MDCTracer.removeDetailId();

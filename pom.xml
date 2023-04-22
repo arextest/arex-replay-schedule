@@ -6,7 +6,7 @@
     <packaging>jar</packaging>
     <groupId>com.arextest</groupId>
     <artifactId>arex-schedule-web-api</artifactId>
-    <version>1.0.23-SNAPSHOT</version>
+    <version>1.0.23.1-SNAPSHOT</version>
     <name>${project.groupId}:${project.artifactId}</name>
     <description>AREX schedule is used for replay.</description>
     <url>https://github.com/arextest/arex-replay-schedule</url>

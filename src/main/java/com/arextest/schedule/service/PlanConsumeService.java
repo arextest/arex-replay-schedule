@@ -13,6 +13,7 @@ import com.arextest.schedule.utils.ReplayParentBinder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.util.Date;
@@ -43,7 +44,7 @@ public final class PlanConsumeService {
     @Resource
     private ProgressEvent progressEvent;
     @Resource
-    private ConsoleLogService consoleLogService;
+    private MetricService metricService;
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
         // TODO: remove block thread use async to load & send for all
@@ -64,11 +65,14 @@ public final class PlanConsumeService {
     }
 
     private void saveActionCaseToSend(ReplayPlan replayPlan) {
-        long executionStartMillis = System.currentTimeMillis();
-        LOGGER.info("console log PLAN_EXECUTION_DELAY: {} , {}, {}", replayPlan.getPlanCreateMills(), executionStartMillis, executionStartMillis - replayPlan.getPlanCreateMills());
-        consoleLogService.onConsoleLogTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
-                executionStartMillis - replayPlan.getPlanCreateMills());
-        replayPlan.setExecutionStartMillis(executionStartMillis);
+        StopWatch planExecutionWatch = replayPlan.getPlanExecutionWatch();
+        planExecutionWatch.stop();
+        LOGGER.info("console type PLAN_EXECUTION_DELAY {} ", planExecutionWatch.getTotalTimeMillis());
+        metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
+                planExecutionWatch.getTotalTimeMillis());
+        planExecutionWatch.start(LogType.PLAN_EXECUTION_TIME.getValue());
+        StopWatch caseExecutionWatch = new StopWatch();
+        caseExecutionWatch.start(LogType.CASE_EXECUTION_TIME.getValue());
         MDCTracer.addPlanId(replayPlan.getId());
         MDCTracer.addAppId(replayPlan.getAppId());
         int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());
@@ -82,6 +86,10 @@ public final class PlanConsumeService {
         if (planSavedCaseSize == 0) {
             progressEvent.onReplayPlanFinish(replayPlan);
         }
+        caseExecutionWatch.stop();
+        LOGGER.info("console type CASE_EXECUTION_TIME {} ", planExecutionWatch.getTotalTimeMillis());
+        metricService.recordTimeEvent(LogType.CASE_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
+                planExecutionWatch.getTotalTimeMillis());
     }
 
     private int saveAllActionCase(List<ReplayActionItem> replayActionItemList) {

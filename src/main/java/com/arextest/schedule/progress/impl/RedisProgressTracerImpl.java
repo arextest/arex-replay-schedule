@@ -7,10 +7,11 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
-import com.arextest.schedule.service.ConsoleLogService;
+import com.arextest.schedule.service.MetricService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.nio.ByteBuffer;
@@ -36,7 +37,7 @@ final class RedisProgressTracerImpl implements ProgressTracer {
     @Resource
     private CacheProvider redisCacheProvider;
     @Resource
-    private ConsoleLogService consoleLogService;
+    private MetricService metricService;
 
     @Override
     public void initTotal(ReplayPlan replayPlan) {
@@ -106,9 +107,11 @@ final class RedisProgressTracerImpl implements ProgressTracer {
             Long finished = doWithRetry(() -> redisCacheProvider.incrValue(toPlanFinishKeyBytes(planId)));
             if (finished != null && finished == replayPlan.getCaseTotalCount()) {
                 progressEvent.onReplayPlanFinish(replayPlan);
-                LOGGER.info("console log PLAN_EXECUTION_TIME: {} , {}, {}", replayPlan.getPlanCreateMills(), System.currentTimeMillis(), System.currentTimeMillis() - replayPlan.getPlanCreateMills());
-                consoleLogService.onConsoleLogTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
-                        System.currentTimeMillis() - replayPlan.getPlanCreateMills());
+                StopWatch planExecutionWatch = replayPlan.getPlanExecutionWatch();
+                planExecutionWatch.stop();
+                LOGGER.info("console type planExecutionWatch {} ", planExecutionWatch.getTotalTimeMillis());
+                metricService.recordTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
+                        planExecutionWatch.getTotalTimeMillis());
             }
         } catch (Throwable throwable) {
 

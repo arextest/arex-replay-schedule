@@ -7,7 +7,7 @@ import com.arextest.schedule.comparer.impl.DefaultReplayResultComparer;
 import com.arextest.schedule.comparer.impl.PrepareCompareSourceRemoteLoader;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.progress.ProgressTracer;
-import com.arextest.schedule.service.ConsoleLogService;
+import com.arextest.schedule.service.MetricService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -25,12 +25,12 @@ public class ReplayComparerConfiguration {
             ProgressTracer progressTracer,
             ComparisonWriter comparisonOutputWriter,
             ReplayActionCaseItemRepository caseItemRepository,
-            ConsoleLogService consoleLogService
+            MetricService metricService
     ) {
         return new DefaultReplayResultComparer(compareConfigService,
                 sourceRemoteLoader,
                 progressTracer,
                 comparisonOutputWriter,
-                caseItemRepository,consoleLogService);
+                caseItemRepository, metricService);
     }
 }

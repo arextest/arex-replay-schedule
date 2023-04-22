@@ -8,10 +8,11 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.progress.ProgressEvent;
-import com.arextest.schedule.service.ConsoleLogService;
+import com.arextest.schedule.service.MetricService;
 import com.arextest.schedule.service.ReplayReportService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.util.Date;
@@ -34,7 +35,7 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
     @Resource
     private CompareConfigService compareConfigService;
     @Resource
-    private ConsoleLogService consoleLogService;
+    private MetricService metricService;
 
     @Override
     public void onReplayPlanCreated(ReplayPlan replayPlan) {
@@ -55,8 +56,11 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         boolean result = replayPlanRepository.finish(planId);
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
         replayReportService.pushPlanStatus(planId, reason, null);
-        consoleLogService.onConsoleLogTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
-                System.currentTimeMillis() - replayPlan.getPlanCreateMills());
+        StopWatch planExecutionWatch = replayPlan.getPlanExecutionWatch();
+        planExecutionWatch.stop();
+        LOGGER.info("console type planExecutionWatch {} ", planExecutionWatch.getTotalTimeMillis());
+        metricService.recordTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
+                planExecutionWatch.getTotalTimeMillis());
     }
 
     @Override
@@ -66,9 +70,13 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         boolean result = replayPlanRepository.finish(planId);
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
         replayReportService.pushPlanStatus(planId, reason, replayPlan.getErrorMessage());
-        consoleLogService.onConsoleLogCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
-        consoleLogService.onConsoleLogTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
-                System.currentTimeMillis() - replayPlan.getPlanCreateMills());
+        metricService.recordCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
+        StopWatch planExecutionWatch = replayPlan.getPlanExecutionWatch();
+        planExecutionWatch.stop();
+        LOGGER.info("console type planExecutionWatch {} ", planExecutionWatch.getTotalTimeMillis());
+
+        metricService.recordTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
+                planExecutionWatch.getTotalTimeMillis());
     }
 
     @Override
