@@ -114,14 +114,13 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         senderParameter.setHeaders(headers);
         senderParameter.setMethod(caseItem.requestMethod());
         senderParameter.setRecordId(caseItem.getRecordId());
-        long sendStartMills = System.currentTimeMillis();
         //todo get messageId from transaction and we will optimize it later.
         String messageId = metricService.generateMessageIdEvent(headers, instanceRunner.getUrl());
         StopWatch watch = new StopWatch();
         watch.start(LogType.DO_SEND.getValue());
         targetSendResult = this.doInvoke(senderParameter);
-        caseItem.setMessageId(messageId);
         watch.stop();
+        caseItem.setMessageId(messageId);
         metricService.recordSendLogEvent(LogType.DO_SEND.getValue(), targetSendResult, caseItem, watch.getTotalTimeMillis());
         caseItem.setSendErrorMessage(targetSendResult.getRemark());
         caseItem.setTargetResultId(targetSendResult.getTraceId());

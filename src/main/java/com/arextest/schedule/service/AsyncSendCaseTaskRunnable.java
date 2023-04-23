@@ -40,6 +40,9 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
         Throwable t = null;
         try {
             MDCTracer.addDetailId(caseItem.getId());
+            long caseExecutionStartMillis = System.currentTimeMillis();
+            caseItem.getParent().getParent().setExecutionStartMillis(caseExecutionStartMillis);
+            LOGGER.info("executionStartMillis {}", caseExecutionStartMillis);
             success = this.replaySender.send(caseItem);
             LOGGER.info("async run sender Id: {} , result:{}", caseItem.getId(), success);
             transmitService.updateSendResult(caseItem, success ? CaseSendStatusType.SUCCESS :
