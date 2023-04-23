@@ -122,7 +122,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         targetSendResult = this.doInvoke(senderParameter);
         caseItem.setMessageId(messageId);
         watch.stop();
-        metricService.onConsoleSendLogEvent(LogType.DO_SEND.getValue(), targetSendResult, caseItem, watch.getTotalTimeMillis());
+        metricService.recordSendLogEvent(LogType.DO_SEND.getValue(), targetSendResult, caseItem, watch.getTotalTimeMillis());
         caseItem.setSendErrorMessage(targetSendResult.getRemark());
         caseItem.setTargetResultId(targetSendResult.getTraceId());
         caseItem.setSendStatus(targetSendResult.getStatusType().getValue());

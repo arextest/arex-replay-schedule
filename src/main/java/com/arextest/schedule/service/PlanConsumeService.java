@@ -65,13 +65,12 @@ public final class PlanConsumeService {
     }
 
     private void saveActionCaseToSend(ReplayPlan replayPlan) {
-        StopWatch planExecutionWatch = replayPlan.getPlanExecutionWatch();
-        planExecutionWatch.stop();
-        LOGGER.info("console type PLAN_EXECUTION_DELAY {} ", planExecutionWatch.getTotalTimeMillis());
+        StopWatch sw = replayPlan.getExecutionDelayWatch();
+        sw.stop();
+        LOGGER.info("console type PLAN_EXECUTION_DELAY {} ", sw.getTotalTimeMillis());
         metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
-                planExecutionWatch.getTotalTimeMillis());
-        StopWatch caseExecutionWatch = new StopWatch();
-        caseExecutionWatch.start(LogType.CASE_EXECUTION_TIME.getValue());
+                sw.getTotalTimeMillis());
+        replayPlan.setExecutionStartMillis(System.currentTimeMillis());
         MDCTracer.addPlanId(replayPlan.getId());
         MDCTracer.addAppId(replayPlan.getAppId());
         int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());
@@ -85,10 +84,6 @@ public final class PlanConsumeService {
         if (planSavedCaseSize == 0) {
             progressEvent.onReplayPlanFinish(replayPlan);
         }
-        caseExecutionWatch.stop();
-        LOGGER.info("console type CASE_EXECUTION_TIME {} ", planExecutionWatch.getTotalTimeMillis());
-        metricService.recordTimeEvent(LogType.CASE_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
-                planExecutionWatch.getTotalTimeMillis());
     }
 
     private int saveAllActionCase(List<ReplayActionItem> replayActionItemList) {

@@ -12,7 +12,6 @@ import com.arextest.schedule.service.MetricService;
 import com.arextest.schedule.service.ReplayReportService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.util.Date;
@@ -56,11 +55,7 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         boolean result = replayPlanRepository.finish(planId);
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
         replayReportService.pushPlanStatus(planId, reason, null);
-        StopWatch planExecutionWatch = replayPlan.getPlanExecutionWatch();
-        planExecutionWatch.stop();
-        LOGGER.info("console type planExecutionWatch {} ", planExecutionWatch.getTotalTimeMillis());
-        metricService.recordTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
-                planExecutionWatch.getTotalTimeMillis());
+        recordPlanExecutionTime(replayPlan);
     }
 
     @Override
@@ -71,12 +66,17 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
         replayReportService.pushPlanStatus(planId, reason, replayPlan.getErrorMessage());
         metricService.recordCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
-        StopWatch planExecutionWatch = replayPlan.getPlanExecutionWatch();
-        planExecutionWatch.stop();
-        LOGGER.info("console type planExecutionWatch {} ", planExecutionWatch.getTotalTimeMillis());
+        recordPlanExecutionTime(replayPlan);
+    }
 
-        metricService.recordTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
-                planExecutionWatch.getTotalTimeMillis());
+    private void recordPlanExecutionTime(ReplayPlan replayPlan) {
+        Date planCreateTime = replayPlan.getPlanCreateTime();
+        long planFinishMills = replayPlan.getPlanFinishTime() == null ? System.currentTimeMillis() : replayPlan.getPlanFinishTime().getTime();
+        if (planCreateTime != null) {
+            LOGGER.info("console type planExecutionWatch {} ", System.currentTimeMillis() - planCreateTime.getTime());
+            metricService.recordTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
+                    planFinishMills - planCreateTime.getTime());
+        }
     }
 
     @Override

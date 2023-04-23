@@ -78,8 +78,12 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.PASS.getValue());
             progressTracer.finishOne(caseItem);
             compareWatch.stop();
+            LOGGER.info("console type COMPARE {} ", compareWatch.getTotalTimeMillis());
             metricService.recordTimeEvent(LogType.COMPARE.getValue(), planId, caseItem.getParent().getAppId(), null,
                     compareWatch.getTotalTimeMillis());
+            LOGGER.info("console type CASE_EXECUTION_TIME {} ", System.currentTimeMillis() - caseItem.getParent().getParent().getExecutionStartMillis());
+            metricService.recordTimeEvent(LogType.CASE_EXECUTION_TIME.getValue(), planId, caseItem.getParent().getAppId(), null,
+                    System.currentTimeMillis() - caseItem.getParent().getParent().getExecutionStartMillis());
             MDCTracer.clear();
         }
     }
@@ -174,7 +178,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
         List<CategoryComparisonHolder> replayResult = sourceRemoteLoader.getReplayResult(recordId, targetResultId);
         //todo record the QMessage replay log,  which will be optimized for removal later.
-        metricService.recordComparisonEvent(caseItem, replayResult);
+        metricService.recordTraceIdEvent(caseItem, replayResult);
         return replayResult;
     }
 

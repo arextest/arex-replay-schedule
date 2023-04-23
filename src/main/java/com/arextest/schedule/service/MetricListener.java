@@ -32,5 +32,5 @@ public interface MetricListener {
 
     String generateMessageId(Map<String, String> headers, String url);
 
-    void recordComparison(ReplayActionCaseItem caseItem, List<CategoryComparisonHolder> replayResult);
+    void recordTraceIdAction(ReplayActionCaseItem caseItem, List<CategoryComparisonHolder> replayResult);
 }

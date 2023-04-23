@@ -39,7 +39,6 @@ public class ReplayPlan {
     private Date caseSourceFrom;
     @JsonIgnore
     private Date caseSourceTo;
-    @JsonIgnore
     private Date planCreateTime;
     @JsonIgnore
     private Date planFinishTime;
@@ -72,8 +71,13 @@ public class ReplayPlan {
     @JsonIgnore
     private String errorMessage;
 
-    private long planCreateMills;
+    /**
+     * the time the task actually starts executing
+     */
     private long executionStartMillis;
-
-    private StopWatch planExecutionWatch;
+    /**
+     * stop watch tasks from creation to actual execution.
+     */
+    @JsonIgnore
+    private StopWatch executionDelayWatch;
 }

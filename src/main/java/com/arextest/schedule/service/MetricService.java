@@ -52,7 +52,7 @@ public class MetricService {
     /**
      * record send log info and invoke time
      */
-    public void onConsoleSendLogEvent(String logType, ReplaySendResult targetSendResult, ReplayActionCaseItem caseItem, long timeUsed) {
+    public void recordSendLogEvent(String logType, ReplaySendResult targetSendResult, ReplayActionCaseItem caseItem, long timeUsed) {
         if (CollectionUtils.isEmpty(this.metricListeners)) {
             LOGGER.warn("Could not found log for {}", logType);
             return;
@@ -79,13 +79,13 @@ public class MetricService {
     /**
      * todo record the QMessage replay log,  which will be optimized for removal later.
      */
-    public void recordComparisonEvent(ReplayActionCaseItem caseItem, List<CategoryComparisonHolder> replayResult) {
+    public void recordTraceIdEvent(ReplayActionCaseItem caseItem, List<CategoryComparisonHolder> replayResult) {
         if (CollectionUtils.isEmpty(this.metricListeners)) {
             LOGGER.warn("recordComparisonEvent could not found consoleLogEvent");
             return;
         }
         for (MetricListener listener : this.metricListeners) {
-            listener.recordComparison(caseItem, replayResult);
+            listener.recordTraceIdAction(caseItem, replayResult);
         }
     }
 }
