@@ -13,6 +13,7 @@ import com.arextest.schedule.utils.ReplayParentBinder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.util.Date;
@@ -41,7 +42,7 @@ public final class PlanConsumeService {
     @Resource
     private ProgressEvent progressEvent;
     @Resource
-    private ConsoleLogService consoleLogService;
+    private MetricService metricService;
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
         // TODO: remove block thread use async to load & send for all
@@ -62,9 +63,11 @@ public final class PlanConsumeService {
     }
 
     private void saveActionCaseToSend(ReplayPlan replayPlan) {
+        StopWatch sw = replayPlan.getExecutionDelayWatch();
+        sw.stop();
+        metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
+                sw.getTotalTimeMillis());
         long executionStartMillis = System.currentTimeMillis();
-        consoleLogService.onConsoleLogTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
-                executionStartMillis - replayPlan.getPlanCreateMills());
         replayPlan.setExecutionStartMillis(executionStartMillis);
         int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());
         if (planSavedCaseSize != replayPlan.getCaseTotalCount()) {

@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
@@ -63,7 +64,7 @@ public class ReplayCaseTransmitService {
     @Resource
     private ProgressEvent progressEvent;
     @Resource
-    private ConsoleLogService consoleLogService;
+    private MetricService metricService;
 
     public boolean send(ReplayActionItem replayActionItem) {
         List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
@@ -226,7 +227,8 @@ public class ReplayCaseTransmitService {
     }
 
     private boolean prepareRemoteDependency(ReplayActionCaseItem caseItem) {
-        long switchVersionStartMills = System.currentTimeMillis();
+        StopWatch watch = new StopWatch();
+        watch.start(LogType.SWITCH_DEPENDENCY_VERSION_TIME.getValue());
         String replayDependency = caseItem.replayDependency();
         boolean prepareResult = false;
         ReplaySender replaySender = findReplaySender(caseItem);
@@ -235,8 +237,9 @@ public class ReplayCaseTransmitService {
         }
         LOGGER.info("prepare remote dependency version: {} , result: {} , {} -> {}", replayDependency, prepareResult,
                 caseItem.getParent().getServiceName(), caseItem.getParent().getOperationName());
-        consoleLogService.onConsoleLogTimeEvent(LogType.SWITCH_DEPENDENCY_VERSION_TIME.getValue(), caseItem.getParent().getPlanId(),
-                caseItem.getParent().getAppId(), null, System.currentTimeMillis() - switchVersionStartMills);
+        watch.stop();
+        metricService.recordTimeEvent(LogType.SWITCH_DEPENDENCY_VERSION_TIME.getValue(), caseItem.getParent().getPlanId(),
+                caseItem.getParent().getAppId(), null, watch.getTotalTimeMillis());
         return prepareResult;
     }
 

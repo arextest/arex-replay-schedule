@@ -10,18 +10,16 @@ import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.ReplaySenderParameters;
 import com.arextest.schedule.sender.SenderParameters;
-import com.arextest.schedule.service.ConsoleLogService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.arextest.schedule.service.MetricService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -33,7 +31,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
     private HttpWepServiceApiClient httpWepServiceApiClient;
 
     @Resource
-    private ConsoleLogService consoleLogService;
+    private MetricService metricService;
 
     private static final String PATTERN_STRING = "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$";
     private static final Pattern BASE_64_PATTERN = Pattern.compile(PATTERN_STRING);
@@ -89,12 +87,14 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         senderParameter.setHeaders(headers);
         senderParameter.setMethod(caseItem.requestMethod());
         senderParameter.setRecordId(caseItem.getRecordId());
-        long sendStartMills = System.currentTimeMillis();
         //todo get log message id and will optimize it later.
-        String messageId = consoleLogService.generateMessageIdEvent(headers, instanceRunner.getUrl());
+        String messageId = metricService.generateMessageIdEvent(headers, instanceRunner.getUrl());
+        StopWatch watch = new StopWatch();
+        watch.start(LogType.DO_SEND.getValue());
         targetSendResult = this.doInvoke(senderParameter);
+        watch.stop();
         caseItem.setMessageId(messageId);
-        consoleLogService.onConsoleSendLogEvent(LogType.DO_SEND.getValue(), targetSendResult, caseItem, System.currentTimeMillis() - sendStartMills);
+        metricService.recordSendLogEvent(LogType.DO_SEND.getValue(), targetSendResult, caseItem, watch.getTotalTimeMillis());
         caseItem.setSendErrorMessage(targetSendResult.getRemark());
         caseItem.setTargetResultId(targetSendResult.getTraceId());
         caseItem.setSendStatus(targetSendResult.getStatusType().getValue());

@@ -20,6 +20,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -45,7 +46,7 @@ public class ReplayCaseRemoteLoadService {
     @Resource
     private ObjectMapper objectMapper;
     @Resource
-    private ConsoleLogService consoleLogService;
+    private MetricService metricService;
 
     public int queryCaseCount(ReplayActionItem replayActionItem) {
         try {
@@ -114,15 +115,16 @@ public class ReplayCaseRemoteLoadService {
         requestType.setBeginTime(beginTimeMills);
         requestType.setEndTime(endTimeMills);
         PagedResponseType responseType;
-        long beginTime = System.currentTimeMillis();
+        StopWatch watch = new StopWatch();
+        watch.start(LogType.LOAD_CASE_TIME.getValue());
         responseType = wepApiClientService.jsonPost(replayCaseUrl, requestType, PagedResponseType.class);
-        long timeUsed = System.currentTimeMillis() - beginTime;
+        watch.stop();
         LOGGER.info("get replay case app id:{},time used:{} ms, operation:{}",
                 requestType.getAppId(),
-                timeUsed, requestType.getOperation()
+                watch.getTotalTimeMillis(), requestType.getOperation()
         );
-        consoleLogService.onConsoleLogTimeEvent(LogType.LOAD_CASE_TIME.getValue(), replayActionItem.getPlanId(),
-                replayActionItem.getAppId(), null, timeUsed);
+        metricService.recordTimeEvent(LogType.LOAD_CASE_TIME.getValue(), replayActionItem.getPlanId(),
+                replayActionItem.getAppId(), null, watch.getTotalTimeMillis());
         if (badResponse(responseType)) {
             try {
                 LOGGER.warn("get replay case is empty,request:{} , response:{}",

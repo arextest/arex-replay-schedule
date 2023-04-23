@@ -4,6 +4,7 @@ import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
+import org.springframework.util.StopWatch;
 
 import java.util.Date;
 import java.util.List;
@@ -65,7 +66,14 @@ public class ReplayPlan {
     @JsonIgnore
     private String errorMessage;
 
-    private long planCreateMills;
+    /**
+     * the time the task actually starts executing
+     */
     private long executionStartMillis;
+    /**
+     * stop watch tasks from creation to actual execution.
+     */
+    @JsonIgnore
+    private StopWatch executionDelayWatch;
 
 }
