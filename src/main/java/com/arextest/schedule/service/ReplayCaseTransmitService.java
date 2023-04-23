@@ -62,12 +62,14 @@ public class ReplayCaseTransmitService {
     @Resource
     private ProgressEvent progressEvent;
 
-    public boolean send(ReplayActionItem replayActionItem) {
+    public boolean send(ReplayActionItem replayActionItem, boolean isFirst) {
         List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
         if (CollectionUtils.isEmpty(sourceItemList)) {
             return false;
         }
-        activeRemoteHost(sourceItemList);
+        if (isFirst) {
+            activeRemoteHost(sourceItemList);
+        }
         Map<String, List<ReplayActionCaseItem>> versionGroupedResult = groupByDependencyVersion(sourceItemList);
         LOGGER.info("found replay send size of group: {}", versionGroupedResult.size());
         replayActionItem.getSendRateLimiter().reset();
@@ -237,7 +239,7 @@ public class ReplayCaseTransmitService {
     private void activeRemoteHost(List<ReplayActionCaseItem> sourceItemList) {
         try {
             for (int i = 0; i < ACTIVE_SERVICE_RETRY_COUNT && i < sourceItemList.size(); i++) {
-                ReplayActionCaseItem caseItem = sourceItemList.get(i);
+                ReplayActionCaseItem caseItem = cloneCaseItem(sourceItemList, i);
                 ReplaySender replaySender = findReplaySender(caseItem);
                 if (replaySender == null) {
                     continue;

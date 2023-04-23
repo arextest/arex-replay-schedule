@@ -25,6 +25,7 @@ import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.arextest.schedule.common.CommonConstant.*;
 
@@ -100,16 +101,16 @@ public class PlanProduceService {
             replayPlan.setTargetImageId(deploymentVersion.getImageId());
             replayPlan.setTargetImageName(deploymentVersion.getImage().getName());
         }
-        ServiceInstance serviceInstance = planContext.targetActiveInstance();
-        replayPlan.setTargetHost(serviceInstance.getUrl());
-        replayPlan.setTargetEnv(serviceInstance.subEnv());
-        serviceInstance = planContext.sourceActiveInstance();
-        if (serviceInstance == null) {
+        List<ServiceInstance> serviceInstances = planContext.targetActiveInstance();
+        replayPlan.setTargetHost(getIpAddress(serviceInstances));
+        replayPlan.setTargetEnv(request.getTargetEnv());
+        serviceInstances = planContext.sourceActiveInstance();
+        if (CollectionUtils.isEmpty(serviceInstances)) {
             replayPlan.setSourceEnv(StringUtils.EMPTY);
             replayPlan.setSourceHost(StringUtils.EMPTY);
         } else {
-            replayPlan.setSourceEnv(serviceInstance.subEnv());
-            replayPlan.setSourceHost(serviceInstance.getUrl());
+            replayPlan.setSourceEnv(request.getSourceEnv());
+            replayPlan.setSourceHost(getIpAddress(serviceInstances));
         }
         replayPlan.setPlanCreateTime(new Date());
         replayPlan.setOperator(request.getOperator());
@@ -133,6 +134,10 @@ public class PlanProduceService {
             replayPlan.setCaseCountLimit(request.getCaseCountLimit());
         }
         return replayPlan;
+    }
+
+    private String getIpAddress(List<ServiceInstance> serviceInstances) {
+        return serviceInstances.stream().map(ServiceInstance::getIp).collect(Collectors.joining(","));
     }
 
     private ReplayPlanBuilder select(BuildReplayPlanRequest request) {

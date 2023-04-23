@@ -27,7 +27,6 @@ public class ReplayActionItem {
     /**
      * example: applyRefund
      */
-    @JsonIgnore
     private String operationName;
     /**
      * example: RefundPaymentService
@@ -50,7 +49,6 @@ public class ReplayActionItem {
      */
     @JsonIgnore
     private int replayStatus;
-    @JsonIgnore
     private Date replayBeginTime;
     @JsonIgnore
     private Date replayFinishTime;
@@ -60,9 +58,9 @@ public class ReplayActionItem {
      */
     private String actionType;
     @JsonIgnore
-    private ServiceInstance sourceInstance;
+    private List<ServiceInstance> sourceInstance;
     @JsonIgnore
-    private ServiceInstance targetInstance;
+    private List<ServiceInstance> targetInstance;
     @JsonIgnore
     private ServiceInstanceOperation mappedInstanceOperation;
     private int replayCaseCount;

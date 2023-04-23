@@ -9,13 +9,13 @@ import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.AppServiceDescriptor;
-import com.arextest.schedule.model.deploy.DeploymentEnvironmentProvider;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.ConfigurationService;
+import com.arextest.schedule.service.DefaultDeployedEnvironmentService;
 import com.arextest.schedule.service.PlanConsumeService;
 import com.arextest.schedule.service.PlanProduceService;
 import com.arextest.schedule.utils.ReplayParentBinder;
@@ -53,7 +53,7 @@ public class SelfHealingInterrupted {
     @Resource
     private PlanContextCreator planContextCreator;
     @Resource
-    private DeploymentEnvironmentProvider deploymentEnvironmentProvider;
+    private DefaultDeployedEnvironmentService deployedEnvironmentService;
 
     // #TODO There is a problem here, Date and Duration types are compared
     public void resumeTimeout(Duration offsetDuration, Duration maxDuration) {
@@ -117,9 +117,10 @@ public class SelfHealingInterrupted {
                 continue;
             }
             AppServiceDescriptor appServiceDescriptor = operationDescriptor.getParent();
-            List<ServiceInstance> activeInstanceList = deploymentEnvironmentProvider.getActiveInstanceList(appServiceDescriptor, replayPlan.getTargetHost());
+            List<ServiceInstance> activeInstanceList = deployedEnvironmentService.getActiveInstanceListEvent(appServiceDescriptor,
+                    replayPlan.getTargetEnv());
             appServiceDescriptor.setTargetActiveInstanceList(activeInstanceList);
-            
+
             planContext.fillReplayAction(actionItem, operationDescriptor);
         }
     }

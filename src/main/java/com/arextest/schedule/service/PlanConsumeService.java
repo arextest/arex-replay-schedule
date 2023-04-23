@@ -156,6 +156,7 @@ public final class PlanConsumeService {
 
     private boolean sendByPaging(ReplayActionItem replayActionItem) {
         List<ReplayActionCaseItem> sourceItemList;
+        boolean isFirst = true;
         while (true) {
             sourceItemList = replayActionCaseItemRepository.waitingSendList(replayActionItem.getId(),
                     CommonConstant.MAX_PAGE_SIZE);
@@ -164,10 +165,11 @@ public final class PlanConsumeService {
                 break;
             }
             ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
-            boolean isCanceled = replayCaseTransmitService.send(replayActionItem);
+            boolean isCanceled = replayCaseTransmitService.send(replayActionItem, isFirst);
             if (isCanceled) {
                 return true;
             }
+            isFirst = false;
             if (replayActionItem.getSendRateLimiter().failBreak()) {
                 break;
             }
