@@ -67,8 +67,6 @@ public final class PlanConsumeService {
         sw.stop();
         metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
                 sw.getTotalTimeMillis());
-        long executionStartMillis = System.currentTimeMillis();
-        replayPlan.setExecutionStartMillis(executionStartMillis);
         int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());
         if (planSavedCaseSize != replayPlan.getCaseTotalCount()) {
             LOGGER.info("update the plan TotalCount, plan id:{} ,appId: {} , size: {} -> {}", replayPlan.getId(),
