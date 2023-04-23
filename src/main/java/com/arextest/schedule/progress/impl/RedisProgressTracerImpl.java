@@ -1,7 +1,6 @@
 package com.arextest.schedule.progress.impl;
 
 import com.arextest.common.cache.CacheProvider;
-import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
@@ -11,7 +10,6 @@ import com.arextest.schedule.service.MetricService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.nio.ByteBuffer;
@@ -107,11 +105,6 @@ final class RedisProgressTracerImpl implements ProgressTracer {
             Long finished = doWithRetry(() -> redisCacheProvider.incrValue(toPlanFinishKeyBytes(planId)));
             if (finished != null && finished == replayPlan.getCaseTotalCount()) {
                 progressEvent.onReplayPlanFinish(replayPlan);
-                StopWatch planExecutionWatch = replayPlan.getPlanExecutionWatch();
-                planExecutionWatch.stop();
-                LOGGER.info("console type planExecutionWatch {} ", planExecutionWatch.getTotalTimeMillis());
-                metricService.recordTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
-                        planExecutionWatch.getTotalTimeMillis());
             }
         } catch (Throwable throwable) {
 
