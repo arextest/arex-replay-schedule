@@ -31,8 +31,7 @@ import java.util.regex.Pattern;
 final class HttpServletReplaySender extends AbstractReplaySender {
     @Resource
     private HttpWepServiceApiClient httpWepServiceApiClient;
-    @Resource
-    private ObjectMapper objectMapper;
+
     @Resource
     private ConsoleLogService consoleLogService;
 
@@ -67,13 +66,6 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         return doInvoke(senderParameters);
     }
 
-
-    private Map<String, String> newHeadersIfEmpty(Map<String, String> source) {
-        if (MapUtils.isEmpty(source)) {
-            return new HashMap<>();
-        }
-        return source;
-    }
 
     private boolean doSend(ReplayActionItem replayActionItem, ReplayActionCaseItem caseItem,
                            Map<String, String> headers) {
@@ -229,9 +221,6 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         return MediaType.parseMediaType(format);
     }
 
-    private boolean isReplayRequest(Map<?, ?> requestHeaders) {
-        return MapUtils.isNotEmpty(requestHeaders) && requestHeaders.containsKey(CommonConstant.AREX_RECORD_ID);
-    }
 
     private ReplaySendResult fromHttpResult(Map<?, ?> requestHeaders, String url, ResponseEntity<?> responseEntity) {
         HttpHeaders responseHeaders = null;
@@ -261,23 +250,6 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         return ReplaySendResult.success(resultId, StringUtils.EMPTY, url);
     }
 
-    private String encodeResponseAsString(Object responseBody) {
-        if (responseBody == null) {
-            return null;
-        }
-        if (responseBody instanceof String) {
-            return (String) responseBody;
-        }
-        if (responseBody instanceof byte[]) {
-            return Base64.getEncoder().encodeToString((byte[]) responseBody);
-        }
-        try {
-            return objectMapper.writeValueAsString(responseBody);
-        } catch (JsonProcessingException e) {
-            LOGGER.warn("encodeAsString error:{}", e.getMessage(), e);
-        }
-        return null;
-    }
 
     private String replayResultId(Map<?, ?> responseHeaders) {
         if (MapUtils.isEmpty(responseHeaders)) {
