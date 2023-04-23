@@ -44,8 +44,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     public boolean compare(ReplayActionCaseItem caseItem, boolean useReplayId) {
         StopWatch compareWatch = new StopWatch();
         compareWatch.start(LogType.COMPARE.getValue());
-        StopWatch caseExecutionWatch = new StopWatch();
-        caseExecutionWatch.start(LogType.CASE_EXECUTION_TIME.getValue());
         String planId = caseItem.getParent().getPlanId();
         try {
             MDCTracer.addPlanId(planId);
