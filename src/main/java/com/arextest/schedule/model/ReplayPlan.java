@@ -70,10 +70,8 @@ public class ReplayPlan {
      * the time the task actually starts executing
      */
     private long executionStartMillis;
-    /**
-     * stop watch tasks from creation to actual execution.
-     */
+
     @JsonIgnore
-    private StopWatch executionDelayWatch;
+    private long planCreateMillis;
 
 }

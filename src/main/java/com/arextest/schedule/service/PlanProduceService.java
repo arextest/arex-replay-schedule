@@ -71,6 +71,7 @@ public class PlanProduceService {
             return CommonResponse.badResponse("appId:" + appId + " error: empty replay actions");
         }
         ReplayPlan replayPlan = build(request, planContext);
+        replayPlan.setPlanCreateMillis(planCreateMillis);
         replayPlan.setReplayActionItemList(replayActionItemList);
         ReplayParentBinder.setupReplayActionParent(replayActionItemList, replayPlan);
         int planCaseCount = planBuilder.buildReplayCaseCount(replayActionItemList);
@@ -86,7 +87,6 @@ public class PlanProduceService {
         if (!replayPlanActionRepository.save(replayActionItemList)) {
             return CommonResponse.badResponse("save replay action error, " + replayPlan.toString());
         }
-        replayPlan.setPlanCreateMills(planCreateMillis);
         progressEvent.onReplayPlanCreated(replayPlan);
         planConsumeService.runAsyncConsume(replayPlan);
         return CommonResponse.successResponse("create plan success！" + result.getRemark(), replayPlan.getId());
