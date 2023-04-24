@@ -3,12 +3,9 @@ package com.arextest.schedule.client;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -36,18 +33,22 @@ import java.util.Map;
 @Component
 @Slf4j
 public final class HttpWepServiceApiClient {
-    private final static int TEN_SECONDS_TIMEOUT = 10_000;
     private RestTemplate restTemplate;
     @Resource
     private ZstdJacksonMessageConverter zstdJacksonMessageConverter;
     @Resource
     private ObjectMapper objectMapper;
 
+    @Value("${arex.connect.time.out}")
+    private int connectTimeOut;
+    @Value("${arex.read.time.out}")
+    private int readTimeOut;
+
     @PostConstruct
     private void initRestTemplate() {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(TEN_SECONDS_TIMEOUT);
-        requestFactory.setReadTimeout(TEN_SECONDS_TIMEOUT);
+        requestFactory.setConnectTimeout(connectTimeOut);
+        requestFactory.setReadTimeout(readTimeOut);
         final int initialCapacity = 10;
         List<HttpMessageConverter<?>> httpMessageConverterList = new ArrayList<>(initialCapacity);
         httpMessageConverterList.add(zstdJacksonMessageConverter);
