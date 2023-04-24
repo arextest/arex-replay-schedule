@@ -71,7 +71,6 @@ public class ReplayPlan {
      */
     private long executionStartMillis;
 
-    @JsonIgnore
-    private long planCreateMillis;
+    private transient long planCreateMillis;
 
 }
