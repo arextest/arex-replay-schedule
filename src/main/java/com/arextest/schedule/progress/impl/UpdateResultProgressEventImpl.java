@@ -67,6 +67,7 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
         metricService.recordCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
         replayReportService.pushPlanStatus(planId, reason, replayPlan.getErrorMessage());
+        recordPlanExecutionTime(replayPlan);
     }
 
     private void recordPlanExecutionTime(ReplayPlan replayPlan) {

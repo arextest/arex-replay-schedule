@@ -183,6 +183,7 @@ public class ReplayCaseTransmitService {
                 taskRunnable.setReplaySender(replaySender);
                 taskRunnable.setGroupSentLatch(groupSentLatch);
                 taskRunnable.setLimiter(semaphore);
+                taskRunnable.setMetricService(metricService);
                 sendExecutorService.execute(taskRunnable);
                 LOGGER.info("submit replay sending success");
             } catch (Throwable throwable) {

@@ -4,12 +4,15 @@ import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSendStatusType;
+import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.sender.ReplaySender;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.CountDownLatch;
+
+import static com.arextest.schedule.common.CommonConstant.DEFAULT_COUNT;
 
 /**
  * @author jmo
@@ -23,6 +26,7 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
     private transient CountDownLatch groupSentLatch;
     private transient SendSemaphoreLimiter limiter;
     private transient final ReplayCaseTransmitService transmitService;
+    private transient MetricService metricService;
 
     AsyncSendCaseTaskRunnable(ReplayCaseTransmitService transmitService) {
         this.transmitService = transmitService;
@@ -52,6 +56,10 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
             caseItem.buildParentErrorMessage(
                     t != null ? t.getMessage() : CaseSendStatusType.EXCEPTION_FAILED.name()
             );
+            if (!success) {
+                metricService.recordCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), caseItem.getParent().getPlanId(),
+                        caseItem.getParent().getAppId(), DEFAULT_COUNT);
+            }
             MDCTracer.removeDetailId();
         }
     }
