@@ -3,10 +3,12 @@ package com.arextest.schedule.progress.impl;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
+import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.progress.ProgressEvent;
+import com.arextest.schedule.service.MetricService;
 import com.arextest.schedule.service.ReplayReportService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -29,6 +31,11 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
     private ReplayReportService replayReportService;
     @Resource
     private CompareConfigService compareConfigService;
+    @Resource
+    private MetricService metricService;
+
+    public static final long DEFAULT_COUNT = 1L;
+
 
     @Override
     public void onReplayPlanCreated(ReplayPlan replayPlan) {
@@ -49,6 +56,7 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         boolean result = replayPlanRepository.finish(planId);
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
         replayReportService.pushPlanStatus(planId, reason, null);
+        recordPlanExecutionTime(replayPlan);
     }
 
     @Override
@@ -57,7 +65,20 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         String planId = replayPlan.getId();
         boolean result = replayPlanRepository.finish(planId);
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
+        metricService.recordCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
         replayReportService.pushPlanStatus(planId, reason, replayPlan.getErrorMessage());
+        recordPlanExecutionTime(replayPlan);
+    }
+
+    private void recordPlanExecutionTime(ReplayPlan replayPlan) {
+        Date planCreateTime = replayPlan.getPlanCreateTime();
+        long planFinishMills = replayPlan.getPlanFinishTime() == null ? System.currentTimeMillis() : replayPlan.getPlanFinishTime().getTime();
+        if (planCreateTime != null) {
+            metricService.recordTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
+                    planFinishMills - planCreateTime.getTime());
+        } else {
+            LOGGER.warn("record plan execution time fail, plan create time is null, plan id :{}", replayPlan.getId());
+        }
     }
 
     @Override
@@ -104,6 +125,8 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         }
         actionItem.setReplayFinishTime(now);
         updateReplayActionStatus(actionItem, ReplayStatusType.FAIL_INTERRUPTED, actionItem.getErrorMessage());
+        metricService.recordCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), actionItem.getPlanId(), actionItem.getAppId(),
+                actionItem.getCaseItemList().size());
     }
 
     public void onActionCancelled(ReplayActionItem actionItem) {

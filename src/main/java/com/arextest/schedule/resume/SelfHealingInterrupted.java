@@ -80,6 +80,8 @@ public class SelfHealingInterrupted {
     }
 
     private void doResume(ReplayPlan replayPlan) {
+        long planCreateMillis = System.currentTimeMillis();
+        replayPlan.setPlanCreateMillis(planCreateMillis);
         String planId = replayPlan.getId();
         List<ReplayActionItem> actionItems = replayPlanActionRepository.queryPlanActionList(planId);
         if (CollectionUtils.isEmpty(actionItems)) {

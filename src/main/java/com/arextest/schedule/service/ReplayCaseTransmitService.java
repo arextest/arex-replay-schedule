@@ -9,6 +9,7 @@ import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSendStatusType;
+import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.progress.ProgressEvent;
@@ -22,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
@@ -61,6 +63,8 @@ public class ReplayCaseTransmitService {
     private CacheProvider redisCacheProvider;
     @Resource
     private ProgressEvent progressEvent;
+    @Resource
+    private MetricService metricService;
 
     public boolean send(ReplayActionItem replayActionItem) {
         List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
@@ -179,6 +183,7 @@ public class ReplayCaseTransmitService {
                 taskRunnable.setReplaySender(replaySender);
                 taskRunnable.setGroupSentLatch(groupSentLatch);
                 taskRunnable.setLimiter(semaphore);
+                taskRunnable.setMetricService(metricService);
                 sendExecutorService.execute(taskRunnable);
                 LOGGER.info("submit replay sending success");
             } catch (Throwable throwable) {
@@ -223,6 +228,8 @@ public class ReplayCaseTransmitService {
     }
 
     private boolean prepareRemoteDependency(ReplayActionCaseItem caseItem) {
+        StopWatch watch = new StopWatch();
+        watch.start(LogType.SWITCH_DEPENDENCY_VERSION_TIME.getValue());
         String replayDependency = caseItem.replayDependency();
         boolean prepareResult = false;
         ReplaySender replaySender = findReplaySender(caseItem);
@@ -231,6 +238,9 @@ public class ReplayCaseTransmitService {
         }
         LOGGER.info("prepare remote dependency version: {} , result: {} , {} -> {}", replayDependency, prepareResult,
                 caseItem.getParent().getServiceName(), caseItem.getParent().getOperationName());
+        watch.stop();
+        metricService.recordTimeEvent(LogType.SWITCH_DEPENDENCY_VERSION_TIME.getValue(), caseItem.getParent().getPlanId(),
+                caseItem.getParent().getAppId(), null, watch.getTotalTimeMillis());
         return prepareResult;
     }
 

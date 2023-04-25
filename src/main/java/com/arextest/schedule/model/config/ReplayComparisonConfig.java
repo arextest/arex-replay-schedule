@@ -50,6 +50,9 @@ public class ReplayComparisonConfig {
         if (Objects.equals(type, MockCategoryType.REDIS.getName())) {
             return true;
         }
+        if (Objects.equals(type, MockCategoryType.Q_MESSAGE_CONSUMER.getName())) {
+            return true;
+        }
         return ignoreTypeList != null && ignoreTypeList.contains(type);
     }
 

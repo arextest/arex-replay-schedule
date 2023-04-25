@@ -5,30 +5,20 @@ import com.arextest.diff.model.CompareOptions;
 import com.arextest.diff.model.CompareResult;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.model.mock.MockCategoryType;
-import com.arextest.schedule.comparer.CategoryComparisonHolder;
-import com.arextest.schedule.comparer.CompareConfigService;
-import com.arextest.schedule.comparer.CompareItem;
-import com.arextest.schedule.comparer.ComparisonWriter;
-import com.arextest.schedule.comparer.ReplayResultComparer;
+import com.arextest.schedule.comparer.*;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.model.CaseSendStatusType;
-import com.arextest.schedule.model.CompareProcessStatusType;
-import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.ReplayCompareResult;
+import com.arextest.schedule.model.*;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.progress.ProgressTracer;
+import com.arextest.schedule.service.MetricService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.StopWatch;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -41,7 +31,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     private final ReplayActionCaseItemRepository caseItemRepository;
     private static final int INDEX_NOT_FOUND = -1;
     private static final CompareSDK COMPARE_INSTANCE = new CompareSDK();
-
+    private final MetricService metricService;
     private static List<String> ignoreInDataBaseMocker = Collections.singletonList("body");
 
     static {
@@ -50,16 +40,16 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
 
     @Override
     public boolean compare(ReplayActionCaseItem caseItem, boolean useReplayId) {
+        StopWatch compareWatch = new StopWatch();
+        compareWatch.start(LogType.COMPARE.getValue());
+        String planId = caseItem.getParent().getPlanId();
         try {
-            MDCTracer.addPlanId(caseItem.getParent().getPlanId());
+            MDCTracer.addPlanId(planId);
             MDCTracer.addPlanItemId(caseItem.getPlanItemId());
             ReplayComparisonConfig compareConfig = getCompareConfig(caseItem.getParent());
             List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
             List<CategoryComparisonHolder> waitCompareMap = buildWaitCompareList(caseItem, useReplayId);
             if (CollectionUtils.isEmpty(waitCompareMap)) {
-                if (!useReplayId) {
-                    return comparisonOutputWriter.writeQmqCompareResult(caseItem);
-                }
                 caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.ERROR.getValue());
                 comparisonOutputWriter.writeIncomparable(caseItem, CaseSendStatusType.REPLAY_RESULT_NOT_FOUND.name());
                 return true;
@@ -69,6 +59,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                     continue;
                 }
                 compareReplayResult(bindHolder, compareConfig, caseItem, replayCompareResults);
+            }
+            if (CollectionUtils.isEmpty(replayCompareResults) && !useReplayId) {
+                return comparisonOutputWriter.writeQmqCompareResult(caseItem);
             }
             return comparisonOutputWriter.write(replayCompareResults);
         } catch (Throwable throwable) {
@@ -81,6 +74,12 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         } finally {
             caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.PASS.getValue());
             progressTracer.finishOne(caseItem);
+            compareWatch.stop();
+            metricService.recordTimeEvent(LogType.COMPARE.getValue(), planId, caseItem.getParent().getAppId(), null,
+                    compareWatch.getTotalTimeMillis());
+            long caseExecutionEndMills = System.currentTimeMillis();
+            metricService.recordTimeEvent(LogType.CASE_EXECUTION_TIME.getValue(), planId, caseItem.getParent().getAppId(), null,
+                    caseExecutionEndMills - caseItem.getExecutionStartMillis());
             MDCTracer.clear();
         }
     }
@@ -123,7 +122,12 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 for (int i = 0; i < recordContentGroupList.size(); i++) {
                     String source = recordContentGroupList.get(i);
                     String target = resultContentGroupList.get(i);
+                    StopWatch stopWatch = new StopWatch();
+                    stopWatch.start(LogType.COMPARE_SDK.getValue());
                     CompareResult comparedResult = compareProcess(category, source, target, compareConfig);
+                    stopWatch.stop();
+                    metricService.recordTimeEvent(LogType.COMPARE_SDK.getValue(), caseItem.getParent().getPlanId(),
+                            caseItem.getParent().getAppId(), source, stopWatch.getTotalTimeMillis());
                     ReplayCompareResult resultNew = ReplayCompareResult.createFrom(caseItem);
                     mergeResult(key, category, resultNew, comparedResult);
                     compareResultNewList.add(resultNew);
@@ -167,7 +171,10 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             }
             return buildWaitCompareList(sourceResponse, targetResponse);
         }
-        return sourceRemoteLoader.getReplayResult(recordId, targetResultId);
+        List<CategoryComparisonHolder> replayResult = sourceRemoteLoader.getReplayResult(recordId, targetResultId);
+        //todo record the QMessage replay log,  which will be optimized for removal later.
+        metricService.recordTraceIdEvent(caseItem, replayResult);
+        return replayResult;
     }
 
     private List<CategoryComparisonHolder> buildWaitCompareList(List<CategoryComparisonHolder> sourceResult,

@@ -4,6 +4,7 @@ import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
+import org.springframework.util.StopWatch;
 
 import java.util.Date;
 import java.util.List;
@@ -64,5 +65,7 @@ public class ReplayPlan {
 
     @JsonIgnore
     private String errorMessage;
+
+    private transient long planCreateMillis;
 
 }

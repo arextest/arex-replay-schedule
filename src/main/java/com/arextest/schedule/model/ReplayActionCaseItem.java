@@ -39,6 +39,12 @@ public class ReplayActionCaseItem {
     private long recordTime;
     @JsonIgnore
     private Target targetRequest;
+    @JsonIgnore
+    private String messageId;
+    /**
+     * the time the case actually starts executing
+     */
+    private long executionStartMillis;
 
     public String replayDependency() {
         return requestAttribute(MockAttributeNames.CONFIG_BATCH_NO);
