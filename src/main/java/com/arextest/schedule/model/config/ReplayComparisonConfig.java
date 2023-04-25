@@ -4,11 +4,7 @@ package com.arextest.schedule.model.config;
 import com.arextest.model.mock.MockCategoryType;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.KeyDeserializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
@@ -48,6 +44,9 @@ public class ReplayComparisonConfig {
             return true;
         }
         if (Objects.equals(type, MockCategoryType.REDIS.getName())) {
+            return true;
+        }
+        if (Objects.equals(type, MockCategoryType.Q_MESSAGE_CONSUMER.getName())) {
             return true;
         }
         return ignoreTypeList != null && ignoreTypeList.contains(type);

@@ -1,11 +1,12 @@
 package com.arextest.schedule.progress.impl;
 
-import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.progress.ProgressEvent;
+import com.arextest.schedule.progress.ProgressTracer;
+import com.arextest.schedule.service.MetricService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -33,6 +34,8 @@ final class RedisProgressTracerImpl implements ProgressTracer {
     private ProgressEvent progressEvent;
     @Resource
     private CacheProvider redisCacheProvider;
+    @Resource
+    private MetricService metricService;
 
     @Override
     public void initTotal(ReplayPlan replayPlan) {

@@ -47,15 +47,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
     public List<ReplayActionCaseItem> waitingSendList(String planItemId, int pageSize) {
         Query query = Query.query(Criteria.where(PLAN_ITEM_ID).is(planItemId));
-        query.addCriteria(
-                new Criteria().orOperator(
-                        Criteria.where(SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()),
-                        new Criteria().andOperator(
-                                Criteria.where(SEND_STATUS).is(CaseSendStatusType.SUCCESS.getValue()),
-                                Criteria.where(COMPARE_STATUS).is(CompareProcessStatusType.WAIT_HANDLING.getValue())
-                        )
-                )
-        );
+        query.addCriteria(Criteria.where(SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()));
         query.limit(pageSize);
         query.with(Sort.by(
                 Sort.Order.asc(DASH_ID),

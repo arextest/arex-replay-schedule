@@ -3,7 +3,6 @@ package com.arextest.schedule.plan.builder.impl;
 import com.arextest.schedule.model.AppServiceDescriptor;
 import com.arextest.schedule.model.CaseSourceEnvType;
 import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.deploy.DeploymentEnvironmentProvider;
 import com.arextest.schedule.model.deploy.DeploymentVersion;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
@@ -30,6 +29,7 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
     private final static String DEFAULT_PRO_SOURCE_ENV = "pro";
     @Resource
     private DefaultDeployedEnvironmentService deployedEnvironmentService;
+
     @Resource
     private ReplayCaseRemoteLoadService replayCaseRemoteLoadService;
     @Resource

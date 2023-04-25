@@ -31,7 +31,7 @@ public final class ConfigurationService {
         return scheduleResponse != null ? scheduleResponse.body : null;
     }
 
-    private Map<String, ?> appIdUrlVariable(String appId) {
+    public static Map<String, ?> appIdUrlVariable(String appId) {
         return Collections.singletonMap("appId", appId);
     }
 
@@ -47,6 +47,7 @@ public final class ConfigurationService {
         private Set<String> targetEnv;
         private Map<String, Set<String>> excludeOperationMap;
         private Integer sendMaxQps;
+        private Integer caseCountLimit;
 
     }
 

@@ -3,16 +3,20 @@ package com.arextest.schedule.progress.impl;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
+import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.progress.ProgressEvent;
+import com.arextest.schedule.service.MetricService;
 import com.arextest.schedule.service.ReplayReportService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.util.Date;
+
+import static com.arextest.schedule.common.CommonConstant.DEFAULT_COUNT;
 
 /**
  * @author jmo
@@ -29,6 +33,8 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
     private ReplayReportService replayReportService;
     @Resource
     private CompareConfigService compareConfigService;
+    @Resource
+    private MetricService metricService;
 
     @Override
     public void onReplayPlanCreated(ReplayPlan replayPlan) {
@@ -49,6 +55,7 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         boolean result = replayPlanRepository.finish(planId);
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
         replayReportService.pushPlanStatus(planId, reason, null);
+        recordPlanExecutionTime(replayPlan);
     }
 
     @Override
@@ -58,6 +65,18 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         boolean result = replayPlanRepository.finish(planId);
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
         replayReportService.pushPlanStatus(planId, reason, replayPlan.getErrorMessage());
+        metricService.recordCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
+        recordPlanExecutionTime(replayPlan);
+    }
+
+    private void recordPlanExecutionTime(ReplayPlan replayPlan) {
+        Date planCreateTime = replayPlan.getPlanCreateTime();
+        long planFinishMills = replayPlan.getPlanFinishTime() == null ? System.currentTimeMillis() : replayPlan.getPlanFinishTime().getTime();
+        if (planCreateTime != null) {
+            LOGGER.info("console type planExecutionWatch {} ", System.currentTimeMillis() - planCreateTime.getTime());
+            metricService.recordTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
+                    planFinishMills - planCreateTime.getTime());
+        }
     }
 
     @Override

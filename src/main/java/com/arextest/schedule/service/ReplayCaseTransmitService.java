@@ -9,6 +9,7 @@ import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSendStatusType;
+import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.progress.ProgressEvent;
@@ -22,18 +23,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static com.arextest.schedule.common.CommonConstant.DEFAULT_COUNT;
 import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_KEY;
 
 /**
@@ -61,6 +60,8 @@ public class ReplayCaseTransmitService {
     private CacheProvider redisCacheProvider;
     @Resource
     private ProgressEvent progressEvent;
+    @Resource
+    private MetricService metricService;
 
     public boolean send(ReplayActionItem replayActionItem, boolean isFirst) {
         List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
@@ -121,6 +122,8 @@ public class ReplayCaseTransmitService {
                 LOGGER.error("prepare remote dependency false, group key: {} marked failed ,action id:{}",
                         groupValues.get(0).replayDependency(),
                         groupValues.get(0).getParent().getId());
+                metricService.recordCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), dependSource.getParent().getPlanId(),
+                        dependSource.getParent().getAppId(), groupValues.size());
             }
         } catch (Exception e) {
             LOGGER.error("do send with dependency to remote host error ,action id:{}",
@@ -181,11 +184,14 @@ public class ReplayCaseTransmitService {
                 taskRunnable.setReplaySender(replaySender);
                 taskRunnable.setGroupSentLatch(groupSentLatch);
                 taskRunnable.setLimiter(semaphore);
+                taskRunnable.setMetricService(metricService);
                 sendExecutorService.execute(taskRunnable);
                 LOGGER.info("submit replay sending success");
             } catch (Throwable throwable) {
                 groupSentLatch.countDown();
                 semaphore.release(false);
+                metricService.recordCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), replayActionCaseItem.getParent().getPlanId(),
+                        replayActionCaseItem.getParent().getAppId(), DEFAULT_COUNT);
                 replayActionCaseItem.buildParentErrorMessage(throwable.getMessage());
                 LOGGER.error("send group to remote host error:{} ,case item id:{}", throwable.getMessage(),
                         replayActionCaseItem.getId(), throwable);
@@ -224,7 +230,9 @@ public class ReplayCaseTransmitService {
         return null;
     }
 
-    private boolean prepareRemoteDependency(ReplayActionCaseItem caseItem) {
+    public boolean prepareRemoteDependency(ReplayActionCaseItem caseItem) {
+        StopWatch watch = new StopWatch();
+        watch.start(LogType.SWITCH_DEPENDENCY_VERSION_TIME.getValue());
         String replayDependency = caseItem.replayDependency();
         boolean prepareResult = false;
         ReplaySender replaySender = findReplaySender(caseItem);
@@ -233,6 +241,10 @@ public class ReplayCaseTransmitService {
         }
         LOGGER.info("prepare remote dependency version: {} , result: {} , {} -> {}", replayDependency, prepareResult,
                 caseItem.getParent().getServiceName(), caseItem.getParent().getOperationName());
+        watch.stop();
+        LOGGER.info("console type SWITCH_DEPENDENCY_VERSION_TIME {} ", watch.getTotalTimeMillis());
+        metricService.recordTimeEvent(LogType.SWITCH_DEPENDENCY_VERSION_TIME.getValue(), caseItem.getParent().getPlanId(),
+                caseItem.getParent().getAppId(), null, watch.getTotalTimeMillis());
         return prepareResult;
     }
 

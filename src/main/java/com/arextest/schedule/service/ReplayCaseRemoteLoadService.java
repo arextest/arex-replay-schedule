@@ -4,26 +4,18 @@ package com.arextest.schedule.service;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker.Target;
-import com.arextest.model.replay.PagedRequestType;
-import com.arextest.model.replay.PagedResponseType;
-import com.arextest.model.replay.QueryCaseCountResponseType;
-import com.arextest.model.replay.ViewRecordRequestType;
-import com.arextest.model.replay.ViewRecordResponseType;
-import com.arextest.schedule.common.CommonConstant;
+import com.arextest.model.replay.*;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
-import com.arextest.schedule.model.CaseSendStatusType;
-import com.arextest.schedule.model.CompareProcessStatusType;
-import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.common.CommonConstant;
+import com.arextest.schedule.model.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -48,6 +40,8 @@ public class ReplayCaseRemoteLoadService {
     private String replayCaseUrl;
     @Resource
     private ObjectMapper objectMapper;
+    @Resource
+    private MetricService metricService;
 
 
     public int queryCaseCount(ReplayActionItem replayActionItem) {
@@ -66,11 +60,12 @@ public class ReplayCaseRemoteLoadService {
         return EMPTY_SIZE;
     }
 
-    public ReplayActionCaseItem viewReplayLoad(ReplayActionCaseItem caseItem) {
+    public ReplayActionCaseItem viewReplayLoad(ReplayActionCaseItem caseItem, String sourceProvider) {
         try {
             ViewRecordRequestType viewReplayCaseRequest = new ViewRecordRequestType();
             viewReplayCaseRequest.setRecordId(caseItem.getRecordId());
             viewReplayCaseRequest.setCategoryType(caseItem.getCaseType());
+            viewReplayCaseRequest.setSourceProvider(sourceProvider);
             ViewRecordResponseType responseType = wepApiClientService.jsonPost(viewRecordUrl,
                     viewReplayCaseRequest,
                     ViewRecordResponseType.class);
@@ -118,11 +113,18 @@ public class ReplayCaseRemoteLoadService {
         requestType.setEndTime(endTimeMills);
         PagedResponseType responseType;
         long beginTime = System.currentTimeMillis();
+        StopWatch watch = new StopWatch();
+        watch.start(LogType.LOAD_CASE_TIME.getValue());
         responseType = wepApiClientService.jsonPost(replayCaseUrl, requestType, PagedResponseType.class);
+        long timeUsed = System.currentTimeMillis() - beginTime;
         LOGGER.info("get replay case app id:{},time used:{} ms, operation:{}",
                 requestType.getAppId(),
-                System.currentTimeMillis() - beginTime, requestType.getOperation()
+                timeUsed, requestType.getOperation()
         );
+        watch.stop();
+        LOGGER.info("console type LOAD_CASE_TIME {} ", watch.getTotalTimeMillis());
+        metricService.recordTimeEvent(LogType.LOAD_CASE_TIME.getValue(), replayActionItem.getPlanId(),
+                replayActionItem.getAppId(), null, watch.getTotalTimeMillis());
         if (badResponse(responseType)) {
             try {
                 LOGGER.warn("get replay case is empty,request:{} , response:{}",

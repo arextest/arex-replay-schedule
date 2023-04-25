@@ -4,7 +4,6 @@ package com.arextest.schedule.model;
 import com.arextest.diff.model.CompareResult;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.model.log.LogEntity;
-
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
@@ -30,6 +29,8 @@ public class ReplayCompareResult {
     private int diffResultCode;
     private String baseMsg;
     private String testMsg;
+    private long recordTime;
+    private long replayTime;
     private List<LogEntity> logs;
 
     public static ReplayCompareResult createFrom(ReplayActionCaseItem caseItem) {

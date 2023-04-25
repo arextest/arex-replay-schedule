@@ -1,9 +1,11 @@
 package com.arextest.schedule.model;
 
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
+import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
+import org.springframework.util.StopWatch;
 
 import java.util.Date;
 import java.util.List;
@@ -37,7 +39,6 @@ public class ReplayPlan {
     private Date caseSourceFrom;
     @JsonIgnore
     private Date caseSourceTo;
-    @JsonIgnore
     private Date planCreateTime;
     @JsonIgnore
     private Date planFinishTime;
@@ -55,6 +56,11 @@ public class ReplayPlan {
      */
     @JsonIgnore
     private int caseSourceType;
+    /**
+     * @see BuildReplayPlanType
+     */
+    @JsonIgnore
+    private int replayPlanType;
     @JsonIgnore
     private List<ReplayActionItem> replayActionItemList;
     @JsonIgnore
@@ -65,4 +71,13 @@ public class ReplayPlan {
     @JsonIgnore
     private String errorMessage;
 
+    /**
+     * the time the task actually starts executing
+     */
+    private long executionStartMillis;
+    /**
+     * stop watch tasks from creation to actual execution.
+     */
+    @JsonIgnore
+    private StopWatch executionDelayWatch;
 }
