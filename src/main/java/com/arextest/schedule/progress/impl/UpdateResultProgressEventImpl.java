@@ -76,6 +76,8 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         if (planCreateTime != null) {
             metricService.recordTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
                     planFinishMills - planCreateTime.getTime());
+        } else {
+            LOGGER.warn("record plan execution time fail, plan create time is null, plan id :{}", replayPlan.getId());
         }
     }
 

@@ -66,11 +66,6 @@ public class ReplayPlan {
     @JsonIgnore
     private String errorMessage;
 
-    /**
-     * the time the task actually starts executing
-     */
-    private long executionStartMillis;
-
     private transient long planCreateMillis;
 
 }

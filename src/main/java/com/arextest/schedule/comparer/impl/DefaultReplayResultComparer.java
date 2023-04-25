@@ -79,7 +79,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                     compareWatch.getTotalTimeMillis());
             long caseExecutionEndMills = System.currentTimeMillis();
             metricService.recordTimeEvent(LogType.CASE_EXECUTION_TIME.getValue(), planId, caseItem.getParent().getAppId(), null,
-                    caseExecutionEndMills - caseItem.getParent().getParent().getExecutionStartMillis());
+                    caseExecutionEndMills - caseItem.getExecutionStartMillis());
             MDCTracer.clear();
         }
     }
