@@ -60,9 +60,9 @@ public class ReplayActionItem {
      */
     private String actionType;
     @JsonIgnore
-    private ServiceInstance sourceInstance;
+    private List<ServiceInstance> sourceInstance;
     @JsonIgnore
-    private ServiceInstance targetInstance;
+    private List<ServiceInstance> targetInstance;
     @JsonIgnore
     private ServiceInstanceOperation mappedInstanceOperation;
     private int replayCaseCount;

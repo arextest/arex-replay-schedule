@@ -67,7 +67,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
 
     private boolean doSend(ReplayActionItem replayActionItem, ReplayActionCaseItem caseItem,
                            Map<String, String> headers) {
-        ServiceInstance instanceRunner = replayActionItem.getTargetInstance();
+        ServiceInstance instanceRunner = getServiceInstance(caseItem.getId(), replayActionItem.getTargetInstance());
         if (instanceRunner == null) {
             return false;
         }
@@ -98,7 +98,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         caseItem.setSendErrorMessage(targetSendResult.getRemark());
         caseItem.setTargetResultId(targetSendResult.getTraceId());
         caseItem.setSendStatus(targetSendResult.getStatusType().getValue());
-        instanceRunner = replayActionItem.getSourceInstance();
+        instanceRunner = getServiceInstance(caseItem.getId(), replayActionItem.getSourceInstance());
         if (instanceRunner == null) {
             return targetSendResult.success();
         }

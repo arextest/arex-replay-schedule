@@ -247,7 +247,7 @@ public class ReplayCaseTransmitService {
     private void activeRemoteHost(List<ReplayActionCaseItem> sourceItemList) {
         try {
             for (int i = 0; i < ACTIVE_SERVICE_RETRY_COUNT && i < sourceItemList.size(); i++) {
-                ReplayActionCaseItem caseItem = sourceItemList.get(i);
+                ReplayActionCaseItem caseItem = cloneCaseItem(sourceItemList, i);
                 ReplaySender replaySender = findReplaySender(caseItem);
                 if (replaySender == null) {
                     continue;

@@ -6,6 +6,7 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.SenderParameters;
 import lombok.Data;
@@ -69,7 +70,11 @@ public class DubboReplaySender extends AbstractReplaySender {
             return false;
         }
 
-        String url = caseItem.getParent().getTargetInstance().getUrl();
+        ServiceInstance instanceRunner = getServiceInstance(caseItem.getId(), caseItem.getParent().getTargetInstance());
+        if (instanceRunner == null) {
+            return false;
+        }
+        String url = instanceRunner.getUrl();
         RpcContext.getServiceContext().setAttachments(headers);
         GenericService genericService = getReferenceConfig(url, interfaceNameAndMethod.getLeft());
         if (genericService == null) {
