@@ -227,7 +227,7 @@ public class ReplayCaseTransmitService {
         return null;
     }
 
-    private boolean prepareRemoteDependency(ReplayActionCaseItem caseItem) {
+    public boolean prepareRemoteDependency(ReplayActionCaseItem caseItem) {
         StopWatch watch = new StopWatch();
         watch.start(LogType.SWITCH_DEPENDENCY_VERSION_TIME.getValue());
         String replayDependency = caseItem.replayDependency();
@@ -247,7 +247,7 @@ public class ReplayCaseTransmitService {
     private void activeRemoteHost(List<ReplayActionCaseItem> sourceItemList) {
         try {
             for (int i = 0; i < ACTIVE_SERVICE_RETRY_COUNT && i < sourceItemList.size(); i++) {
-                ReplayActionCaseItem caseItem = sourceItemList.get(i);
+                ReplayActionCaseItem caseItem = cloneCaseItem(sourceItemList, i);
                 ReplaySender replaySender = findReplaySender(caseItem);
                 if (replaySender == null) {
                     continue;

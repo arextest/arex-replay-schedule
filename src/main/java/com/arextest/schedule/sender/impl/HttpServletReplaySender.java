@@ -50,7 +50,15 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
         headers.put(CommonConstant.CONFIG_VERSION_HEADER_NAME, caseItem.replayDependency());
         headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
-        return doSend(caseItem.getParent(), caseItem, headers) || doSend(caseItem.getParent(), caseItem, headers);
+        int instanceSize = caseItem.getParent().getTargetInstance().size();
+        boolean allSuccess = true;
+        for (int i = 0; i < instanceSize; i++) {
+            caseItem.setId(String.valueOf(i));
+            boolean prepareSuccess = doSend(caseItem.getParent(), caseItem, headers) || doSend(caseItem.getParent(), caseItem,
+                    headers);
+            allSuccess = allSuccess && prepareSuccess;
+        }
+        return allSuccess;
     }
 
     @Override
@@ -73,7 +81,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
 
     private boolean doSend(ReplayActionItem replayActionItem, ReplayActionCaseItem caseItem,
                            Map<String, String> headers) {
-        ServiceInstance instanceRunner = replayActionItem.getTargetInstance();
+        ServiceInstance instanceRunner = selectLoadBalanceInstance(caseItem.getId(), replayActionItem.getTargetInstance());
         if (instanceRunner == null) {
             return false;
         }
@@ -104,7 +112,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         caseItem.setSendErrorMessage(targetSendResult.getRemark());
         caseItem.setTargetResultId(targetSendResult.getTraceId());
         caseItem.setSendStatus(targetSendResult.getStatusType().getValue());
-        instanceRunner = replayActionItem.getSourceInstance();
+        instanceRunner = selectLoadBalanceInstance(caseItem.getId(), replayActionItem.getSourceInstance());
         if (instanceRunner == null) {
             return targetSendResult.success();
         }
