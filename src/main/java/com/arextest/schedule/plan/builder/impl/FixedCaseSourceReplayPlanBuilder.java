@@ -37,14 +37,12 @@ final class FixedCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
             return BuildPlanValidateResult.create(BuildPlanValidateResult.REQUESTED_EMPTY_OPERATION, "REQUESTED_EMPTY_OPERATION");
         }
         for (OperationCaseInfo requestedOperation : request.getOperationCaseInfoList()) {
-            if (planContext.findAppServiceOperationDescriptor(requestedOperation.getOperationId()) == null) {
-                return BuildPlanValidateResult.create(BuildPlanValidateResult.REQUESTED_OPERATION_NOT_FOUND, "REQUESTED_OPERATION_NOT_FOUND");
-            }
             if (CollectionUtils.isEmpty(requestedOperation.getReplayIdList())) {
                 return BuildPlanValidateResult.create(BuildPlanValidateResult.REQUESTED_OPERATION_NOT_FOUND_ANY_CASE,
                         "REQUESTED_OPERATION_NOT_FOUND_ANY_CASE");
             }
         }
+        super.filterAppServiceDescriptors(request, planContext);
         return super.validate(request, planContext);
     }
 

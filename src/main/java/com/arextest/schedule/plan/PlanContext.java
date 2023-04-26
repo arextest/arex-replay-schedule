@@ -11,9 +11,12 @@ import lombok.Data;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @author jmo
@@ -28,6 +31,9 @@ public final class PlanContext {
 
 
     public AppServiceOperationDescriptor findAppServiceOperationDescriptor(String operationId) {
+        if (CollectionUtils.isEmpty(appServiceDescriptorList)) {
+            return null;
+        }
         List<AppServiceOperationDescriptor> operationDescriptorList;
         for (AppServiceDescriptor appServiceDescriptor : appServiceDescriptorList) {
             operationDescriptorList = appServiceDescriptor.getOperationList();
@@ -41,6 +47,23 @@ public final class PlanContext {
             }
         }
         return null;
+    }
+
+    public List<AppServiceDescriptor> filterAppServiceDescriptors(List<String> operationIds) {
+        if (CollectionUtils.isEmpty(operationIds) || CollectionUtils.isEmpty(appServiceDescriptorList)) {
+            return Collections.emptyList();
+        }
+        List<AppServiceDescriptor> filterAppServiceDescriptorList = new ArrayList<>(appServiceDescriptorList.size());
+        for (AppServiceDescriptor appServiceDescriptor : appServiceDescriptorList) {
+            if (null == appServiceDescriptor || CollectionUtils.isEmpty(appServiceDescriptor.getOperationList())) {
+                continue;
+            }
+            List<AppServiceOperationDescriptor> operationDescriptorList = appServiceDescriptor.getOperationList();
+            if (operationDescriptorList.stream().anyMatch(item -> operationIds.contains(item.getId()))) {
+                filterAppServiceDescriptorList.add(appServiceDescriptor);
+            }
+        }
+        return filterAppServiceDescriptorList;
     }
 
     public List<ServiceInstance> targetActiveInstance() {
@@ -64,6 +87,9 @@ public final class PlanContext {
     }
 
     private ServiceInstance firstActiveInstance(Function<AppServiceDescriptor, List<ServiceInstance>> source) {
+        if (CollectionUtils.isEmpty(appServiceDescriptorList)) {
+            return null;
+        }
         for (AppServiceDescriptor appServiceDescriptor : appServiceDescriptorList) {
             List<ServiceInstance> instanceList = source.apply(appServiceDescriptor);
             if (CollectionUtils.isNotEmpty(instanceList)) {

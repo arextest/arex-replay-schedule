@@ -10,8 +10,11 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author jmo
@@ -27,7 +30,7 @@ public final class PlanContextCreator {
     public PlanContext createByAppId(String appId) {
         PlanContext planContext = new PlanContext();
         GenericResponseType responseType = apiClient.get(applicationServiceUrl, Collections.singletonMap("appId",
-                appId),
+                        appId),
                 GenericResponseType.class);
         if (responseType == null) {
             return planContext;
@@ -37,10 +40,18 @@ public final class PlanContextCreator {
         if (CollectionUtils.isEmpty(appServiceDescriptorList)) {
             return planContext;
         }
-        for (AppServiceDescriptor appServiceDescriptor : appServiceDescriptorList) {
-            setupOperationParent(appServiceDescriptor);
+        Map<String, List<AppServiceDescriptor>> serviceKeyAppServices = appServiceDescriptorList.stream()
+                .collect(Collectors.groupingBy(AppServiceDescriptor::getServiceKey));
+        List<AppServiceDescriptor> distinctAppServiceDescriptor = new ArrayList<>(appServiceDescriptorList.size());
+        for (Map.Entry<String, List<AppServiceDescriptor>> appServiceDescriptor : serviceKeyAppServices.entrySet()) {
+            List<AppServiceDescriptor> appServiceDescriptorValue = appServiceDescriptor.getValue();
+            if (CollectionUtils.isNotEmpty(appServiceDescriptorValue)) {
+                AppServiceDescriptor distinctAppService = appServiceDescriptorValue.get(0);
+                setupOperationParent(distinctAppService);
+                distinctAppServiceDescriptor.add(distinctAppService);
+            }
         }
-        planContext.setAppServiceDescriptorList(appServiceDescriptorList);
+        planContext.setAppServiceDescriptorList(distinctAppServiceDescriptor);
         return planContext;
     }
 
