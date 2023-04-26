@@ -121,6 +121,9 @@ public final class PlanContext {
     private ServiceInstanceOperation findActiveOperation(String operation, ServiceInstance activeInstance) {
         if (activeInstance != null) {
             List<ServiceInstanceOperation> operationList = activeInstance.getOperationList();
+            if (CollectionUtils.isEmpty(operationList)) {
+                return null;
+            }
             for (ServiceInstanceOperation serviceInstanceOperation : operationList) {
                 if (StringUtils.equals(operation, serviceInstanceOperation.getName())) {
                     return serviceInstanceOperation;
