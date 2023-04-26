@@ -54,10 +54,7 @@ public final class PlanContext {
             if (CollectionUtils.isEmpty(activeInstanceList)) {
                 continue;
             }
-            if (activeInstanceList.get(0) == null) {
-                continue;
-            }
-            if (StringUtils.isEmpty(activeInstanceList.get(0).getIp())) {
+            if (activeInstanceList.get(0) == null || StringUtils.isEmpty(activeInstanceList.get(0).getIp())) {
                 continue;
             }
             instanceList.addAll(source.apply(descriptor));
@@ -103,7 +100,9 @@ public final class PlanContext {
         replayActionItem.setServiceKey(serviceDescriptor.getServiceKey());
         replayActionItem.setServiceName(serviceDescriptor.getServiceName());
         replayActionItem.setOperationId(operationDescriptor.getId());
-        replayActionItem.setMappedInstanceOperation(this.findActiveOperation(operationName, serviceDescriptor.getTargetActiveInstanceList().get(0)));
+        if (CollectionUtils.isNotEmpty(serviceDescriptor.getTargetActiveInstanceList())) {
+            replayActionItem.setMappedInstanceOperation(this.findActiveOperation(operationName, serviceDescriptor.getTargetActiveInstanceList().get(0)));
+        }
     }
 
     private ServiceInstanceOperation findActiveOperation(String operation, ServiceInstance activeInstance) {
