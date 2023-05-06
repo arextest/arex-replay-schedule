@@ -113,26 +113,26 @@ public final class CompareConfigService {
                 ReplayComparisonConfig tempReplayComparisonConfig = operationCompareConfig.getOrDefault(operationId,
                         new ReplayComparisonConfig());
 
-                if (tempReplayComparisonConfig.getExclusionList() == null) {
-                    tempReplayComparisonConfig.setExclusionList(compareSummaryConfig.getExclusionList());
-                } else {
-                    tempReplayComparisonConfig.getExclusionList().addAll(compareSummaryConfig.getExclusionList());
-                }
-                if (tempReplayComparisonConfig.getInclusionList() == null) {
-                    tempReplayComparisonConfig.setInclusionList(compareSummaryConfig.getInclusionList());
-                } else {
-                    tempReplayComparisonConfig.getInclusionList().addAll(compareSummaryConfig.getInclusionList());
-                }
-                if (tempReplayComparisonConfig.getReferenceMap() == null) {
-                    tempReplayComparisonConfig.setReferenceMap(compareSummaryConfig.getReferenceMap());
-                } else {
-                    tempReplayComparisonConfig.getReferenceMap().putAll(compareSummaryConfig.getReferenceMap());
-                }
-                if (tempReplayComparisonConfig.getListSortMap() == null) {
-                    tempReplayComparisonConfig.setListSortMap(compareSummaryConfig.getListSortMap());
-                } else {
-                    tempReplayComparisonConfig.getListSortMap().putAll(compareSummaryConfig.getListSortMap());
-                }
+                Set<List<String>> exclusionList = Optional.ofNullable(tempReplayComparisonConfig.getExclusionList())
+                        .orElse(new HashSet<>());
+                exclusionList.addAll(compareSummaryConfig.getExclusionList());
+                tempReplayComparisonConfig.setExclusionList(exclusionList);
+
+                Set<List<String>> inclusionList = Optional.ofNullable(tempReplayComparisonConfig.getInclusionList())
+                        .orElse(new HashSet<>());
+                inclusionList.addAll(compareSummaryConfig.getInclusionList());
+                tempReplayComparisonConfig.setInclusionList(inclusionList);
+
+                Map<List<String>, List<String>> referenceMap = Optional.ofNullable(
+                        tempReplayComparisonConfig.getReferenceMap()).orElse(new HashMap<>());
+                referenceMap.putAll(compareSummaryConfig.getReferenceMap());
+                tempReplayComparisonConfig.setReferenceMap(referenceMap);
+
+                Map<List<String>, List<List<String>>> listSortMap = Optional.ofNullable(
+                        tempReplayComparisonConfig.getListSortMap()).orElse(new HashMap<>());
+                listSortMap.putAll(compareSummaryConfig.getListSortMap());
+                tempReplayComparisonConfig.setListSortMap(listSortMap);
+
                 operationCompareConfig.put(operationId, tempReplayComparisonConfig);
             }
         }
