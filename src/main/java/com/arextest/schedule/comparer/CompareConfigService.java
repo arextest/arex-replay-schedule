@@ -5,15 +5,11 @@ import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
-import com.arextest.schedule.model.config.CompareExclusionsConfig;
-import com.arextest.schedule.model.config.CompareInclusionsConfig;
-import com.arextest.schedule.model.config.CompareListSortConfig;
-import com.arextest.schedule.model.config.CompareReferenceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
+import com.arextest.web.model.contract.contracts.config.replay.ReplayConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -23,13 +19,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by wang_yc on 2021/10/14
@@ -42,14 +32,8 @@ public final class CompareConfigService {
     @Resource
     private CacheProvider redisCacheProvider;
 
-    @Value("${arex.report.config.comparison.exclusions.url}")
-    private String configComparisonExclusionsUrl;
-    @Value("${arex.report.config.comparison.inclusions.url}")
-    private String configComparisonInclusionsUrl;
-    @Value("${arex.report.config.comparison.listsort.url}")
-    private String configComparisonListSortUrl;
-    @Value("${arex.report.config.comparison.reference.url}")
-    private String configComparisonReferenceUrl;
+    @Value("${arex.report.config.comparison.summary.url}")
+    private String summaryConfigUrl;
 
     @Resource
     private ObjectMapper objectMapper;
@@ -57,8 +41,7 @@ public final class CompareConfigService {
     public void preload(ReplayPlan plan) {
         Map<String, ReplayComparisonConfig> operationCompareConfig = new HashMap<>();
 
-        if (!getExclusions(operationCompareConfig, plan) || !getInclusions(operationCompareConfig, plan) ||
-                !getListSort(operationCompareConfig, plan) || !getReference(operationCompareConfig, plan)) {
+        if (!getConfigSummary(operationCompareConfig, plan)) {
             LOGGER.warn("prepare load appId comparison config empty");
             return;
         }
@@ -113,136 +96,52 @@ public final class CompareConfigService {
         return replayComparisonConfig;
     }
 
-    private boolean getExclusions(Map<String, ReplayComparisonConfig> operationCompareConfig, ReplayPlan plan) {
-
+    private boolean getConfigSummary(Map<String, ReplayComparisonConfig> operationCompareConfig, ReplayPlan plan) {
         Map<String, String> urlVariables = Collections.singletonMap("appId", plan.getAppId());
-        ResponseEntity<GenericResponseType<CompareExclusionsConfig>> compareExclusionsEntity =
-                httpWepServiceApiClient.get(configComparisonExclusionsUrl, urlVariables,
-                        new ParameterizedTypeReference<GenericResponseType<CompareExclusionsConfig>>() {
+
+        ResponseEntity<GenericResponseType<ReplayConfiguration>> compareSummaryConfigEntity =
+                httpWepServiceApiClient.get(summaryConfigUrl, urlVariables,
+                        new ParameterizedTypeReference<GenericResponseType<ReplayConfiguration>>() {
                         });
 
-        if (compareExclusionsEntity == null) {
-            return false;
-        }
-        GenericResponseType<CompareExclusionsConfig> body = compareExclusionsEntity.getBody();
+        if (compareSummaryConfigEntity == null) return false;
+        GenericResponseType<ReplayConfiguration> body = compareSummaryConfigEntity.getBody();
         if (body != null && body.getBody() != null) {
-            List<CompareExclusionsConfig> details = body.getBody();
-            for (CompareExclusionsConfig compareExclusionsConfig : details) {
-                String operationId = compareExclusionsConfig.getOperationId();
-                List<String> exclusions = compareExclusionsConfig.getExclusions();
-
+            ReplayConfiguration detail =  body.getBody();
+            for(ReplayConfiguration.ReplayComparisonConfig compareSummaryConfig : detail.getReplayComparisonConfigs()) {
+                String operationId = compareSummaryConfig.getOperationId();
                 ReplayComparisonConfig tempReplayComparisonConfig = operationCompareConfig.getOrDefault(operationId,
                         new ReplayComparisonConfig());
-                Set<List<String>> tempExclusionList = tempReplayComparisonConfig.getExclusionList() ==
-                        null ? new HashSet<>() : tempReplayComparisonConfig.getExclusionList();
 
-                if (CollectionUtils.isNotEmpty(exclusions)) {
-                    tempExclusionList.add(exclusions);
-                    tempReplayComparisonConfig.setExclusionList(tempExclusionList);
+                if (tempReplayComparisonConfig.getExclusionList() == null) {
+                    tempReplayComparisonConfig.setExclusionList(compareSummaryConfig.getExclusionList());
+                } else {
+                    tempReplayComparisonConfig.getExclusionList().addAll(compareSummaryConfig.getExclusionList());
+                }
+                if (tempReplayComparisonConfig.getInclusionList() == null) {
+                    tempReplayComparisonConfig.setInclusionList(compareSummaryConfig.getInclusionList());
+                } else {
+                    tempReplayComparisonConfig.getInclusionList().addAll(compareSummaryConfig.getInclusionList());
+                }
+                if (tempReplayComparisonConfig.getReferenceMap() == null) {
+                    tempReplayComparisonConfig.setReferenceMap(compareSummaryConfig.getReferenceMap());
+                } else {
+                    tempReplayComparisonConfig.getReferenceMap().putAll(compareSummaryConfig.getReferenceMap());
+                }
+                if (tempReplayComparisonConfig.getListSortMap() == null) {
+                    tempReplayComparisonConfig.setListSortMap(compareSummaryConfig.getListSortMap());
+                } else {
+                    tempReplayComparisonConfig.getListSortMap().putAll(compareSummaryConfig.getListSortMap());
                 }
                 operationCompareConfig.put(operationId, tempReplayComparisonConfig);
             }
         }
-        return true;
+        return  true;
     }
-
-    private boolean getInclusions(Map<String, ReplayComparisonConfig> operationCompareConfig, ReplayPlan plan) {
-        Map<String, String> urlVariables = Collections.singletonMap("appId", plan.getAppId());
-        ResponseEntity<GenericResponseType<CompareInclusionsConfig>> responseEntity =
-                httpWepServiceApiClient.get(configComparisonInclusionsUrl, urlVariables,
-                        new ParameterizedTypeReference<GenericResponseType<CompareInclusionsConfig>>() {
-                        });
-        if (responseEntity == null) {
-            return false;
-        }
-        GenericResponseType<CompareInclusionsConfig> body = responseEntity.getBody();
-        if (body != null && body.getBody() != null) {
-            List<CompareInclusionsConfig> details = body.getBody();
-            for (CompareInclusionsConfig compareInclusionsConfig : details) {
-                String operationId = compareInclusionsConfig.getOperationId();
-                List<String> inclusions = compareInclusionsConfig.getInclusions();
-
-                ReplayComparisonConfig tempReplayComparisonConfig = operationCompareConfig.getOrDefault(operationId,
-                        new ReplayComparisonConfig());
-                Set<List<String>> tempInclusionList = tempReplayComparisonConfig.getInclusionList() ==
-                        null ? new HashSet<>() : tempReplayComparisonConfig.getInclusionList();
-
-                if (CollectionUtils.isNotEmpty(inclusions)) {
-                    tempInclusionList.add(inclusions);
-                    tempReplayComparisonConfig.setInclusionList(tempInclusionList);
-                    operationCompareConfig.put(operationId, tempReplayComparisonConfig);
-                }
-            }
-        }
-        return true;
-    }
-
-    private boolean getListSort(Map<String, ReplayComparisonConfig> operationCompareConfig, ReplayPlan plan) {
-        Map<String, String> urlVariables = Collections.singletonMap("appId", plan.getAppId());
-        ResponseEntity<GenericResponseType<CompareListSortConfig>> responseEntity =
-                httpWepServiceApiClient.get(configComparisonListSortUrl, urlVariables,
-                        new ParameterizedTypeReference<GenericResponseType<CompareListSortConfig>>() {
-                        });
-        if (responseEntity == null) {
-            return false;
-        }
-        GenericResponseType<CompareListSortConfig> body = responseEntity.getBody();
-        if (body != null && body.getBody() != null) {
-            List<CompareListSortConfig> details = body.getBody();
-            for (CompareListSortConfig compareListSortConfig : details) {
-                String operationId = compareListSortConfig.getOperationId();
-                List<String> listPath = compareListSortConfig.getListPath();
-                List<List<String>> keys = compareListSortConfig.getKeys();
-
-                ReplayComparisonConfig tempReplayComparisonConfig = operationCompareConfig.getOrDefault(operationId, new ReplayComparisonConfig());
-                Map<List<String>, List<List<String>>> tempListSortMap = tempReplayComparisonConfig.getListSortMap() ==
-                        null ? new HashMap<>() : tempReplayComparisonConfig.getListSortMap();
-
-                if (CollectionUtils.isNotEmpty(listPath) && CollectionUtils.isNotEmpty(keys)) {
-                    tempListSortMap.put(listPath, keys);
-                    tempReplayComparisonConfig.setListSortMap(tempListSortMap);
-                    operationCompareConfig.put(operationId, tempReplayComparisonConfig);
-                }
-            }
-        }
-        return true;
-    }
-
-    private boolean getReference(Map<String, ReplayComparisonConfig> operationCompareConfig, ReplayPlan plan) {
-        Map<String, String> urlVariables = Collections.singletonMap("appId", plan.getAppId());
-        ResponseEntity<GenericResponseType<CompareReferenceConfig>> responseEntity =
-                httpWepServiceApiClient.get(configComparisonReferenceUrl, urlVariables,
-                        new ParameterizedTypeReference<GenericResponseType<CompareReferenceConfig>>() {
-                        });
-        if (responseEntity == null) {
-            return false;
-        }
-        GenericResponseType<CompareReferenceConfig> body = responseEntity.getBody();
-        if (body != null && body.getBody() != null) {
-            List<CompareReferenceConfig> details = body.getBody();
-            for (CompareReferenceConfig compareReferenceConfig : details) {
-                String operationId = compareReferenceConfig.getOperationId();
-                List<String> fkPath = compareReferenceConfig.getFkPath();
-                List<String> pkPath = compareReferenceConfig.getPkPath();
-
-                ReplayComparisonConfig tempReplayComparisonConfig = operationCompareConfig.getOrDefault(operationId, new ReplayComparisonConfig());
-                Map<List<String>, List<String>> tempReferenceMap = tempReplayComparisonConfig.getReferenceMap() ==
-                        null ? new HashMap<>() : tempReplayComparisonConfig.getReferenceMap();
-
-                if (CollectionUtils.isNotEmpty(fkPath) && CollectionUtils.isNotEmpty(pkPath)) {
-                    tempReferenceMap.put(fkPath, pkPath);
-                    tempReplayComparisonConfig.setReferenceMap(tempReferenceMap);
-                    operationCompareConfig.put(operationId, tempReplayComparisonConfig);
-                }
-            }
-        }
-        return true;
-    }
-
 
     @Data
     private final static class GenericResponseType<T> {
-        private List<T> body;
+        private T body;
     }
 
     public ReplayComparisonConfig loadConfig(ReplayActionItem actionItem) {
