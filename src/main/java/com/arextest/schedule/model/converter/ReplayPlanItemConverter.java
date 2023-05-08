@@ -5,12 +5,13 @@ import com.arextest.schedule.model.dao.mongodb.ReplayPlanItemCollection;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
+import org.mapstruct.control.DeepClone;
 import org.mapstruct.factory.Mappers;
 
 /**
  * Created by rchen9 on 2022/8/19.
  */
-@Mapper
+@Mapper(mappingControl = DeepClone.class)
 public interface ReplayPlanItemConverter {
 
     ReplayPlanItemConverter INSTANCE = Mappers.getMapper(ReplayPlanItemConverter.class);
@@ -23,5 +24,7 @@ public interface ReplayPlanItemConverter {
             @Mapping(target = "dataChangeUpdateTime", expression = "java(System.currentTimeMillis())")
     })
     ReplayPlanItemCollection daoFromDto(ReplayActionItem dto);
+
+    ReplayActionItem clone(ReplayActionItem replayActionItem);
 
 }
