@@ -69,6 +69,7 @@ final class FixedCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
             for (String replayId : replayIdList) {
                 caseItem = new ReplayActionCaseItem();
                 caseItem.setRecordId(replayId);
+                caseItem.setCaseType(replayActionItem.getActionType());
                 caseItem.setParent(replayActionItem);
                 caseItemList.add(caseItem);
             }
