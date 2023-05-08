@@ -6,6 +6,7 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.deploy.DeploymentVersion;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.deploy.ServiceInstanceOperation;
+import com.google.common.collect.Lists;
 import lombok.Data;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -42,8 +43,23 @@ public final class PlanContext {
         return null;
     }
 
-    public ServiceInstance targetActiveInstance() {
-        return firstActiveInstance(AppServiceDescriptor::getTargetActiveInstanceList);
+    public List<ServiceInstance> targetActiveInstance() {
+        return getActiveInstance(AppServiceDescriptor::getTargetActiveInstanceList);
+    }
+
+    private List<ServiceInstance> getActiveInstance(Function<AppServiceDescriptor, List<ServiceInstance>> source) {
+        List<ServiceInstance> instanceList = Lists.newArrayList();
+        for (AppServiceDescriptor descriptor : appServiceDescriptorList) {
+            if (CollectionUtils.isEmpty(descriptor.getTargetActiveInstanceList())) {
+                break;
+            }
+            List<ServiceInstance> targetActiveInstanceList = descriptor.getTargetActiveInstanceList();
+            if (StringUtils.isEmpty(targetActiveInstanceList.get(0).getIp())) {
+                break;
+            }
+            instanceList.addAll(source.apply(descriptor));
+        }
+        return instanceList;
     }
 
     private ServiceInstance firstActiveInstance(Function<AppServiceDescriptor, List<ServiceInstance>> source) {
@@ -63,8 +79,23 @@ public final class PlanContext {
         return null;
     }
 
-    public ServiceInstance sourceActiveInstance() {
-        return firstActiveInstance(AppServiceDescriptor::getSourceActiveInstanceList);
+    public List<ServiceInstance> sourceActiveInstance() {
+        return getSourceActiveInstance(AppServiceDescriptor::getSourceActiveInstanceList);
+    }
+
+    private List<ServiceInstance> getSourceActiveInstance(Function<AppServiceDescriptor, List<ServiceInstance>> source) {
+        List<ServiceInstance> instanceList = Lists.newArrayList();
+        for (AppServiceDescriptor descriptor : appServiceDescriptorList) {
+            if (CollectionUtils.isEmpty(descriptor.getSourceActiveInstanceList())) {
+                break;
+            }
+            List<ServiceInstance> sourceActiveInstanceList = descriptor.getSourceActiveInstanceList();
+            if (StringUtils.isEmpty(sourceActiveInstanceList.get(0).getIp())) {
+                break;
+            }
+            instanceList.addAll(source.apply(descriptor));
+        }
+        return instanceList;
     }
 
     public ReplayActionItem toReplayAction(AppServiceOperationDescriptor operationDescriptor) {
@@ -77,20 +108,22 @@ public final class PlanContext {
         AppServiceDescriptor serviceDescriptor = operationDescriptor.getParent();
         replayActionItem.setAppId(serviceDescriptor.getAppId());
         final String operationName = operationDescriptor.getOperationName();
-        ServiceInstance activeInstance = firstActiveInstance(serviceDescriptor.getTargetActiveInstanceList());
-        replayActionItem.setTargetInstance(activeInstance);
-        replayActionItem.setSourceInstance(firstActiveInstance(serviceDescriptor.getSourceActiveInstanceList()));
+        replayActionItem.setTargetInstance(serviceDescriptor.getTargetActiveInstanceList());
+        replayActionItem.setSourceInstance(serviceDescriptor.getSourceActiveInstanceList());
         replayActionItem.setOperationName(operationName);
         replayActionItem.setActionType(operationDescriptor.getOperationType());
         replayActionItem.setServiceKey(serviceDescriptor.getServiceKey());
         replayActionItem.setServiceName(serviceDescriptor.getServiceName());
         replayActionItem.setOperationId(operationDescriptor.getId());
-        replayActionItem.setMappedInstanceOperation(this.findActiveOperation(operationName, activeInstance));
+        replayActionItem.setMappedInstanceOperation(this.findActiveOperation(operationName, serviceDescriptor.getTargetActiveInstanceList().get(0)));
     }
 
     private ServiceInstanceOperation findActiveOperation(String operation, ServiceInstance activeInstance) {
         if (activeInstance != null) {
             List<ServiceInstanceOperation> operationList = activeInstance.getOperationList();
+            if (CollectionUtils.isEmpty(operationList)) {
+                return null;
+            }
             for (ServiceInstanceOperation serviceInstanceOperation : operationList) {
                 if (StringUtils.equals(operation, serviceInstanceOperation.getName())) {
                     return serviceInstanceOperation;
