@@ -40,6 +40,9 @@ final class HttpServletReplaySender extends AbstractReplaySender {
     @Resource
     private MetricService metricService;
 
+    @Resource
+    private MetricService metricService;
+
     private static final String PATTERN_STRING = "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$";
     private static final Pattern BASE_64_PATTERN = Pattern.compile(PATTERN_STRING);
 

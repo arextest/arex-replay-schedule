@@ -49,6 +49,7 @@ public class ReplayActionItem {
      */
     @JsonIgnore
     private int replayStatus;
+
     private Date replayBeginTime;
     @JsonIgnore
     private Date replayFinishTime;

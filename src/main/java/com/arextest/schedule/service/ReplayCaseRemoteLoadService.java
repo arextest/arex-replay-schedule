@@ -8,6 +8,7 @@ import com.arextest.model.replay.*;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.*;
+import com.arextest.schedule.model.converter.ReplayActionItemConverter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -42,24 +43,35 @@ public class ReplayCaseRemoteLoadService {
     private ObjectMapper objectMapper;
     @Resource
     private MetricService metricService;
-
+    private static final String DUBBO_PROTOCOL = "dubbo";
 
     public int queryCaseCount(ReplayActionItem replayActionItem) {
         try {
             int caseCountLimit = replayActionItem.getParent().getCaseCountLimit();
-            PagedRequestType request = buildPagingSearchCaseRequest(replayActionItem, caseCountLimit);
-            QueryCaseCountResponseType responseType =
-                    wepApiClientService.jsonPost(countByRangeUrl, request, QueryCaseCountResponseType.class);
-            if (responseType == null || responseType.getResponseStatusType().hasError()) {
-                return EMPTY_SIZE;
+            int caseCount = 0;
+            if (replayActionItem.getTargetInstance().stream().anyMatch(ele -> ele != null && DUBBO_PROTOCOL.equalsIgnoreCase(ele.getProtocol()))) {
+                ReplayActionItem cloneReplayActionItem = ReplayActionItemConverter.INSTANCE.clone(replayActionItem);
+                cloneReplayActionItem.setActionType(MockCategoryType.DUBBO_PROVIDER.getName());
+                caseCount = getCaseCount(cloneReplayActionItem, caseCountLimit);
             }
-            return Math.min(caseCountLimit, (int) responseType.getCount());
+            caseCount += getCaseCount(replayActionItem, caseCountLimit);
+            return Math.min(caseCountLimit, caseCount);
         } catch (Exception e) {
             LOGGER.error("query case count error,request: {} ", replayActionItem.getId(), e);
         }
         return EMPTY_SIZE;
     }
 
+    public int getCaseCount(ReplayActionItem replayActionItem, int caseCountLimit) {
+        PagedRequestType request = buildPagingSearchCaseRequest(replayActionItem, caseCountLimit);
+        QueryCaseCountResponseType responseType =
+                wepApiClientService.jsonPost(countByRangeUrl, request, QueryCaseCountResponseType.class);
+        if (responseType == null || responseType.getResponseStatusType() == null ||responseType.getResponseStatusType().hasError()) {
+            return EMPTY_SIZE;
+        }
+        return Math.min(caseCountLimit, (int) responseType.getCount());
+    }
+    
     public ReplayActionCaseItem viewReplayLoad(ReplayActionCaseItem caseItem, String sourceProvider) {
         try {
             ViewRecordRequestType viewReplayCaseRequest = new ViewRecordRequestType();
@@ -108,6 +120,24 @@ public class ReplayCaseRemoteLoadService {
 
     public List<ReplayActionCaseItem> pagingLoad(long beginTimeMills, long endTimeMills,
                                                  ReplayActionItem replayActionItem, int caseCountLimit) {
+        List<ReplayActionCaseItem> totalCaseItemList = new ArrayList<>(caseCountLimit);
+        if (replayActionItem.getTargetInstance().stream().anyMatch(element -> element != null && DUBBO_PROTOCOL.equalsIgnoreCase(element.getProtocol()))) {
+            ReplayActionItem cloneReplayActionItem = ReplayActionItemConverter.INSTANCE.clone(replayActionItem);
+            cloneReplayActionItem.setActionType(MockCategoryType.DUBBO_PROVIDER.getName());
+            List<ReplayActionCaseItem> dubboReplayActionCaseItem = getCaseItemList(beginTimeMills, endTimeMills, cloneReplayActionItem, caseCountLimit);
+            if (CollectionUtils.isNotEmpty(dubboReplayActionCaseItem)) {
+                totalCaseItemList.addAll(dubboReplayActionCaseItem);
+                caseCountLimit -= dubboReplayActionCaseItem.size();
+            }
+        }
+        List<ReplayActionCaseItem> caseItemList = getCaseItemList(beginTimeMills, endTimeMills, replayActionItem, caseCountLimit);
+        if (!caseItemList.isEmpty()) {
+            totalCaseItemList.addAll(caseItemList);
+        }
+        return totalCaseItemList;
+    }
+
+    public List<ReplayActionCaseItem> getCaseItemList(long beginTimeMills, long endTimeMills, ReplayActionItem replayActionItem, int caseCountLimit) {
         PagedRequestType requestType = buildPagingSearchCaseRequest(replayActionItem, caseCountLimit);
         requestType.setBeginTime(beginTimeMills);
         requestType.setEndTime(endTimeMills);
@@ -134,7 +164,6 @@ public class ReplayCaseRemoteLoadService {
             }
             return Collections.emptyList();
         }
-
         return toCaseItemList(responseType.getRecords());
     }
 

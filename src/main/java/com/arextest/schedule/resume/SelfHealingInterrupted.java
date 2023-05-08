@@ -4,7 +4,6 @@ import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.MDCTracer;
-
 import com.arextest.schedule.model.*;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.plan.PlanContext;
@@ -77,6 +76,8 @@ public class SelfHealingInterrupted {
     }
 
     private void doResume(ReplayPlan replayPlan) {
+        long planCreateMillis = System.currentTimeMillis();
+        replayPlan.setPlanCreateMillis(planCreateMillis);
         String planId = replayPlan.getId();
         List<ReplayActionItem> actionItems = replayPlanActionRepository.queryPlanActionList(planId);
         if (CollectionUtils.isEmpty(actionItems)) {

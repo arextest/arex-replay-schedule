@@ -36,6 +36,9 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
     @Resource
     private MetricService metricService;
 
+    public static final long DEFAULT_COUNT = 1L;
+
+
     @Override
     public void onReplayPlanCreated(ReplayPlan replayPlan) {
         try {
@@ -64,6 +67,7 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         String planId = replayPlan.getId();
         boolean result = replayPlanRepository.finish(planId);
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
+        metricService.recordCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
         replayReportService.pushPlanStatus(planId, reason, replayPlan.getErrorMessage());
         metricService.recordCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
         recordPlanExecutionTime(replayPlan);
@@ -76,6 +80,10 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
             LOGGER.info("console type planExecutionWatch {} ", System.currentTimeMillis() - planCreateTime.getTime());
             metricService.recordTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
                     planFinishMills - planCreateTime.getTime());
+            metricService.recordTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
+                    planFinishMills - planCreateTime.getTime());
+        } else {
+            LOGGER.warn("record plan execution time fail, plan create time is null, plan id :{}", replayPlan.getId());
         }
     }
 
@@ -123,6 +131,8 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         }
         actionItem.setReplayFinishTime(now);
         updateReplayActionStatus(actionItem, ReplayStatusType.FAIL_INTERRUPTED, actionItem.getErrorMessage());
+        metricService.recordCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), actionItem.getPlanId(), actionItem.getAppId(),
+                actionItem.getCaseItemList().size());
     }
 
     public void onActionCancelled(ReplayActionItem actionItem) {

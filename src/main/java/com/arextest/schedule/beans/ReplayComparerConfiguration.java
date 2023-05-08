@@ -32,5 +32,7 @@ public class ReplayComparerConfiguration {
                 progressTracer,
                 comparisonOutputWriter,
                 caseItemRepository, metricService);
+                caseItemRepository,
+                metricService);
     }
 }

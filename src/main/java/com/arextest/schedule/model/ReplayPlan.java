@@ -80,4 +80,5 @@ public class ReplayPlan {
      */
     @JsonIgnore
     private StopWatch executionDelayWatch;
+    private transient long planCreateMillis;
 }

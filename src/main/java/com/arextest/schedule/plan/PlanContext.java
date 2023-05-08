@@ -123,7 +123,7 @@ public final class PlanContext {
         replayActionItem.setOperationId(operationDescriptor.getId());
         replayActionItem.setMappedInstanceOperation(this.findActiveOperation(operationName, serviceDescriptor.getTargetActiveInstanceList().get(0)));
     }
-
+    
     private ServiceInstanceOperation findActiveOperation(String operation, List<ServiceInstance> activeInstances) {
         if (CollectionUtils.isEmpty(activeInstances)) {
             return null;

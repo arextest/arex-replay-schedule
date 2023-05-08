@@ -28,6 +28,7 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
     private transient MetricService metricService;
 
     private transient final ReplayCaseTransmitService transmitService;
+    private transient MetricService metricService;
 
     AsyncSendCaseTaskRunnable(ReplayCaseTransmitService transmitService) {
         this.transmitService = transmitService;

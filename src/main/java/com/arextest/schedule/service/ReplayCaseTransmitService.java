@@ -230,7 +230,7 @@ public class ReplayCaseTransmitService {
         return null;
     }
 
-    public boolean prepareRemoteDependency(ReplayActionCaseItem caseItem) {
+    private boolean prepareRemoteDependency(ReplayActionCaseItem caseItem) {
         StopWatch watch = new StopWatch();
         watch.start(LogType.SWITCH_DEPENDENCY_VERSION_TIME.getValue());
         String replayDependency = caseItem.replayDependency();

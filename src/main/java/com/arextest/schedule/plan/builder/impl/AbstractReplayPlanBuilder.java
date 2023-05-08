@@ -29,7 +29,6 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
     private final static String DEFAULT_PRO_SOURCE_ENV = "pro";
     @Resource
     private DefaultDeployedEnvironmentService deployedEnvironmentService;
-
     @Resource
     private ReplayCaseRemoteLoadService replayCaseRemoteLoadService;
     @Resource
