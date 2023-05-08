@@ -4,11 +4,7 @@ import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.model.AppServiceOperationDescriptor;
-import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.ReplayPlan;
-import com.arextest.schedule.model.AppServiceDescriptor;
+import com.arextest.schedule.model.*;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
@@ -122,7 +118,7 @@ public class SelfHealingInterrupted {
             List<ServiceInstance> activeInstanceList = deployedEnvironmentService.getActiveInstanceListEvent(appServiceDescriptor,
                     replayPlan.getTargetEnv());
             appServiceDescriptor.setTargetActiveInstanceList(activeInstanceList);
-            
+
             planContext.fillReplayAction(actionItem, operationDescriptor);
         }
     }

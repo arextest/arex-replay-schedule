@@ -1,5 +1,6 @@
 package com.arextest.schedule.plan;
 
+import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.model.AppServiceDescriptor;
 import com.arextest.schedule.model.AppServiceOperationDescriptor;
 import com.arextest.schedule.model.ReplayActionItem;
@@ -11,9 +12,14 @@ import lombok.Data;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.annotation.Resource;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
+
+import static com.arextest.schedule.common.CommonConstant.SOAPROVIDER;
 
 /**
  * @author jmo
@@ -25,7 +31,6 @@ public final class PlanContext {
     private DeploymentVersion targetVersion;
     private DeploymentVersion sourceVersion;
     private String appId;
-
 
     public AppServiceOperationDescriptor findAppServiceOperationDescriptor(String operationId) {
         List<AppServiceOperationDescriptor> operationDescriptorList;
@@ -111,25 +116,55 @@ public final class PlanContext {
         replayActionItem.setTargetInstance(serviceDescriptor.getTargetActiveInstanceList());
         replayActionItem.setSourceInstance(serviceDescriptor.getSourceActiveInstanceList());
         replayActionItem.setOperationName(operationName);
-        replayActionItem.setActionType(operationDescriptor.getOperationType());
+        replayActionItem.setSourceInstance(serviceDescriptor.getSourceActiveInstanceList());
+        replayActionItem.setActionType(operationType);
         replayActionItem.setServiceKey(serviceDescriptor.getServiceKey());
         replayActionItem.setServiceName(serviceDescriptor.getServiceName());
         replayActionItem.setOperationId(operationDescriptor.getId());
         replayActionItem.setMappedInstanceOperation(this.findActiveOperation(operationName, serviceDescriptor.getTargetActiveInstanceList().get(0)));
     }
-
-    private ServiceInstanceOperation findActiveOperation(String operation, ServiceInstance activeInstance) {
-        if (activeInstance != null) {
-            List<ServiceInstanceOperation> operationList = activeInstance.getOperationList();
-            if (CollectionUtils.isEmpty(operationList)) {
-                return null;
-            }
-            for (ServiceInstanceOperation serviceInstanceOperation : operationList) {
-                if (StringUtils.equals(operation, serviceInstanceOperation.getName())) {
-                    return serviceInstanceOperation;
-                }
+    
+    private ServiceInstanceOperation findActiveOperation(String operation, List<ServiceInstance> activeInstances) {
+        if (CollectionUtils.isEmpty(activeInstances)) {
+            return null;
+        }
+        List<ServiceInstanceOperation> operationList = activeInstances.get(0).getOperationList();
+        if (CollectionUtils.isEmpty(operationList)) {
+            return null;
+        }
+        for (ServiceInstanceOperation serviceInstanceOperation : operationList) {
+            if (StringUtils.equals(operation, serviceInstanceOperation.getName())) {
+                return serviceInstanceOperation;
             }
         }
         return null;
+    }
+
+    private String getShortOperationName(String operationType, String operationName) {
+        if (operationType.equals(SOAPROVIDER) || operationType.equals(MockCategoryType.DUBBO_PROVIDER.getName())) {
+            String[] split = operationName.split("\\.");
+            operationName = split[split.length - 1];
+        }
+        return operationName;
+    }
+
+    private List<ServiceInstance> findActiveInstances(AppServiceDescriptor serviceDescriptor, String operationName, String operationType) {
+        List<ServiceInstance> targetActiveInstanceList = serviceDescriptor.getTargetActiveInstanceList();
+        if (operationType.equals(MockCategoryType.SERVLET.getName())) {
+            return targetActiveInstanceList;
+        }
+        List<ServiceInstance> newTargetInstanceList = Lists.newArrayList();
+        for (ServiceInstance instance : targetActiveInstanceList) {
+            List<ServiceInstanceOperation> operationList = instance.getOperationList();
+            if (CollectionUtils.isEmpty(operationList)) {
+                continue;
+            }
+
+            Optional<ServiceInstanceOperation> any = operationList.stream().filter(operation -> operation.getName().equals(operationName)).findAny();
+            if (any.isPresent()) {
+                newTargetInstanceList.add(instance);
+            }
+        }
+        return newTargetInstanceList;
     }
 }

@@ -71,7 +71,7 @@ public class ReplayCaseRemoteLoadService {
         }
         return Math.min(caseCountLimit, (int) responseType.getCount());
     }
-
+    
     public ReplayActionCaseItem viewReplayLoad(ReplayActionCaseItem caseItem, String sourceProvider) {
         try {
             ViewRecordRequestType viewReplayCaseRequest = new ViewRecordRequestType();

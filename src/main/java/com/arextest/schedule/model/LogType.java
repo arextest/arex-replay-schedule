@@ -27,7 +27,7 @@ public enum LogType {
      */
     CASE_EXCEPTION_NUMBER("caseExceptionNumber"),
     /**
-    * time spent pulling cases from the data service.
+     * time spent pulling cases from the data service.
      */
     LOAD_CASE_TIME("loadCaseTime"),
     /**

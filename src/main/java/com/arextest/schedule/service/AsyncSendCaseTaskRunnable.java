@@ -25,6 +25,8 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
     private transient ReplayActionCaseItem caseItem;
     private transient CountDownLatch groupSentLatch;
     private transient SendSemaphoreLimiter limiter;
+    private transient MetricService metricService;
+
     private transient final ReplayCaseTransmitService transmitService;
     private transient MetricService metricService;
 
@@ -40,7 +42,8 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
         try {
             MDCTracer.addDetailId(caseItem.getId());
             long caseExecutionStartMillis = System.currentTimeMillis();
-            caseItem.setExecutionStartMillis(caseExecutionStartMillis);
+            caseItem.getParent().getParent().setExecutionStartMillis(caseExecutionStartMillis);
+            LOGGER.info("executionStartMillis {}", caseExecutionStartMillis);
             success = this.replaySender.send(caseItem);
             LOGGER.info("async run sender Id: {} , result:{}", caseItem.getId(), success);
             transmitService.updateSendResult(caseItem, success ? CaseSendStatusType.SUCCESS :

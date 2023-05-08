@@ -20,6 +20,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import static com.arextest.schedule.common.CommonConstant.PINNED;
+
 /**
  * @author jmo
  * @since 2021/9/15
@@ -63,8 +65,12 @@ public final class PlanConsumeService {
     }
 
     private void saveActionCaseToSend(ReplayPlan replayPlan) {
+        StopWatch sw = replayPlan.getExecutionDelayWatch();
+        sw.stop();
         metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
-                System.currentTimeMillis() - replayPlan.getPlanCreateMillis());
+                sw.getTotalTimeMillis());
+        MDCTracer.addPlanId(replayPlan.getId());
+        MDCTracer.addAppId(replayPlan.getAppId());
         int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());
         if (planSavedCaseSize != replayPlan.getCaseTotalCount()) {
             LOGGER.info("update the plan TotalCount, plan id:{} ,appId: {} , size: {} -> {}", replayPlan.getId(),
@@ -157,6 +163,7 @@ public final class PlanConsumeService {
 
     private boolean sendByPaging(ReplayActionItem replayActionItem) {
         List<ReplayActionCaseItem> sourceItemList;
+        boolean isFirst = true;
         while (true) {
             sourceItemList = replayActionCaseItemRepository.waitingSendList(replayActionItem.getId(),
                     CommonConstant.MAX_PAGE_SIZE);
@@ -165,10 +172,11 @@ public final class PlanConsumeService {
                 break;
             }
             ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
-            boolean isCanceled = replayCaseTransmitService.send(replayActionItem);
+            boolean isCanceled = replayCaseTransmitService.send(replayActionItem, isFirst);
             if (isCanceled) {
                 return true;
             }
+            isFirst = false;
             if (replayActionItem.getSendRateLimiter().failBreak()) {
                 break;
             }
@@ -189,9 +197,10 @@ public final class PlanConsumeService {
 
     private int doFixedCaseSave(List<ReplayActionCaseItem> caseItemList) {
         int size = 0;
+        String sourceProvider = PINNED;
         for (int i = 0; i < caseItemList.size(); i++) {
             ReplayActionCaseItem caseItem = caseItemList.get(i);
-            ReplayActionCaseItem viewReplay = caseRemoteLoadService.viewReplayLoad(caseItem);
+            ReplayActionCaseItem viewReplay = caseRemoteLoadService.viewReplayLoad(caseItem, sourceProvider);
             if (viewReplay == null) {
                 caseItem.setSendStatus(CaseSendStatusType.REPLAY_CASE_NOT_FOUND.getValue());
             } else {

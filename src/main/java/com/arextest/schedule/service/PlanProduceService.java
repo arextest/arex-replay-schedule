@@ -4,22 +4,24 @@ import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.plan.PlanContext;
-import com.arextest.schedule.plan.PlanContextCreator;
-import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.model.CommonResponse;
+import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.deploy.DeploymentVersion;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
+import com.arextest.schedule.plan.PlanContext;
+import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.plan.builder.BuildPlanValidateResult;
 import com.arextest.schedule.plan.builder.ReplayPlanBuilder;
+import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
@@ -53,9 +55,10 @@ public class PlanProduceService {
     private CacheProvider redisCacheProvider;
 
     public CommonResponse createPlan(BuildReplayPlanRequest request) {
-        long planCreateMillis = System.currentTimeMillis();
+        StopWatch sw = new StopWatch();
+        sw.start(LogType.PLAN_EXECUTION_DELAY.getValue());
         String appId = request.getAppId();
-        if (isCreating(appId)) {
+        if (isCreating(appId, request.getTargetEnv())) {
             return CommonResponse.badResponse("This appid is creating plan");
         }
         ReplayPlanBuilder planBuilder = select(request);
@@ -72,7 +75,7 @@ public class PlanProduceService {
             return CommonResponse.badResponse("appId:" + appId + " error: empty replay actions");
         }
         ReplayPlan replayPlan = build(request, planContext);
-        replayPlan.setPlanCreateMillis(planCreateMillis);
+        replayPlan.setExecutionDelayWatch(sw);
         replayPlan.setReplayActionItemList(replayActionItemList);
         ReplayParentBinder.setupReplayActionParent(replayActionItemList, replayPlan);
         int planCaseCount = planBuilder.buildReplayCaseCount(replayActionItemList);
@@ -119,6 +122,7 @@ public class PlanProduceService {
         replayPlan.setCaseSourceFrom(request.getCaseSourceFrom());
         replayPlan.setCaseSourceTo(request.getCaseSourceTo());
         replayPlan.setCaseSourceType(request.getCaseSourceType());
+        replayPlan.setReplayPlanType(request.getReplayPlanType());
         ConfigurationService.Application replayApp = configurationService.application(appId);
         if (replayApp != null) {
             replayPlan.setArexCordVersion(replayApp.getAgentVersion());
@@ -126,7 +130,7 @@ public class PlanProduceService {
             replayPlan.setCaseRecordVersion(replayApp.getAgentExtVersion());
             replayPlan.setAppName(replayApp.getAppName());
         }
-        ConfigurationService.ScheduleConfiguration schedule = configurationService.schedule(appId);
+        ConfigurationService.ScheduleConfiguration schedule = configurationService.schedule(replayPlan.getAppId());
         if (schedule != null) {
             replayPlan.setReplaySendMaxQps(schedule.getSendMaxQps());
         }
@@ -151,9 +155,9 @@ public class PlanProduceService {
         return null;
     }
 
-    public Boolean isCreating(String appId) {
+    public Boolean isCreating(String appId, String targetEnv) {
         try {
-            byte[] key = String.format("schedule_creating_%s", appId).getBytes(StandardCharsets.UTF_8);
+            byte[] key = String.format("schedule_creating_%s_%s", appId, targetEnv).getBytes(StandardCharsets.UTF_8);
             byte[] value = appId.getBytes(StandardCharsets.UTF_8);
             Boolean result = redisCacheProvider.putIfAbsent(key, CREATE_PLAN_REDIS_EXPIRE,value);
             return !result;
@@ -163,16 +167,16 @@ public class PlanProduceService {
         }
     }
 
-    public void removeCreating(String appId) {
+    public void removeCreating(String appId, String targetEnv) {
         try {
-            byte[] key = String.format("schedule_creating_%s", appId).getBytes(StandardCharsets.UTF_8);
+            byte[] key = String.format("schedule_creating_%s_%s", appId, targetEnv).getBytes(StandardCharsets.UTF_8);
             redisCacheProvider.remove(key);
         } catch (Exception e) {
             LOGGER.error("removeCreating error : {}", e.getMessage(), e);
         }
     }
 
-    public void stopPlan(String planId) {
+    public void stopPlan(String planId, String remark) {
         try {
             String redisKey = STOP_PLAN_REDIS_KEY + planId;
             redisCacheProvider.putIfAbsent(redisKey.getBytes(StandardCharsets.UTF_8), STOP_PLAN_REDIS_EXPIRE, planId.getBytes(StandardCharsets.UTF_8));

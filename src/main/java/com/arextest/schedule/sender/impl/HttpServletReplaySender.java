@@ -7,11 +7,15 @@ import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.deploy.ServiceInstance;
+import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.ReplaySenderParameters;
 import com.arextest.schedule.sender.SenderParameters;
 import com.arextest.schedule.service.MetricService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.*;
@@ -20,6 +24,8 @@ import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -29,6 +35,10 @@ import java.util.regex.Pattern;
 final class HttpServletReplaySender extends AbstractReplaySender {
     @Resource
     private HttpWepServiceApiClient httpWepServiceApiClient;
+    @Resource
+    private ObjectMapper objectMapper;
+    @Resource
+    private MetricService metricService;
 
     @Resource
     private MetricService metricService;
@@ -48,9 +58,8 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         int instanceSize = caseItem.getParent().getTargetInstance().size();
         boolean allSuccess = true;
         for (int i = 0; i < instanceSize; i++) {
-            caseItem.setId(String.valueOf(i));
-            boolean prepareSuccess = doSend(caseItem.getParent(), caseItem, headers) || doSend(caseItem.getParent(), caseItem,
-                    headers);
+            caseItem.setId(i + "");
+            boolean prepareSuccess = doSend(caseItem.getParent(), caseItem, headers) || doSend(caseItem.getParent(), caseItem, headers);
             allSuccess = allSuccess && prepareSuccess;
         }
         return allSuccess;
@@ -60,7 +69,13 @@ final class HttpServletReplaySender extends AbstractReplaySender {
     public boolean activeRemoteService(ReplayActionCaseItem caseItem) {
         Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
         headers.put(CommonConstant.AREX_REPLAY_WARM_UP, Boolean.TRUE.toString());
-        return doSend(caseItem.getParent(), caseItem, headers);
+        int instanceSize = caseItem.getParent().getTargetInstance().size();
+        boolean allSuccess = true;
+        for (int i = 0; i < instanceSize; i++) {
+            caseItem.setId(i + "");
+            allSuccess = allSuccess & doSend(caseItem.getParent(), caseItem, headers);
+        }
+        return allSuccess;
     }
 
     @Override
@@ -68,7 +83,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         if (StringUtils.isBlank(senderParameters.getUrl())) {
             return ReplaySendResult.failed("url is null or empty");
         }
-        before(senderParameters.getRecordId());
+        before(senderParameters.getRecordId(), BuildReplayPlanType.BY_APP_ID.getValue());
         return doInvoke(senderParameters);
     }
 
@@ -95,7 +110,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         senderParameter.setHeaders(headers);
         senderParameter.setMethod(caseItem.requestMethod());
         senderParameter.setRecordId(caseItem.getRecordId());
-        //todo get log message id and will optimize it later.
+        //todo get messageId from transaction and we will optimize it later.
         String messageId = metricService.generateMessageIdEvent(headers, instanceRunner.getUrl());
         StopWatch watch = new StopWatch();
         watch.start(LogType.DO_SEND.getValue());
@@ -119,11 +134,19 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         return sourceSendResult.success() && targetSendResult.success();
     }
 
+    protected ServiceInstance getServiceInstance(ReplayActionCaseItem caseItem, List<ServiceInstance> serviceInstances) {
+        if (CollectionUtils.isEmpty(serviceInstances)) {
+            return null;
+        }
+        Integer index = Math.abs(caseItem.getId().hashCode() % serviceInstances.size());
+        return serviceInstances.get(index);
+    }
+
     @Override
     public boolean send(ReplayActionCaseItem caseItem) {
         Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
         ReplayActionItem replayActionItem = caseItem.getParent();
-        before(caseItem.getRecordId());
+        before(caseItem.getRecordId(), replayActionItem.getParent().getReplayPlanType());
         headers.remove(CommonConstant.AREX_REPLAY_WARM_UP);
         headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
         String exclusionOperationConfig = replayActionItem.getExclusionOperationConfig();

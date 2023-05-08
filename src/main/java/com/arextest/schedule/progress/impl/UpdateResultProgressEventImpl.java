@@ -16,6 +16,8 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.util.Date;
 
+import static com.arextest.schedule.common.CommonConstant.DEFAULT_COUNT;
+
 /**
  * @author jmo
  * @since 2021/10/11
@@ -67,6 +69,7 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
         metricService.recordCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
         replayReportService.pushPlanStatus(planId, reason, replayPlan.getErrorMessage());
+        metricService.recordCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
         recordPlanExecutionTime(replayPlan);
     }
 
@@ -74,6 +77,9 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         Date planCreateTime = replayPlan.getPlanCreateTime();
         long planFinishMills = replayPlan.getPlanFinishTime() == null ? System.currentTimeMillis() : replayPlan.getPlanFinishTime().getTime();
         if (planCreateTime != null) {
+            LOGGER.info("console type planExecutionWatch {} ", System.currentTimeMillis() - planCreateTime.getTime());
+            metricService.recordTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
+                    planFinishMills - planCreateTime.getTime());
             metricService.recordTimeEvent(LogType.PLAN_EXECUTION_TIME.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
                     planFinishMills - planCreateTime.getTime());
         } else {

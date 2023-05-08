@@ -1,7 +1,5 @@
 package com.arextest.schedule.comparer;
 
-import com.arextest.model.mock.AREXMocker;
-import com.arextest.model.mock.MockCategoryType;
 import lombok.Data;
 
 import java.util.List;

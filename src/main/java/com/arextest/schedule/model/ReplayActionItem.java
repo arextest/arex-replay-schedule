@@ -1,10 +1,10 @@
 package com.arextest.schedule.model;
 
+import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanItemCollection;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.deploy.ServiceInstanceOperation;
-import com.arextest.model.mock.MockCategoryType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 

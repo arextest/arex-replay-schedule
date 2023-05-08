@@ -32,7 +32,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     private static final int INDEX_NOT_FOUND = -1;
     private static final CompareSDK COMPARE_INSTANCE = new CompareSDK();
     private final MetricService metricService;
+
     private static List<String> ignoreInDataBaseMocker = Collections.singletonList("body");
+    private static long MAX_TIME = Long.MAX_VALUE;
 
     static {
         COMPARE_INSTANCE.getGlobalOptions().putNameToLower(true).putNullEqualsEmpty(true).putIgnoredTimePrecision(1000);
@@ -52,6 +54,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             if (CollectionUtils.isEmpty(waitCompareMap)) {
                 caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.ERROR.getValue());
                 comparisonOutputWriter.writeIncomparable(caseItem, CaseSendStatusType.REPLAY_RESULT_NOT_FOUND.name());
+                caseItem.setSendStatus(CaseSendStatusType.REPLAY_RESULT_NOT_FOUND.getValue());
                 return true;
             }
             for (CategoryComparisonHolder bindHolder : waitCompareMap) {
@@ -78,8 +81,10 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             metricService.recordTimeEvent(LogType.COMPARE.getValue(), planId, caseItem.getParent().getAppId(), null,
                     compareWatch.getTotalTimeMillis());
             long caseExecutionEndMills = System.currentTimeMillis();
+            LOGGER.info("caseExecutionEndMills {} {}",caseExecutionEndMills,
+                    caseExecutionEndMills - caseItem.getParent().getParent().getExecutionStartMillis());
             metricService.recordTimeEvent(LogType.CASE_EXECUTION_TIME.getValue(), planId, caseItem.getParent().getAppId(), null,
-                    caseExecutionEndMills - caseItem.getExecutionStartMillis());
+                    caseExecutionEndMills - caseItem.getParent().getParent().getExecutionStartMillis());
             MDCTracer.clear();
         }
     }
@@ -137,6 +142,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             addMissReplayResult(category, compareConfig, recordContentList, caseItem, compareResultNewList);
         }
     }
+
 
     private CompareResult compareProcess(String category, String record, String result,
                                          ReplayComparisonConfig compareConfig) {

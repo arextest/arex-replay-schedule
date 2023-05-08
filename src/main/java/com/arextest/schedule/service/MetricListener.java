@@ -30,6 +30,8 @@ public interface MetricListener {
      */
     void recordSendLogAction(String logType, ReplaySendResult targetSendResult, ReplayActionCaseItem caseItem, long timeUsed);
 
+    String generateMessageId(Map<String, String> headers, String url);
+
     /**
      * get log message id from url and headers
      */

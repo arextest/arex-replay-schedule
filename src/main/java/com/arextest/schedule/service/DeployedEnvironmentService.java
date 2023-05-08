@@ -1,27 +1,24 @@
 package com.arextest.schedule.service;
 
-
 import com.arextest.schedule.model.AppServiceDescriptor;
 import com.arextest.schedule.model.deploy.DeploymentEnvironmentProvider;
 import com.arextest.schedule.model.deploy.DeploymentVersion;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
 
 /**
- * @author jmo
- * @since 2021/9/13
+ * created by xinyuan_wang on 2023/1/12
  */
-@Service
 @Slf4j
-public class DefaultDeployedEnvironmentService {
+public final class DeployedEnvironmentService {
+
     private final List<DeploymentEnvironmentProvider> environmentProviderList;
 
-    public DefaultDeployedEnvironmentService(List<DeploymentEnvironmentProvider> environmentProviderList) {
+    public DeployedEnvironmentService(List<DeploymentEnvironmentProvider> environmentProviderList) {
         this.environmentProviderList = environmentProviderList;
     }
 
