@@ -41,9 +41,9 @@ public class DubboReplaySender extends AbstractReplaySender {
     }
     @Override
     public boolean send(ReplayActionCaseItem caseItem) {
-        Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
         ReplayActionItem replayActionItem = caseItem.getParent();
         before(caseItem.getRecordId(), replayActionItem.getParent().getReplayPlanType());
+        Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
         headers.remove(CommonConstant.AREX_REPLAY_WARM_UP);
         headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
         String exclusionOperationConfig = replayActionItem.getExclusionOperationConfig();
