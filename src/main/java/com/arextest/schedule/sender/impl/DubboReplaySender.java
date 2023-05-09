@@ -11,7 +11,6 @@ import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.SenderParameters;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -44,7 +43,7 @@ public class DubboReplaySender extends AbstractReplaySender {
     public boolean send(ReplayActionCaseItem caseItem) {
         Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
         ReplayActionItem replayActionItem = caseItem.getParent();
-        before(caseItem.getRecordId());
+        before(caseItem.getRecordId(), replayActionItem.getParent().getReplayPlanType());
         headers.remove(CommonConstant.AREX_REPLAY_WARM_UP);
         headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
         String exclusionOperationConfig = replayActionItem.getExclusionOperationConfig();

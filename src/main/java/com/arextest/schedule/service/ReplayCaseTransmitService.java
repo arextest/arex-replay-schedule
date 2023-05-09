@@ -66,12 +66,14 @@ public class ReplayCaseTransmitService {
     @Resource
     private MetricService metricService;
 
-    public boolean send(ReplayActionItem replayActionItem) {
+    public boolean send(ReplayActionItem replayActionItem, boolean isFirst) {
         List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
         if (CollectionUtils.isEmpty(sourceItemList)) {
             return false;
         }
-        activeRemoteHost(sourceItemList);
+        if (isFirst) {
+            activeRemoteHost(sourceItemList);
+        }
         Map<String, List<ReplayActionCaseItem>> versionGroupedResult = groupByDependencyVersion(sourceItemList);
         LOGGER.info("found replay send size of group: {}", versionGroupedResult.size());
         replayActionItem.getSendRateLimiter().reset();
