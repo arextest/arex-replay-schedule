@@ -126,7 +126,7 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         actionItem.setReplayFinishTime(now);
         updateReplayActionStatus(actionItem, ReplayStatusType.FAIL_INTERRUPTED, actionItem.getErrorMessage());
         metricService.recordCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), actionItem.getPlanId(), actionItem.getAppId(),
-                actionItem.getCaseItemList().size());
+                actionItem.getCaseItemList() == null ? 0 : actionItem.getCaseItemList().size());
     }
 
     public void onActionCancelled(ReplayActionItem actionItem) {
