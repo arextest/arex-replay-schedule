@@ -58,6 +58,7 @@ public final class PlanContext {
                 continue;
             }
             instanceList.addAll(source.apply(descriptor));
+            break;
         }
         return instanceList;
     }
