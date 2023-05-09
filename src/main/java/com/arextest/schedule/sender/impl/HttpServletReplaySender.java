@@ -14,7 +14,11 @@ import com.arextest.schedule.service.MetricService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
@@ -45,6 +49,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
     public boolean prepareRemoteDependency(ReplayActionCaseItem caseItem) {
         Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
         headers.put(CommonConstant.CONFIG_VERSION_HEADER_NAME, caseItem.replayDependency());
+        headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
         return doSend(caseItem.getParent(), caseItem, headers) || doSend(caseItem.getParent(), caseItem, headers);
     }
 
@@ -52,6 +57,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
     public boolean activeRemoteService(ReplayActionCaseItem caseItem) {
         Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
         headers.put(CommonConstant.AREX_REPLAY_WARM_UP, Boolean.TRUE.toString());
+        headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
         return doSend(caseItem.getParent(), caseItem, headers);
     }
 
