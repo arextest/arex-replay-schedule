@@ -6,6 +6,7 @@ import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
+import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -98,16 +99,16 @@ public final class CompareConfigService {
     private boolean getReplayComparisonConfig(Map<String, ReplayComparisonConfig> operationCompareConfig, ReplayPlan plan) {
         Map<String, String> urlVariables = Collections.singletonMap("appId", plan.getAppId());
 
-        ResponseEntity<GenericResponseType<com.arextest.web.model.contract.contracts.config.replay.ReplayComparisonConfig>> replayComparisonConfigEntity =
+        ResponseEntity<GenericResponseType<ReplayCompareConfig>> replayComparisonConfigEntity =
                 httpWepServiceApiClient.get(summaryConfigUrl, urlVariables,
-                        new ParameterizedTypeReference<GenericResponseType<com.arextest.web.model.contract.contracts.config.replay.ReplayComparisonConfig>>() {
+                        new ParameterizedTypeReference<GenericResponseType<ReplayCompareConfig>>() {
                         });
 
         if (replayComparisonConfigEntity == null) return false;
-        GenericResponseType<com.arextest.web.model.contract.contracts.config.replay.ReplayComparisonConfig> body = replayComparisonConfigEntity.getBody();
+        GenericResponseType<ReplayCompareConfig> body = replayComparisonConfigEntity.getBody();
         if (body != null && body.getBody() != null) {
-            com.arextest.web.model.contract.contracts.config.replay.ReplayComparisonConfig detail =  body.getBody();
-            for(com.arextest.web.model.contract.contracts.config.replay.ReplayComparisonConfig.ReplayComparisonItem replayComparisonItem : detail.getReplayComparisonItems()) {
+            ReplayCompareConfig detail =  body.getBody();
+            for(ReplayCompareConfig.ReplayComparisonItem replayComparisonItem : detail.getReplayComparisonItems()) {
                 String operationId = replayComparisonItem.getOperationId();
                 ReplayComparisonConfig tempReplayComparisonConfig = operationCompareConfig.getOrDefault(operationId,
                         new ReplayComparisonConfig());
