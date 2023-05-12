@@ -9,6 +9,7 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.schedule.sender.ReplaySendResult;
+import com.arextest.schedule.sender.ReplaySenderFactory;
 import com.arextest.schedule.sender.ReplaySenderParameters;
 import com.arextest.schedule.sender.SenderParameters;
 import com.arextest.schedule.service.MetricService;
@@ -278,5 +279,10 @@ final class HttpServletReplaySender extends AbstractReplaySender {
             return (String) value;
         }
         return null;
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        ReplaySenderFactory.put(MockCategoryType.SERVLET.getName(),this);
     }
 }

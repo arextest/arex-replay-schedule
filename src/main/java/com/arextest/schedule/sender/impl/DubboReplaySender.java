@@ -8,6 +8,7 @@ import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.sender.ReplaySendResult;
+import com.arextest.schedule.sender.ReplaySenderFactory;
 import com.arextest.schedule.sender.SenderParameters;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -191,6 +192,11 @@ public class DubboReplaySender extends AbstractReplaySender {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        ReplaySenderFactory.put(MockCategoryType.DUBBO_PROVIDER.getName(),this);
     }
 
     @Data

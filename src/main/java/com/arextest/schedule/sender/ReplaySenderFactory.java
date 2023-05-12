@@ -1,29 +1,22 @@
 package com.arextest.schedule.sender;
 
-import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.Resource;
-import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author: miaolu
  * @create: 2021-12-08
  **/
-@Component
 public class ReplaySenderFactory {
-    @Resource
-    private List<ReplaySender> replaySenderList;
 
-    public ReplaySender findReplaySender(String sendType) {
-        if (CollectionUtils.isEmpty(replaySenderList)) {
-            return null;
-        }
-        for (ReplaySender sender : replaySenderList) {
-            if (sender.isSupported(sendType)) {
-                return sender;
-            }
-        }
-        return null;
+    private static Map<String, ReplaySender> replaySenderMap = new ConcurrentHashMap<>();
+
+    public static void put(String sendType, ReplaySender replaySender) {
+        replaySenderMap.put(sendType, replaySender);
     }
+
+    public static ReplaySender get(String sendType) {
+        return replaySenderMap.get(sendType);
+    }
+
 }

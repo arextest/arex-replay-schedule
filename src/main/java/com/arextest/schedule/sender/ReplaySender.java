@@ -1,16 +1,18 @@
 package com.arextest.schedule.sender;
 
 import com.arextest.schedule.model.ReplayActionCaseItem;
+import org.springframework.beans.factory.InitializingBean;
 
 /**
  * @author jmo
  * @since 2021/9/16
  */
-public interface ReplaySender {
+public interface ReplaySender extends InitializingBean {
     /**
      * Indicate the instance should be working for the message content type,
      * return true should be used,others skipped
      */
+    @Deprecated
     boolean isSupported(String categoryType);
 
     /**

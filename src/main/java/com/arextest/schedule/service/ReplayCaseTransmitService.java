@@ -56,8 +56,6 @@ public class ReplayCaseTransmitService {
     @Resource
     private ProgressTracer progressTracer;
     @Resource
-    private ReplaySenderFactory senderFactory;
-    @Resource
     private ComparisonWriter comparisonWriter;
     @Resource
     private CacheProvider redisCacheProvider;
@@ -221,7 +219,7 @@ public class ReplayCaseTransmitService {
     }
 
     private ReplaySender findReplaySender(ReplayActionCaseItem caseItem) {
-        ReplaySender sender = senderFactory.findReplaySender(caseItem.getCaseType());
+        ReplaySender sender = ReplaySenderFactory.get(caseItem.getCaseType());
         if (sender != null) {
             return sender;
         }
