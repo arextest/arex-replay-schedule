@@ -7,7 +7,9 @@ import lombok.Data;
 import lombok.ToString;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author jmo
@@ -64,10 +66,11 @@ public class ReplayPlan {
     @JsonIgnore
     private List<ReplayActionItem> replayActionItemList;
     @JsonIgnore
+    private List<PlanExecutionContext> executionContexts;
+    @JsonIgnore
     private String appName;
     @JsonIgnore
     private int caseCountLimit;
-
     @JsonIgnore
     private String errorMessage;
 

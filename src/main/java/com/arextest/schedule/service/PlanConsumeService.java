@@ -7,13 +7,13 @@ import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.*;
+import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.util.Date;
@@ -45,6 +45,8 @@ public final class PlanConsumeService {
     private ProgressEvent progressEvent;
     @Resource
     private MetricService metricService;
+    @Resource
+    private PlanExecutionContextProvider planExecutionContextProvider;
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
         // TODO: remove block thread use async to load & send for all
@@ -60,11 +62,15 @@ public final class PlanConsumeService {
 
         @Override
         protected void doWithTracedRunning() {
-            saveActionCaseToSend(replayPlan);
+            int planSavedCaseSize = saveActionCaseToSend(replayPlan);
+            sendAllActionCase(replayPlan);
+            if (planSavedCaseSize == 0) {
+                progressEvent.onReplayPlanFinish(replayPlan);
+            }
         }
     }
 
-    private void saveActionCaseToSend(ReplayPlan replayPlan) {
+    private int saveActionCaseToSend(ReplayPlan replayPlan) {
         metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
                 System.currentTimeMillis() - replayPlan.getPlanCreateMillis());
         int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());
@@ -74,10 +80,7 @@ public final class PlanConsumeService {
             replayPlan.setCaseTotalCount(planSavedCaseSize);
             replayPlanRepository.updateCaseTotal(replayPlan.getId(), planSavedCaseSize);
         }
-        this.sendAllActionCase(replayPlan);
-        if (planSavedCaseSize == 0) {
-            progressEvent.onReplayPlanFinish(replayPlan);
-        }
+        return planSavedCaseSize;
     }
 
     private int saveAllActionCase(List<ReplayActionItem> replayActionItemList) {
@@ -106,50 +109,41 @@ public final class PlanConsumeService {
         final SendSemaphoreLimiter sendRateLimiter = new SendSemaphoreLimiter();
         sendRateLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
         sendRateLimiter.setSendMaxRate(replayPlan.getReplaySendMaxQps());
-        boolean isInterrupted = false;
-        boolean isCancelled = false;
-        for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
-            MDCTracer.addActionId(replayActionItem.getId());
-            if (replayActionItem.finished()) {
-                continue;
+        ExecutionStatus lastResult = ExecutionStatus.buildNormal();
+
+        for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
+            planExecutionContextProvider.onBeforeContextExecution(executionContext, replayPlan);
+
+            for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
+                if (!replayActionItem.isProcessed()) {
+                    replayActionItem.setProcessed(true);
+                    MDCTracer.addActionId(replayActionItem.getId());
+
+                    if (replayActionItem.isEmpty()) {
+                        replayActionItem.setReplayFinishTime(new Date());
+                        progressEvent.onActionComparisonFinish(replayActionItem);
+                    }
+                }
+
+                if (replayActionItem.finished() || replayActionItem.isEmpty()) {
+                    continue;
+                }
+                lastResult = sendItemByContext(replayActionItem, executionContext, lastResult);
             }
-            if (replayActionItem.isEmpty()) {
-                replayActionItem.setReplayFinishTime(new Date());
-                progressEvent.onActionComparisonFinish(replayActionItem);
-                continue;
-            }
-            if (isCancelled) {
-                progressEvent.onActionCancelled(replayActionItem);
-                continue;
-            }
-            if (isInterrupted) {
-                progressEvent.onActionInterrupted(replayActionItem);
-                continue;
-            }
-            if (replayActionItem.getReplayFinishTime() == null) {
-                progressEvent.onActionBeforeSend(replayActionItem);
-            }
-            replayActionItem.setSendRateLimiter(sendRateLimiter);
-            isCancelled = sendByPaging(replayActionItem);
-            if (isCancelled) {
-                continue;
-            }
-            isInterrupted = sendRateLimiter.failBreak();
-            if (isInterrupted) {
-                progressEvent.onActionInterrupted(replayActionItem);
-                continue;
-            }
-            progressEvent.onActionAfterSend(replayActionItem);
+
+            planExecutionContextProvider.onAfterContextExecution(executionContext, replayPlan);
         }
-        if (isInterrupted) {
-            progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
-            LOGGER.info("The plan was interrupted, plan id:{} ,appId: {} ", replayPlan.getId(),
+
+        if (lastResult.isCanceled()) {
+            progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.CANCELLED);
+            LOGGER.info("The plan was isCancelled, plan id:{} ,appId: {} ", replayPlan.getId(),
                     replayPlan.getAppId());
             return;
         }
-        if (isCancelled) {
-            progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.CANCELLED);
-            LOGGER.info("The plan was isCancelled, plan id:{} ,appId: {} ", replayPlan.getId(),
+
+        if (lastResult.isInterrupted()) {
+            progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
+            LOGGER.info("The plan was interrupted, plan id:{} ,appId: {} ", replayPlan.getId(),
                     replayPlan.getAppId());
             return;
         }
@@ -157,27 +151,57 @@ public final class PlanConsumeService {
                 replayPlan.getAppId());
     }
 
-    private boolean sendByPaging(ReplayActionItem replayActionItem) {
+    private ExecutionStatus sendItemByContext(ReplayActionItem replayActionItem, PlanExecutionContext currentContext,
+                                              ExecutionStatus lastResult) {
+        if (lastResult.isCanceled() && replayActionItem.getReplayStatus() != ReplayStatusType.CANCELLED.getValue()) {
+            progressEvent.onActionCancelled(replayActionItem);
+            return lastResult;
+        }
+
+        if (lastResult.isInterrupted() && replayActionItem.getReplayStatus() != ReplayStatusType.FAIL_INTERRUPTED.getValue()) {
+            progressEvent.onActionInterrupted(replayActionItem);
+            return lastResult;
+        }
+
+        if (replayActionItem.getReplayFinishTime() == null
+                && replayActionItem.getReplayStatus() != ReplayStatusType.RUNNING.getValue()) {
+            progressEvent.onActionBeforeSend(replayActionItem);
+        }
+
+        ExecutionStatus curStatus = this.sendByPaging(replayActionItem, currentContext);
+        if (curStatus.isInterrupted()) {
+            progressEvent.onActionInterrupted(replayActionItem);
+        }
+
+        if (curStatus.isNormal()) {
+            progressEvent.onActionAfterSend(replayActionItem);
+        }
+
+        return curStatus;
+    }
+
+    private ExecutionStatus sendByPaging(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {
         List<ReplayActionCaseItem> sourceItemList;
         boolean isFirst = true;
         while (true) {
             sourceItemList = replayActionCaseItemRepository.waitingSendList(replayActionItem.getId(),
-                    CommonConstant.MAX_PAGE_SIZE);
+                    CommonConstant.MAX_PAGE_SIZE, executionContext.getContextCaceQuery());
+
             replayActionItem.setCaseItemList(sourceItemList);
             if (CollectionUtils.isEmpty(sourceItemList)) {
                 break;
             }
             ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
+
             boolean isCanceled = replayCaseTransmitService.send(replayActionItem, isFirst);
-            if (isCanceled) {
-                return true;
+            boolean isInterrupted = replayActionItem.getSendRateLimiter().failBreak();
+
+            if (isCanceled || isInterrupted) {
+                return ExecutionStatus.builder().canceled(isCanceled).interrupted(isInterrupted).build();
             }
             isFirst = false;
-            if (replayActionItem.getSendRateLimiter().failBreak()) {
-                break;
-            }
         }
-        return false;
+        return ExecutionStatus.buildNormal();
     }
 
     private int streamingCaseItemSave(ReplayActionItem replayActionItem) {

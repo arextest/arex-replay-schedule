@@ -8,6 +8,7 @@ import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.converter.ReplayRunDetailsConverter;
 import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
 import com.mongodb.client.result.UpdateResult;
+import jdk.internal.jline.internal.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -16,7 +17,9 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
+import javax.validation.constraints.Null;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -45,8 +48,10 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         return insert.getId() != null;
     }
 
-    public List<ReplayActionCaseItem> waitingSendList(String planItemId, int pageSize) {
-        Query query = Query.query(Criteria.where(PLAN_ITEM_ID).is(planItemId));
+    public List<ReplayActionCaseItem> waitingSendList(String planItemId, int pageSize, @Nullable Query baseQuery) {
+        Query query = Optional.ofNullable(baseQuery).orElse(new Query());
+
+        query.addCriteria(Criteria.where(PLAN_ITEM_ID).is(planItemId));
         query.addCriteria(Criteria.where(SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()));
         query.limit(pageSize);
         query.with(Sort.by(

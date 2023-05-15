@@ -96,4 +96,6 @@ public class ReplayActionItem {
 
     @JsonIgnore
     private String errorMessage;
+    @JsonIgnore
+    private boolean processed;
 }

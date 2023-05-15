@@ -47,22 +47,6 @@ final class HttpServletReplaySender extends AbstractReplaySender {
     }
 
     @Override
-    public boolean prepareRemoteDependency(ReplayActionCaseItem caseItem) {
-        Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
-        headers.put(CommonConstant.CONFIG_VERSION_HEADER_NAME, caseItem.replayDependency());
-        headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
-        int instanceSize = caseItem.getParent().getTargetInstance().size();
-        boolean allSuccess = true;
-        for (int i = 0; i < instanceSize; i++) {
-            caseItem.setId(String.valueOf(i));
-            boolean prepareSuccess = doSend(caseItem.getParent(), caseItem, headers) || doSend(caseItem.getParent(), caseItem,
-                    headers);
-            allSuccess = allSuccess && prepareSuccess;
-        }
-        return allSuccess;
-    }
-
-    @Override
     public boolean activeRemoteService(ReplayActionCaseItem caseItem) {
         Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
         headers.put(CommonConstant.AREX_REPLAY_WARM_UP, Boolean.TRUE.toString());
