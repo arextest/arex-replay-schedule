@@ -43,5 +43,6 @@ public class ReplayPlanCollection extends ModelBase{
     private String caseRecordVersion;
     private int caseTotalCount;
     private int caseSourceType;
+    private int replayPlanType;
 
 }

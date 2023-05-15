@@ -1,10 +1,10 @@
 package com.arextest.schedule.model;
 
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
+import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
-import org.springframework.util.StopWatch;
 
 import java.util.Date;
 import java.util.List;
@@ -56,6 +56,11 @@ public class ReplayPlan {
      */
     @JsonIgnore
     private int caseSourceType;
+    /**
+     * @see BuildReplayPlanType
+     */
+    @JsonIgnore
+    private int replayPlanType;
     @JsonIgnore
     private List<ReplayActionItem> replayActionItemList;
     @JsonIgnore
