@@ -6,6 +6,7 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.deploy.DeploymentVersion;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
+import com.arextest.schedule.model.plan.OperationCaseInfo;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.builder.BuildPlanValidateResult;
 import com.arextest.schedule.plan.builder.ReplayPlanBuilder;
@@ -17,8 +18,10 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Resource;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 /**
  * @author jmo
@@ -34,6 +37,16 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
     @Resource
     private ReplayActionItemPreprocessService replayActionItemPreprocessService;
 
+
+    @Override
+    public void filterAppServiceDescriptors(BuildReplayPlanRequest request, PlanContext planContext) {
+        if (request == null || CollectionUtils.isEmpty(request.getOperationCaseInfoList()) || planContext == null) {
+            return;
+        }
+        planContext.setAppServiceDescriptorList(planContext.filterAppServiceDescriptors(request.getOperationCaseInfoList().stream()
+                .map(OperationCaseInfo::getOperationId)
+                .collect(Collectors.toList())));
+    }
 
     @Override
     public BuildPlanValidateResult validate(BuildReplayPlanRequest request, PlanContext planContext) {
@@ -70,16 +83,16 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
 
     private boolean unableLoadActiveInstance(List<AppServiceDescriptor> descriptorList, String env,
                                              BiConsumer<AppServiceDescriptor, List<ServiceInstance>> bindTo) {
-        List<ServiceInstance> instanceList;
         boolean hasInstance = false;
-        AppServiceDescriptor appServiceDescriptor;
-        for (int i = 0; i < descriptorList.size(); i++) {
-            appServiceDescriptor = descriptorList.get(i);
-            instanceList = deployedEnvironmentService.getActiveInstanceList(appServiceDescriptor, env);
+        for (Iterator<AppServiceDescriptor> iterator = descriptorList.iterator(); iterator.hasNext(); ) {
+            AppServiceDescriptor appServiceDescriptor = iterator.next();
+            List<ServiceInstance> instanceList = deployedEnvironmentService.getActiveInstanceList(appServiceDescriptor, env);
             if (CollectionUtils.isNotEmpty(instanceList)) {
                 hasInstance = true;
+                bindTo.accept(appServiceDescriptor, instanceList);
+            } else {
+                iterator.remove();
             }
-            bindTo.accept(appServiceDescriptor, instanceList);
         }
         return !hasInstance;
     }
