@@ -171,6 +171,12 @@ public class ReplayCaseTransmitService {
                 doSendFailedAsFinish(replayActionCaseItem, CaseSendStatusType.EXCEPTION_FAILED);
             }
         }
+
+        try {
+            groupSentLatch.await(GROUP_SENT_WAIT_TIMEOUT, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            LOGGER.error("send group to remote host error:{}", e.getMessage(), e);
+        }
         MDCTracer.removeDetailId();
     }
 

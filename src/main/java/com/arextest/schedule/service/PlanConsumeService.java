@@ -63,6 +63,7 @@ public final class PlanConsumeService {
         @Override
         protected void doWithTracedRunning() {
             int planSavedCaseSize = saveActionCaseToSend(replayPlan);
+
             if (planSavedCaseSize == 0) {
                 progressEvent.onReplayPlanFinish(replayPlan);
                 return;
@@ -76,6 +77,7 @@ public final class PlanConsumeService {
             }
 
             sendAllActionCase(replayPlan);
+
         }
     }
 
