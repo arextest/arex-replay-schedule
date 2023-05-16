@@ -8,6 +8,14 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * Max QPS = APP Config Max || DEFAULT MAX(20)
+ * Initial QPS = Max QPS * STEP 0 RATIO (0.3)
+ *
+ * Consecutive 20 success API call -> try increase QPS to next step || increase by one if lower than the lowest ratio
+ * Any failed API call -> try reducing QPS to previous step || reduce by one if already lower or equal to the lowest step ratio
+ *
+ * Consecutive 40 failed API call || 10% of total case failed -> break execution
+ *
  * @author hzmeng
  * @since 2021/11/09
  */
@@ -93,12 +101,6 @@ public final class SendSemaphoreLimiter {
         return (int) Math.floor(sendMaxRate * QPS_INITIAL_RATIO);
     }
 
-    /**
-     * todo: 临时
-     * 最初以最低频率执行， 没错误发生时，连需成功N(20)次就频率+1，直至最高频率
-     * 出错时，降低频率，需要连需5N次成功才提升频率
-     * 让出2N次出错，使其有机会降频去恢复，所以，设连续出错2N次或整个计划任务累计出错超10%，则中断回放
-     */
     private final class ReplayHealthy {
         private final static int SUCCESS_COUNT_TO_BALANCE_NO_ERROR = 20;
         private final static int CONTINUOUS_FAIL_TOTAL = 2 * SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
