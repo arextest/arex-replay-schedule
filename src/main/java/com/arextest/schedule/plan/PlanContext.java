@@ -6,13 +6,17 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.deploy.DeploymentVersion;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.deploy.ServiceInstanceOperation;
+import com.google.common.collect.Lists;
 import lombok.Data;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @author jmo
@@ -27,6 +31,9 @@ public final class PlanContext {
 
 
     public AppServiceOperationDescriptor findAppServiceOperationDescriptor(String operationId) {
+        if (CollectionUtils.isEmpty(appServiceDescriptorList)) {
+            return null;
+        }
         List<AppServiceOperationDescriptor> operationDescriptorList;
         for (AppServiceDescriptor appServiceDescriptor : appServiceDescriptorList) {
             operationDescriptorList = appServiceDescriptor.getOperationList();
@@ -42,11 +49,47 @@ public final class PlanContext {
         return null;
     }
 
-    public ServiceInstance targetActiveInstance() {
-        return firstActiveInstance(AppServiceDescriptor::getTargetActiveInstanceList);
+    public List<AppServiceDescriptor> filterAppServiceDescriptors(List<String> operationIds) {
+        if (CollectionUtils.isEmpty(operationIds) || CollectionUtils.isEmpty(appServiceDescriptorList)) {
+            return Collections.emptyList();
+        }
+        List<AppServiceDescriptor> filterAppServiceDescriptorList = new ArrayList<>(appServiceDescriptorList.size());
+        for (AppServiceDescriptor appServiceDescriptor : appServiceDescriptorList) {
+            if (null == appServiceDescriptor || CollectionUtils.isEmpty(appServiceDescriptor.getOperationList())) {
+                continue;
+            }
+            List<AppServiceOperationDescriptor> operationDescriptorList = appServiceDescriptor.getOperationList();
+            if (operationDescriptorList.stream().anyMatch(item -> operationIds.contains(item.getId()))) {
+                filterAppServiceDescriptorList.add(appServiceDescriptor);
+            }
+        }
+        return filterAppServiceDescriptorList;
+    }
+
+    public List<ServiceInstance> targetActiveInstance() {
+        return getActiveInstance(AppServiceDescriptor::getTargetActiveInstanceList, true);
+    }
+
+    private List<ServiceInstance> getActiveInstance(Function<AppServiceDescriptor, List<ServiceInstance>> source, boolean targetInstance) {
+        List<ServiceInstance> instanceList = Lists.newArrayList();
+        for (AppServiceDescriptor descriptor : appServiceDescriptorList) {
+            List<ServiceInstance> activeInstanceList = targetInstance ? descriptor.getTargetActiveInstanceList() : descriptor.getSourceActiveInstanceList();
+            if (CollectionUtils.isEmpty(activeInstanceList)) {
+                continue;
+            }
+            if (activeInstanceList.get(0) == null || StringUtils.isEmpty(activeInstanceList.get(0).getIp())) {
+                continue;
+            }
+            instanceList.addAll(source.apply(descriptor));
+            break;
+        }
+        return instanceList;
     }
 
     private ServiceInstance firstActiveInstance(Function<AppServiceDescriptor, List<ServiceInstance>> source) {
+        if (CollectionUtils.isEmpty(appServiceDescriptorList)) {
+            return null;
+        }
         for (AppServiceDescriptor appServiceDescriptor : appServiceDescriptorList) {
             List<ServiceInstance> instanceList = source.apply(appServiceDescriptor);
             if (CollectionUtils.isNotEmpty(instanceList)) {
@@ -63,8 +106,8 @@ public final class PlanContext {
         return null;
     }
 
-    public ServiceInstance sourceActiveInstance() {
-        return firstActiveInstance(AppServiceDescriptor::getSourceActiveInstanceList);
+    public List<ServiceInstance> sourceActiveInstance() {
+        return getActiveInstance(AppServiceDescriptor::getSourceActiveInstanceList, false);
     }
 
     public ReplayActionItem toReplayAction(AppServiceOperationDescriptor operationDescriptor) {
@@ -77,20 +120,24 @@ public final class PlanContext {
         AppServiceDescriptor serviceDescriptor = operationDescriptor.getParent();
         replayActionItem.setAppId(serviceDescriptor.getAppId());
         final String operationName = operationDescriptor.getOperationName();
-        ServiceInstance activeInstance = firstActiveInstance(serviceDescriptor.getTargetActiveInstanceList());
-        replayActionItem.setTargetInstance(activeInstance);
-        replayActionItem.setSourceInstance(firstActiveInstance(serviceDescriptor.getSourceActiveInstanceList()));
+        replayActionItem.setTargetInstance(serviceDescriptor.getTargetActiveInstanceList());
+        replayActionItem.setSourceInstance(serviceDescriptor.getSourceActiveInstanceList());
         replayActionItem.setOperationName(operationName);
         replayActionItem.setActionType(operationDescriptor.getOperationType());
         replayActionItem.setServiceKey(serviceDescriptor.getServiceKey());
         replayActionItem.setServiceName(serviceDescriptor.getServiceName());
         replayActionItem.setOperationId(operationDescriptor.getId());
-        replayActionItem.setMappedInstanceOperation(this.findActiveOperation(operationName, activeInstance));
+        if (CollectionUtils.isNotEmpty(serviceDescriptor.getTargetActiveInstanceList())) {
+            replayActionItem.setMappedInstanceOperation(this.findActiveOperation(operationName, serviceDescriptor.getTargetActiveInstanceList().get(0)));
+        }
     }
 
     private ServiceInstanceOperation findActiveOperation(String operation, ServiceInstance activeInstance) {
         if (activeInstance != null) {
             List<ServiceInstanceOperation> operationList = activeInstance.getOperationList();
+            if (CollectionUtils.isEmpty(operationList)) {
+                return null;
+            }
             for (ServiceInstanceOperation serviceInstanceOperation : operationList) {
                 if (StringUtils.equals(operation, serviceInstanceOperation.getName())) {
                     return serviceInstanceOperation;

@@ -51,4 +51,9 @@ final class AppIdSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
     public boolean isSupported(BuildReplayPlanRequest request) {
         return request.getReplayPlanType() == BuildReplayPlanType.BY_APP_ID.getValue();
     }
+
+    @Override
+    public void filterAppServiceDescriptors(BuildReplayPlanRequest request, PlanContext planContext) {
+        // replay for whole app no need filtered
+    }
 }

@@ -35,11 +35,7 @@ final class OperationSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
         if (CollectionUtils.isEmpty(request.getOperationCaseInfoList())) {
             return BuildPlanValidateResult.create(BuildPlanValidateResult.REQUESTED_EMPTY_OPERATION, "REQUESTED_EMPTY_OPERATION");
         }
-        for (OperationCaseInfo requestedOperation : request.getOperationCaseInfoList()) {
-            if (planContext.findAppServiceOperationDescriptor(requestedOperation.getOperationId()) == null) {
-                return BuildPlanValidateResult.create(BuildPlanValidateResult.REQUESTED_OPERATION_NOT_FOUND, "REQUESTED_OPERATION_NOT_FOUND");
-            }
-        }
+        super.filterAppServiceDescriptors(request, planContext);
         return super.validate(request, planContext);
     }
 

@@ -7,6 +7,7 @@ import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.deploy.ServiceInstance;
+import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.ReplaySenderParameters;
 import com.arextest.schedule.sender.SenderParameters;
@@ -50,7 +51,15 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
         headers.put(CommonConstant.CONFIG_VERSION_HEADER_NAME, caseItem.replayDependency());
         headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
-        return doSend(caseItem.getParent(), caseItem, headers) || doSend(caseItem.getParent(), caseItem, headers);
+        int instanceSize = caseItem.getParent().getTargetInstance().size();
+        boolean allSuccess = true;
+        for (int i = 0; i < instanceSize; i++) {
+            caseItem.setId(String.valueOf(i));
+            boolean prepareSuccess = doSend(caseItem.getParent(), caseItem, headers) || doSend(caseItem.getParent(), caseItem,
+                    headers);
+            allSuccess = allSuccess && prepareSuccess;
+        }
+        return allSuccess;
     }
 
     @Override
@@ -66,14 +75,14 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         if (StringUtils.isBlank(senderParameters.getUrl())) {
             return ReplaySendResult.failed("url is null or empty");
         }
-        before(senderParameters.getRecordId());
+        before(senderParameters.getRecordId(), BuildReplayPlanType.BY_APP_ID.getValue());
         return doInvoke(senderParameters);
     }
 
 
     private boolean doSend(ReplayActionItem replayActionItem, ReplayActionCaseItem caseItem,
                            Map<String, String> headers) {
-        ServiceInstance instanceRunner = replayActionItem.getTargetInstance();
+        ServiceInstance instanceRunner = selectLoadBalanceInstance(caseItem.getId(), replayActionItem.getTargetInstance());
         if (instanceRunner == null) {
             return false;
         }
@@ -104,7 +113,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
         caseItem.setSendErrorMessage(targetSendResult.getRemark());
         caseItem.setTargetResultId(targetSendResult.getTraceId());
         caseItem.setSendStatus(targetSendResult.getStatusType().getValue());
-        instanceRunner = replayActionItem.getSourceInstance();
+        instanceRunner = selectLoadBalanceInstance(caseItem.getId(), replayActionItem.getSourceInstance());
         if (instanceRunner == null) {
             return targetSendResult.success();
         }
@@ -121,7 +130,7 @@ final class HttpServletReplaySender extends AbstractReplaySender {
     public boolean send(ReplayActionCaseItem caseItem) {
         Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
         ReplayActionItem replayActionItem = caseItem.getParent();
-        before(caseItem.getRecordId());
+        before(caseItem.getRecordId(), replayActionItem.getParent().getReplayPlanType());
         headers.remove(CommonConstant.AREX_REPLAY_WARM_UP);
         headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
         String exclusionOperationConfig = replayActionItem.getExclusionOperationConfig();

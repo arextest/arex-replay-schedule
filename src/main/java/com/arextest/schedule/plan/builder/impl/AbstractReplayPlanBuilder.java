@@ -3,13 +3,14 @@ package com.arextest.schedule.plan.builder.impl;
 import com.arextest.schedule.model.AppServiceDescriptor;
 import com.arextest.schedule.model.CaseSourceEnvType;
 import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.deploy.DeploymentEnvironmentProvider;
 import com.arextest.schedule.model.deploy.DeploymentVersion;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
+import com.arextest.schedule.model.plan.OperationCaseInfo;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.builder.BuildPlanValidateResult;
 import com.arextest.schedule.plan.builder.ReplayPlanBuilder;
+import com.arextest.schedule.service.DeployedEnvironmentService;
 import com.arextest.schedule.service.ReplayActionItemPreprocessService;
 import com.arextest.schedule.service.ReplayCaseRemoteLoadService;
 import org.apache.commons.collections4.CollectionUtils;
@@ -17,8 +18,10 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Resource;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 /**
  * @author jmo
@@ -28,12 +31,22 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
     static final int APP_SUSPENDED_STATUS = -1;
     private final static String DEFAULT_PRO_SOURCE_ENV = "pro";
     @Resource
-    private DeploymentEnvironmentProvider deploymentEnvironmentProvider;
+    private DeployedEnvironmentService deployedEnvironmentService;
     @Resource
     private ReplayCaseRemoteLoadService replayCaseRemoteLoadService;
     @Resource
     private ReplayActionItemPreprocessService replayActionItemPreprocessService;
 
+
+    @Override
+    public void filterAppServiceDescriptors(BuildReplayPlanRequest request, PlanContext planContext) {
+        if (request == null || CollectionUtils.isEmpty(request.getOperationCaseInfoList()) || planContext == null) {
+            return;
+        }
+        planContext.setAppServiceDescriptorList(planContext.filterAppServiceDescriptors(request.getOperationCaseInfoList().stream()
+                .map(OperationCaseInfo::getOperationId)
+                .collect(Collectors.toList())));
+    }
 
     @Override
     public BuildPlanValidateResult validate(BuildReplayPlanRequest request, PlanContext planContext) {
@@ -54,7 +67,7 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
             return BuildPlanValidateResult.create(BuildPlanValidateResult.REQUESTED_TARGET_ENV_UNAVAILABLE, "requested target env unable load" +
                     " active instance");
         }
-        DeploymentVersion deploymentVersion = deploymentEnvironmentProvider.getVersion(appId, env);
+        DeploymentVersion deploymentVersion = deployedEnvironmentService.getVersion(appId, env);
         planContext.setTargetVersion(deploymentVersion);
         env = request.getSourceEnv();
         if (StringUtils.isNotBlank(env) && !StringUtils.equals(DEFAULT_PRO_SOURCE_ENV, env)) {
@@ -62,7 +75,7 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
                 return BuildPlanValidateResult.create(BuildPlanValidateResult.REQUESTED_SOURCE_ENV_UNAVAILABLE,
                         "requested source env unable load active instance");
             }
-            deploymentVersion = deploymentEnvironmentProvider.getVersion(appId, env);
+            deploymentVersion = deployedEnvironmentService.getVersion(appId, env);
             planContext.setSourceVersion(deploymentVersion);
         }
         return BuildPlanValidateResult.createSuccess();
@@ -70,16 +83,16 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
 
     private boolean unableLoadActiveInstance(List<AppServiceDescriptor> descriptorList, String env,
                                              BiConsumer<AppServiceDescriptor, List<ServiceInstance>> bindTo) {
-        List<ServiceInstance> instanceList;
         boolean hasInstance = false;
-        AppServiceDescriptor appServiceDescriptor;
-        for (int i = 0; i < descriptorList.size(); i++) {
-            appServiceDescriptor = descriptorList.get(i);
-            instanceList = deploymentEnvironmentProvider.getActiveInstanceList(appServiceDescriptor, env);
+        for (Iterator<AppServiceDescriptor> iterator = descriptorList.iterator(); iterator.hasNext(); ) {
+            AppServiceDescriptor appServiceDescriptor = iterator.next();
+            List<ServiceInstance> instanceList = deployedEnvironmentService.getActiveInstanceList(appServiceDescriptor, env);
             if (CollectionUtils.isNotEmpty(instanceList)) {
                 hasInstance = true;
+                bindTo.accept(appServiceDescriptor, instanceList);
+            } else {
+                iterator.remove();
             }
-            bindTo.accept(appServiceDescriptor, instanceList);
         }
         return !hasInstance;
     }

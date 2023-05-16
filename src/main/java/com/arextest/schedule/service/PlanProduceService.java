@@ -25,6 +25,7 @@ import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.arextest.schedule.common.CommonConstant.*;
 
@@ -54,7 +55,7 @@ public class PlanProduceService {
     public CommonResponse createPlan(BuildReplayPlanRequest request) {
         long planCreateMillis = System.currentTimeMillis();
         String appId = request.getAppId();
-        if (isCreating(appId)) {
+        if (isCreating(appId, request.getTargetEnv())) {
             return CommonResponse.badResponse("This appid is creating plan");
         }
         ReplayPlanBuilder planBuilder = select(request);
@@ -102,22 +103,23 @@ public class PlanProduceService {
             replayPlan.setTargetImageId(deploymentVersion.getImageId());
             replayPlan.setTargetImageName(deploymentVersion.getImage().getName());
         }
-        ServiceInstance serviceInstance = planContext.targetActiveInstance();
-        replayPlan.setTargetHost(serviceInstance.getUrl());
-        replayPlan.setTargetEnv(serviceInstance.subEnv());
-        serviceInstance = planContext.sourceActiveInstance();
-        if (serviceInstance == null) {
+        List<ServiceInstance> serviceInstances = planContext.targetActiveInstance();
+        replayPlan.setTargetHost(getIpAddress(serviceInstances));
+        replayPlan.setTargetEnv(request.getTargetEnv());
+        serviceInstances = planContext.sourceActiveInstance();
+        if (CollectionUtils.isEmpty(serviceInstances)) {
             replayPlan.setSourceEnv(StringUtils.EMPTY);
             replayPlan.setSourceHost(StringUtils.EMPTY);
         } else {
-            replayPlan.setSourceEnv(serviceInstance.subEnv());
-            replayPlan.setSourceHost(serviceInstance.getUrl());
+            replayPlan.setSourceEnv(request.getSourceEnv());
+            replayPlan.setSourceHost(getIpAddress(serviceInstances));
         }
         replayPlan.setPlanCreateTime(new Date());
         replayPlan.setOperator(request.getOperator());
         replayPlan.setCaseSourceFrom(request.getCaseSourceFrom());
         replayPlan.setCaseSourceTo(request.getCaseSourceTo());
         replayPlan.setCaseSourceType(request.getCaseSourceType());
+        replayPlan.setReplayPlanType(request.getReplayPlanType());
         ConfigurationService.Application replayApp = configurationService.application(appId);
         if (replayApp != null) {
             replayPlan.setArexCordVersion(replayApp.getAgentVersion());
@@ -137,6 +139,10 @@ public class PlanProduceService {
         return replayPlan;
     }
 
+    private String getIpAddress(List<ServiceInstance> serviceInstances) {
+        return serviceInstances.stream().map(ServiceInstance::getIp).collect(Collectors.joining(","));
+    }
+
     private ReplayPlanBuilder select(BuildReplayPlanRequest request) {
         for (ReplayPlanBuilder replayPlanBuilder : replayPlanBuilderList) {
             if (replayPlanBuilder.isSupported(request)) {
@@ -146,9 +152,9 @@ public class PlanProduceService {
         return null;
     }
 
-    public Boolean isCreating(String appId) {
+    public Boolean isCreating(String appId, String targetEnv) {
         try {
-            byte[] key = String.format("schedule_creating_%s", appId).getBytes(StandardCharsets.UTF_8);
+            byte[] key = String.format("schedule_creating_%s_%s", appId, targetEnv).getBytes(StandardCharsets.UTF_8);
             byte[] value = appId.getBytes(StandardCharsets.UTF_8);
             Boolean result = redisCacheProvider.putIfAbsent(key, CREATE_PLAN_REDIS_EXPIRE,value);
             return !result;
@@ -158,9 +164,9 @@ public class PlanProduceService {
         }
     }
 
-    public void removeCreating(String appId) {
+    public void removeCreating(String appId, String targetEnv) {
         try {
-            byte[] key = String.format("schedule_creating_%s", appId).getBytes(StandardCharsets.UTF_8);
+            byte[] key = String.format("schedule_creating_%s_%s", appId, targetEnv).getBytes(StandardCharsets.UTF_8);
             redisCacheProvider.remove(key);
         } catch (Exception e) {
             LOGGER.error("removeCreating error : {}", e.getMessage(), e);

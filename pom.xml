@@ -6,7 +6,7 @@
     <packaging>${packagingType}</packaging>
     <groupId>com.arextest</groupId>
     <artifactId>arex-schedule-web-api</artifactId>
-    <version>1.0.21</version>
+    <version>1.0.23</version>
     <name>${project.groupId}:${project.artifactId}</name>
     <description>AREX schedule is used for replay.</description>
     <url>https://github.com/arextest/arex-replay-schedule</url>
@@ -392,6 +392,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>**/WebSpringBootServletInitializer.java</exclude>
+                                <exclude>**/DubboReplaySender.java</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
@@ -446,6 +447,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>**/WebSpringBootServletInitializer.java</exclude>
+                                <exclude>**/DubboReplaySender.java</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
