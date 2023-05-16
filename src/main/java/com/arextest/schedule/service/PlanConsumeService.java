@@ -63,10 +63,19 @@ public final class PlanConsumeService {
         @Override
         protected void doWithTracedRunning() {
             int planSavedCaseSize = saveActionCaseToSend(replayPlan);
-            sendAllActionCase(replayPlan);
             if (planSavedCaseSize == 0) {
                 progressEvent.onReplayPlanFinish(replayPlan);
+                return;
             }
+
+            replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
+            if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
+                LOGGER.error("Invalid context built for plan {}", replayPlan);
+                progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
+                return;
+            }
+
+            sendAllActionCase(replayPlan);
         }
     }
 
@@ -106,9 +115,12 @@ public final class PlanConsumeService {
 
     private void sendAllActionCase(ReplayPlan replayPlan) {
         progressTracer.initTotal(replayPlan);
-        final SendSemaphoreLimiter sendRateLimiter = new SendSemaphoreLimiter();
-        sendRateLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
-        sendRateLimiter.setSendMaxRate(replayPlan.getReplaySendMaxQps());
+
+        // limiter share for entire plan, TODO: limiter for each service instance
+        final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter();
+        qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
+        qpsLimiter.setSendMaxRate(replayPlan.getReplaySendMaxQps());
+
         ExecutionStatus lastResult = ExecutionStatus.buildNormal();
 
         for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
@@ -118,7 +130,7 @@ public final class PlanConsumeService {
                 if (!replayActionItem.isProcessed()) {
                     replayActionItem.setProcessed(true);
                     MDCTracer.addActionId(replayActionItem.getId());
-
+                    replayActionItem.setSendRateLimiter(qpsLimiter);
                     if (replayActionItem.isEmpty()) {
                         replayActionItem.setReplayFinishTime(new Date());
                         progressEvent.onActionComparisonFinish(replayActionItem);
