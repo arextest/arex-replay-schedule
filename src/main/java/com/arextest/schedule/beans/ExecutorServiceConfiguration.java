@@ -24,7 +24,7 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
     private static final int SEND_QUEUE_MAX_CAPACITY_SIZE = 2000;
     private static final int PRELOAD_QUEUE_MAX_CAPACITY_SIZE = 100;
 
-    private static final int SEND_POOL_SIZE = ExecutorServiceConfiguration.calculateIOPoolThreadPoolSize();
+    private static final int SEND_POOL_SIZE = ExecutorServiceConfiguration.calculateIOPoolSize();
 
     @Bean
     public ExecutorService preloadExecutorService() {
@@ -55,7 +55,7 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
         LOGGER.error("uncaughtException {} ,error :{}", t.getName(), e.getMessage(), e);
     }
 
-    private static int calculateIOPoolThreadPoolSize() {
+    private static int calculateIOPoolSize() {
         int nThreads = Runtime.getRuntime().availableProcessors();
         double targetCPUUtilization = 0.8;
         double wC = 3.0; // assume wait time is 5 times compute time
