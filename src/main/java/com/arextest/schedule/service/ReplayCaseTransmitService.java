@@ -74,7 +74,7 @@ public class ReplayCaseTransmitService {
         if (isFirst) {
             activeRemoteHost(sourceItemList);
         }
-        replayActionItem.getSendRateLimiter().reset();
+        // replayActionItem.getSendRateLimiter().reset();
         byte[] cancelKey = getCancelKey(replayActionItem.getPlanId());
 
         if (replayActionItem.getSendRateLimiter().failBreak()) {

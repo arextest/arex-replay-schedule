@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.RateLimiter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -13,18 +14,29 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SuppressWarnings("UnstableApiUsage")
 @Slf4j
 public final class SendSemaphoreLimiter {
-    private static final int DEFAULT_MIN_RATE = 1;
+    private static final double[] QPS_STEP_RATIO = {0.3, 0.5, 0.7, 1};
+    private static final int QPS_MAX_STEP = QPS_STEP_RATIO.length - 1;
+    private static final double QPS_INITIAL_RATIO = QPS_STEP_RATIO[0];
     private static final int DEFAULT_MAX_RATE = 20;
-    private int sendMaxRate;
+    private static final int ABSOLUTE_MIN_GUARD = 1;
+    private final int sendMaxRate;
+    private final int sendInitialRate;
     private volatile int permits;
+    private volatile int currentStep = 0;
     private final ReplayHealthy checker = new ReplayHealthy();
     private final RateLimiter rateLimiter;
+
     @Setter
     private int totalTasks;
 
-    public SendSemaphoreLimiter() {
-        this.rateLimiter = RateLimiter.create(DEFAULT_MIN_RATE);
-        this.permits = DEFAULT_MIN_RATE;
+    public SendSemaphoreLimiter(Integer maxQps) {
+        Integer actualMaxQps = Optional.ofNullable(maxQps).filter(qps -> qps > 0).orElse(DEFAULT_MAX_RATE);
+        Integer actualInitialMinQps = SendSemaphoreLimiter.calculateInitialRate(actualMaxQps);
+
+        this.sendInitialRate = actualInitialMinQps;
+        this.sendMaxRate = actualMaxQps;
+        this.rateLimiter = RateLimiter.create(actualInitialMinQps);
+        this.permits = actualInitialMinQps;
     }
 
     public boolean failBreak() {
@@ -40,37 +52,45 @@ public final class SendSemaphoreLimiter {
         checker.statistic(success);
     }
 
-    public void reset() {
-        checker.reset();
-        permits = DEFAULT_MIN_RATE;
-        LOGGER.info("reset rate to default permits: {}", permits);
-        this.changeRateWithLog(permits);
-    }
+    private synchronized void tryModifyRate(boolean increase) {
+        Integer originalQps = this.permits;
+        Integer newQps = originalQps;
 
-    private synchronized void tryReduceRate() {
-        LOGGER.info("try reduce rate , permits: {}", this.permits);
-        if (this.permits <= DEFAULT_MIN_RATE) {
-            return;
+        if (increase) {
+            // try step forward
+            if (this.currentStep < QPS_MAX_STEP && originalQps.equals(getRatioOfStep(this.currentStep))) {
+                this.currentStep += 1;
+                newQps = getRatioOfStep(this.currentStep);
+                // try increase by one until reach Min step
+            } else if (this.currentStep < QPS_MAX_STEP) {
+                newQps = originalQps + 1;
+            }
+        } else {
+            // try step back
+            if (this.currentStep > 1) {
+                this.currentStep -= 1;
+                newQps = getRatioOfStep(this.currentStep);
+                // try reducing to absolute min
+            } else if (originalQps > ABSOLUTE_MIN_GUARD) {
+                newQps = originalQps - 1;
+            } else {
+                newQps = ABSOLUTE_MIN_GUARD;
+            }
         }
-        this.changeRateWithLog(this.permits--);
-    }
 
-    private synchronized void tryIncreaseRate() {
-        if (this.permits >= sendMaxRate) {
-            return;
+        if (!newQps.equals(originalQps)) {
+            this.permits = newQps;
+            this.rateLimiter.setRate(newQps);
+            LOGGER.info("send rate permits: {} -> {} (per second)", originalQps, newQps);
         }
-        this.changeRateWithLog(this.permits++);
     }
 
-    private void changeRateWithLog(double newPermitsPerSecond) {
-        double beforeValue = this.rateLimiter.getRate();
-        this.rateLimiter.setRate(newPermitsPerSecond);
-        LOGGER.info("send rate permits: {} -> {} (per second)", beforeValue, newPermitsPerSecond);
+    private Integer getRatioOfStep(int step) {
+        return (int) Math.floor(sendMaxRate * QPS_STEP_RATIO[step]);
     }
 
-
-    public void setSendMaxRate(int replaySendMaxQps) {
-        sendMaxRate = replaySendMaxQps > 0 ? replaySendMaxQps : DEFAULT_MAX_RATE;
+    private static Integer calculateInitialRate(int sendMaxRate) {
+        return (int) Math.floor(sendMaxRate * QPS_INITIAL_RATIO);
     }
 
     /**
@@ -118,13 +138,13 @@ public final class SendSemaphoreLimiter {
 
         private void tryChangeRate() {
             if (hasError) {
-                tryReduceRate();
+                tryModifyRate(false);
                 hasError = false;
                 checkCount = SUCCESS_COUNT_TO_BALANCE_WITH_ERROR;
                 return;
             }
             if (continuousSuccessCounter.get() > checkCount) {
-                tryIncreaseRate();
+                tryModifyRate(true);
                 continuousSuccessCounter.set(0);
                 checkCount = SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
             }
