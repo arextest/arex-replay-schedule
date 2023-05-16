@@ -10,7 +10,6 @@ import java.util.List;
  */
 public interface PlanExecutionContextProvider {
     List<PlanExecutionContext> buildContext(ReplayPlan plan);
-
     void onBeforeContextExecution(PlanExecutionContext currentContext, ReplayPlan plan);
     void onAfterContextExecution(PlanExecutionContext currentContext, ReplayPlan plan);
 }
