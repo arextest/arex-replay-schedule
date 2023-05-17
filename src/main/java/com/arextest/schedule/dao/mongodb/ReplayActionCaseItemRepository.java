@@ -46,8 +46,12 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         return insert.getId() != null;
     }
 
-    public List<ReplayActionCaseItem> waitingSendList(String planItemId, int pageSize, Query baseQuery) {
-        Query query = Optional.ofNullable(baseQuery).orElse(new Query());
+    public List<ReplayActionCaseItem> waitingSendList(String planItemId, int pageSize, List<Criteria> baseCriteria) {
+        Query query = new Query();
+
+        Optional.ofNullable(baseCriteria).ifPresent(criteria -> {
+            criteria.forEach(query::addCriteria);
+        });
 
         query.addCriteria(Criteria.where(PLAN_ITEM_ID).is(planItemId));
         query.addCriteria(Criteria.where(SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()));

@@ -4,13 +4,10 @@ import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayPlan;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.mongodb.core.query.BasicQuery;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by Qzmo on 2023/5/15
@@ -34,8 +31,8 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
         singletonContext.setDependencies(dependencies);
 
         // set up base query for cases belonging to this context
-        Query baseQuery = new Query();
-        singletonContext.setContextCaceQuery(baseQuery);
+        Criteria dummyCriteria = Criteria.where("dataChangeCreateTime").gt(0);
+        singletonContext.setContextCaseQuery(Collections.singletonList(dummyCriteria));
 
         List<PlanExecutionContext<Map<String, String>>> contexts = Collections.singletonList(singletonContext);
         LOGGER.info("Constructed contexts of size: {}", contexts.size());

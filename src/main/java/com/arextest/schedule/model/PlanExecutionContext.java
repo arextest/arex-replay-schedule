@@ -2,9 +2,9 @@ package com.arextest.schedule.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
-import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Criteria;
 
-import java.util.Map;
+import java.util.List;
 
 /**
  * Created by Qzmo on 2023/5/15
@@ -15,7 +15,7 @@ public class PlanExecutionContext<T> {
 
     // extra condition provide for case selecting before send
     @JsonIgnore
-    private Query contextCaceQuery;
+    private List<Criteria> contextCaseQuery;
 
     @JsonIgnore
     private T dependencies;

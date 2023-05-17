@@ -201,7 +201,7 @@ public final class PlanConsumeService {
         boolean isFirst = true;
         while (true) {
             sourceItemList = replayActionCaseItemRepository.waitingSendList(replayActionItem.getId(),
-                    CommonConstant.MAX_PAGE_SIZE, executionContext.getContextCaceQuery());
+                    CommonConstant.MAX_PAGE_SIZE, executionContext.getContextCaseQuery());
 
             replayActionItem.setCaseItemList(sourceItemList);
             if (CollectionUtils.isEmpty(sourceItemList)) {
