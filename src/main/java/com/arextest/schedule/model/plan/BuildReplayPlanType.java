@@ -18,7 +18,13 @@ public enum BuildReplayPlanType {
     /**
      * 固定case回放
      */
-    BY_FIXED_CASE(2);
+    BY_FIXED_CASE(2),
+
+    /**
+     * rolling表中case回放
+     */
+    BY_ROLLING_CASE(3);
+
     @Getter
     final int value;
 
