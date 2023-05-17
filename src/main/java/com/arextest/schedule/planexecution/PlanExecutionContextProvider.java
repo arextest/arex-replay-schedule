@@ -8,8 +8,8 @@ import java.util.List;
 /**
  * Created by Qzmo on 2023/5/15
  */
-public interface PlanExecutionContextProvider {
-    List<PlanExecutionContext> buildContext(ReplayPlan plan);
-    void onBeforeContextExecution(PlanExecutionContext currentContext, ReplayPlan plan);
-    void onAfterContextExecution(PlanExecutionContext currentContext, ReplayPlan plan);
+public interface PlanExecutionContextProvider<T> {
+    List<PlanExecutionContext<T>> buildContext(ReplayPlan plan);
+    void onBeforeContextExecution(PlanExecutionContext<T> currentContext, ReplayPlan plan);
+    void onAfterContextExecution(PlanExecutionContext<T> currentContext, ReplayPlan plan);
 }

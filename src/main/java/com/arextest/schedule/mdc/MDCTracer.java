@@ -12,8 +12,8 @@ public final class MDCTracer {
     private static final String PLAN_ID = "planId";
     private static final String ACTION_ID = "actionId";
     private static final String DETAIL_ID = "detailId";
-
     private static final String PLAN_ITEM_ID = "planItemId";
+    private static final String EXECUTION_CONTEXT_NAME = "executionContextName";
 
     private static final String APP_TYPE = "app-type";
     private static final String AREX_SCHEDULE = "arex-schedule";
@@ -40,6 +40,11 @@ public final class MDCTracer {
     public static void addPlanId(String planId) {
         addAppType();
         MDC.put(PLAN_ID, planId);
+    }
+
+    public static void addExecutionContextNme(String contextName) {
+        addAppType();
+        MDC.put(EXECUTION_CONTEXT_NAME, contextName);
     }
 
     public static void addPlanItemId(String planItemId) {

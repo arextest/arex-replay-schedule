@@ -28,6 +28,7 @@ import static com.arextest.schedule.common.CommonConstant.PINNED;
  */
 @Slf4j
 @Service
+@SuppressWarnings("rawtypes")
 public final class PlanConsumeService {
     @Resource
     private ReplayCaseRemoteLoadService caseRemoteLoadService;
@@ -61,6 +62,7 @@ public final class PlanConsumeService {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         protected void doWithTracedRunning() {
             int planSavedCaseSize = saveActionCaseToSend(replayPlan);
 
@@ -115,6 +117,7 @@ public final class PlanConsumeService {
         return planSavedCaseSize;
     }
 
+    @SuppressWarnings("unchecked")
     private void sendAllActionCase(ReplayPlan replayPlan) {
         progressTracer.initTotal(replayPlan);
 
