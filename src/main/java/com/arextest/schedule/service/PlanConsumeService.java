@@ -123,7 +123,7 @@ public final class PlanConsumeService {
     private void sendAllActionCase(ReplayPlan replayPlan) {
         progressTracer.initTotal(replayPlan);
 
-        // limiter share for entire plan, TODO: limiter for each service instance
+        // limiter shared for entire plan
         final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps());
         qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
 
