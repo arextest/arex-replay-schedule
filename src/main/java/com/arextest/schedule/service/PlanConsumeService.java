@@ -6,6 +6,12 @@ import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
+import com.arextest.schedule.model.CaseSendStatusType;
+import com.arextest.schedule.model.LogType;
+import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.*;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.progress.ProgressEvent;
@@ -21,8 +27,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static com.arextest.schedule.common.CommonConstant.PINNED;
 
 /**
  * @author jmo
@@ -233,10 +237,9 @@ public final class PlanConsumeService {
 
     private int doFixedCaseSave(List<ReplayActionCaseItem> caseItemList) {
         int size = 0;
-        String sourceProvider = PINNED;
         for (int i = 0; i < caseItemList.size(); i++) {
             ReplayActionCaseItem caseItem = caseItemList.get(i);
-            ReplayActionCaseItem viewReplay = caseRemoteLoadService.viewReplayLoad(caseItem, sourceProvider);
+            ReplayActionCaseItem viewReplay = caseRemoteLoadService.viewReplayLoad(caseItem, caseItem.getSourceProvider());
             if (viewReplay == null) {
                 caseItem.setSendStatus(CaseSendStatusType.REPLAY_CASE_NOT_FOUND.getValue());
             } else {

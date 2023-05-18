@@ -41,6 +41,8 @@ public class ReplayActionCaseItem {
     private Target targetRequest;
     @JsonIgnore
     private String messageId;
+    @JsonIgnore
+    private String sourceProvider;
     /**
      * the time the case actually starts executing
      */
