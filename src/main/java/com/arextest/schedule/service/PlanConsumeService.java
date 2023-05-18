@@ -65,12 +65,6 @@ public final class PlanConsumeService {
         @SuppressWarnings("unchecked")
         protected void doWithTracedRunning() {
             int planSavedCaseSize = saveActionCaseToSend(replayPlan);
-
-            if (planSavedCaseSize == 0) {
-                progressEvent.onReplayPlanFinish(replayPlan);
-                return;
-            }
-
             replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
             if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
                 LOGGER.error("Invalid context built for plan {}", replayPlan);
@@ -80,6 +74,10 @@ public final class PlanConsumeService {
 
             sendAllActionCase(replayPlan);
 
+            // empty items are not able to trigger plan finished hook
+            if (planSavedCaseSize == 0) {
+                progressEvent.onReplayPlanFinish(replayPlan);
+            }
         }
     }
 
