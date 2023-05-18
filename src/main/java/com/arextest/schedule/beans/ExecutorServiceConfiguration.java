@@ -19,6 +19,7 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
     private static final int MAXIMUM_POOL_SIZE = 2 * CORE_POOL_SIZE;
     private static final int SEND_QUEUE_MAX_CAPACITY_SIZE = 2000;
     private static final int PRELOAD_QUEUE_MAX_CAPACITY_SIZE = 100;
+    private static final int ACTION_ITEM_QUEUE_MAX_CAPACITY_SIZE = 200;
 
     private static final int SEND_POOL_SIZE = ExecutorServiceConfiguration.calculateIOPoolSize();
 
@@ -52,9 +53,11 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
                 .setDaemon(true)
                 .setUncaughtExceptionHandler(this)
                 .build();
-        return new ThreadPoolExecutor(CORE_POOL_SIZE,
-                MAXIMUM_POOL_SIZE, KEEP_ALIVE_TIME,
-                TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(PRELOAD_QUEUE_MAX_CAPACITY_SIZE), threadFactory);
+        return new ThreadPoolExecutor(CORE_POOL_SIZE, MAXIMUM_POOL_SIZE,
+                KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(ACTION_ITEM_QUEUE_MAX_CAPACITY_SIZE),
+                threadFactory,
+                new ThreadPoolExecutor.CallerRunsPolicy());
     }
 
     @Override
