@@ -13,6 +13,9 @@ import java.util.List;
 public class PlanExecutionContext<T> {
     private String contextName;
 
+    @JsonIgnore
+    private ExecutionStatus executionStatus;
+
     // extra condition provide for case selecting before send
     @JsonIgnore
     private List<Criteria> contextCaseQuery;
