@@ -8,20 +8,20 @@ import lombok.Getter;
  */
 public enum BuildReplayPlanType {
     /**
-     * app维度回放
+     * app dimension replay
      */
     BY_APP_ID(0),
     /**
-     * 接口维度回放
+     * interface dimension replay
      */
     BY_OPERATION_OF_APP_ID(1),
     /**
-     * pinned表中case回放
+     * case replay in the pinned table
      */
     BY_PINNED_CASE(2),
 
     /**
-     * rolling表中case回放
+     * case replay in the pinned table
      */
     BY_ROLLING_CASE(3);
 
