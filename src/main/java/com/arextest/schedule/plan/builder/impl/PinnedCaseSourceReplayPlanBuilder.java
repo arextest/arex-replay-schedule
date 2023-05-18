@@ -22,14 +22,14 @@ import java.util.List;
  * @since 2021/9/18
  */
 @Component
-final class FixedCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
+final class PinnedCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
 
     @Resource
     private ReplayActionItemPreprocessService replayActionItemPreprocessService;
 
     @Override
     public boolean isSupported(BuildReplayPlanRequest request) {
-        return request.getReplayPlanType() == BuildReplayPlanType.BY_FIXED_CASE.getValue();
+        return request.getReplayPlanType() == BuildReplayPlanType.BY_PINNED_CASE.getValue();
     }
 
     @Override

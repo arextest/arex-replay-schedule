@@ -32,7 +32,7 @@ final class MockCachePreLoader {
     void fillMockSource(String replayId, int replayPlanType) {
         QueryMockCacheRequestType mockCacheRequestType = new QueryMockCacheRequestType();
         mockCacheRequestType.setRecordId(replayId);
-        if (replayPlanType == BuildReplayPlanType.BY_FIXED_CASE.getValue()) {
+        if (replayPlanType == BuildReplayPlanType.BY_PINNED_CASE.getValue()) {
             mockCacheRequestType.setSourceProvider(PINNED);
         }
         if (replayPlanType == BuildReplayPlanType.BY_ROLLING_CASE.getValue()) {

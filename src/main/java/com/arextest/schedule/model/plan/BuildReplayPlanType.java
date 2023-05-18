@@ -16,9 +16,9 @@ public enum BuildReplayPlanType {
      */
     BY_OPERATION_OF_APP_ID(1),
     /**
-     * 固定case回放
+     * pinned表中case回放
      */
-    BY_FIXED_CASE(2),
+    BY_PINNED_CASE(2),
 
     /**
      * rolling表中case回放
