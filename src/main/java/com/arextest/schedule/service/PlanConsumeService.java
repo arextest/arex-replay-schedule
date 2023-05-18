@@ -78,7 +78,7 @@ public final class PlanConsumeService {
 
             sendAllActionCase(replayPlan);
 
-            // empty items are not able to trigger plan finished hook
+            // actionItems with empty case item are not able to trigger plan finished hook
             if (planSavedCaseSize == 0) {
                 progressEvent.onReplayPlanFinish(replayPlan);
             }
