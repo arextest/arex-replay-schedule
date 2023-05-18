@@ -127,7 +127,7 @@ public final class PlanConsumeService {
         final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps());
         qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
 
-        AtomicReference<ExecutionStatus> lastResult = new AtomicReference<>(ExecutionStatus.buildNormal());
+        AtomicReference<ExecutionStatus> sendResult = new AtomicReference<>(ExecutionStatus.buildNormal());
 
         for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
             planExecutionContextProvider.onBeforeContextExecution(executionContext, replayPlan);
@@ -147,7 +147,7 @@ public final class PlanConsumeService {
                     continue;
                 }
                 CompletableFuture<Void> task = CompletableFuture.runAsync(
-                        () -> sendItemByContext(replayActionItem, executionContext, lastResult),
+                        () -> sendItemByContext(replayActionItem, executionContext, sendResult),
                         actionItemParallelPool);
                 contextTasks.add(task);
             }
@@ -156,14 +156,14 @@ public final class PlanConsumeService {
             planExecutionContextProvider.onAfterContextExecution(executionContext, replayPlan);
         }
 
-        if (lastResult.get().isCanceled()) {
+        if (sendResult.get().isCanceled()) {
             progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.CANCELLED);
             LOGGER.info("The plan was isCancelled, plan id:{} ,appId: {} ", replayPlan.getId(),
                     replayPlan.getAppId());
             return;
         }
 
-        if (lastResult.get().isInterrupted()) {
+        if (sendResult.get().isInterrupted()) {
             progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
             LOGGER.info("The plan was interrupted, plan id:{} ,appId: {} ", replayPlan.getId(),
                     replayPlan.getAppId());
@@ -174,13 +174,13 @@ public final class PlanConsumeService {
     }
 
     private void sendItemByContext(ReplayActionItem replayActionItem, PlanExecutionContext currentContext,
-                                              AtomicReference<ExecutionStatus> lastResult) {
-        if (lastResult.get().isCanceled() && replayActionItem.getReplayStatus() != ReplayStatusType.CANCELLED.getValue()) {
+                                              AtomicReference<ExecutionStatus> sendResult) {
+        if (sendResult.get().isCanceled() && replayActionItem.getReplayStatus() != ReplayStatusType.CANCELLED.getValue()) {
             progressEvent.onActionCancelled(replayActionItem);
             return;
         }
 
-        if (lastResult.get().isInterrupted() && replayActionItem.getReplayStatus() != ReplayStatusType.FAIL_INTERRUPTED.getValue()) {
+        if (sendResult.get().isInterrupted() && replayActionItem.getReplayStatus() != ReplayStatusType.FAIL_INTERRUPTED.getValue()) {
             progressEvent.onActionInterrupted(replayActionItem);
             return;
         }
@@ -199,7 +199,7 @@ public final class PlanConsumeService {
             progressEvent.onActionAfterSend(replayActionItem);
         }
 
-        lastResult.set(curStatus);
+        sendResult.set(curStatus);
     }
 
     private ExecutionStatus sendByPaging(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {
