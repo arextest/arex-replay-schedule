@@ -66,15 +66,17 @@ public class ReplayCaseTransmitService {
     @Resource
     private MetricService metricService;
 
-    public boolean send(ReplayActionItem replayActionItem, boolean isFirst) {
+    public boolean send(ReplayActionItem replayActionItem) {
         List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
         if (CollectionUtils.isEmpty(sourceItemList)) {
             return false;
         }
-        if (isFirst) {
+
+        // warmUp should be done once for each endpoint
+        if (!replayActionItem.isProcessed()) {
             activeRemoteHost(sourceItemList);
         }
-        // replayActionItem.getSendRateLimiter().reset();
+
         byte[] cancelKey = getCancelKey(replayActionItem.getPlanId());
 
         if (replayActionItem.getSendRateLimiter().failBreak()) {

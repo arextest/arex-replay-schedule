@@ -5,11 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * @author jmo
@@ -48,6 +44,17 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
                 .build();
         return new ThreadPoolExecutor(SEND_POOL_SIZE, SEND_POOL_SIZE, KEEP_ALIVE_TIME,
                 TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(SEND_QUEUE_MAX_CAPACITY_SIZE), threadFactory);
+    }
+
+    @Bean
+    public ExecutorService actionItemParallelPool() {
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("replay-action-parallel-%d")
+                .setDaemon(true)
+                .setUncaughtExceptionHandler(this)
+                .build();
+        return new ThreadPoolExecutor(CORE_POOL_SIZE,
+                MAXIMUM_POOL_SIZE, KEEP_ALIVE_TIME,
+                TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(PRELOAD_QUEUE_MAX_CAPACITY_SIZE), threadFactory);
     }
 
     @Override
