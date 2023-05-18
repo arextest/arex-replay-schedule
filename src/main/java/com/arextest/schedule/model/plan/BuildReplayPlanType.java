@@ -21,7 +21,7 @@ public enum BuildReplayPlanType {
     BY_PINNED_CASE(2),
 
     /**
-     * case replay in the pinned table
+     * case replay in the rolling table
      */
     BY_ROLLING_CASE(3);
 
