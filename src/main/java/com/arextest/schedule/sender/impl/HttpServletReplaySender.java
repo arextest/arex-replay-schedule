@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
 
 @Slf4j
 @Component
-final class HttpServletReplaySender extends AbstractReplaySender {
+public final class HttpServletReplaySender extends AbstractReplaySender {
     @Resource
     private HttpWepServiceApiClient httpWepServiceApiClient;
 
