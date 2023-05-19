@@ -1,5 +1,6 @@
 package com.arextest.schedule.plan.builder.impl;
 
+import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.AppServiceOperationDescriptor;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
@@ -21,14 +22,14 @@ import java.util.List;
  * @since 2021/9/18
  */
 @Component
-final class FixedCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
+final class RollingCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
 
     @Resource
     private ReplayActionItemPreprocessService replayActionItemPreprocessService;
 
     @Override
     public boolean isSupported(BuildReplayPlanRequest request) {
-        return request.getReplayPlanType() == BuildReplayPlanType.BY_FIXED_CASE.getValue();
+        return request.getReplayPlanType() == BuildReplayPlanType.BY_ROLLING_CASE.getValue();
     }
 
     @Override
@@ -68,6 +69,7 @@ final class FixedCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
                 caseItem = new ReplayActionCaseItem();
                 caseItem.setRecordId(replayId);
                 caseItem.setCaseType(replayActionItem.getActionType());
+                caseItem.setSourceProvider(CommonConstant.ROLLING);
                 caseItem.setParent(replayActionItem);
                 caseItemList.add(caseItem);
             }
