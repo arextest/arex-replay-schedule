@@ -130,6 +130,7 @@ public final class PlanConsumeService {
         for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
             executionContext.setExecutionStatus(sendResult);
             planExecutionContextProvider.onBeforeContextExecution(executionContext, replayPlan);
+
             List<CompletableFuture<Void>> contextTasks = new ArrayList<>();
             for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
                 if (!replayActionItem.isProcessed()) {
