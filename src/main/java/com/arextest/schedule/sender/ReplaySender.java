@@ -21,11 +21,6 @@ public interface ReplaySender {
     boolean send(ReplayActionCaseItem caseItem);
 
     /**
-     * Try to send the replay case to remote target host with extra headers
-     */
-    boolean send(ReplayActionCaseItem caseItem, Map<String, String> headers);
-
-    /**
      * Try to send the request message to remote target host
      */
     ReplaySendResult send(SenderParameters senderParameters);

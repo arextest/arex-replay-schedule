@@ -54,11 +54,6 @@ public class DubboReplaySender extends AbstractReplaySender {
     }
 
     @Override
-    public boolean send(ReplayActionCaseItem caseItem, Map<String, String> headers) {
-        return this.send(caseItem);
-    }
-
-    @Override
     public ReplaySendResult send(SenderParameters senderParameters) {
         return null;
     }

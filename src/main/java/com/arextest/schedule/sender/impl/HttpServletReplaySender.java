@@ -124,11 +124,6 @@ public final class HttpServletReplaySender extends AbstractReplaySender {
         return doSend(replayActionItem, caseItem, headers);
     }
 
-    @Override
-    public boolean send(ReplayActionCaseItem caseItem, Map<String, String> headers) {
-        return doSend(caseItem.getParent(), caseItem, headers);
-    }
-
     private String contactUrl(String baseUrl, String operation) {
         String result = null;
         if (StringUtils.endsWith(baseUrl, "/") || StringUtils.startsWith(operation, "/")) {
