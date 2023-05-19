@@ -60,6 +60,14 @@ public final class SendSemaphoreLimiter {
         checker.statistic(success);
     }
 
+    public void batchRelease(boolean success, int size) {
+        if (success) {
+            checker.batchSuccess(size);
+        } else {
+            checker.batchFail(size);
+        }
+    }
+
     private synchronized void tryModifyRate(boolean increase) {
         Integer originalQps = this.permits;
         Integer newQps = originalQps;
@@ -125,6 +133,22 @@ public final class SendSemaphoreLimiter {
             continuousSuccessCounter.set(0);
             hasError = true;
             failCounter.incrementAndGet();
+        }
+
+        private void batchFail(int size) {
+            hasError = true;
+
+            continuousSuccessCounter.set(0);
+            continuousFailCounter.addAndGet(size);
+            failCounter.addAndGet(size);
+        }
+
+        private void batchSuccess(int size) {
+            continuousSuccessCounter.addAndGet(size);
+            if (continuousFailCounter.get() < CONTINUOUS_FAIL_TOTAL) {
+                // reset to zero else pin down
+                continuousFailCounter.set(0);
+            }
         }
 
         private boolean failBreak() {

@@ -214,13 +214,23 @@ public final class PlanConsumeService {
             }
             ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
 
-            sendResult.setCanceled(replayCaseTransmitService.send(replayActionItem));
+            switch (executionContext.getActionType()) {
+                case INTERRUPT_CASES_OF_CONTEXT:
+                    sendResult.setCanceled(replayCaseTransmitService.markAllAsExceptional(replayActionItem));
+                    break;
+                case NORMAL:
+                default:
+                    sendResult.setCanceled(replayCaseTransmitService.send(replayActionItem));
+            }
+
             sendResult.setInterrupted(replayActionItem.getSendRateLimiter().failBreak());
         }
     }
 
     private int streamingCaseItemSave(ReplayActionItem replayActionItem) {
         List<ReplayActionCaseItem> caseItemList = replayActionItem.getCaseItemList();
+        // to provide necessary fields into case item for context to consume when sending
+        planExecutionContextProvider.injectContextIntoCase(caseItemList);
         int size;
         if (CollectionUtils.isNotEmpty(caseItemList)) {
             size = doFixedCaseSave(caseItemList);

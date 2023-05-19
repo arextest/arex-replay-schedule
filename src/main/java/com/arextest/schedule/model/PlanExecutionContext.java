@@ -12,6 +12,7 @@ import java.util.List;
 @Data
 public class PlanExecutionContext<T> {
     private String contextName;
+    private ExecutionContextActionType actionType = ExecutionContextActionType.NORMAL;
 
     @JsonIgnore
     private ExecutionStatus executionStatus;

@@ -2,8 +2,10 @@ package com.arextest.schedule.planexecution;
 
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.PlanExecutionContext;
+import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayPlan;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
@@ -38,6 +40,13 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
         LOGGER.info("Constructed contexts of size: {}", contexts.size());
 
         return contexts;
+    }
+
+    @Override
+    public void injectContextIntoCase(List<ReplayActionCaseItem> cases) {
+        cases.forEach(caseItem -> {
+            caseItem.setContextIdentifier(StringUtils.EMPTY);
+        });
     }
 
     @Override

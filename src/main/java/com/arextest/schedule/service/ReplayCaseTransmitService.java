@@ -96,6 +96,27 @@ public class ReplayCaseTransmitService {
         return false;
     }
 
+    public boolean markAllAsExceptional(ReplayActionItem replayActionItem) {
+        List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
+        if (CollectionUtils.isEmpty(sourceItemList)) {
+            return false;
+        }
+        byte[] cancelKey = getCancelKey(replayActionItem.getPlanId());
+
+        if (isCancelled(cancelKey)) {
+            progressEvent.onActionCancelled(replayActionItem);
+            return true;
+        }
+
+        if (replayActionItem.getSendRateLimiter().failBreak()) {
+            return false;
+        }
+
+        markAllSendStatus(sourceItemList, CaseSendStatusType.EXCEPTION_FAILED);
+        replayActionItem.getSendRateLimiter().batchRelease(false, sourceItemList.size());
+        return false;
+    }
+
     private byte[] getCancelKey(String planId) {
         return (STOP_PLAN_REDIS_KEY + planId).getBytes(StandardCharsets.UTF_8);
     }
