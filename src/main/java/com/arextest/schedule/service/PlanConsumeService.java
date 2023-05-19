@@ -229,8 +229,6 @@ public final class PlanConsumeService {
 
     private int streamingCaseItemSave(ReplayActionItem replayActionItem) {
         List<ReplayActionCaseItem> caseItemList = replayActionItem.getCaseItemList();
-        // to provide necessary fields into case item for context to consume when sending
-        planExecutionContextProvider.injectContextIntoCase(caseItemList);
         int size;
         if (CollectionUtils.isNotEmpty(caseItemList)) {
             size = doFixedCaseSave(caseItemList);
@@ -241,6 +239,7 @@ public final class PlanConsumeService {
     }
 
     private int doFixedCaseSave(List<ReplayActionCaseItem> caseItemList) {
+        caseItemPostProcess(caseItemList);
         int size = 0;
         for (int i = 0; i < caseItemList.size(); i++) {
             ReplayActionCaseItem caseItem = caseItemList.get(i);
@@ -255,6 +254,11 @@ public final class PlanConsumeService {
         }
         replayActionCaseItemRepository.save(caseItemList);
         return size;
+    }
+
+    private void caseItemPostProcess(List<ReplayActionCaseItem> caseItemList) {
+        // to provide necessary fields into case item for context to consume when sending
+        planExecutionContextProvider.injectContextIntoCase(caseItemList);
     }
 
     /**
@@ -280,6 +284,7 @@ public final class PlanConsumeService {
             if (CollectionUtils.isEmpty(caseItemList)) {
                 break;
             }
+            caseItemPostProcess(caseItemList);
             ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
             totalSize += caseItemList.size();
             beginTimeMills = caseItemList.get(caseItemList.size() - 1).getRecordTime();
