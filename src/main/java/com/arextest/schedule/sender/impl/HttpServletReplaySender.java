@@ -59,10 +59,9 @@ public final class HttpServletReplaySender extends AbstractReplaySender {
         if (StringUtils.isBlank(senderParameters.getUrl())) {
             return ReplaySendResult.failed("url is null or empty");
         }
-        before(senderParameters.getRecordId(), BuildReplayPlanType.BY_APP_ID.getValue());
+        before(senderParameters.getRecordId(), senderParameters.getReplayPlanType().getValue());
         return doInvoke(senderParameters);
     }
-
 
     private boolean doSend(ReplayActionItem replayActionItem, ReplayActionCaseItem caseItem,
                            Map<String, String> headers) {
