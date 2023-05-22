@@ -26,9 +26,9 @@ import java.util.Set;
 public class ReplayComparisonConfig {
 
     // ignore according to type
-    private List<String> ignoreTypeList;
+    private Set<String> ignoreTypeList;
     // ignore according to interface
-    private List<String> ignoreKeyList;
+    private Set<String> ignoreKeyList;
 
     private Set<List<String>> exclusionList;
     private Set<List<String>> inclusionList;

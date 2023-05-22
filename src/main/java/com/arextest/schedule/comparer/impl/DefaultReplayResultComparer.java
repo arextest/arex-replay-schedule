@@ -107,7 +107,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             return;
         }
 
-        final List<String> ignoreKeyList = compareConfig.getIgnoreKeyList();
+        final Set<String> ignoreKeyList = compareConfig.getIgnoreKeyList();
 
         Map<String, List<CompareItem>> recordMap =
                 recordList.stream().filter(data -> StringUtils.isNotEmpty(data.getCompareKey()))
@@ -258,7 +258,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             return;
         }
         String operation;
-        final List<String> ignoreKeyList = compareConfig.getIgnoreKeyList();
+        final Set<String> ignoreKeyList = compareConfig.getIgnoreKeyList();
         for (CompareItem item : compareItems) {
             operation = item.getCompareOperation();
             if (ignoreKeyList.contains(operation)) {
