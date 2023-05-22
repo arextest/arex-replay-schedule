@@ -27,18 +27,20 @@ final class PrepareCompareItemBuilder {
         if (StringUtils.isEmpty(operationKey)) {
             operationKey = instance.getOperationName();
         }
-        long compareCreateTime = instance.getCreationTime();
+        long createTime = instance.getCreationTime();
         String body;
         String compareKey = instance.getId();
+        boolean entryPointCategory = false;
         if (categoryType.isEntryPoint()) {
             body = Objects.isNull(instance.getTargetResponse()) ? null : instance.getTargetResponse().getBody();
             compareKey = null;
+            entryPointCategory = true;
         } else if (Objects.equals(categoryType.getName(), MockCategoryType.DATABASE.getName())) {
             body = this.buildAttributes(instance.getTargetRequest()).toString();
         } else {
             body = Objects.isNull(instance.getTargetRequest()) ? null : instance.getTargetRequest().getBody();
         }
-        return new CompareItemImpl(operationKey, body, compareKey, compareCreateTime);
+        return new CompareItemImpl(operationKey, body, compareKey, createTime, entryPointCategory);
     }
 
     private String operationName(MockCategoryType categoryType, Target target) {
@@ -78,18 +80,21 @@ final class PrepareCompareItemBuilder {
         private final String compareOperation;
         private final String compareService;
         private final String compareKey;
-        private final long compareCreateTime;
+        private final long createTime;
+        private final boolean entryPointCategory;
 
-        private CompareItemImpl(String compareOperation, String compareMessage, String compareKey, long compareCreateTime) {
-            this(compareOperation, compareMessage, null, compareKey, compareCreateTime);
+        private CompareItemImpl(String compareOperation, String compareMessage, String compareKey, long createTime, boolean entryPointCategory) {
+            this(compareOperation, compareMessage, null, compareKey, createTime, entryPointCategory);
         }
 
-        private CompareItemImpl(String compareOperation, String compareMessage, String compareService, String compareKey,long compareCreateTime) {
+        private CompareItemImpl(String compareOperation, String compareMessage, String compareService, String compareKey,
+                                long createTime, boolean entryPointCategory) {
             this.compareMessage = compareMessage;
             this.compareOperation = compareOperation;
             this.compareService = compareService;
             this.compareKey = compareKey;
-            this.compareCreateTime = compareCreateTime;
+            this.createTime = createTime;
+            this.entryPointCategory = entryPointCategory;
         }
 
         @Override
@@ -113,8 +118,13 @@ final class PrepareCompareItemBuilder {
         }
 
         @Override
-        public long getCompareCreateTime() {
-            return compareCreateTime;
+        public long getCreateTime() {
+            return createTime;
+        }
+
+        @Override
+        public boolean isEntryPointCategory() {
+            return entryPointCategory;
         }
     }
 }

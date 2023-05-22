@@ -13,5 +13,7 @@ public interface CompareItem {
 
     String getCompareKey();
 
-    long getCompareCreateTime();
+    long getCreateTime();
+
+    boolean isEntryPointCategory();
 }

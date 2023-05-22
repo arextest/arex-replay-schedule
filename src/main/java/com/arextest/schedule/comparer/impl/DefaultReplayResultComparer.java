@@ -120,9 +120,14 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 continue;
             }
 
-            if (StringUtils.isEmpty(compareKey)) {
+            if (resultCompareItem.isEntryPointCategory()) {
                 compareRecordAndResult(compareConfig, caseItem, compareResultNewList, category, resultCompareItem, recordList.get(0));
                 return;
+            }
+
+            if (StringUtils.isEmpty(compareKey)) {
+                addMissResult(category, compareConfig, Collections.singletonList(resultCompareItem), caseItem, compareResultNewList, true);
+                continue;
             }
 
             if (recordMap.containsKey(compareKey)) {
@@ -163,7 +168,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         metricService.recordTimeEvent(LogType.COMPARE_SDK.getValue(), caseItem.getParent().getPlanId(),
                 caseItem.getParent().getAppId(), source.getCompareContent(), stopWatch.getTotalTimeMillis());
         ReplayCompareResult resultNew = ReplayCompareResult.createFrom(caseItem);
-        mergeResult(source.getCompareOperation(), category, resultNew, comparedResult, source.getCompareCreateTime(), target.getCompareCreateTime(),
+        mergeResult(source.getCompareOperation(), category, resultNew, comparedResult, source.getCreateTime(), target.getCreateTime(),
                 target.getCompareKey());
         compareResultNewList.add(resultNew);
     }
@@ -274,9 +279,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             ReplayCompareResult resultItem = ReplayCompareResult.createFrom(caseItem);
 
             if (missRecord) {
-                mergeResult(operation, category, resultItem, comparedResult, MAX_TIME, item.getCompareCreateTime(), item.getCompareKey());
+                mergeResult(operation, category, resultItem, comparedResult, MAX_TIME, item.getCreateTime(), item.getCompareKey());
             } else {
-                mergeResult(operation, category, resultItem, comparedResult, item.getCompareCreateTime(), MAX_TIME, item.getCompareKey());
+                mergeResult(operation, category, resultItem, comparedResult, item.getCreateTime(), MAX_TIME, item.getCompareKey());
             }
             resultItem.setServiceName(item.getCompareService());
             resultList.add(resultItem);
