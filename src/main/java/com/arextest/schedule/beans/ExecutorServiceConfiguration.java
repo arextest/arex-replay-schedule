@@ -2,6 +2,7 @@ package com.arextest.schedule.beans;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -20,8 +21,10 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
     private static final int SEND_QUEUE_MAX_CAPACITY_SIZE = 2000;
     private static final int PRELOAD_QUEUE_MAX_CAPACITY_SIZE = 100;
     private static final int ACTION_ITEM_QUEUE_MAX_CAPACITY_SIZE = 200;
+    private final int SEND_POOL_SIZE = calculateIOPoolSize();
 
-    private static final int SEND_POOL_SIZE = ExecutorServiceConfiguration.calculateIOPoolSize();
+    @Value("${arex.schedule.pool.io.cpuratio}")
+    private int cpuRatio;
 
     @Bean
     public ExecutorService preloadExecutorService() {
@@ -65,10 +68,10 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
         LOGGER.error("uncaughtException {} ,error :{}", t.getName(), e.getMessage(), e);
     }
 
-    private static int calculateIOPoolSize() {
+    private int calculateIOPoolSize() {
         int nThreads = Runtime.getRuntime().availableProcessors();
         double targetCPUUtilization = 0.8;
-        double wC = 3.0; // assume wait time is 5 times compute time
+        double wC = cpuRatio == 0 ? 3 : cpuRatio; // assume wait time is 5 times compute time
         int optimalThreadPoolSize = (int) Math.ceil(nThreads * targetCPUUtilization * (1 + wC));
         return optimalThreadPoolSize;
     }

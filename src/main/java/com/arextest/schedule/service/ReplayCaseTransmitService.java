@@ -9,7 +9,6 @@ import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSendStatusType;
-import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.progress.ProgressEvent;
@@ -18,20 +17,14 @@ import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -48,7 +41,7 @@ public class ReplayCaseTransmitService {
     @Resource
     private ExecutorService sendExecutorService;
     private static final int ACTIVE_SERVICE_RETRY_COUNT = 3;
-    private static final int GROUP_SENT_WAIT_TIMEOUT = 300;
+    private static final int GROUP_SENT_WAIT_TIMEOUT = 500;
     @Resource
     private ReplayResultComparer replayResultComparer;
     @Resource
@@ -96,7 +89,7 @@ public class ReplayCaseTransmitService {
         return false;
     }
 
-    public boolean markAllAsExceptional(ReplayActionItem replayActionItem) {
+    public boolean releaseAllCases(ReplayActionItem replayActionItem) {
         List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
         if (CollectionUtils.isEmpty(sourceItemList)) {
             return false;
@@ -111,9 +104,7 @@ public class ReplayCaseTransmitService {
         if (replayActionItem.getSendRateLimiter().failBreak()) {
             return false;
         }
-
-        markAllSendStatus(sourceItemList, CaseSendStatusType.EXCEPTION_FAILED);
-        replayActionItem.getSendRateLimiter().batchRelease(false, sourceItemList.size());
+        replayActionItem.getSendRateLimiter().batchRelease(false, replayActionItem.getReplayCaseCount());
         return false;
     }
 

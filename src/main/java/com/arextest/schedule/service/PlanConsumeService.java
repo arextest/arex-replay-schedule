@@ -191,6 +191,7 @@ public final class PlanConsumeService {
         }
 
         this.sendByPaging(replayActionItem, currentContext);
+
         if (sendResult.isInterrupted()) {
             progressEvent.onActionInterrupted(replayActionItem);
         }
@@ -202,28 +203,31 @@ public final class PlanConsumeService {
 
     private void sendByPaging(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {
         ExecutionStatus sendResult = executionContext.getExecutionStatus();
-
-        List<ReplayActionCaseItem> sourceItemList;
-        while (true) {
-            sourceItemList = replayActionCaseItemRepository.waitingSendList(replayActionItem.getId(),
-                    CommonConstant.MAX_PAGE_SIZE, executionContext.getContextCaseQuery());
-
-            replayActionItem.setCaseItemList(sourceItemList);
-            if (CollectionUtils.isEmpty(sourceItemList)) {
+        switch (executionContext.getActionType()) {
+            case INTERRUPT_CASES_OF_CONTEXT:
+                // skip all cases of this context leaving the status as default
+                sendResult.setCanceled(replayCaseTransmitService.releaseAllCases(replayActionItem));
                 break;
-            }
-            ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
 
-            switch (executionContext.getActionType()) {
-                case INTERRUPT_CASES_OF_CONTEXT:
-                    sendResult.setCanceled(replayCaseTransmitService.markAllAsExceptional(replayActionItem));
-                    break;
-                case NORMAL:
-                default:
+            case NORMAL:
+            default:
+                List<ReplayActionCaseItem> sourceItemList;
+                while (true) {
+                    sourceItemList = replayActionCaseItemRepository.waitingSendList(replayActionItem.getId(),
+                            CommonConstant.MAX_PAGE_SIZE, executionContext.getContextCaseQuery());
+
+                    replayActionItem.setCaseItemList(sourceItemList);
+                    if (CollectionUtils.isEmpty(sourceItemList)) {
+                        break;
+                    }
+                    ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
+                    sendResult.setInterrupted(replayActionItem.getSendRateLimiter().failBreak());
+
+                    if (sendResult.isInterrupted() || sendResult.isCanceled()) {
+                        break;
+                    }
                     sendResult.setCanceled(replayCaseTransmitService.send(replayActionItem));
-            }
-
-            sendResult.setInterrupted(replayActionItem.getSendRateLimiter().failBreak());
+                }
         }
     }
 
