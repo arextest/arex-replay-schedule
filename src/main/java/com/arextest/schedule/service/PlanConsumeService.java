@@ -207,6 +207,7 @@ public final class PlanConsumeService {
             case INTERRUPT_CASES_OF_CONTEXT:
                 // skip all cases of this context leaving the status as default
                 sendResult.setCanceled(replayCaseTransmitService.releaseAllCases(replayActionItem));
+                sendResult.setInterrupted(replayActionItem.getSendRateLimiter().failBreak());
                 break;
 
             case NORMAL:
