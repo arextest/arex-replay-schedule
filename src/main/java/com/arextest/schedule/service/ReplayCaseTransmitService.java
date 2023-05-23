@@ -153,6 +153,11 @@ public class ReplayCaseTransmitService {
         final SendSemaphoreLimiter semaphore = actionItem.getSendRateLimiter();
         final CountDownLatch groupSentLatch = new CountDownLatch(valueSize);
         for (int i = 0; i < valueSize; i++) {
+            if (semaphore.failBreak()) {
+                groupSentLatch.countDown();
+                continue;
+            }
+
             ReplayActionCaseItem replayActionCaseItem = values.get(i);
             MDCTracer.addDetailId(caseItem.getId());
             try {
