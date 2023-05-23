@@ -37,7 +37,7 @@ public class FileUtils {
         try {
             method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
         } catch (NoSuchMethodException | SecurityException e1) {
-            e1.printStackTrace();
+            LOGGER.error("getDeclaredMethod failed, jarPath:{}, message:{}", jarPath, e1.getMessage());
         }
         boolean accessible = method.isAccessible();
         try {
@@ -46,7 +46,7 @@ public class FileUtils {
             URL url = jarFile.toURI().toURL();
             method.invoke(classLoader, url);
         } catch (Exception e2) {
-            e2.printStackTrace();
+            LOGGER.error("addUrl failed, jarPath:{}, message:{}", jarPath, e2.getMessage());
         } finally {
             method.setAccessible(accessible);
         }
