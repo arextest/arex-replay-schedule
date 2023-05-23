@@ -1,11 +1,17 @@
 package com.arextest.schedule.sender.impl;
 
+import com.alibaba.dubbo.config.ApplicationConfig;
+import com.alibaba.dubbo.config.ReferenceConfig;
+import com.alibaba.dubbo.rpc.RpcContext;
+import com.alibaba.dubbo.rpc.service.GenericService;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.common.CommonConstant;
+import com.arextest.schedule.common.FileUtils;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.model.config.CustomProtocolConfig;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.SenderParameters;
@@ -14,16 +20,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.dubbo.config.ApplicationConfig;
-import org.apache.dubbo.config.ReferenceConfig;
-import org.apache.dubbo.rpc.RpcContext;
-import org.apache.dubbo.rpc.service.GenericService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author b_yu
@@ -34,6 +37,9 @@ import java.util.Map;
 public class DubboReplaySender extends AbstractReplaySender {
     private static final String DUBBO_APP_NAME = "arex-replay";
     private static final String APPLICATION_JSON = "application/json";
+    private static final String EXTENSION_FILE_PATH = "target/classes/META-INF/dubbo/com.alibaba.dubbo.rpc.Protocol";
+    private static final ConcurrentHashMap<String, CustomProtocolConfig> customProtocolMap = new ConcurrentHashMap<>();
+
 
     @Override
     public boolean isSupported(String categoryType) {
@@ -74,7 +80,14 @@ public class DubboReplaySender extends AbstractReplaySender {
             return false;
         }
         String url = instanceRunner.getUrl();
-        RpcContext.getServiceContext().setAttachments(headers);
+        String protocol = instanceRunner.getProtocol();
+
+        //custom dubbo protocol
+        if (!StringUtils.equals(protocol, ServiceInstance.DUBBO_PROTOCOL)) {
+            handleCustomProtocol(protocol);
+        }
+
+        RpcContext.getContext().setAttachments(headers);
         GenericService genericService = getReferenceConfig(url, interfaceNameAndMethod.getLeft());
         if (genericService == null) {
             return false;
@@ -89,6 +102,32 @@ public class DubboReplaySender extends AbstractReplaySender {
         caseItem.setSendStatus(targetSendResult.getStatusType().getValue());
 
         return targetSendResult.success();
+    }
+
+    private void handleCustomProtocol(String protocol) {
+        //existing protocol, skip
+        if (protocol == null || customProtocolMap.containsKey(protocol)) {
+            return;
+        }
+        //user appoint extension text file path
+        String textFilePath = System.getProperty("arex.custom.protocol.textPath");
+        FileUtils.copy(textFilePath, EXTENSION_FILE_PATH);
+
+        List<String> protocolConfigs = FileUtils.readInLine(textFilePath);
+        String jarPath = null;
+        for(String line: protocolConfigs) {
+            String name = null;
+            int i = line.indexOf(61);
+            if (i > 0) name = line.substring(0, i).trim();
+            if (name != null && StringUtils.equals(protocol, name)) {
+                //user appoint protocol jar file path
+                jarPath = System.getProperty("arex.custom.protocol.jarPath"+ "." + name) ;
+                customProtocolMap.put(name, new CustomProtocolConfig(name, jarPath));
+            }
+        }
+        if (jarPath != null) {
+            FileUtils.loadJar(jarPath);
+        }
     }
 
     private ReplaySendResult fromDubboResult(Map<?, ?> requestHeaders, String url, Object result) {
