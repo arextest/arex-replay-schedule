@@ -9,6 +9,7 @@ import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSendStatusType;
+import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.progress.ProgressEvent;
@@ -89,11 +90,8 @@ public class ReplayCaseTransmitService {
         return false;
     }
 
-    public boolean releaseAllCases(ReplayActionItem replayActionItem) {
-        List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
-        if (CollectionUtils.isEmpty(sourceItemList)) {
-            return false;
-        }
+    @SuppressWarnings("rawtypes")
+    public boolean releaseCasesOfContext(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {
         byte[] cancelKey = getCancelKey(replayActionItem.getPlanId());
 
         if (isCancelled(cancelKey)) {
@@ -104,7 +102,10 @@ public class ReplayCaseTransmitService {
         if (replayActionItem.getSendRateLimiter().failBreak()) {
             return false;
         }
-        replayActionItem.getSendRateLimiter().batchRelease(false, replayActionItem.getReplayCaseCount());
+
+        long contextCasesCount = replayActionCaseItemRepository.countWaitingSendList(replayActionItem.getId(),
+                executionContext.getContextCaseQuery());
+        replayActionItem.getSendRateLimiter().batchRelease(false, (int) contextCasesCount);
         return false;
     }
 
