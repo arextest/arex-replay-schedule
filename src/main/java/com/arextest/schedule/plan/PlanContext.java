@@ -127,6 +127,7 @@ public final class PlanContext {
         replayActionItem.setServiceKey(serviceDescriptor.getServiceKey());
         replayActionItem.setServiceName(serviceDescriptor.getServiceName());
         replayActionItem.setOperationId(operationDescriptor.getId());
+        replayActionItem.setOperationTypes(operationDescriptor.getOperationTypes());
         if (CollectionUtils.isNotEmpty(serviceDescriptor.getTargetActiveInstanceList())) {
             replayActionItem.setMappedInstanceOperation(this.findActiveOperation(operationName, serviceDescriptor.getTargetActiveInstanceList().get(0)));
         }

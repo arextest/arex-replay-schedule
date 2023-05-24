@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -197,7 +198,8 @@ public final class PlanConsumeService {
         int size = 0;
         for (int i = 0; i < caseItemList.size(); i++) {
             ReplayActionCaseItem caseItem = caseItemList.get(i);
-            ReplayActionCaseItem viewReplay = caseRemoteLoadService.viewReplayLoad(caseItem, caseItem.getSourceProvider());
+            Set<String> operationTypes = caseItem.getParent().getOperationTypes();
+            ReplayActionCaseItem viewReplay = caseRemoteLoadService.viewReplayLoad(caseItem, operationTypes);
             if (viewReplay == null) {
                 caseItem.setSendStatus(CaseSendStatusType.REPLAY_CASE_NOT_FOUND.getValue());
             } else {
@@ -225,7 +227,7 @@ public final class PlanConsumeService {
         }
         long endTimeMills = replayPlan.getCaseSourceTo().getTime();
         int totalSize = 0;
-        int caseCountLimit = replayPlan.getCaseCountLimit();
+        int caseCountLimit = replayActionItem.getOperationTypes() == null ? replayPlan.getCaseCountLimit() : replayPlan.getCaseCountLimit() * replayActionItem.getOperationTypes().size();
         int pageSize = Math.min(caseCountLimit, CommonConstant.MAX_PAGE_SIZE);
         while (beginTimeMills < endTimeMills) {
             List<ReplayActionCaseItem> caseItemList = caseRemoteLoadService.pagingLoad(beginTimeMills, endTimeMills,
