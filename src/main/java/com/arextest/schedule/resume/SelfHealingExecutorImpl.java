@@ -3,6 +3,7 @@ package com.arextest.schedule.resume;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
+import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.AppServiceOperationDescriptor;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
@@ -52,6 +53,29 @@ public class SelfHealingExecutorImpl implements SelfHealingExecutor {
     private DeployedEnvironmentService deployedEnvironmentService;
 
     // #TODO There is a problem here, Date and Duration types are compared
+    public void defaultSelfHealing(Duration offsetDuration, Duration maxDuration) {
+        List<ReplayPlan> timeoutPlans = queryTimeoutPlan(offsetDuration, maxDuration);
+        if (CollectionUtils.isEmpty(timeoutPlans)) {
+            return;
+        }
+        long durationMillis = offsetDuration.toMillis();
+        for (ReplayPlan replayPlan : timeoutPlans) {
+            String planId = replayPlan.getId();
+            MDCTracer.addPlanId(planId);
+            try {
+                if (isRunning(planId, durationMillis)) {
+                    LOGGER.warn("skip resume when the plan running, plan id: {} , timeout millis {},", planId,
+                            durationMillis);
+                    continue;
+                }
+                doResume(replayPlan);
+            } catch (Throwable throwable) {
+                LOGGER.error("do resume plan error:{} ,plan id: {}", throwable.getMessage(), planId, throwable);
+            }
+        }
+        MDCTracer.clear();
+    }
+
     public List<ReplayPlan> queryTimeoutPlan(Duration offsetDuration, Duration maxDuration) {
         return replayPlanRepository.timeoutPlanList(offsetDuration, maxDuration);
     }
