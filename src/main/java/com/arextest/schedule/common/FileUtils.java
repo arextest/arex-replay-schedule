@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class FileUtils {
 
+    private static final String ADD_URL_FUN_NAME = "addURL";
     public static void copy(String oldPath, String newPath) {
         File oldFile = new File(oldPath);
         File newFile = new File(newPath);
@@ -35,7 +36,7 @@ public class FileUtils {
         File jarFile = new File(jarPath);
         Method method = null;
         try {
-            method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+            method = URLClassLoader.class.getDeclaredMethod(ADD_URL_FUN_NAME, URL.class);
         } catch (NoSuchMethodException | SecurityException e1) {
             LOGGER.error("getDeclaredMethod failed, jarPath:{}, message:{}", jarPath, e1.getMessage());
         }

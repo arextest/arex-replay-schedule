@@ -38,6 +38,8 @@ public class DubboReplaySender extends AbstractReplaySender {
     private static final String DUBBO_APP_NAME = "arex-replay";
     private static final String APPLICATION_JSON = "application/json";
     private static final String EXTENSION_FILE_PATH = "target/classes/META-INF/dubbo/com.alibaba.dubbo.rpc.Protocol";
+    private static final String EXTENSION_FILE_PATH_PROPERTY_KEY = "arex.custom.protocol.textPath";
+    private static final String EXTENSION_JAR_PATH_PROPERTY_KEY_PATTERN = "arex.custom.protocol.jarPath.%s";
     private static final ConcurrentHashMap<String, CustomProtocolConfig> customProtocolMap = new ConcurrentHashMap<>();
 
 
@@ -52,6 +54,7 @@ public class DubboReplaySender extends AbstractReplaySender {
         Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
         headers.remove(CommonConstant.AREX_REPLAY_WARM_UP);
         headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
+        headers.put(CommonConstant.AREX_SCHEDULE_REPLAY, Boolean.TRUE.toString());
         String exclusionOperationConfig = replayActionItem.getExclusionOperationConfig();
         if (StringUtils.isNotEmpty(exclusionOperationConfig)) {
             headers.put(CommonConstant.X_AREX_EXCLUSION_OPERATIONS, exclusionOperationConfig);
@@ -110,7 +113,7 @@ public class DubboReplaySender extends AbstractReplaySender {
             return;
         }
         //user appoint extension text file path
-        String textFilePath = System.getProperty("arex.custom.protocol.textPath");
+        String textFilePath = System.getProperty(EXTENSION_FILE_PATH_PROPERTY_KEY);
         FileUtils.copy(textFilePath, EXTENSION_FILE_PATH);
 
         List<String> protocolConfigs = FileUtils.readInLine(textFilePath);
@@ -121,7 +124,7 @@ public class DubboReplaySender extends AbstractReplaySender {
             if (i > 0) name = line.substring(0, i).trim();
             if (name != null && StringUtils.equals(protocol, name)) {
                 //user appoint protocol jar file path
-                jarPath = System.getProperty("arex.custom.protocol.jarPath"+ "." + name) ;
+                jarPath = System.getProperty(String.format(EXTENSION_JAR_PATH_PROPERTY_KEY_PATTERN, name)) ;
                 customProtocolMap.put(name, new CustomProtocolConfig(name, jarPath));
             }
         }
