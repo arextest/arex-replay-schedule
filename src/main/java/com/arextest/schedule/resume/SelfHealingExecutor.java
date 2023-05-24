@@ -9,6 +9,10 @@ import java.util.List;
  * Created by Qzmo on 2023/5/24
  */
 public interface SelfHealingExecutor {
+    /**
+     * Query plans created between [now-offset-max   to  now-offset] and have not been finished correctly
+     * @return A list of timeout plans
+     */
     List<ReplayPlan> queryTimeoutPlan(Duration offsetDuration, Duration maxDuration);
 
     /**
