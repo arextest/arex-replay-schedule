@@ -98,6 +98,31 @@ public final class ReplayReportService implements ComparisonWriter {
         LOGGER.info("initReport response:{}", response);
     }
 
+    public void updateCaseItemCount(String planId, String planItemId, Integer caseItemCount) {
+        ReportInitialRequestType requestType = new ReportInitialRequestType();
+        requestType.setPlanId(planId);
+        List<ReportInitialRequestType.ReportItem> reportItemList = new ArrayList<>();
+        ReportInitialRequestType.ReportItem reportItem = new ReportInitialRequestType.ReportItem();
+        reportItem.setPlanItemId(planItemId);
+        reportItem.setTotalCaseCount(caseItemCount);
+        reportItemList.add(reportItem);
+        requestType.setReportItemList(reportItemList);
+        LOGGER.info("updateCaseItemCount request:{}", requestType);
+        Response response = httpWepServiceApiClient.jsonPost(reportInitUrl, requestType,
+                GenericResponseType.class);
+        LOGGER.info("updateCaseItemCount response:{}", response);
+    }
+
+    public void updateTotalCaseCount(String planId, Integer totalCaseCount) {
+        ReportInitialRequestType requestType = new ReportInitialRequestType();
+        requestType.setPlanId(planId);
+        requestType.setTotalCaseCount(totalCaseCount);
+        LOGGER.info("updateTotalCaseCount request:{}", requestType);
+        Response response = httpWepServiceApiClient.jsonPost(reportInitUrl, requestType,
+                GenericResponseType.class);
+        LOGGER.info("updateTotalCaseCount response:{}", response);
+    }
+
     public void pushActionStatus(String planId, ReplayStatusType statusType, String actionId, String errorMessage) {
         ChangeReplayStatusRequestType requestType = new ChangeReplayStatusRequestType();
         ChangeReplayStatusRequestType.ReplayItem replayItem = new ChangeReplayStatusRequestType.ReplayItem();

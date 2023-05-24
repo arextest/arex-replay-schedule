@@ -47,6 +47,8 @@ public final class PlanConsumeService {
     private ProgressEvent progressEvent;
     @Resource
     private MetricService metricService;
+    @Resource
+    private ReplayReportService replayReportService;
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
         // TODO: remove block thread use async to load & send for all
@@ -75,6 +77,7 @@ public final class PlanConsumeService {
                     replayPlan.getAppId(), replayPlan.getCaseTotalCount(), planSavedCaseSize);
             replayPlan.setCaseTotalCount(planSavedCaseSize);
             replayPlanRepository.updateCaseTotal(replayPlan.getId(), planSavedCaseSize);
+            replayReportService.updateTotalCaseCount(replayPlan.getId(), planSavedCaseSize);
         }
         this.sendAllActionCase(replayPlan);
         if (planSavedCaseSize == 0) {
@@ -89,14 +92,15 @@ public final class PlanConsumeService {
                 planSavedCaseSize += replayActionItem.getReplayCaseCount();
                 continue;
             }
+            int preloaded = replayActionItem.getReplayCaseCount();
             int actionSavedCount = streamingCaseItemSave(replayActionItem);
             replayActionItem.setReplayCaseCount(actionSavedCount);
             planSavedCaseSize += actionSavedCount;
-            int preloaded = replayActionItem.getReplayCaseCount();
             if (preloaded != actionSavedCount) {
                 replayActionItem.setReplayCaseCount(actionSavedCount);
                 LOGGER.warn("The saved case size of actionItem not equals, preloaded size:{},saved size:{}", preloaded,
                         actionSavedCount);
+                replayReportService.updateCaseItemCount(replayActionItem.getPlanId(), replayActionItem.getId(), actionSavedCount);
             }
             progressEvent.onActionCaseLoaded(replayActionItem);
         }
