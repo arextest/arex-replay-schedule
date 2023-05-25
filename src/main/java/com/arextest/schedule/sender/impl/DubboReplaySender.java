@@ -87,6 +87,7 @@ public class DubboReplaySender extends AbstractReplaySender {
 
         //custom dubbo protocol
         if (!StringUtils.equals(protocol, ServiceInstance.DUBBO_PROTOCOL)) {
+            LOGGER.info("custom dubbo protocol:{}", protocol);
             handleCustomProtocol(protocol);
         }
 
