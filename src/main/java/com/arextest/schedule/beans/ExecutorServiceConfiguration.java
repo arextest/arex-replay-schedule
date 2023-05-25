@@ -20,7 +20,6 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
     private static final int MAXIMUM_POOL_SIZE = 2 * CORE_POOL_SIZE;
     private static final int SEND_QUEUE_MAX_CAPACITY_SIZE = 2000;
     private static final int PRELOAD_QUEUE_MAX_CAPACITY_SIZE = 100;
-    private static final int ACTION_ITEM_QUEUE_MAX_CAPACITY_SIZE = 200;
     private final int SEND_POOL_SIZE = calculateIOPoolSize();
 
     @Value("${arex.schedule.pool.io.cpuratio}")
@@ -58,7 +57,7 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
                 .build();
         return new ThreadPoolExecutor(CORE_POOL_SIZE, MAXIMUM_POOL_SIZE,
                 KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(ACTION_ITEM_QUEUE_MAX_CAPACITY_SIZE),
+                new LinkedBlockingQueue<>(MAXIMUM_POOL_SIZE * 2),
                 threadFactory,
                 new ThreadPoolExecutor.CallerRunsPolicy());
     }
