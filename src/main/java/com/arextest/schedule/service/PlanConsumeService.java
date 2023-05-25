@@ -11,6 +11,7 @@ import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.utils.ReplayParentBinder;
+import io.netty.util.internal.MathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
@@ -133,8 +134,8 @@ public final class PlanConsumeService {
 
             List<CompletableFuture<Void>> contextTasks = new ArrayList<>();
             for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
-                if (!replayActionItem.isProcessed()) {
-                    replayActionItem.setProcessed(true);
+                if (!replayActionItem.isItemProcessed()) {
+                    replayActionItem.setItemProcessed(true);
                     MDCTracer.addActionId(replayActionItem.getId());
                     replayActionItem.setSendRateLimiter(qpsLimiter);
                     if (replayActionItem.isEmpty()) {
@@ -192,11 +193,12 @@ public final class PlanConsumeService {
 
         this.sendByPaging(replayActionItem, currentContext);
 
-        if (sendResult.isInterrupted()) {
+        if (sendResult.isInterrupted() && replayActionItem.getReplayStatus() != ReplayStatusType.FAIL_INTERRUPTED.getValue()) {
             progressEvent.onActionInterrupted(replayActionItem);
         }
 
-        if (sendResult.isNormal()) {
+        if (sendResult.isNormal() &&
+                MathUtil.compare(replayActionItem.getReplayCaseCount(), replayActionItem.getCaseProcessCount()) == 0) {
             progressEvent.onActionAfterSend(replayActionItem);
         }
     }
@@ -204,7 +206,7 @@ public final class PlanConsumeService {
     private void sendByPaging(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {
         ExecutionStatus sendResult = executionContext.getExecutionStatus();
         switch (executionContext.getActionType()) {
-            case INTERRUPT_CASES_OF_CONTEXT:
+            case SKIP_CASE_OF_CONTEXT:
                 // skip all cases of this context leaving the status as default
                 sendResult.setCanceled(replayCaseTransmitService.releaseCasesOfContext(replayActionItem, executionContext));
                 sendResult.setInterrupted(replayActionItem.getSendRateLimiter().failBreak());

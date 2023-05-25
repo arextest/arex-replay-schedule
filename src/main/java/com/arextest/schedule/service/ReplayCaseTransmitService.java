@@ -18,6 +18,7 @@ import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.util.internal.MathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -67,7 +68,7 @@ public class ReplayCaseTransmitService {
         }
 
         // warmUp should be done once for each endpoint
-        if (!replayActionItem.isProcessed()) {
+        if (!replayActionItem.isItemProcessed()) {
             activeRemoteHost(sourceItemList);
         }
 
@@ -85,6 +86,8 @@ public class ReplayCaseTransmitService {
         } catch (Throwable throwable) {
             LOGGER.error("do send error:{}", throwable.getMessage(), throwable);
             markAllSendStatus(sourceItemList, CaseSendStatusType.EXCEPTION_FAILED);
+        } finally {
+            replayActionItem.setCaseProcessCount(replayActionItem.getReplayCaseCount() + sourceItemList.size());
         }
 
         return false;
@@ -103,9 +106,17 @@ public class ReplayCaseTransmitService {
             return false;
         }
 
-        long contextCasesCount = replayActionCaseItemRepository.countWaitingSendList(replayActionItem.getId(),
+        int contextCasesCount = (int) replayActionCaseItemRepository.countWaitingSendList(replayActionItem.getId(),
                 executionContext.getContextCaseQuery());
-        replayActionItem.getSendRateLimiter().batchRelease(false, (int) contextCasesCount);
+
+        replayActionItem.setCaseProcessCount(replayActionItem.getReplayCaseCount() + contextCasesCount);
+        replayActionItem.getSendRateLimiter().batchRelease(false, contextCasesCount);
+
+        // if we skip the rest of cases remaining in the action item, set its status
+        if (MathUtil.compare(replayActionItem.getReplayCaseCount(), replayActionItem.getCaseProcessCount()) == 0) {
+            progressEvent.onActionInterrupted(replayActionItem);
+        }
+
         return false;
     }
 
