@@ -6,10 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author jmo
@@ -73,7 +70,9 @@ public class ReplayPlan {
     private int caseCountLimit;
     @JsonIgnore
     private String errorMessage;
-
     private transient long planCreateMillis;
 
+    // Min(targetInstanceCount || Int.MAX, sourceInstanceCount || Int.MAX)
+    @JsonIgnore
+    private int minInstanceCount;
 }
