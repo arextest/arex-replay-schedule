@@ -87,7 +87,7 @@ public class ReplayCaseTransmitService {
             LOGGER.error("do send error:{}", throwable.getMessage(), throwable);
             markAllSendStatus(sourceItemList, CaseSendStatusType.EXCEPTION_FAILED);
         } finally {
-            replayActionItem.setCaseProcessCount(replayActionItem.getReplayCaseCount() + sourceItemList.size());
+            replayActionItem.recordProcessCaseCount(sourceItemList.size());
         }
 
         return false;
@@ -109,7 +109,7 @@ public class ReplayCaseTransmitService {
         int contextCasesCount = (int) replayActionCaseItemRepository.countWaitingSendList(replayActionItem.getId(),
                 executionContext.getContextCaseQuery());
 
-        replayActionItem.setCaseProcessCount(replayActionItem.getReplayCaseCount() + contextCasesCount);
+        replayActionItem.recordProcessCaseCount(contextCasesCount);
         replayActionItem.getSendRateLimiter().batchRelease(false, contextCasesCount);
 
         // if we skip the rest of cases remaining in the action item, set its status

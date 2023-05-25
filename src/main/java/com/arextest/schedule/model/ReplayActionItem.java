@@ -100,4 +100,8 @@ public class ReplayActionItem {
     private boolean itemProcessed;
     @JsonIgnore
     private int caseProcessCount;
+
+    public void recordProcessCaseCount(int incoming) {
+        setCaseProcessCount(caseProcessCount + incoming);
+    }
 }
