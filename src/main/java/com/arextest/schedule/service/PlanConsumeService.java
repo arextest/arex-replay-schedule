@@ -148,6 +148,8 @@ public final class PlanConsumeService {
                 }
 
                 if (replayActionItem.finished() || replayActionItem.isEmpty()) {
+                    LOGGER.warn("Skipped action item: {}, finished: {}, empty: {}",
+                            replayActionItem.getAppId(), replayActionItem.finished(), replayActionItem.isEmpty());
                     continue;
                 }
                 CompletableFuture<Void> task = CompletableFuture.runAsync(
