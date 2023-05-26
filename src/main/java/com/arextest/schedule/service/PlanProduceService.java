@@ -136,6 +136,8 @@ public class PlanProduceService {
         } else {
             replayPlan.setCaseCountLimit(request.getCaseCountLimit());
         }
+
+        replayPlan.setMinInstanceCount(planContext.determineMinInstanceCount());
         return replayPlan;
     }
 

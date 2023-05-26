@@ -1,5 +1,6 @@
 package com.arextest.schedule.sender;
 
+import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import lombok.Data;
 
 import java.util.Map;
@@ -20,4 +21,5 @@ public class ReplaySenderParameters implements SenderParameters {
     private Map<String, String> headers;
     private String recordId;
     private String method;
+    private BuildReplayPlanType replayPlanType;
 }

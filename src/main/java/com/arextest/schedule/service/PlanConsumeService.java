@@ -6,22 +6,21 @@ import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.model.CaseSendStatusType;
-import com.arextest.schedule.model.LogType;
-import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.ReplayPlan;
-import com.arextest.schedule.model.ReplayStatusType;
+import com.arextest.schedule.model.*;
+import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.utils.ReplayParentBinder;
+import io.netty.util.internal.MathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -30,6 +29,7 @@ import java.util.concurrent.ExecutorService;
  */
 @Slf4j
 @Service
+@SuppressWarnings("rawtypes")
 public final class PlanConsumeService {
     @Resource
     private ReplayCaseRemoteLoadService caseRemoteLoadService;
@@ -40,6 +40,8 @@ public final class PlanConsumeService {
     @Resource
     private ExecutorService preloadExecutorService;
     @Resource
+    private ExecutorService actionItemParallelPool;
+    @Resource
     private ReplayPlanRepository replayPlanRepository;
     @Resource
     private ProgressTracer progressTracer;
@@ -47,6 +49,8 @@ public final class PlanConsumeService {
     private ProgressEvent progressEvent;
     @Resource
     private MetricService metricService;
+    @Resource
+    private PlanExecutionContextProvider planExecutionContextProvider;
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
         // TODO: remove block thread use async to load & send for all
@@ -61,12 +65,27 @@ public final class PlanConsumeService {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         protected void doWithTracedRunning() {
-            saveActionCaseToSend(replayPlan);
+            int planSavedCaseSize = saveActionCaseToSend(replayPlan);
+            replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
+            if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
+                LOGGER.error("Invalid context built for plan {}", replayPlan);
+                replayPlan.setErrorMessage("Got empty execution context");
+                progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
+                return;
+            }
+
+            sendAllActionCase(replayPlan);
+
+            // actionItems with empty case item are not able to trigger plan finished hook
+            if (planSavedCaseSize == 0) {
+                progressEvent.onReplayPlanFinish(replayPlan);
+            }
         }
     }
 
-    private void saveActionCaseToSend(ReplayPlan replayPlan) {
+    private int saveActionCaseToSend(ReplayPlan replayPlan) {
         metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
                 System.currentTimeMillis() - replayPlan.getPlanCreateMillis());
         int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());
@@ -76,10 +95,7 @@ public final class PlanConsumeService {
             replayPlan.setCaseTotalCount(planSavedCaseSize);
             replayPlanRepository.updateCaseTotal(replayPlan.getId(), planSavedCaseSize);
         }
-        this.sendAllActionCase(replayPlan);
-        if (planSavedCaseSize == 0) {
-            progressEvent.onReplayPlanFinish(replayPlan);
-        }
+        return planSavedCaseSize;
     }
 
     private int saveAllActionCase(List<ReplayActionItem> replayActionItemList) {
@@ -103,55 +119,59 @@ public final class PlanConsumeService {
         return planSavedCaseSize;
     }
 
+    @SuppressWarnings("unchecked")
     private void sendAllActionCase(ReplayPlan replayPlan) {
         progressTracer.initTotal(replayPlan);
-        final SendSemaphoreLimiter sendRateLimiter = new SendSemaphoreLimiter();
-        sendRateLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
-        sendRateLimiter.setSendMaxRate(replayPlan.getReplaySendMaxQps());
-        boolean isInterrupted = false;
-        boolean isCancelled = false;
-        for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
-            MDCTracer.addActionId(replayActionItem.getId());
-            if (replayActionItem.finished()) {
-                continue;
+
+        // limiter shared for entire plan, max qps = maxQps per instance * min instance count
+        final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(
+                replayPlan.getReplaySendMaxQps() * replayPlan.getMinInstanceCount());
+
+        qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
+
+        ExecutionStatus sendResult = ExecutionStatus.buildNormal();
+
+        for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
+            executionContext.setExecutionStatus(sendResult);
+            planExecutionContextProvider.onBeforeContextExecution(executionContext, replayPlan);
+
+            List<CompletableFuture<Void>> contextTasks = new ArrayList<>();
+            for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
+                if (!replayActionItem.isItemProcessed()) {
+                    replayActionItem.setItemProcessed(true);
+                    MDCTracer.addActionId(replayActionItem.getId());
+                    replayActionItem.setSendRateLimiter(qpsLimiter);
+                    if (replayActionItem.isEmpty()) {
+                        replayActionItem.setReplayFinishTime(new Date());
+                        progressEvent.onActionComparisonFinish(replayActionItem);
+                    }
+                }
+
+                if (replayActionItem.finished() || replayActionItem.isEmpty()) {
+                    LOGGER.warn("Skipped action item: {}, finished: {}, empty: {}",
+                            replayActionItem.getAppId(), replayActionItem.finished(), replayActionItem.isEmpty());
+                    continue;
+                }
+                CompletableFuture<Void> task = CompletableFuture.runAsync(
+                        () -> sendItemByContext(replayActionItem, executionContext),
+                        actionItemParallelPool);
+                contextTasks.add(task);
             }
-            if (replayActionItem.isEmpty()) {
-                replayActionItem.setReplayFinishTime(new Date());
-                progressEvent.onActionComparisonFinish(replayActionItem);
-                continue;
-            }
-            if (isCancelled) {
-                progressEvent.onActionCancelled(replayActionItem);
-                continue;
-            }
-            if (isInterrupted) {
-                progressEvent.onActionInterrupted(replayActionItem);
-                continue;
-            }
-            if (replayActionItem.getReplayFinishTime() == null) {
-                progressEvent.onActionBeforeSend(replayActionItem);
-            }
-            replayActionItem.setSendRateLimiter(sendRateLimiter);
-            isCancelled = sendByPaging(replayActionItem);
-            if (isCancelled) {
-                continue;
-            }
-            isInterrupted = sendRateLimiter.failBreak();
-            if (isInterrupted) {
-                progressEvent.onActionInterrupted(replayActionItem);
-                continue;
-            }
-            progressEvent.onActionAfterSend(replayActionItem);
+
+            CompletableFuture.allOf(contextTasks.toArray(new CompletableFuture[0])).join();
+            planExecutionContextProvider.onAfterContextExecution(executionContext, replayPlan);
         }
-        if (isInterrupted) {
-            progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
-            LOGGER.info("The plan was interrupted, plan id:{} ,appId: {} ", replayPlan.getId(),
+
+        if (sendResult.isCanceled()) {
+            progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.CANCELLED);
+            LOGGER.info("The plan was isCancelled, plan id:{} ,appId: {} ", replayPlan.getId(),
                     replayPlan.getAppId());
             return;
         }
-        if (isCancelled) {
-            progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.CANCELLED);
-            LOGGER.info("The plan was isCancelled, plan id:{} ,appId: {} ", replayPlan.getId(),
+
+        if (sendResult.isInterrupted()) {
+            progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
+            LOGGER.info("The plan was interrupted, plan id:{} ,appId: {} ", replayPlan.getId(),
                     replayPlan.getAppId());
             return;
         }
@@ -159,27 +179,64 @@ public final class PlanConsumeService {
                 replayPlan.getAppId());
     }
 
-    private boolean sendByPaging(ReplayActionItem replayActionItem) {
-        List<ReplayActionCaseItem> sourceItemList;
-        boolean isFirst = true;
-        while (true) {
-            sourceItemList = replayActionCaseItemRepository.waitingSendList(replayActionItem.getId(),
-                    CommonConstant.MAX_PAGE_SIZE);
-            replayActionItem.setCaseItemList(sourceItemList);
-            if (CollectionUtils.isEmpty(sourceItemList)) {
-                break;
-            }
-            ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
-            boolean isCanceled = replayCaseTransmitService.send(replayActionItem, isFirst);
-            if (isCanceled) {
-                return true;
-            }
-            isFirst = false;
-            if (replayActionItem.getSendRateLimiter().failBreak()) {
-                break;
-            }
+    private void sendItemByContext(ReplayActionItem replayActionItem, PlanExecutionContext currentContext) {
+        ExecutionStatus sendResult = currentContext.getExecutionStatus();
+        if (sendResult.isCanceled() && replayActionItem.getReplayStatus() != ReplayStatusType.CANCELLED.getValue()) {
+            progressEvent.onActionCancelled(replayActionItem);
+            return;
         }
-        return false;
+
+        if (sendResult.isInterrupted() && replayActionItem.getReplayStatus() != ReplayStatusType.FAIL_INTERRUPTED.getValue()) {
+            progressEvent.onActionInterrupted(replayActionItem);
+            return;
+        }
+
+        if (replayActionItem.getReplayFinishTime() == null
+                && replayActionItem.getReplayStatus() != ReplayStatusType.RUNNING.getValue()) {
+            progressEvent.onActionBeforeSend(replayActionItem);
+        }
+
+        this.sendByPaging(replayActionItem, currentContext);
+
+        if (sendResult.isInterrupted() && replayActionItem.getReplayStatus() != ReplayStatusType.FAIL_INTERRUPTED.getValue()) {
+            progressEvent.onActionInterrupted(replayActionItem);
+        }
+
+        if (sendResult.isNormal() &&
+                MathUtil.compare(replayActionItem.getReplayCaseCount(), replayActionItem.getCaseProcessCount()) == 0) {
+            progressEvent.onActionAfterSend(replayActionItem);
+        }
+    }
+
+    private void sendByPaging(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {
+        ExecutionStatus sendResult = executionContext.getExecutionStatus();
+        switch (executionContext.getActionType()) {
+            case SKIP_CASE_OF_CONTEXT:
+                // skip all cases of this context leaving the status as default
+                sendResult.setCanceled(replayCaseTransmitService.releaseCasesOfContext(replayActionItem, executionContext));
+                sendResult.setInterrupted(replayActionItem.getSendRateLimiter().failBreak());
+                break;
+
+            case NORMAL:
+            default:
+                List<ReplayActionCaseItem> sourceItemList;
+                while (true) {
+                    sourceItemList = replayActionCaseItemRepository.waitingSendList(replayActionItem.getId(),
+                            CommonConstant.MAX_PAGE_SIZE, executionContext.getContextCaseQuery());
+
+                    replayActionItem.setCaseItemList(sourceItemList);
+                    if (CollectionUtils.isEmpty(sourceItemList)) {
+                        break;
+                    }
+                    ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
+                    sendResult.setInterrupted(replayActionItem.getSendRateLimiter().failBreak());
+
+                    if (sendResult.isInterrupted() || sendResult.isCanceled()) {
+                        break;
+                    }
+                    sendResult.setCanceled(replayCaseTransmitService.send(replayActionItem));
+                }
+        }
     }
 
     private int streamingCaseItemSave(ReplayActionItem replayActionItem) {
@@ -194,6 +251,7 @@ public final class PlanConsumeService {
     }
 
     private int doFixedCaseSave(List<ReplayActionCaseItem> caseItemList) {
+        caseItemPostProcess(caseItemList);
         int size = 0;
         for (int i = 0; i < caseItemList.size(); i++) {
             ReplayActionCaseItem caseItem = caseItemList.get(i);
@@ -208,6 +266,11 @@ public final class PlanConsumeService {
         }
         replayActionCaseItemRepository.save(caseItemList);
         return size;
+    }
+
+    private void caseItemPostProcess(List<ReplayActionCaseItem> caseItemList) {
+        // to provide necessary fields into case item for context to consume when sending
+        planExecutionContextProvider.injectContextIntoCase(caseItemList);
     }
 
     /**
@@ -233,6 +296,7 @@ public final class PlanConsumeService {
             if (CollectionUtils.isEmpty(caseItemList)) {
                 break;
             }
+            caseItemPostProcess(caseItemList);
             ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
             totalSize += caseItemList.size();
             beginTimeMills = caseItemList.get(caseItemList.size() - 1).getRecordTime();

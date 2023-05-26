@@ -22,6 +22,7 @@ public class ReplayRunDetailsCollection extends ModelBase {
     private String targetResultId;
     @NonNull
     private String sourceResultId;
+    private String contextIdentifier;
     private int sendStatus;
     private int compareStatus;
     private String caseType;
