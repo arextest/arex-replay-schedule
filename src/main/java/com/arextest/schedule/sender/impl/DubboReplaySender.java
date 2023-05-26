@@ -57,10 +57,6 @@ public class DubboReplaySender extends AbstractReplaySender {
     public ReplaySendResult send(SenderParameters senderParameters) {
         return null;
     }
-    @Override
-    public boolean prepareRemoteDependency(ReplayActionCaseItem caseItem) {
-        return false;
-    }
 
     private boolean doSend(ReplayActionCaseItem caseItem, Map<String, String> headers) {
         ImmutablePair<String, String> interfaceNameAndMethod =

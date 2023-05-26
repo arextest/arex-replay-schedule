@@ -1,6 +1,8 @@
 package com.arextest.schedule.plan.builder.impl;
 
+import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.AppServiceOperationDescriptor;
+import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.model.plan.BuildReplayPlanType;
@@ -20,14 +22,14 @@ import java.util.List;
  * @since 2021/9/18
  */
 @Component
-final class OperationSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
+final class RollingCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
 
     @Resource
     private ReplayActionItemPreprocessService replayActionItemPreprocessService;
 
     @Override
     public boolean isSupported(BuildReplayPlanRequest request) {
-        return request.getReplayPlanType() == BuildReplayPlanType.BY_OPERATION_OF_APP_ID.getValue();
+        return request.getReplayPlanType() == BuildReplayPlanType.BY_ROLLING_CASE.getValue();
     }
 
     @Override
@@ -35,13 +37,24 @@ final class OperationSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
         if (CollectionUtils.isEmpty(request.getOperationCaseInfoList())) {
             return BuildPlanValidateResult.create(BuildPlanValidateResult.REQUESTED_EMPTY_OPERATION, "REQUESTED_EMPTY_OPERATION");
         }
+        for (OperationCaseInfo requestedOperation : request.getOperationCaseInfoList()) {
+            if (CollectionUtils.isEmpty(requestedOperation.getReplayIdList())) {
+                return BuildPlanValidateResult.create(BuildPlanValidateResult.REQUESTED_OPERATION_NOT_FOUND_ANY_CASE,
+                        "REQUESTED_OPERATION_NOT_FOUND_ANY_CASE");
+            }
+        }
         super.filterAppServiceDescriptors(request, planContext);
         return super.validate(request, planContext);
     }
 
     @Override
+    boolean unsupportedCaseTimeRange(BuildReplayPlanRequest request) {
+        return false;
+    }
+
+    @Override
     List<ReplayActionItem> getReplayActionList(BuildReplayPlanRequest request, PlanContext planContext) {
-        List<ReplayActionItem> replayActionItemList = new ArrayList<>();
+        final List<ReplayActionItem> replayActionItemList = new ArrayList<>();
         AppServiceOperationDescriptor operationDescriptor;
         for (OperationCaseInfo operationCaseInfo : request.getOperationCaseInfoList()) {
             operationDescriptor = planContext.findAppServiceOperationDescriptor(operationCaseInfo.getOperationId());
@@ -49,8 +62,26 @@ final class OperationSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
                 continue;
             }
             ReplayActionItem replayActionItem = planContext.toReplayAction(operationDescriptor);
+            List<String> replayIdList = operationCaseInfo.getReplayIdList();
+            ReplayActionCaseItem caseItem;
+            final List<ReplayActionCaseItem> caseItemList = new ArrayList<>(replayIdList.size());
+            for (String replayId : replayIdList) {
+                caseItem = new ReplayActionCaseItem();
+                caseItem.setRecordId(replayId);
+                caseItem.setCaseType(replayActionItem.getActionType());
+                caseItem.setSourceProvider(CommonConstant.ROLLING);
+                caseItem.setParent(replayActionItem);
+                caseItemList.add(caseItem);
+            }
+            replayActionItem.setCaseItemList(caseItemList);
+            replayActionItem.setReplayCaseCount(caseItemList.size());
             replayActionItemList.add(replayActionItem);
         }
         return replayActionItemList;
+    }
+
+    @Override
+    int queryCaseCount(ReplayActionItem actionItem) {
+        return actionItem.getCaseItemList().size();
     }
 }

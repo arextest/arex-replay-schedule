@@ -17,6 +17,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -45,8 +46,14 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         return insert.getId() != null;
     }
 
-    public List<ReplayActionCaseItem> waitingSendList(String planItemId, int pageSize) {
-        Query query = Query.query(Criteria.where(PLAN_ITEM_ID).is(planItemId));
+    public List<ReplayActionCaseItem> waitingSendList(String planItemId, int pageSize, List<Criteria> baseCriteria) {
+        Query query = new Query();
+
+        Optional.ofNullable(baseCriteria).ifPresent(criteria -> {
+            criteria.forEach(query::addCriteria);
+        });
+
+        query.addCriteria(Criteria.where(PLAN_ITEM_ID).is(planItemId));
         query.addCriteria(Criteria.where(SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()));
         query.limit(pageSize);
         query.with(Sort.by(
@@ -55,6 +62,22 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         ));
         List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query, ReplayRunDetailsCollection.class);
         return replayRunDetailsCollections.stream().map(ReplayRunDetailsConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
+    }
+
+    public long countWaitingSendList(String planItemId, List<Criteria> baseCriteria) {
+        Query query = new Query();
+
+        Optional.ofNullable(baseCriteria).ifPresent(criteria -> {
+            criteria.forEach(query::addCriteria);
+        });
+
+        query.addCriteria(Criteria.where(PLAN_ITEM_ID).is(planItemId));
+        query.addCriteria(Criteria.where(SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()));
+        query.with(Sort.by(
+                Sort.Order.asc(DASH_ID),
+                Sort.Order.asc(REPLAY_DEPENDENCE)
+        ));
+        return mongoTemplate.count(query, ReplayRunDetailsCollection.class);
     }
 
     public boolean updateSendResult(ReplayActionCaseItem replayActionCaseItem) {
