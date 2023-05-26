@@ -63,9 +63,10 @@ public final class HttpServletReplaySender extends AbstractReplaySender {
         return doInvoke(senderParameters);
     }
 
+
     private boolean doSend(ReplayActionItem replayActionItem, ReplayActionCaseItem caseItem,
                            Map<String, String> headers) {
-        ServiceInstance instanceRunner = selectLoadBalanceInstance(caseItem.getId(), replayActionItem.getTargetInstance());
+        ServiceInstance instanceRunner = selectLoadBalanceInstance(caseItem.getId(), replayActionItem.getTargetInstance().get(CommonConstant.HTTP_PROTOCOL));
         if (instanceRunner == null) {
             return false;
         }
@@ -96,7 +97,7 @@ public final class HttpServletReplaySender extends AbstractReplaySender {
         caseItem.setSendErrorMessage(targetSendResult.getRemark());
         caseItem.setTargetResultId(targetSendResult.getTraceId());
         caseItem.setSendStatus(targetSendResult.getStatusType().getValue());
-        instanceRunner = selectLoadBalanceInstance(caseItem.getId(), replayActionItem.getSourceInstance());
+        instanceRunner = selectLoadBalanceInstance(caseItem.getId(), replayActionItem.getSourceInstance().get(CommonConstant.HTTP_PROTOCOL));
         if (instanceRunner == null) {
             return targetSendResult.success();
         }

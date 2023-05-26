@@ -11,10 +11,7 @@ import lombok.Data;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -120,8 +117,8 @@ public final class PlanContext {
         AppServiceDescriptor serviceDescriptor = operationDescriptor.getParent();
         replayActionItem.setAppId(serviceDescriptor.getAppId());
         final String operationName = operationDescriptor.getOperationName();
-        replayActionItem.setTargetInstance(serviceDescriptor.getTargetActiveInstanceList());
-        replayActionItem.setSourceInstance(serviceDescriptor.getSourceActiveInstanceList());
+        replayActionItem.setTargetInstance(groupByInstance(serviceDescriptor.getTargetActiveInstanceList()));
+        replayActionItem.setSourceInstance(groupByInstance(serviceDescriptor.getSourceActiveInstanceList()));
         replayActionItem.setOperationName(operationName);
         replayActionItem.setActionType(operationDescriptor.getOperationType());
         replayActionItem.setServiceKey(serviceDescriptor.getServiceKey());
@@ -156,5 +153,19 @@ public final class PlanContext {
             min = Math.min(min, sourceInstance.size());
         }
         return min;
+    }
+
+    private Map<String, List<ServiceInstance>> groupByInstance(List<ServiceInstance> serviceInstances) {
+        if (CollectionUtils.isEmpty(serviceInstances)) {
+            return Collections.emptyMap();
+        }
+        Map<String, List<ServiceInstance>> instanceMap = new HashMap<>();
+        for (ServiceInstance serviceInstance : serviceInstances) {
+            if (serviceInstance == null || StringUtils.isBlank(serviceInstance.getProtocol())) {
+                continue;
+            }
+            instanceMap.computeIfAbsent(serviceInstance.getProtocol(), k -> new ArrayList<>()).add(serviceInstance);
+        }
+        return instanceMap;
     }
 }

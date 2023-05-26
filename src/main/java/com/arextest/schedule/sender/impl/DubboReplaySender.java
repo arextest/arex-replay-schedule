@@ -65,7 +65,7 @@ public class DubboReplaySender extends AbstractReplaySender {
             return false;
         }
 
-        ServiceInstance instanceRunner = selectLoadBalanceInstance(caseItem.getId(), caseItem.getParent().getTargetInstance());
+        ServiceInstance instanceRunner = selectLoadBalanceInstance(caseItem.getId(), caseItem.getParent().getTargetInstance().get(CommonConstant.DUBBO_PROTOCOL));
         if (instanceRunner == null) {
             return false;
         }

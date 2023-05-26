@@ -28,4 +28,7 @@ public final class CommonConstant {
     public static final String PINNED = "Pinned";
     public static final String ROLLING = "Rolling";
 
+    public static final String HTTP_PROTOCOL = "http";
+
+    public static final String DUBBO_PROTOCOL = "dubbo";
 }

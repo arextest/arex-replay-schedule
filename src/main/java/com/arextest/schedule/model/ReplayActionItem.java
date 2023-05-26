@@ -10,6 +10,7 @@ import lombok.Data;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -60,9 +61,9 @@ public class ReplayActionItem {
      */
     private String actionType;
     @JsonIgnore
-    private List<ServiceInstance> sourceInstance;
+    private Map<String, List<ServiceInstance>> sourceInstance;
     @JsonIgnore
-    private List<ServiceInstance> targetInstance;
+    private Map<String, List<ServiceInstance>> targetInstance;
     @JsonIgnore
     private ServiceInstanceOperation mappedInstanceOperation;
     private int replayCaseCount;
