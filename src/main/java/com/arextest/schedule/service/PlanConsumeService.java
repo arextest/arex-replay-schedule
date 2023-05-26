@@ -71,7 +71,8 @@ public final class PlanConsumeService {
             replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
             if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
                 LOGGER.error("Invalid context built for plan {}", replayPlan);
-                progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
+                replayPlan.setErrorMessage("Got empty execution context");
+                progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
                 return;
             }
 
