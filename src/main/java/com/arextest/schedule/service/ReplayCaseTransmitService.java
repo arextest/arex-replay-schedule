@@ -204,7 +204,10 @@ public class ReplayCaseTransmitService {
         }
 
         try {
-            groupSentLatch.await(GROUP_SENT_WAIT_TIMEOUT, TimeUnit.SECONDS);
+            boolean clear = groupSentLatch.await(GROUP_SENT_WAIT_TIMEOUT, TimeUnit.SECONDS);
+            if (!clear) {
+                LOGGER.error("Send group failed to await all request of batch");
+            }
         } catch (InterruptedException e) {
             LOGGER.error("send group to remote host error:{}", e.getMessage(), e);
         }
