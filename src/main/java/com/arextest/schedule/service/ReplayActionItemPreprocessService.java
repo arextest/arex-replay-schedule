@@ -34,7 +34,7 @@ public class ReplayActionItemPreprocessService {
             return;
         }
         if (CollectionUtils.isNotEmpty(schedule.getExcludeServiceOperationSet())) {
-            // 根据ExcludeServiceOperationSet过滤replayActionItemList
+            // 根据ExcludeServiceOperationSet filter replayActionItemList by ExcludeServiceOperationSet
             Iterator<ReplayActionItem> iterator = replayActionItemList.iterator();
             while (iterator.hasNext()) {
                 if (schedule.getExcludeServiceOperationSet().contains(iterator.next().getOperationName())) {
