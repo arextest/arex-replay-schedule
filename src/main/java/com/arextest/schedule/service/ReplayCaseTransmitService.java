@@ -18,7 +18,6 @@ import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.netty.util.internal.MathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -113,8 +112,12 @@ public class ReplayCaseTransmitService {
         replayActionItem.getSendRateLimiter().batchRelease(false, contextCasesCount);
 
         // if we skip the rest of cases remaining in the action item, set its status
-        if (MathUtil.compare(replayActionItem.getReplayCaseCount(), replayActionItem.getCaseProcessCount()) == 0) {
+        if (Integer.valueOf(replayActionItem.getReplayCaseCount()).equals(replayActionItem.getCaseProcessCount())) {
             progressEvent.onActionInterrupted(replayActionItem);
+        } else {
+            for (int i = 0; i < contextCasesCount; i++) {
+                progressTracer.finishCaseByAction(replayActionItem);
+            }
         }
 
         return false;

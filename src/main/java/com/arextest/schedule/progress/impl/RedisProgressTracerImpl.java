@@ -90,8 +90,14 @@ final class RedisProgressTracerImpl implements ProgressTracer {
     @Override
     public void finishOne(ReplayActionCaseItem caseItem) {
         ReplayActionItem replayActionItem = caseItem.getParent();
-        doReplayActionFinish(replayActionItem);
-        ReplayPlan replayPlan = replayActionItem.getParent();
+        finishCaseByAction(replayActionItem);
+    }
+
+    // todo batch finish cases
+    @Override
+    public void finishCaseByAction(ReplayActionItem actionItem) {
+        doReplayActionFinish(actionItem);
+        ReplayPlan replayPlan = actionItem.getParent();
         doPlanFinish(replayPlan);
         this.refreshUpdateTime(replayPlan.getId());
     }
