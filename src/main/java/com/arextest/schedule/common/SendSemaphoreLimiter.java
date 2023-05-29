@@ -1,6 +1,7 @@
 package com.arextest.schedule.common;
 
 import com.google.common.util.concurrent.RateLimiter;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,13 +23,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SuppressWarnings("UnstableApiUsage")
 @Slf4j
 public final class SendSemaphoreLimiter {
-    private static final double[] QPS_STEP_RATIO = {0.3, 0.5, 0.7, 1};
+    public static final double[] QPS_STEP_RATIO = {0.3, 0.5, 0.7, 1};
     private static final int QPS_MAX_STEP = QPS_STEP_RATIO.length - 1;
     private static final int QPS_INITIAL_STEP = 0;
-    private static final int DEFAULT_MAX_RATE = 20;
     private static final int ABSOLUTE_MIN_GUARD = 1;
+    public static final int DEFAULT_MAX_RATE = 20;
+    public final static int SUCCESS_COUNT_TO_BALANCE_NO_ERROR = 20;
+    public final static int CONTINUOUS_FAIL_TOTAL = 2 * SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
+    public final static int SUCCESS_COUNT_TO_BALANCE_WITH_ERROR = 5 * SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
+    public final static double ERROR_BREAK_RATE = 0.1;
+
     private final int sendMaxRate;
     private final int sendInitialRate;
+
+    @Getter
     private volatile int permits;
     private volatile int currentStep = 0;
     private final ReplayHealthy checker = new ReplayHealthy();
@@ -111,10 +119,6 @@ public final class SendSemaphoreLimiter {
     }
 
     private final class ReplayHealthy {
-        private final static int SUCCESS_COUNT_TO_BALANCE_NO_ERROR = 20;
-        private final static int CONTINUOUS_FAIL_TOTAL = 2 * SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
-        private final static int SUCCESS_COUNT_TO_BALANCE_WITH_ERROR = 5 * SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
-        private final static double ERROR_BREAK_RATE = 0.1;
         private volatile boolean hasError;
         private final AtomicInteger continuousSuccessCounter = new AtomicInteger();
         private final AtomicInteger failCounter = new AtomicInteger();
