@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class SendSemaphoreLimiter {
     private static final double[] QPS_STEP_RATIO = {0.3, 0.5, 0.7, 1};
     private static final int QPS_MAX_STEP = QPS_STEP_RATIO.length - 1;
-    private static final double QPS_INITIAL_RATIO = QPS_STEP_RATIO[0];
+    private static final int QPS_INITIAL_STEP = 0;
     private static final int DEFAULT_MAX_RATE = 20;
     private static final int ABSOLUTE_MIN_GUARD = 1;
     private final int sendMaxRate;
@@ -39,7 +39,7 @@ public final class SendSemaphoreLimiter {
 
     public SendSemaphoreLimiter(Integer maxQps) {
         Integer actualMaxQps = Optional.ofNullable(maxQps).filter(qps -> qps > 0).orElse(DEFAULT_MAX_RATE);
-        Integer actualInitialMinQps = SendSemaphoreLimiter.calculateInitialRate(actualMaxQps);
+        Integer actualInitialMinQps = this.getRatioOfStep(QPS_INITIAL_STEP);
 
         this.sendInitialRate = actualInitialMinQps;
         this.sendMaxRate = actualMaxQps;
@@ -102,11 +102,11 @@ public final class SendSemaphoreLimiter {
     }
 
     private Integer getRatioOfStep(int step) {
-        return (int) Math.floor(sendMaxRate * QPS_STEP_RATIO[step]);
-    }
-
-    private static Integer calculateInitialRate(int sendMaxRate) {
-        return (int) Math.floor(sendMaxRate * QPS_INITIAL_RATIO);
+        int rate = (int) Math.floor(sendMaxRate * QPS_STEP_RATIO[step]);
+        if (rate == 0) {
+            return 1;
+        }
+        return rate;
     }
 
     private final class ReplayHealthy {
