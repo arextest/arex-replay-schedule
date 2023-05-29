@@ -147,4 +147,14 @@ public final class PlanContext {
         }
         return null;
     }
+
+    // if both target env and source env are given, return the min(target, source) to throttle qps
+    public int determineMinInstanceCount() {
+        int min = targetActiveInstance().size();
+        List<ServiceInstance> sourceInstance = sourceActiveInstance();
+        if (CollectionUtils.isNotEmpty(sourceInstance)) {
+            min = Math.min(min, sourceInstance.size());
+        }
+        return min;
+    }
 }

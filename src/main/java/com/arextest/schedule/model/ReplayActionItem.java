@@ -98,4 +98,12 @@ public class ReplayActionItem {
 
     @JsonIgnore
     private String errorMessage;
+    @JsonIgnore
+    private boolean itemProcessed;
+    @JsonIgnore
+    private int caseProcessCount;
+
+    public void recordProcessCaseCount(int incoming) {
+        setCaseProcessCount(caseProcessCount + incoming);
+    }
 }
