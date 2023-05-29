@@ -195,7 +195,7 @@ public class ReplayCaseRemoteLoadService {
     }
 
     private List<PagedRequestType> buildPagingSearchCaseRequests(ReplayActionItem replayActionItem, int caseCountLimit) {
-        if (replayActionItem.getOperationTypes() == null) {
+        if (CollectionUtils.isEmpty(replayActionItem.getOperationTypes())) {
             return Arrays.asList(buildPagingSearchCaseRequest(replayActionItem, caseCountLimit));
         }
         List<PagedRequestType> pagedRequestTypeList = new ArrayList<>();
