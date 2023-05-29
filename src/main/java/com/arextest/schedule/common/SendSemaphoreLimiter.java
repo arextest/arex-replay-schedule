@@ -37,8 +37,9 @@ public final class SendSemaphoreLimiter {
     @Setter
     private int totalTasks;
 
-    public SendSemaphoreLimiter(Integer maxQps) {
-        this.sendMaxRate = Optional.ofNullable(maxQps).filter(qps -> qps > 0).orElse(DEFAULT_MAX_RATE);
+    public SendSemaphoreLimiter(Integer maxQpsPerInstance, Integer instanceCount) {
+        this.sendMaxRate = Optional.ofNullable(maxQpsPerInstance).filter(qps -> qps > 0).orElse(DEFAULT_MAX_RATE)
+                * instanceCount;
 
         Integer actualInitialMinQps = this.getRatioOfStep(QPS_INITIAL_STEP);
 

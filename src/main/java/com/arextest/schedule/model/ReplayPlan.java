@@ -18,7 +18,7 @@ import java.util.*;
 public class ReplayPlan {
     private String id;
     private String appId;
-    private int replaySendMaxQps;
+    private Integer replaySendMaxQps;
     @JsonIgnore
     private String planName;
 //    @JsonIgnore
