@@ -68,7 +68,6 @@ final class PinnedCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder 
             for (String replayId : replayIdList) {
                 caseItem = new ReplayActionCaseItem();
                 caseItem.setRecordId(replayId);
-                caseItem.setCaseType(replayActionItem.getActionType());
                 caseItem.setSourceProvider(CommonConstant.PINNED);
                 caseItem.setParent(replayActionItem);
                 caseItemList.add(caseItem);

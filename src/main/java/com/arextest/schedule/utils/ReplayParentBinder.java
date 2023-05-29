@@ -31,7 +31,6 @@ public final class ReplayParentBinder {
             return;
         }
         for (ReplayActionCaseItem caseItem : sourceItemList) {
-            caseItem.setCaseType(parent.getActionType());
             caseItem.setParent(parent);
         }
     }
