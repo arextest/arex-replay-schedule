@@ -22,7 +22,8 @@ public interface ReplayRunDetailsConverter {
             @Mapping(target = "id", expression = "java(null)"),
             @Mapping(target = "operationId", expression = "java(null)"),
             @Mapping(target = "dataChangeCreateTime", expression = "java(System.currentTimeMillis())"),
-            @Mapping(target = "dataChangeUpdateTime", expression = "java(System.currentTimeMillis())")
+            @Mapping(target = "dataChangeUpdateTime", expression = "java(System.currentTimeMillis())"),
+            @Mapping(target = "dataChangeCreateDate", expression = "java(new java.util.Date())")
     })
     ReplayRunDetailsCollection daoFromDto(ReplayActionCaseItem dto);
 }
