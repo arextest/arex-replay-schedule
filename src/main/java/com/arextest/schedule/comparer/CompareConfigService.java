@@ -38,7 +38,7 @@ public final class CompareConfigService {
     @Resource
     private ObjectMapper objectMapper;
     @Resource
-    CompareConfigExtensionService compareConfigExtensionService;
+    CustomComparisonConfigurationHandler customComparisonConfigurationHandler;
 
     public void preload(ReplayPlan plan) {
         Map<String, ReplayComparisonConfig> operationCompareConfig = new HashMap<>();
@@ -51,7 +51,7 @@ public final class CompareConfigService {
         for (ReplayActionItem actionItem : plan.getReplayActionItemList()) {
             String operationId = actionItem.getOperationId();
             ReplayComparisonConfig config = build(operationCompareConfig, operationId);
-            compareConfigExtensionService.build(config, actionItem);
+            customComparisonConfigurationHandler.build(config, actionItem);
             String redisKey = key(actionItem.getId());
             String json = objectToJsonString(config);
             redisCacheProvider.put(redisKey.getBytes(StandardCharsets.UTF_8),

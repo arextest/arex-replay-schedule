@@ -1,10 +1,10 @@
 package com.arextest.schedule.beans;
 
-import com.arextest.schedule.comparer.CompareConfigExtensionService;
+import com.arextest.schedule.comparer.CustomComparisonConfigurationHandler;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.ReplayResultComparer;
-import com.arextest.schedule.comparer.impl.DefaultCompareConfigExtensionService;
+import com.arextest.schedule.comparer.impl.DefaultCustomComparisonConfigurationHandler;
 import com.arextest.schedule.comparer.impl.DefaultReplayResultComparer;
 import com.arextest.schedule.comparer.impl.PrepareCompareSourceRemoteLoader;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
@@ -38,8 +38,8 @@ public class ReplayComparerConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(CompareConfigExtensionService.class)
-    public CompareConfigExtensionService compareConfigPreService() {
-        return new DefaultCompareConfigExtensionService();
+    @ConditionalOnMissingBean(CustomComparisonConfigurationHandler.class)
+    public CustomComparisonConfigurationHandler customComparisonConfigurationHandler() {
+        return new DefaultCustomComparisonConfigurationHandler();
     }
 }
