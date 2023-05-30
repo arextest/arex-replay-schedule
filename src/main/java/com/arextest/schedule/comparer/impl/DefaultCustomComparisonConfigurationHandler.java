@@ -12,6 +12,6 @@ public class DefaultCustomComparisonConfigurationHandler implements CustomCompar
 
     @Override
     public void build(ReplayComparisonConfig config, ReplayActionItem actionItem) {
-
+        // if you want to add custom comparison configuration, you can do it here.
     }
 }
