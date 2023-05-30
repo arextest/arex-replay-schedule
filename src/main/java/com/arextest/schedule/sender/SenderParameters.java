@@ -1,5 +1,7 @@
 package com.arextest.schedule.sender;
 
+import com.arextest.schedule.model.plan.BuildReplayPlanType;
+
 import java.util.Map;
 
 /**
@@ -33,6 +35,10 @@ public interface SenderParameters {
     default String getRecordId() {
         return null;
     }
+
+    default BuildReplayPlanType getReplayPlanType() {
+        return BuildReplayPlanType.BY_APP_ID;
+    };
 
     Map<String, String> getHeaders();
 }

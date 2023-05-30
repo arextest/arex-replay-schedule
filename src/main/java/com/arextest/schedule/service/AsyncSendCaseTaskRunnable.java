@@ -38,6 +38,10 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
         boolean success = false;
         Throwable t = null;
         try {
+            if (this.limiter.failBreak()) {
+                return;
+            }
+
             MDCTracer.addDetailId(caseItem.getId());
             long caseExecutionStartMillis = System.currentTimeMillis();
             caseItem.setExecutionStartMillis(caseExecutionStartMillis);

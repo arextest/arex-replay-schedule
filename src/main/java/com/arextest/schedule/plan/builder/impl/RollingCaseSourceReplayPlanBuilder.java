@@ -77,7 +77,6 @@ final class RollingCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder
             replayActionItem.setReplayCaseCount(caseItemList.size());
             replayActionItemList.add(replayActionItem);
         }
-        replayActionItemPreprocessService.addExclusionOperation(replayActionItemList, planContext.getAppId());
         return replayActionItemList;
     }
 
