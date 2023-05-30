@@ -1,12 +1,12 @@
 package com.arextest.schedule.common;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.loader.WebappClassLoaderBase;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -36,14 +36,16 @@ public class FileUtils {
         File jarFile = new File(jarPath);
         Method method = null;
         try {
-            method = URLClassLoader.class.getDeclaredMethod(ADD_URL_FUN_NAME, URL.class);
+            method = WebappClassLoaderBase.class.getDeclaredMethod(ADD_URL_FUN_NAME, URL.class);
         } catch (NoSuchMethodException | SecurityException e1) {
             LOGGER.error("getDeclaredMethod failed, jarPath:{}, message:{}", jarPath, e1.getMessage());
         }
         boolean accessible = method.isAccessible();
         try {
             method.setAccessible(true);
-            URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+            Class<?> clazz = FileUtils.class;
+            ClassLoader classLoader = clazz.getClassLoader();
+//            URLClassLoader urlClassLoader = (URLClassLoader) classLoader;
             URL url = jarFile.toURI().toURL();
             method.invoke(classLoader, url);
         } catch (Exception e2) {
@@ -52,6 +54,7 @@ public class FileUtils {
             method.setAccessible(accessible);
         }
     }
+
 
     public static List<String> readInLine(String path) {
         try {
