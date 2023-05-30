@@ -102,6 +102,12 @@ final class RedisProgressTracerImpl implements ProgressTracer {
         this.refreshUpdateTime(replayPlan.getId());
     }
 
+    @Override
+    public void finishCaseByPlan(ReplayPlan replayPlan) {
+        doPlanFinish(replayPlan);
+        this.refreshUpdateTime(replayPlan.getId());
+    }
+
     private void doPlanFinish(ReplayPlan replayPlan) {
         String planId = replayPlan.getId();
         try {

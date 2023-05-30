@@ -8,10 +8,7 @@ import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.model.CaseSendStatusType;
-import com.arextest.schedule.model.PlanExecutionContext;
-import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.model.*;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySender;
@@ -114,6 +111,10 @@ public class ReplayCaseTransmitService {
         // if we skip the rest of cases remaining in the action item, set its status
         if (Integer.valueOf(replayActionItem.getReplayCaseCount()).equals(replayActionItem.getCaseProcessCount())) {
             progressEvent.onActionInterrupted(replayActionItem);
+            ReplayPlan replayPlan = replayActionItem.getParent();
+            for (int i = 0; i < contextCasesCount; i++) {
+                progressTracer.finishCaseByPlan(replayPlan);
+            }
         } else {
             for (int i = 0; i < contextCasesCount; i++) {
                 progressTracer.finishCaseByAction(replayActionItem);
