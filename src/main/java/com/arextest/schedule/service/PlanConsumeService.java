@@ -18,10 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
@@ -126,8 +123,8 @@ public final class PlanConsumeService {
         progressTracer.initTotal(replayPlan);
 
         // limiter shared for entire plan, max qps = maxQps per instance * min instance count
-        final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(
-                replayPlan.getReplaySendMaxQps() * replayPlan.getMinInstanceCount());
+        final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps(),
+                replayPlan.getMinInstanceCount());
 
         qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
 

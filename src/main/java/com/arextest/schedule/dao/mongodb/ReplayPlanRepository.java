@@ -65,5 +65,4 @@ public class ReplayPlanRepository implements RepositoryField {
         List<ReplayPlanCollection> replayPlanCollections = mongoTemplate.find(query, ReplayPlanCollection.class);
         return replayPlanCollections.stream().map(ReplayPlanConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
     }
-
 }
