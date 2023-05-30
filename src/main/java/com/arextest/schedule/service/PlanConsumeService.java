@@ -14,6 +14,7 @@ import com.arextest.schedule.utils.ReplayParentBinder;
 import io.netty.util.internal.MathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -260,6 +261,8 @@ public final class PlanConsumeService {
             ReplayActionCaseItem viewReplay = caseRemoteLoadService.viewReplayLoad(caseItem, operationTypes);
             if (viewReplay == null) {
                 caseItem.setSendStatus(CaseSendStatusType.REPLAY_CASE_NOT_FOUND.getValue());
+                caseItem.setSourceResultId(StringUtils.EMPTY);
+                caseItem.setTargetResultId(StringUtils.EMPTY);
             } else {
                 viewReplay.setParent(caseItem.getParent());
                 caseItemList.set(i, viewReplay);
