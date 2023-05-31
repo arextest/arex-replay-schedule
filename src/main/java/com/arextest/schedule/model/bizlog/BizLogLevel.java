@@ -1,8 +1,21 @@
 package com.arextest.schedule.model.bizlog;
 
+import lombok.Getter;
+
+/**
+ * Created by qzmo on 2023/5/31.
+ */
 public enum BizLogLevel {
-    INFO,
-    DEBUG,
-    WARN,
-    ERROR
+    INFO(0),
+    WARN(1),
+    ERROR(2),
+    DEBUG(3),
+    ;
+
+    @Getter
+    private int val;
+
+    BizLogLevel(int val) {
+        this.val = val;
+    }
 }

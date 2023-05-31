@@ -4,6 +4,7 @@ import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.MDCTracer;
+import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.progress.ProgressEvent;
@@ -88,6 +89,8 @@ public class PlanProduceService {
         if (!replayPlanActionRepository.save(replayActionItemList)) {
             return CommonResponse.badResponse("save replay action error, " + replayPlan.toString());
         }
+
+        BizLog.recordPlanStart(replayPlan);
         progressEvent.onReplayPlanCreated(replayPlan);
         planConsumeService.runAsyncConsume(replayPlan);
         return CommonResponse.successResponse("create plan success！" + result.getRemark(), replayPlan.getId());

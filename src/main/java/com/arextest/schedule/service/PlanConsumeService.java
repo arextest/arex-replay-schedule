@@ -3,6 +3,7 @@ package com.arextest.schedule.service;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
+import com.arextest.schedule.dao.mongodb.ReplayBizLogRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
@@ -35,6 +36,8 @@ public final class PlanConsumeService {
     @Resource
     private ReplayActionCaseItemRepository replayActionCaseItemRepository;
     @Resource
+    private ReplayBizLogRepository replayBizLogRepository;
+    @Resource
     private ReplayCaseTransmitService replayCaseTransmitService;
     @Resource
     private ExecutorService preloadExecutorService;
@@ -66,20 +69,24 @@ public final class PlanConsumeService {
         @Override
         @SuppressWarnings("unchecked")
         protected void doWithTracedRunning() {
-            int planSavedCaseSize = saveActionCaseToSend(replayPlan);
-            replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
-            if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
-                LOGGER.error("Invalid context built for plan {}", replayPlan);
-                replayPlan.setErrorMessage("Got empty execution context");
-                progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
-                return;
-            }
+            try {
+                int planSavedCaseSize = saveActionCaseToSend(replayPlan);
+                replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
+                if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
+                    LOGGER.error("Invalid context built for plan {}", replayPlan);
+                    replayPlan.setErrorMessage("Got empty execution context");
+                    progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
+                    return;
+                }
 
-            sendAllActionCase(replayPlan);
+                sendAllActionCase(replayPlan);
 
-            // actionItems with empty case item are not able to trigger plan finished hook
-            if (planSavedCaseSize == 0) {
-                progressEvent.onReplayPlanFinish(replayPlan);
+                // actionItems with empty case item are not able to trigger plan finished hook
+                if (planSavedCaseSize == 0) {
+                    progressEvent.onReplayPlanFinish(replayPlan);
+                }
+            } finally {
+                replayBizLogRepository.saveAll(replayPlan);
             }
         }
     }

@@ -2,8 +2,13 @@ package com.arextest.schedule.model.bizlog;
 
 import lombok.Getter;
 
+import java.text.MessageFormat;
+
+/**
+ * Created by qzmo on 2023/5/31.
+ */
 public enum BizLogContent {
-    PLAN_START(0, BizLogLevel.INFO, ""),
+    PLAN_START(0, BizLogLevel.INFO, "Plan passes validation, starts execution."),
     PLAN_CASE_SAVED(1, BizLogLevel.INFO, ""),
     PLAN_CONTEXT_BUILT(2, BizLogLevel.INFO, ""),
 
@@ -32,4 +37,8 @@ public enum BizLogContent {
     private int type;
 
     private BizLogLevel level;
+
+    public String format(Object... args) {
+        return MessageFormat.format(this.getTemplate(), args);
+    }
 }
