@@ -1,5 +1,6 @@
 package com.arextest.schedule.plan.builder.impl;
 
+import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.AppServiceDescriptor;
 import com.arextest.schedule.model.CaseSourceEnvType;
 import com.arextest.schedule.model.ReplayActionItem;
@@ -108,11 +109,20 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
     public int buildReplayCaseCount(List<ReplayActionItem> actionItemList) {
         int sum = 0;
         int actionCount;
+        int maxCount = 0;
         for (int i = 0; i < actionItemList.size(); i++) {
             ReplayActionItem actionItem = actionItemList.get(i);
             actionCount = queryCaseCount(actionItem);
             actionItem.setReplayCaseCount(actionCount);
+            if (actionCount > maxCount) {
+                maxCount = actionCount;
+            }
             sum += actionCount;
+        }
+        if (maxCount > 0) {
+            actionItemList.get(0).getParent().setCaseCountLimit(maxCount);
+        } else {
+            actionItemList.get(0).getParent().setCaseCountLimit(CommonConstant.MAX_PAGE_SIZE);
         }
         return sum;
     }

@@ -52,8 +52,9 @@ public class ReplayCaseRemoteLoadService {
     public int queryCaseCount(ReplayActionItem replayActionItem) {
         int queryTotalCount = EMPTY_SIZE;
         try {
-            int caseCountLimit = replayActionItem.getOperationTypes() == null ? replayActionItem.getParent().getCaseCountLimit()
-                    : replayActionItem.getParent().getCaseCountLimit() * replayActionItem.getOperationTypes().size();
+            int replayCaseCount = replayActionItem.getParent().getCaseCountLimit();
+            int caseCountLimit = replayCaseCount > EMPTY_SIZE ?
+                    replayActionItem.getOperationTypes() == null ? replayCaseCount : replayCaseCount * replayActionItem.getOperationTypes().size() : CommonConstant.MAX_PAGE_SIZE;
             List<PagedRequestType> request = buildPagingSearchCaseRequests(replayActionItem, caseCountLimit);
             for (PagedRequestType pagedRequestType : request) {
                 QueryCaseCountResponseType responseType =
@@ -61,7 +62,11 @@ public class ReplayCaseRemoteLoadService {
                 if (responseType == null || responseType.getResponseStatusType().hasError()) {
                     continue;
                 }
-                queryTotalCount = queryTotalCount + Math.min(replayActionItem.getParent().getCaseCountLimit(), (int) responseType.getCount());
+                if (replayCaseCount == EMPTY_SIZE) {
+                    queryTotalCount = queryTotalCount + (int) responseType.getCount();
+                } else {
+                    queryTotalCount = queryTotalCount + Math.min(replayCaseCount, (int) responseType.getCount());
+                }
             }
         } catch (Exception e) {
             LOGGER.error("query case count error,request: {} ", replayActionItem.getId(), e);
@@ -200,7 +205,7 @@ public class ReplayCaseRemoteLoadService {
         }
         List<PagedRequestType> pagedRequestTypeList = new ArrayList<>();
         for (String catagoryType : replayActionItem.getOperationTypes()) {
-            PagedRequestType pagedRequestType = buildPagingSearchCaseRequest(replayActionItem, (int) Math.ceil(caseCountLimit/replayActionItem.getOperationTypes().size()));
+            PagedRequestType pagedRequestType = buildPagingSearchCaseRequest(replayActionItem, (int) Math.ceil(caseCountLimit / replayActionItem.getOperationTypes().size()));
             pagedRequestType.setCategory(MockCategoryType.createEntryPoint(catagoryType));
             pagedRequestTypeList.add(pagedRequestType);
         }
