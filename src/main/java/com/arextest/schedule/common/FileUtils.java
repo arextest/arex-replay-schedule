@@ -25,11 +25,14 @@ public class FileUtils {
             LOGGER.error("oldFile doesn't exist. oldFile:{}", oldPath);
             return;
         }
-        newFile.delete();
+        if (newFile.exists()) {
+            LOGGER.info("delete existed newFile");
+            newFile.delete();
+        }
         try {
             Files.copy(oldFile.toPath(), newFile.toPath());
         } catch (IOException e) {
-            LOGGER.error("copy file failed from {} to {}, cause:{}", oldPath, newPath, e.getCause());
+            LOGGER.error("copy file failed from {} to {}, exception:{}", oldPath, newPath, e);
         }
     }
 
@@ -46,7 +49,6 @@ public class FileUtils {
             method.setAccessible(true);
             Class<?> clazz = FileUtils.class;
             ClassLoader classLoader = clazz.getClassLoader();
-//            URLClassLoader urlClassLoader = (URLClassLoader) classLoader;
             URL url = jarFile.toURI().toURL();
             method.invoke(classLoader, url);
         } catch (Exception e2) {
