@@ -11,7 +11,6 @@ import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.utils.ReplayParentBinder;
-import io.netty.util.internal.MathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -201,8 +200,7 @@ public final class PlanConsumeService {
             progressEvent.onActionInterrupted(replayActionItem);
         }
 
-        if (sendResult.isNormal() &&
-                MathUtil.compare(replayActionItem.getReplayCaseCount(), replayActionItem.getCaseProcessCount()) == 0) {
+        if (sendResult.isNormal() && replayActionItem.getReplayCaseCount() == replayActionItem.getCaseProcessCount()) {
             progressEvent.onActionAfterSend(replayActionItem);
         }
     }
