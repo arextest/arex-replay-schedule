@@ -37,7 +37,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DubboReplaySender extends AbstractReplaySender {
     private static final String DUBBO_APP_NAME = "arex-replay";
     private static final String APPLICATION_JSON = "application/json";
-    private static final String EXTENSION_FILE_PATH = "/usr/local/tomcat/webapps/arex-schedule-web-api/WEB-INF/classes/META-INF/dubbo/com.alibaba.dubbo.rpc.Protocol";
+    private static final String EXTENSION_FILE_PATH = "/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/META-INF/dubbo/com.alibaba.dubbo.rpc.Protocol";
+    //    private static final String EXTENSION_FILE_PATH = "../webapps/arex_schedule_web_api_war/WEB-INF/classes/META-INF/dubbo/com.alibaba.dubbo.rpc.Protocol";
     private static final String EXTENSION_FILE_PATH_PROPERTY_KEY = "arex.custom.protocol.textPath";
     private static final String EXTENSION_JAR_PATH_PROPERTY_KEY_PATTERN = "arex.custom.protocol.jarPath.%s";
     private static final ConcurrentHashMap<String, CustomProtocolConfig> customProtocolMap = new ConcurrentHashMap<>();
