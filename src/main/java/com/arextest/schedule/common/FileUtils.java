@@ -22,6 +22,7 @@ public class FileUtils {
         File newFile = new File(newPath);
 
         if (!oldFile.exists()) {
+            LOGGER.error("oldFile doesn't exist. oldFile:{}", oldPath);
             return;
         }
         newFile.delete();
