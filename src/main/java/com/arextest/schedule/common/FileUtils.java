@@ -29,7 +29,7 @@ public class FileUtils {
         try {
             Files.copy(oldFile.toPath(), newFile.toPath());
         } catch (IOException e) {
-            LOGGER.error("copy file failed from {} to {}, cause:{}", oldPath, newPath, e.getMessage());
+            LOGGER.error("copy file failed from {} to {}, cause:{}", oldPath, newPath, e.getCause());
         }
     }
 

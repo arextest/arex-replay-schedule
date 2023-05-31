@@ -114,6 +114,7 @@ public class DubboReplaySender extends AbstractReplaySender {
         FileUtils.copy(textFilePath, EXTENSION_FILE_PATH);
 
         List<String> protocolConfigs = FileUtils.readInLine(textFilePath);
+        LOGGER.info("procotol configs:{}", protocolConfigs);
         String jarPath = null;
         for(String line: protocolConfigs) {
             String name = null;
