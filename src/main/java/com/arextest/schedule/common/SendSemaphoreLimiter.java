@@ -118,9 +118,18 @@ public final class SendSemaphoreLimiter {
         return rate;
     }
 
+    public int totalError() {
+        return this.checker.failCounter.get();
+    }
+
+    public int continuousError() {
+        return this.checker.continuousSuccessCounter.get();
+    }
+
     private final class ReplayHealthy {
         private volatile boolean hasError;
         private final AtomicInteger continuousSuccessCounter = new AtomicInteger();
+
         private final AtomicInteger failCounter = new AtomicInteger();
         private final AtomicInteger continuousFailCounter = new AtomicInteger();
         private volatile int checkCount = SUCCESS_COUNT_TO_BALANCE_NO_ERROR;

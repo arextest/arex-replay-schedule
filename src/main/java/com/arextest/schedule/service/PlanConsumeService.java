@@ -8,6 +8,7 @@ import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.*;
+import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
@@ -55,6 +56,7 @@ public final class PlanConsumeService {
     private PlanExecutionContextProvider planExecutionContextProvider;
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
+        BizLog.recordPlanAsyncStart(replayPlan);
         // TODO: remove block thread use async to load & send for all
         preloadExecutorService.execute(new ReplayActionLoadingRunnableImpl(replayPlan));
     }
@@ -71,7 +73,11 @@ public final class PlanConsumeService {
         protected void doWithTracedRunning() {
             try {
                 int planSavedCaseSize = saveActionCaseToSend(replayPlan);
+                BizLog.recordPlanCaseSaved(replayPlan, planSavedCaseSize);
+
                 replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
+                BizLog.recordContextBuilt(replayPlan);
+
                 if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
                     LOGGER.error("Invalid context built for plan {}", replayPlan);
                     replayPlan.setErrorMessage("Got empty execution context");
@@ -127,19 +133,25 @@ public final class PlanConsumeService {
 
     @SuppressWarnings("unchecked")
     private void sendAllActionCase(ReplayPlan replayPlan) {
+        long start, end;
         progressTracer.initTotal(replayPlan);
 
         // limiter shared for entire plan, max qps = maxQps per instance * min instance count
         final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps(),
                 replayPlan.getMinInstanceCount());
-
         qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
 
-        ExecutionStatus sendResult = ExecutionStatus.buildNormal();
+        BizLog.recordQpsInit(replayPlan, qpsLimiter.getPermits(), replayPlan.getMinInstanceCount());
 
+        ExecutionStatus sendResult = ExecutionStatus.buildNormal();
         for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
             executionContext.setExecutionStatus(sendResult);
+            executionContext.setPlan(replayPlan);
+
+            start = System.currentTimeMillis();
             planExecutionContextProvider.onBeforeContextExecution(executionContext, replayPlan);
+            end = System.currentTimeMillis();
+            BizLog.recordContextBeforeRun(executionContext, end - start);
 
             List<CompletableFuture<Void>> contextTasks = new ArrayList<>();
             for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
@@ -150,6 +162,8 @@ public final class PlanConsumeService {
                     if (replayActionItem.isEmpty()) {
                         replayActionItem.setReplayFinishTime(new Date());
                         progressEvent.onActionComparisonFinish(replayActionItem);
+                        BizLog.recordActionStatusChange(replayActionItem, ReplayStatusType.FINISHED.name(),
+                                "No case needs to be sent");
                     }
                 }
 
@@ -170,15 +184,15 @@ public final class PlanConsumeService {
 
         if (sendResult.isCanceled()) {
             progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.CANCELLED);
-            LOGGER.info("The plan was isCancelled, plan id:{} ,appId: {} ", replayPlan.getId(),
-                    replayPlan.getAppId());
+            BizLog.recordPlanStatusChange(replayPlan, ReplayStatusType.CANCELLED.name(), "Plan Canceled");
             return;
         }
 
         if (sendResult.isInterrupted()) {
             progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
-            LOGGER.info("The plan was interrupted, plan id:{} ,appId: {} ", replayPlan.getId(),
-                    replayPlan.getAppId());
+            BizLog.recordPlanStatusChange(replayPlan, ReplayStatusType.FAIL_INTERRUPTED.name(),
+                    "Qps limiter with total error count of: " + qpsLimiter.totalError()
+                            + " and continuous error of: " + qpsLimiter.continuousError());
             return;
         }
         LOGGER.info("All the plan action sent,waiting to compare, plan id:{} ,appId: {} ", replayPlan.getId(),
@@ -186,14 +200,18 @@ public final class PlanConsumeService {
     }
 
     private void sendItemByContext(ReplayActionItem replayActionItem, PlanExecutionContext currentContext) {
+        BizLog.recordActionUnderContext(replayActionItem, currentContext);
+
         ExecutionStatus sendResult = currentContext.getExecutionStatus();
         if (sendResult.isCanceled() && replayActionItem.getReplayStatus() != ReplayStatusType.CANCELLED.getValue()) {
+            BizLog.recordActionStatusChange(replayActionItem, ReplayStatusType.CANCELLED.name(), "");
             progressEvent.onActionCancelled(replayActionItem);
             return;
         }
 
         if (sendResult.isInterrupted() && replayActionItem.getReplayStatus() != ReplayStatusType.FAIL_INTERRUPTED.getValue()) {
             progressEvent.onActionInterrupted(replayActionItem);
+            BizLog.recordActionInterrupted(replayActionItem);
             return;
         }
 
@@ -206,11 +224,13 @@ public final class PlanConsumeService {
 
         if (sendResult.isInterrupted() && replayActionItem.getReplayStatus() != ReplayStatusType.FAIL_INTERRUPTED.getValue()) {
             progressEvent.onActionInterrupted(replayActionItem);
+            BizLog.recordActionInterrupted(replayActionItem);
         }
 
         if (sendResult.isNormal() &&
                 MathUtil.compare(replayActionItem.getReplayCaseCount(), replayActionItem.getCaseProcessCount()) == 0) {
             progressEvent.onActionAfterSend(replayActionItem);
+            BizLog.recordActionItemSent(replayActionItem);
         }
     }
 
