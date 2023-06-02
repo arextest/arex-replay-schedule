@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
@@ -55,6 +56,10 @@ public final class PlanConsumeService {
     @Resource
     private PlanExecutionContextProvider planExecutionContextProvider;
 
+    private static final int LOG_SIZE_TO_SAVE_CHECK = 1000;
+    private static final long LOG_TIME_GAP_TO_SAVE_CHECK = 10 * 1000;
+
+
     public void runAsyncConsume(ReplayPlan replayPlan) {
         BizLog.recordPlanAsyncStart(replayPlan);
         // TODO: remove block thread use async to load & send for all
@@ -82,6 +87,8 @@ public final class PlanConsumeService {
                     LOGGER.error("Invalid context built for plan {}", replayPlan);
                     replayPlan.setErrorMessage("Got empty execution context");
                     progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
+                    BizLog.recordPlanStatusChange(replayPlan, ReplayStatusType.FAIL_INTERRUPTED.name(),
+                            "NO context to execute");
                     return;
                 }
 
@@ -92,7 +99,7 @@ public final class PlanConsumeService {
                     progressEvent.onReplayPlanFinish(replayPlan);
                 }
             } finally {
-                replayBizLogRepository.saveAll(replayPlan);
+                replayBizLogRepository.saveAll(replayPlan.getBizLogs());
             }
         }
     }
@@ -160,6 +167,8 @@ public final class PlanConsumeService {
             planExecutionContextProvider.onAfterContextExecution(executionContext, replayPlan);
             end = System.currentTimeMillis();
             BizLog.recordContextAfterRun(executionContext, end - start);
+
+            tryFiringLogs(replayPlan);
         }
 
         if (sendResult.isCanceled()) {
@@ -170,9 +179,7 @@ public final class PlanConsumeService {
 
         if (sendResult.isInterrupted()) {
             progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
-            BizLog.recordPlanStatusChange(replayPlan, ReplayStatusType.FAIL_INTERRUPTED.name(),
-                    "Qps limiter with total error count of: " + qpsLimiter.totalError()
-                            + " and continuous error of: " + qpsLimiter.continuousError());
+            BizLog.recordPlanInterrupted(replayPlan, qpsLimiter);
             return;
         }
         BizLog.recordPlanDone(replayPlan);
@@ -346,5 +353,19 @@ public final class PlanConsumeService {
             replayActionItem.setLastRecordTime(beginTimeMills);
         }
         return totalSize;
+    }
+
+    private void tryFiringLogs(ReplayPlan replayPlan) {
+        BlockingQueue<BizLog> logs = replayPlan.getBizLogs();
+        if (logs.size() > LOG_SIZE_TO_SAVE_CHECK
+                || (System.currentTimeMillis() - replayPlan.getLastLogTime()) > LOG_TIME_GAP_TO_SAVE_CHECK) {
+            List<BizLog> logsToSave = new ArrayList<>();
+            int curSize = replayPlan.getBizLogs().size();
+            for (int i = 0; i < curSize; i++) {
+                logsToSave.add(logs.remove());
+            }
+            replayPlan.setLastLogTime(System.currentTimeMillis());
+            replayBizLogRepository.saveAll(logsToSave);
+        }
     }
 }

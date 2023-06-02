@@ -1,5 +1,6 @@
 package com.arextest.schedule.model.bizlog;
 
+import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
@@ -30,6 +31,7 @@ public class BizLog {
     private String contextIdentifier;
     private String caseItemId;
     private String actionItemId;
+    private String operationName;
 
     // private Throwable exception;
 
@@ -55,19 +57,20 @@ public class BizLog {
     }
 
     private void postProcessAndEnqueue(PlanExecutionContext context) {
-        this.postProcessAndEnqueue(context.getPlan());
         this.setContextName(context.getContextName());
+        this.postProcessAndEnqueue(context.getPlan());
     }
 
     private void postProcessAndEnqueue(ReplayActionItem action) {
-        Optional.ofNullable(action.getParent()).ifPresent(this::postProcessAndEnqueue);
         this.setActionItemId(action.getId());
+        this.setOperationName(action.getOperationName());
+        Optional.ofNullable(action.getParent()).ifPresent(this::postProcessAndEnqueue);
     }
 
     private void postProcessAndEnqueue(ReplayActionCaseItem caseItem) {
-        Optional.ofNullable(caseItem.getParent()).ifPresent(this::postProcessAndEnqueue);
         this.setContextIdentifier(caseItem.getContextIdentifier());
         this.setCaseItemId(caseItem.getId());
+        Optional.ofNullable(caseItem.getParent()).ifPresent(this::postProcessAndEnqueue);
     }
 
     // region <Plan Level Log>
@@ -116,13 +119,24 @@ public class BizLog {
         log.postProcessAndEnqueue(plan);
     }
 
+    public static void recordPlanInterrupted(ReplayPlan plan, SendSemaphoreLimiter limiter) {
+        BizLog log = BizLog.error()
+                .logType(BizLogContent.PLAN_INTERRUPTED.getType())
+                .message(BizLogContent.PLAN_INTERRUPTED.format(limiter.totalError(),
+                        limiter.continuousError()))
+                .build();
+
+        log.postProcessAndEnqueue(plan);
+    }
     // endregion
 
     // region <Action Level Log>
     public static void recordActionUnderContext(ReplayActionItem action, PlanExecutionContext context) {
         BizLog log = BizLog.info()
                 .logType(BizLogContent.ACTION_ITEM_EXECUTE_CONTEXT.getType())
-                .message(BizLogContent.ACTION_ITEM_EXECUTE_CONTEXT.format(action.getId(),
+                .message(BizLogContent.ACTION_ITEM_EXECUTE_CONTEXT.format(
+                        action.getOperationName(),
+                        action.getId(),
                         context.getContextName(),
                         context.getActionType().name()))
                 .build();
@@ -133,7 +147,10 @@ public class BizLog {
     public static void recordActionItemCaseCount(ReplayActionItem action) {
         BizLog log = BizLog.info()
                 .logType(BizLogContent.ACTION_ITEM_INIT_TOTAL_COUNT.getType())
-                .message(BizLogContent.ACTION_ITEM_INIT_TOTAL_COUNT.format(action.getId(), action.getReplayCaseCount()))
+                .message(BizLogContent.ACTION_ITEM_INIT_TOTAL_COUNT.format(
+                        action.getOperationName(),
+                        action.getId(),
+                        action.getReplayCaseCount()))
                 .build();
 
         log.postProcessAndEnqueue(action);
@@ -142,16 +159,23 @@ public class BizLog {
     public static void recordActionStatusChange(ReplayActionItem action, String targetStatus, String reason) {
         BizLog log = BizLog.info()
                 .logType(BizLogContent.ACTION_ITEM_STATUS_CHANGED.getType())
-                .message(BizLogContent.ACTION_ITEM_STATUS_CHANGED.format(targetStatus, reason))
+                .message(BizLogContent.ACTION_ITEM_STATUS_CHANGED.format(
+                        action.getOperationName(),
+                        action.getId(),
+                        targetStatus,
+                        reason))
                 .build();
 
         log.postProcessAndEnqueue(action);
     }
 
     public static void recordActionInterrupted(ReplayActionItem action) {
-        BizLog log = BizLog.info()
+        BizLog log = BizLog.error()
                 .logType(BizLogContent.ACTION_ITEM_INTERRUPTED.getType())
-                .message(BizLogContent.ACTION_ITEM_INTERRUPTED.format(action.getSendRateLimiter().totalError(),
+                .message(BizLogContent.ACTION_ITEM_INTERRUPTED.format(
+                        action.getOperationName(),
+                        action.getId(),
+                        action.getSendRateLimiter().totalError(),
                         action.getSendRateLimiter().continuousError()))
                 .build();
 
@@ -161,7 +185,10 @@ public class BizLog {
     public static void recordActionItemSent(ReplayActionItem action) {
         BizLog log = BizLog.info()
                 .logType(BizLogContent.ACTION_ITEM_SENT.getType())
-                .message(BizLogContent.ACTION_ITEM_SENT.format(action.getCaseProcessCount()))
+                .message(BizLogContent.ACTION_ITEM_SENT.format(
+                        action.getOperationName(),
+                        action.getId(),
+                        action.getCaseProcessCount()))
                 .build();
 
         log.postProcessAndEnqueue(action);
@@ -227,6 +254,7 @@ public class BizLog {
         PLAN_DONE(3, "Plan send job done normally."),
         PLAN_ASYNC_RUN_START(4, "Plan async task init."),
         PLAN_STATUS_CHANGE(5, "Plan status changed to {0}, because of [{1}]."),
+        PLAN_INTERRUPTED(305, "Plan interrupted, because Qps limiter with total error count of: {0} and continuous error of: {1}."),
 
 
         QPS_LIMITER_INIT(100, "Qps limiter init with initial total rate of {0} for {1} instances."),
@@ -235,13 +263,11 @@ public class BizLog {
         CONTEXT_START(200, "Context: {0} init with action: {1}, before hook took {2} ms."),
         CONTEXT_AFTER_RUN(202, "Context: {0} done, after hook took {1} ms."),
 
-        ACTION_ITEM_EXECUTE_CONTEXT(300, "Action item: {0} under context: {1} starts executing action type: {2}."),
-        ACTION_ITEM_INIT_TOTAL_COUNT(302, "Action item id: {0} init total case count: {1}."),
-        ACTION_ITEM_STATUS_CHANGED(303, "Action item status changed to {0}, because of [{1}]."),
-        ACTION_ITEM_SENT(304, "All cases of action item sent, total size: {0}"),
-        ACTION_ITEM_INTERRUPTED(305, "Action item status interrupted, because Qps limiter with total error count of: {0} and continuous error of: {1}."),
-
-
+        ACTION_ITEM_EXECUTE_CONTEXT(300, "Operation: {0} id: {1} under context: {2} starts executing action type: {3}."),
+        ACTION_ITEM_INIT_TOTAL_COUNT(302, "Operation: {0} id: {1} init total case count: {2}."),
+        ACTION_ITEM_STATUS_CHANGED(303, "Operation: {0} id: {1} status changed to {2}, because of [{3}]."),
+        ACTION_ITEM_SENT(304, "All cases of Operation: {0} id: {1} sent, total size: {2}"),
+        ACTION_ITEM_INTERRUPTED(305, "Operation: {0} id: {1} status interrupted, because Qps limiter with total error count of: {2} and continuous error of: {3}."),
         ;
         BizLogContent(int type, String template) {
             this.type = type;

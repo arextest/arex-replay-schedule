@@ -5,6 +5,7 @@ import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
 import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
+import lombok.Getter;
 import lombok.ToString;
 
 import java.util.*;
@@ -78,6 +79,9 @@ public class ReplayPlan {
     // Min(targetInstanceCount || Int.MAX, sourceInstanceCount || Int.MAX)
     @JsonIgnore
     private int minInstanceCount;
+
+    @JsonIgnore
+    private long lastLogTime = System.currentTimeMillis();
 
     @JsonIgnore
     private BlockingQueue<BizLog> bizLogs = new LinkedBlockingQueue<>();

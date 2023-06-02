@@ -2,6 +2,7 @@ package com.arextest.schedule.dao.mongodb;
 
 import com.arextest.schedule.dao.mongodb.util.MongoHelper;
 import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.model.converter.ReplayBizLogConverter;
 import com.arextest.schedule.model.converter.ReplayPlanConverter;
 import com.arextest.schedule.model.dao.mongodb.ReplayBizLogCollection;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,15 +37,14 @@ public class ReplayBizLogRepository implements RepositoryField {
             "dataChangeCreateDate",
             "_id"};
 
-    public void saveAll(ReplayPlan replayPlan) {
-        List<ReplayBizLogCollection> logs = replayPlan
-                .getBizLogs()
+    public void saveAll(Collection<BizLog> logs) {
+        List<ReplayBizLogCollection> logDocs = logs
                 .stream()
                 .map(ReplayBizLogConverter.INSTANCE::daoFromDto)
                 .collect(Collectors.toList());
 
-        if (!CollectionUtils.isEmpty(logs)) {
-            this.mongoTemplate.insertAll(logs);
+        if (!CollectionUtils.isEmpty(logDocs)) {
+            this.mongoTemplate.insertAll(logDocs);
         }
     }
 

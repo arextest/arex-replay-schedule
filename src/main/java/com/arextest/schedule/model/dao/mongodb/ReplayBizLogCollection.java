@@ -21,6 +21,9 @@ public class ReplayBizLogCollection extends ModelBase{
 
     private String planId;
     private String contextName;
+
     private String contextIdentifier;
     private String caseItemId;
+    private String actionItemId;
+    private String operationName;
 }
