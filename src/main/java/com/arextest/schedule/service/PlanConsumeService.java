@@ -175,6 +175,7 @@ public final class PlanConsumeService {
                             + " and continuous error of: " + qpsLimiter.continuousError());
             return;
         }
+        BizLog.recordPlanDone(replayPlan);
         LOGGER.info("All the plan action sent,waiting to compare, plan id:{} ,appId: {} ", replayPlan.getId(),
                 replayPlan.getAppId());
     }

@@ -29,6 +29,12 @@ public class ReplayBizLogRepository implements RepositoryField {
     @Autowired
     MongoTemplate mongoTemplate;
 
+    private static final String PLAN_ID_KEY = "planId";
+    private static final String[] EXCLUSIONS = {"dataChangeCreateTime",
+            "dataChangeUpdateTime",
+            "dataChangeCreateDate",
+            "_id"};
+
     public void saveAll(ReplayPlan replayPlan) {
         List<ReplayBizLogCollection> logs = replayPlan
                 .getBizLogs()
@@ -39,5 +45,12 @@ public class ReplayBizLogRepository implements RepositoryField {
         if (!CollectionUtils.isEmpty(logs)) {
             this.mongoTemplate.insertAll(logs);
         }
+    }
+
+    public List<ReplayBizLogCollection> queryByPlanId(String planId) {
+        Query query = new Query().addCriteria(Criteria.where(PLAN_ID_KEY).is(planId));
+        query.fields().exclude(EXCLUSIONS);
+        return this.mongoTemplate
+                .find(query, ReplayBizLogCollection.class);
     }
 }

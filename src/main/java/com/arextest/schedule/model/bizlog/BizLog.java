@@ -80,10 +80,10 @@ public class BizLog {
         log.postProcessAndEnqueue(plan);
     }
 
-    public static void recordReportInit(ReplayPlan plan) {
+    public static void recordPlanDone(ReplayPlan plan) {
         BizLog log = BizLog.info()
-                .logType(BizLogContent.PLAN_REPORT_INIT.getType())
-                .message(BizLogContent.PLAN_REPORT_INIT.format())
+                .logType(BizLogContent.PLAN_DONE.getType())
+                .message(BizLogContent.PLAN_DONE.format())
                 .build();
 
         log.postProcessAndEnqueue(plan);
@@ -224,7 +224,7 @@ public class BizLog {
         PLAN_START(0, "Plan passes validation, starts execution."),
         PLAN_CASE_SAVED(1, "Plan saved {0} cases to send."),
         PLAN_CONTEXT_BUILT(2, "{0} execution context built."),
-        PLAN_REPORT_INIT(3, "Plan report init."),
+        PLAN_DONE(3, "Plan send job done normally."),
         PLAN_ASYNC_RUN_START(4, "Plan async task init."),
         PLAN_STATUS_CHANGE(5, "Plan status changed to {0}, because of [{1}]."),
 
