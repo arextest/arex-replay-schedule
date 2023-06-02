@@ -139,6 +139,7 @@ public final class PlanConsumeService {
         // limiter shared for entire plan, max qps = maxQps per instance * min instance count
         final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps(),
                 replayPlan.getMinInstanceCount());
+        qpsLimiter.setReplayPlan(replayPlan);
         qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
 
         BizLog.recordQpsInit(replayPlan, qpsLimiter.getPermits(), replayPlan.getMinInstanceCount());
@@ -153,33 +154,12 @@ public final class PlanConsumeService {
             end = System.currentTimeMillis();
             BizLog.recordContextBeforeRun(executionContext, end - start);
 
-            List<CompletableFuture<Void>> contextTasks = new ArrayList<>();
-            for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
-                if (!replayActionItem.isItemProcessed()) {
-                    replayActionItem.setItemProcessed(true);
-                    MDCTracer.addActionId(replayActionItem.getId());
-                    replayActionItem.setSendRateLimiter(qpsLimiter);
-                    if (replayActionItem.isEmpty()) {
-                        replayActionItem.setReplayFinishTime(new Date());
-                        progressEvent.onActionComparisonFinish(replayActionItem);
-                        BizLog.recordActionStatusChange(replayActionItem, ReplayStatusType.FINISHED.name(),
-                                "No case needs to be sent");
-                    }
-                }
+            executeContext(replayPlan, qpsLimiter, executionContext);
 
-                if (replayActionItem.finished() || replayActionItem.isEmpty()) {
-                    LOGGER.warn("Skipped action item: {}, finished: {}, empty: {}",
-                            replayActionItem.getAppId(), replayActionItem.finished(), replayActionItem.isEmpty());
-                    continue;
-                }
-                CompletableFuture<Void> task = CompletableFuture.runAsync(
-                        () -> sendItemByContext(replayActionItem, executionContext),
-                        actionItemParallelPool);
-                contextTasks.add(task);
-            }
-
-            CompletableFuture.allOf(contextTasks.toArray(new CompletableFuture[0])).join();
+            start = System.currentTimeMillis();
             planExecutionContextProvider.onAfterContextExecution(executionContext, replayPlan);
+            end = System.currentTimeMillis();
+            BizLog.recordContextAfterRun(executionContext, end - start);
         }
 
         if (sendResult.isCanceled()) {
@@ -197,6 +177,35 @@ public final class PlanConsumeService {
         }
         LOGGER.info("All the plan action sent,waiting to compare, plan id:{} ,appId: {} ", replayPlan.getId(),
                 replayPlan.getAppId());
+    }
+
+    private void executeContext(ReplayPlan replayPlan, SendSemaphoreLimiter qpsLimiter, PlanExecutionContext executionContext) {
+        List<CompletableFuture<Void>> contextTasks = new ArrayList<>();
+        for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
+            if (!replayActionItem.isItemProcessed()) {
+                replayActionItem.setItemProcessed(true);
+                MDCTracer.addActionId(replayActionItem.getId());
+                replayActionItem.setSendRateLimiter(qpsLimiter);
+                if (replayActionItem.isEmpty()) {
+                    replayActionItem.setReplayFinishTime(new Date());
+                    progressEvent.onActionComparisonFinish(replayActionItem);
+                    BizLog.recordActionStatusChange(replayActionItem, ReplayStatusType.FINISHED.name(),
+                            "No case needs to be sent");
+                }
+            }
+
+            if (replayActionItem.finished() || replayActionItem.isEmpty()) {
+                LOGGER.warn("Skipped action item: {}, finished: {}, empty: {}",
+                        replayActionItem.getAppId(), replayActionItem.finished(), replayActionItem.isEmpty());
+                continue;
+            }
+            CompletableFuture<Void> task = CompletableFuture.runAsync(
+                    () -> sendItemByContext(replayActionItem, executionContext),
+                    actionItemParallelPool);
+            contextTasks.add(task);
+        }
+
+        CompletableFuture.allOf(contextTasks.toArray(new CompletableFuture[0])).join();
     }
 
     private void sendItemByContext(ReplayActionItem replayActionItem, PlanExecutionContext currentContext) {
