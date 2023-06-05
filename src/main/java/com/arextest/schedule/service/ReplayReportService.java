@@ -14,6 +14,7 @@ import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.model.*;
+import com.arextest.web.model.contract.contracts.replay.UpdateReportInfoRequestType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -101,14 +102,14 @@ public final class ReplayReportService implements ComparisonWriter {
     }
 
     public void updateCaseItemCount(String planId, String planItemId, Integer caseItemCount) {
-        ReportInitialRequestType requestType = new ReportInitialRequestType();
+        UpdateReportInfoRequestType requestType = new UpdateReportInfoRequestType();
         requestType.setPlanId(planId);
-        List<ReportInitialRequestType.ReportItem> reportItemList = new ArrayList<>();
-        ReportInitialRequestType.ReportItem reportItem = new ReportInitialRequestType.ReportItem();
+        List<UpdateReportInfoRequestType.UpdateReportItem> updateReportInfoList = new ArrayList<>();
+        UpdateReportInfoRequestType.UpdateReportItem reportItem = new UpdateReportInfoRequestType.UpdateReportItem();
         reportItem.setPlanItemId(planItemId);
         reportItem.setTotalCaseCount(caseItemCount);
-        reportItemList.add(reportItem);
-        requestType.setReportItemList(reportItemList);
+        updateReportInfoList.add(reportItem);
+        requestType.setUpdateReportItems(updateReportInfoList);
         LOGGER.info("updateCaseItemCount request:{}", requestType);
         Response response = httpWepServiceApiClient.jsonPost(updateReportInfoUrl, requestType,
                 GenericResponseType.class);
@@ -116,7 +117,7 @@ public final class ReplayReportService implements ComparisonWriter {
     }
 
     public void updateTotalCaseCount(String planId, Integer totalCaseCount) {
-        ReportInitialRequestType requestType = new ReportInitialRequestType();
+        UpdateReportInfoRequestType requestType = new UpdateReportInfoRequestType();
         requestType.setPlanId(planId);
         requestType.setTotalCaseCount(totalCaseCount);
         LOGGER.info("updateTotalCaseCount request:{}", requestType);
