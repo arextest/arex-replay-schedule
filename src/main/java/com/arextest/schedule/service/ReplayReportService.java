@@ -36,6 +36,8 @@ public final class ReplayReportService implements ComparisonWriter {
     private String pushReplayCompareResultUrl;
     @Value("${arex.report.push.replayStatus.url}")
     private String pushReplayStatusUrl;
+    @Value("${arex.report.update.report.info.url}")
+    private String updateReportInfoUrl;
 
     private static final String CASE_COUNT_LIMIT_NAME = "caseCountLimit";
 
@@ -108,7 +110,7 @@ public final class ReplayReportService implements ComparisonWriter {
         reportItemList.add(reportItem);
         requestType.setReportItemList(reportItemList);
         LOGGER.info("updateCaseItemCount request:{}", requestType);
-        Response response = httpWepServiceApiClient.jsonPost(reportInitUrl, requestType,
+        Response response = httpWepServiceApiClient.jsonPost(updateReportInfoUrl, requestType,
                 GenericResponseType.class);
         LOGGER.info("updateCaseItemCount response:{}", response);
     }
@@ -118,7 +120,7 @@ public final class ReplayReportService implements ComparisonWriter {
         requestType.setPlanId(planId);
         requestType.setTotalCaseCount(totalCaseCount);
         LOGGER.info("updateTotalCaseCount request:{}", requestType);
-        Response response = httpWepServiceApiClient.jsonPost(reportInitUrl, requestType,
+        Response response = httpWepServiceApiClient.jsonPost(updateReportInfoUrl, requestType,
                 GenericResponseType.class);
         LOGGER.info("updateTotalCaseCount response:{}", response);
     }
