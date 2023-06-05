@@ -6,8 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
 
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author jmo
@@ -19,7 +18,7 @@ import java.util.List;
 public class ReplayPlan {
     private String id;
     private String appId;
-    private int replaySendMaxQps;
+    private Integer replaySendMaxQps;
     @JsonIgnore
     private String planName;
 //    @JsonIgnore
@@ -64,13 +63,16 @@ public class ReplayPlan {
     @JsonIgnore
     private List<ReplayActionItem> replayActionItemList;
     @JsonIgnore
+    private List<PlanExecutionContext> executionContexts;
+    @JsonIgnore
     private String appName;
     @JsonIgnore
     private int caseCountLimit;
-
     @JsonIgnore
     private String errorMessage;
-
     private transient long planCreateMillis;
 
+    // Min(targetInstanceCount || Int.MAX, sourceInstanceCount || Int.MAX)
+    @JsonIgnore
+    private int minInstanceCount;
 }

@@ -6,7 +6,7 @@
     <packaging>${packagingType}</packaging>
     <groupId>com.arextest</groupId>
     <artifactId>arex-schedule-web-api</artifactId>
-    <version>1.0.24</version>
+    <version>1.0.25</version>
     <name>${project.groupId}:${project.artifactId}</name>
     <description>AREX schedule is used for replay.</description>
     <url>https://github.com/arextest/arex-replay-schedule</url>
@@ -16,7 +16,8 @@
         <spring.boot.version>2.6.3</spring.boot.version>
         <jmockit.version>1.37</jmockit.version>
         <lombok.version>1.18.2</lombok.version>
-        <compare-sdk.version>0.1.13</compare-sdk.version>
+        <guava.version>20.0</guava.version>
+        <compare-sdk.version>0.1.16</compare-sdk.version>
         <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
 
         <!-- single jacoco.exec file relative to root directory of the project -->
@@ -44,6 +45,11 @@
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
@@ -138,6 +144,10 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>

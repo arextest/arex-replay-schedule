@@ -17,7 +17,6 @@ import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.ConfigurationService;
 import com.arextest.schedule.service.DeployedEnvironmentService;
 import com.arextest.schedule.service.PlanConsumeService;
-import com.arextest.schedule.service.PlanProduceService;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -33,7 +32,7 @@ import java.util.List;
  */
 @Component
 @Slf4j
-public class SelfHealingInterrupted {
+public class SelfHealingExecutorImpl implements SelfHealingExecutor {
     @Resource
     private ReplayPlanRepository replayPlanRepository;
     @Resource
@@ -49,20 +48,18 @@ public class SelfHealingInterrupted {
     @Resource
     private PlanConsumeService planConsumeService;
     @Resource
-    private PlanProduceService planProduceService;
-    @Resource
     private PlanContextCreator planContextCreator;
     @Resource
     private DeployedEnvironmentService deployedEnvironmentService;
 
     // #TODO There is a problem here, Date and Duration types are compared
-    public void resumeTimeout(Duration offsetDuration, Duration maxDuration) {
-        List<ReplayPlan> planList = replayPlanRepository.timeoutPlanList(offsetDuration, maxDuration);
-        if (CollectionUtils.isEmpty(planList)) {
+    public void defaultSelfHealing(Duration offsetDuration, Duration maxDuration) {
+        List<ReplayPlan> timeoutPlans = queryTimeoutPlan(offsetDuration, maxDuration);
+        if (CollectionUtils.isEmpty(timeoutPlans)) {
             return;
         }
         long durationMillis = offsetDuration.toMillis();
-        for (ReplayPlan replayPlan : planList) {
+        for (ReplayPlan replayPlan : timeoutPlans) {
             String planId = replayPlan.getId();
             MDCTracer.addPlanId(planId);
             try {
@@ -79,7 +76,11 @@ public class SelfHealingInterrupted {
         MDCTracer.clear();
     }
 
-    private void doResume(ReplayPlan replayPlan) {
+    public List<ReplayPlan> queryTimeoutPlan(Duration offsetDuration, Duration maxDuration) {
+        return replayPlanRepository.timeoutPlanList(offsetDuration, maxDuration);
+    }
+
+    public void doResume(ReplayPlan replayPlan) {
         long planCreateMillis = System.currentTimeMillis();
         replayPlan.setPlanCreateMillis(planCreateMillis);
         String planId = replayPlan.getId();

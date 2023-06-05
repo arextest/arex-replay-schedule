@@ -2,6 +2,8 @@ package com.arextest.schedule.sender;
 
 import com.arextest.schedule.model.ReplayActionCaseItem;
 
+import java.util.Map;
+
 /**
  * @author jmo
  * @since 2021/9/16
@@ -22,11 +24,6 @@ public interface ReplaySender {
      * Try to send the request message to remote target host
      */
     ReplaySendResult send(SenderParameters senderParameters);
-
-    /**
-     * Try to prepare the replay case remote dependency such as resume config files
-     */
-    boolean prepareRemoteDependency(ReplayActionCaseItem caseItem);
 
     /**
      * Try to warm up the remote target service before sending

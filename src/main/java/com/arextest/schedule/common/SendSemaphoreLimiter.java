@@ -1,30 +1,59 @@
 package com.arextest.schedule.common;
 
 import com.google.common.util.concurrent.RateLimiter;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * Max QPS = APP Config Max || DEFAULT MAX(20)
+ * Initial QPS = Max QPS * STEP 0 RATIO (0.3)
+ *
+ * Consecutive 20 success API call -> try increase QPS to next step || increase by one if lower than the lowest ratio
+ * Any failed API call -> try reducing QPS to previous step || reduce by one if already lower or equal to the lowest step ratio
+ *
+ * Consecutive 40 failed API call || 10% of total case failed -> break execution
+ *
  * @author hzmeng
  * @since 2021/11/09
  */
 @SuppressWarnings("UnstableApiUsage")
 @Slf4j
 public final class SendSemaphoreLimiter {
-    private static final int DEFAULT_MIN_RATE = 1;
-    private static final int DEFAULT_MAX_RATE = 20;
-    private int sendMaxRate;
+    public static final double[] QPS_STEP_RATIO = {0.3, 0.5, 0.7, 1};
+    private static final int QPS_MAX_STEP = QPS_STEP_RATIO.length - 1;
+    private static final int QPS_INITIAL_STEP = 0;
+    private static final int ABSOLUTE_MIN_GUARD = 1;
+    public static final int DEFAULT_MAX_RATE = 20;
+    public final static int SUCCESS_COUNT_TO_BALANCE_NO_ERROR = 20;
+    public final static int CONTINUOUS_FAIL_TOTAL = 2 * SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
+    public final static int SUCCESS_COUNT_TO_BALANCE_WITH_ERROR = 5 * SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
+    public final static double ERROR_BREAK_RATE = 0.1;
+
+    private final int sendMaxRate;
+    private final int sendInitialRate;
+
+    @Getter
     private volatile int permits;
+    private volatile int currentStep = 0;
     private final ReplayHealthy checker = new ReplayHealthy();
     private final RateLimiter rateLimiter;
+
     @Setter
     private int totalTasks;
 
-    public SendSemaphoreLimiter() {
-        this.rateLimiter = RateLimiter.create(DEFAULT_MIN_RATE);
-        this.permits = DEFAULT_MIN_RATE;
+    public SendSemaphoreLimiter(Integer maxQpsPerInstance, Integer instanceCount) {
+        this.sendMaxRate = Optional.ofNullable(maxQpsPerInstance).filter(qps -> qps > 0).orElse(DEFAULT_MAX_RATE)
+                * instanceCount;
+
+        Integer actualInitialMinQps = this.getRatioOfStep(QPS_INITIAL_STEP);
+
+        this.sendInitialRate = actualInitialMinQps;
+        this.rateLimiter = RateLimiter.create(actualInitialMinQps);
+        this.permits = actualInitialMinQps;
     }
 
     public boolean failBreak() {
@@ -40,50 +69,56 @@ public final class SendSemaphoreLimiter {
         checker.statistic(success);
     }
 
-    public void reset() {
-        checker.reset();
-        permits = DEFAULT_MIN_RATE;
-        LOGGER.info("reset rate to default permits: {}", permits);
-        this.changeRateWithLog(permits);
-    }
-
-    private synchronized void tryReduceRate() {
-        LOGGER.info("try reduce rate , permits: {}", this.permits);
-        if (this.permits <= DEFAULT_MIN_RATE) {
-            return;
+    public void batchRelease(boolean success, int size) {
+        if (success) {
+            checker.batchSuccess(size);
+        } else {
+            checker.batchFail(size);
         }
-        this.changeRateWithLog(this.permits--);
     }
 
-    private synchronized void tryIncreaseRate() {
-        if (this.permits >= sendMaxRate) {
-            return;
+    private synchronized void tryModifyRate(boolean increase) {
+        Integer originalQps = this.permits;
+        Integer newQps = originalQps;
+
+        if (increase) {
+            // try step forward
+            if (this.currentStep < QPS_MAX_STEP && originalQps.equals(getRatioOfStep(this.currentStep))) {
+                this.currentStep += 1;
+                newQps = getRatioOfStep(this.currentStep);
+                // try increase by one until reach Min step
+            } else if (this.currentStep < QPS_MAX_STEP) {
+                newQps = originalQps + 1;
+            }
+        } else {
+            // try step back
+            if (this.currentStep > 1) {
+                this.currentStep -= 1;
+                newQps = getRatioOfStep(this.currentStep);
+                // try reducing to absolute min
+            } else if (originalQps > ABSOLUTE_MIN_GUARD) {
+                newQps = originalQps - 1;
+            } else {
+                newQps = ABSOLUTE_MIN_GUARD;
+            }
         }
-        this.changeRateWithLog(this.permits++);
+
+        if (!newQps.equals(originalQps)) {
+            this.permits = newQps;
+            this.rateLimiter.setRate(newQps);
+            LOGGER.info("send rate permits: {} -> {} (per second)", originalQps, newQps);
+        }
     }
 
-    private void changeRateWithLog(double newPermitsPerSecond) {
-        double beforeValue = this.rateLimiter.getRate();
-        this.rateLimiter.setRate(newPermitsPerSecond);
-        LOGGER.info("send rate permits: {} -> {} (per second)", beforeValue, newPermitsPerSecond);
+    private Integer getRatioOfStep(int step) {
+        int rate = (int) Math.floor(sendMaxRate * QPS_STEP_RATIO[step]);
+        if (rate == 0) {
+            return 1;
+        }
+        return rate;
     }
 
-
-    public void setSendMaxRate(int replaySendMaxQps) {
-        sendMaxRate = replaySendMaxQps > 0 ? replaySendMaxQps : DEFAULT_MAX_RATE;
-    }
-
-    /**
-     * todo: 临时
-     * 最初以最低频率执行， 没错误发生时，连需成功N(20)次就频率+1，直至最高频率
-     * 出错时，降低频率，需要连需5N次成功才提升频率
-     * 让出2N次出错，使其有机会降频去恢复，所以，设连续出错2N次或整个计划任务累计出错超10%，则中断回放
-     */
     private final class ReplayHealthy {
-        private final static int SUCCESS_COUNT_TO_BALANCE_NO_ERROR = 20;
-        private final static int CONTINUOUS_FAIL_TOTAL = 2 * SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
-        private final static int SUCCESS_COUNT_TO_BALANCE_WITH_ERROR = 5 * SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
-        private final static double ERROR_BREAK_RATE = 0.1;
         private volatile boolean hasError;
         private final AtomicInteger continuousSuccessCounter = new AtomicInteger();
         private final AtomicInteger failCounter = new AtomicInteger();
@@ -105,6 +140,22 @@ public final class SendSemaphoreLimiter {
             failCounter.incrementAndGet();
         }
 
+        private void batchFail(int size) {
+            hasError = true;
+
+            continuousSuccessCounter.set(0);
+            continuousFailCounter.addAndGet(size);
+            failCounter.addAndGet(size);
+        }
+
+        private void batchSuccess(int size) {
+            continuousSuccessCounter.addAndGet(size);
+            if (continuousFailCounter.get() < CONTINUOUS_FAIL_TOTAL) {
+                // reset to zero else pin down
+                continuousFailCounter.set(0);
+            }
+        }
+
         private boolean failBreak() {
             return continuousFailCounter.get() > CONTINUOUS_FAIL_TOTAL ||
                     (totalTasks > 0 && (failCounter.doubleValue() / totalTasks) > ERROR_BREAK_RATE);
@@ -118,13 +169,13 @@ public final class SendSemaphoreLimiter {
 
         private void tryChangeRate() {
             if (hasError) {
-                tryReduceRate();
+                tryModifyRate(false);
                 hasError = false;
                 checkCount = SUCCESS_COUNT_TO_BALANCE_WITH_ERROR;
                 return;
             }
             if (continuousSuccessCounter.get() > checkCount) {
-                tryIncreaseRate();
+                tryModifyRate(true);
                 continuousSuccessCounter.set(0);
                 checkCount = SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
             }

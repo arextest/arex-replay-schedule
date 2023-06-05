@@ -23,6 +23,7 @@ public class ReplayActionCaseItem {
     private String recordId;
     private String targetResultId;
     private String sourceResultId;
+    private String contextIdentifier;
 
     private ReplayActionItem parent;
     /**
