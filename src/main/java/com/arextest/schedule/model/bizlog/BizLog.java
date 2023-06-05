@@ -237,6 +237,8 @@ public class BizLog {
 
         CONTEXT_START(200, "Context: {0} init with action: {1}, before hook took {2} ms."),
         CONTEXT_AFTER_RUN(202, "Context: {0} done, after hook took {1} ms."),
+        CONTEXT_SKIP(203, "Context: {0} done, after hook took {1} ms."),
+        CONTEXT_NORMAL(204, "Context: {0} done, after hook took {1} ms."),
 
         ACTION_ITEM_EXECUTE_CONTEXT(300, "Operation: {0} id: {1} under context: {2} starts executing action type: {3}."),
         ACTION_ITEM_INIT_TOTAL_COUNT(302, "Operation: {0} id: {1} init total case count: {2}."),
