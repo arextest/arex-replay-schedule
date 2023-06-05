@@ -118,16 +118,6 @@ public class BizLog {
 
         log.postProcessAndEnqueue(plan);
     }
-
-    public static void recordPlanInterrupted(ReplayPlan plan, SendSemaphoreLimiter limiter) {
-        BizLog log = BizLog.error()
-                .logType(BizLogContent.PLAN_INTERRUPTED.getType())
-                .message(BizLogContent.PLAN_INTERRUPTED.format(limiter.totalError(),
-                        limiter.continuousError()))
-                .build();
-
-        log.postProcessAndEnqueue(plan);
-    }
     // endregion
 
     // region <Action Level Log>
@@ -164,19 +154,6 @@ public class BizLog {
                         action.getId(),
                         targetStatus,
                         reason))
-                .build();
-
-        log.postProcessAndEnqueue(action);
-    }
-
-    public static void recordActionInterrupted(ReplayActionItem action) {
-        BizLog log = BizLog.error()
-                .logType(BizLogContent.ACTION_ITEM_INTERRUPTED.getType())
-                .message(BizLogContent.ACTION_ITEM_INTERRUPTED.format(
-                        action.getOperationName(),
-                        action.getId(),
-                        action.getSendRateLimiter().totalError(),
-                        action.getSendRateLimiter().continuousError()))
                 .build();
 
         log.postProcessAndEnqueue(action);
@@ -254,8 +231,6 @@ public class BizLog {
         PLAN_DONE(3, "Plan send job done normally."),
         PLAN_ASYNC_RUN_START(4, "Plan async task init."),
         PLAN_STATUS_CHANGE(5, "Plan status changed to {0}, because of [{1}]."),
-        PLAN_INTERRUPTED(305, "Plan interrupted, because Qps limiter with total error count of: {0} and continuous error of: {1}."),
-
 
         QPS_LIMITER_INIT(100, "Qps limiter init with initial total rate of {0} for {1} instances."),
         QPS_LIMITER_CHANGE(101, "Qps limit changed from {0} to {1}."),
@@ -267,7 +242,6 @@ public class BizLog {
         ACTION_ITEM_INIT_TOTAL_COUNT(302, "Operation: {0} id: {1} init total case count: {2}."),
         ACTION_ITEM_STATUS_CHANGED(303, "Operation: {0} id: {1} status changed to {2}, because of [{3}]."),
         ACTION_ITEM_SENT(304, "All cases of Operation: {0} id: {1} sent, total size: {2}"),
-        ACTION_ITEM_INTERRUPTED(305, "Operation: {0} id: {1} status interrupted, because Qps limiter with total error count of: {2} and continuous error of: {3}."),
         ;
         BizLogContent(int type, String template) {
             this.type = type;

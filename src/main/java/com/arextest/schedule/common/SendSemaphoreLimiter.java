@@ -34,11 +34,11 @@ public final class SendSemaphoreLimiter {
     public final static int CONTINUOUS_FAIL_TOTAL = 2 * SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
     public final static int SUCCESS_COUNT_TO_BALANCE_WITH_ERROR = 5 * SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
     public final static double ERROR_BREAK_RATE = 0.1;
+    private final int sendMaxRate;
+    private final int sendInitialRate;
 
     @Setter
     private ReplayPlan replayPlan;
-    private final int sendMaxRate;
-    private final int sendInitialRate;
 
     @Getter
     private volatile int permits;
@@ -134,7 +134,6 @@ public final class SendSemaphoreLimiter {
     private final class ReplayHealthy {
         private volatile boolean hasError;
         private final AtomicInteger continuousSuccessCounter = new AtomicInteger();
-
         private final AtomicInteger failCounter = new AtomicInteger();
         private final AtomicInteger continuousFailCounter = new AtomicInteger();
         private volatile int checkCount = SUCCESS_COUNT_TO_BALANCE_NO_ERROR;

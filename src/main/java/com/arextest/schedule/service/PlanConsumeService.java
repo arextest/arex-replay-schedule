@@ -146,8 +146,8 @@ public final class PlanConsumeService {
         // limiter shared for entire plan, max qps = maxQps per instance * min instance count
         final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps(),
                 replayPlan.getMinInstanceCount());
-        qpsLimiter.setReplayPlan(replayPlan);
         qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
+        qpsLimiter.setReplayPlan(replayPlan);
 
         BizLog.recordQpsInit(replayPlan, qpsLimiter.getPermits(), replayPlan.getMinInstanceCount());
 
@@ -179,7 +179,10 @@ public final class PlanConsumeService {
 
         if (sendResult.isInterrupted()) {
             progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
-            BizLog.recordPlanInterrupted(replayPlan, qpsLimiter);
+
+            // todo, fix the qps limiter counter
+            BizLog.recordPlanStatusChange(replayPlan, ReplayStatusType.FAIL_INTERRUPTED.name(),
+                    "Plan Interrupted by QPS limiter.");
             return;
         }
         BizLog.recordPlanDone(replayPlan);
@@ -228,7 +231,6 @@ public final class PlanConsumeService {
 
         if (sendResult.isInterrupted() && replayActionItem.getReplayStatus() != ReplayStatusType.FAIL_INTERRUPTED.getValue()) {
             progressEvent.onActionInterrupted(replayActionItem);
-            BizLog.recordActionInterrupted(replayActionItem);
             return;
         }
 
@@ -241,7 +243,6 @@ public final class PlanConsumeService {
 
         if (sendResult.isInterrupted() && replayActionItem.getReplayStatus() != ReplayStatusType.FAIL_INTERRUPTED.getValue()) {
             progressEvent.onActionInterrupted(replayActionItem);
-            BizLog.recordActionInterrupted(replayActionItem);
         }
 
         if (sendResult.isNormal() &&
