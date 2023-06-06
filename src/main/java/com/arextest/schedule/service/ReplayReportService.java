@@ -95,10 +95,9 @@ public final class ReplayReportService implements ComparisonWriter {
             reportItemList.add(reportItem);
         }
         requestType.setReportItemList(reportItemList);
-        LOGGER.info("initReport request:{}", requestType);
         Response response = httpWepServiceApiClient.jsonPost(reportInitUrl, requestType,
                 GenericResponseType.class);
-        LOGGER.info("initReport response:{}", response);
+        LOGGER.info("initReport request:{}, response:{}", requestType, response);
     }
 
     public void updateReportCaseCount(ReplayPlan replayPlan) {
@@ -117,10 +116,9 @@ public final class ReplayReportService implements ComparisonWriter {
             }
             requestType.setUpdateReportItems(updateReportInfoList);
         }
-        LOGGER.info("updateReportTotalCaseCount request:{}", requestType);
         Response response = httpWepServiceApiClient.jsonPost(updateReportInfoUrl, requestType,
                 GenericResponseType.class);
-        LOGGER.info("updateTotalCaseCount response:{}", response);
+        LOGGER.info("updateReportCaseCount request:{}, response:{}", requestType, response);
     }
 
     public void pushActionStatus(String planId, ReplayStatusType statusType, String actionId, String errorMessage) {
