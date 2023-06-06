@@ -1,8 +1,10 @@
 package com.arextest.schedule.sender.impl;
 
+import com.alibaba.dubbo.common.api.LsfApi;
 import com.alibaba.dubbo.config.ApplicationConfig;
 import com.alibaba.dubbo.config.ReferenceConfig;
 import com.alibaba.dubbo.rpc.RpcContext;
+import com.alibaba.dubbo.rpc.protocol.dubbo.DecodeableRpcResult;
 import com.alibaba.dubbo.rpc.service.GenericService;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
@@ -55,6 +57,7 @@ public class DubboReplaySender extends AbstractReplaySender {
         Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
         headers.remove(CommonConstant.AREX_REPLAY_WARM_UP);
         headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
+        LsfApi.putTag(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
         headers.put(CommonConstant.AREX_SCHEDULE_REPLAY, Boolean.TRUE.toString());
         String exclusionOperationConfig = replayActionItem.getExclusionOperationConfig();
         if (StringUtils.isNotEmpty(exclusionOperationConfig)) {
@@ -85,7 +88,7 @@ public class DubboReplaySender extends AbstractReplaySender {
         //custom dubbo protocol
         if (!StringUtils.equals(protocol, ServiceInstance.DUBBO_PROTOCOL)) {
             LOGGER.info("custom dubbo protocol:{}", protocol);
-            handleCustomProtocol(protocol);
+            //handleCustomProtocol(protocol);
         }
 
         RpcContext.getContext().setAttachments(headers);
@@ -141,6 +144,7 @@ public class DubboReplaySender extends AbstractReplaySender {
             attachments.forEach(responseHeaders::add);
             traceId = attachments.get(CommonConstant.AREX_REPLAY_ID);
         }
+        if (traceId == null) traceId = DecodeableRpcResult.replayId;
         LOGGER.info("invoke result url:{}, request header:{}, response header:{}, body:{}", url, requestHeaders,
                 responseHeaders, body);
         if (!isReplayRequest(requestHeaders)) {
