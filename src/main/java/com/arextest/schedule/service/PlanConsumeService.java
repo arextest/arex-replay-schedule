@@ -95,7 +95,7 @@ public final class PlanConsumeService {
                     replayPlan.getAppId(), replayPlan.getCaseTotalCount(), planSavedCaseSize);
             replayPlan.setCaseTotalCount(planSavedCaseSize);
             replayPlanRepository.updateCaseTotal(replayPlan.getId(), planSavedCaseSize);
-            replayReportService.updateTotalCaseCount(replayPlan.getId(), planSavedCaseSize);
+            replayReportService.updateReportCaseCount(replayPlan);
         }
         return planSavedCaseSize;
     }
@@ -109,13 +109,11 @@ public final class PlanConsumeService {
             }
             int preloaded = replayActionItem.getReplayCaseCount();
             int actionSavedCount = streamingCaseItemSave(replayActionItem);
-            replayActionItem.setReplayCaseCount(actionSavedCount);
             planSavedCaseSize += actionSavedCount;
             if (preloaded != actionSavedCount) {
                 replayActionItem.setReplayCaseCount(actionSavedCount);
                 LOGGER.warn("The saved case size of actionItem not equals, preloaded size:{},saved size:{}", preloaded,
                         actionSavedCount);
-                replayReportService.updateCaseItemCount(replayActionItem.getPlanId(), replayActionItem.getId(), actionSavedCount);
             }
             progressEvent.onActionCaseLoaded(replayActionItem);
         }

@@ -101,26 +101,23 @@ public final class ReplayReportService implements ComparisonWriter {
         LOGGER.info("initReport response:{}", response);
     }
 
-    public void updateCaseItemCount(String planId, String planItemId, Integer caseItemCount) {
+    public void updateReportCaseCount(ReplayPlan replayPlan) {
         UpdateReportInfoRequestType requestType = new UpdateReportInfoRequestType();
-        requestType.setPlanId(planId);
-        List<UpdateReportInfoRequestType.UpdateReportItem> updateReportInfoList = new ArrayList<>();
-        UpdateReportInfoRequestType.UpdateReportItem reportItem = new UpdateReportInfoRequestType.UpdateReportItem();
-        reportItem.setPlanItemId(planItemId);
-        reportItem.setTotalCaseCount(caseItemCount);
-        updateReportInfoList.add(reportItem);
-        requestType.setUpdateReportItems(updateReportInfoList);
-        LOGGER.info("updateCaseItemCount request:{}", requestType);
-        Response response = httpWepServiceApiClient.jsonPost(updateReportInfoUrl, requestType,
-                GenericResponseType.class);
-        LOGGER.info("updateCaseItemCount response:{}", response);
-    }
-
-    public void updateTotalCaseCount(String planId, Integer totalCaseCount) {
-        UpdateReportInfoRequestType requestType = new UpdateReportInfoRequestType();
-        requestType.setPlanId(planId);
-        requestType.setTotalCaseCount(totalCaseCount);
-        LOGGER.info("updateTotalCaseCount request:{}", requestType);
+        requestType.setPlanId(replayPlan.getId());
+        requestType.setTotalCaseCount(replayPlan.getCaseTotalCount());
+        List<ReplayActionItem> actionItemList = replayPlan.getReplayActionItemList();
+        if (CollectionUtils.isNotEmpty(actionItemList)) {
+            List<UpdateReportInfoRequestType.UpdateReportItem> updateReportInfoList = new ArrayList<>(actionItemList.size());
+            UpdateReportInfoRequestType.UpdateReportItem reportItem;
+            for (ReplayActionItem actionItem : actionItemList) {
+                reportItem = new UpdateReportInfoRequestType.UpdateReportItem();
+                reportItem.setPlanItemId(actionItem.getId());
+                reportItem.setTotalCaseCount(actionItem.getReplayCaseCount());
+                updateReportInfoList.add(reportItem);
+            }
+            requestType.setUpdateReportItems(updateReportInfoList);
+        }
+        LOGGER.info("updateReportTotalCaseCount request:{}", requestType);
         Response response = httpWepServiceApiClient.jsonPost(updateReportInfoUrl, requestType,
                 GenericResponseType.class);
         LOGGER.info("updateTotalCaseCount response:{}", response);
