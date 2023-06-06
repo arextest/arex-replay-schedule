@@ -50,6 +50,8 @@ public final class PlanConsumeService {
     private MetricService metricService;
     @Resource
     private PlanExecutionContextProvider planExecutionContextProvider;
+    @Resource
+    private ReplayReportService replayReportService;
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
         // TODO: remove block thread use async to load & send for all
@@ -93,6 +95,7 @@ public final class PlanConsumeService {
                     replayPlan.getAppId(), replayPlan.getCaseTotalCount(), planSavedCaseSize);
             replayPlan.setCaseTotalCount(planSavedCaseSize);
             replayPlanRepository.updateCaseTotal(replayPlan.getId(), planSavedCaseSize);
+            replayReportService.updateReportCaseCount(replayPlan);
         }
         return planSavedCaseSize;
     }
@@ -104,10 +107,9 @@ public final class PlanConsumeService {
                 planSavedCaseSize += replayActionItem.getReplayCaseCount();
                 continue;
             }
-            int actionSavedCount = streamingCaseItemSave(replayActionItem);
-            replayActionItem.setReplayCaseCount(actionSavedCount);
-            planSavedCaseSize += actionSavedCount;
             int preloaded = replayActionItem.getReplayCaseCount();
+            int actionSavedCount = streamingCaseItemSave(replayActionItem);
+            planSavedCaseSize += actionSavedCount;
             if (preloaded != actionSavedCount) {
                 replayActionItem.setReplayCaseCount(actionSavedCount);
                 LOGGER.warn("The saved case size of actionItem not equals, preloaded size:{},saved size:{}", preloaded,
