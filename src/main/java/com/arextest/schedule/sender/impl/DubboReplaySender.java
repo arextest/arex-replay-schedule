@@ -4,7 +4,6 @@ import com.alibaba.dubbo.common.api.LsfApi;
 import com.alibaba.dubbo.config.ApplicationConfig;
 import com.alibaba.dubbo.config.ReferenceConfig;
 import com.alibaba.dubbo.rpc.RpcContext;
-import com.alibaba.dubbo.rpc.protocol.dubbo.DecodeableRpcResult;
 import com.alibaba.dubbo.rpc.service.GenericService;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
@@ -144,7 +143,7 @@ public class DubboReplaySender extends AbstractReplaySender {
             attachments.forEach(responseHeaders::add);
             traceId = attachments.get(CommonConstant.AREX_REPLAY_ID);
         }
-        if (traceId == null) traceId = DecodeableRpcResult.replayId;
+        //if (traceId == null) traceId = DecodeableRpcResult.replayId;
         LOGGER.info("invoke result url:{}, request header:{}, response header:{}, body:{}", url, requestHeaders,
                 responseHeaders, body);
         if (!isReplayRequest(requestHeaders)) {
