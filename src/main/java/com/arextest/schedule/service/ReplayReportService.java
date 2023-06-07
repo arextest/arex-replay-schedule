@@ -6,7 +6,7 @@ import com.arextest.common.model.response.Response;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.model.mock.MockCategoryType;
-import com.arextest.schedule.model.bizlog.BizLog;
+import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
 import com.arextest.web.model.contract.contracts.ChangeReplayStatusRequestType;
 import com.arextest.web.model.contract.contracts.PushCompareResultsRequestType;
 import com.arextest.web.model.contract.contracts.ReportInitialRequestType;
@@ -30,6 +30,8 @@ import java.util.*;
 @Slf4j
 @Component
 public final class ReplayReportService implements ComparisonWriter {
+    @Resource
+    private ReplayCompareResultRepositoryImpl replayCompareResultRepository;
     @Resource
     private HttpWepServiceApiClient httpWepServiceApiClient;
     @Value("${arex.report.init.url}")
@@ -96,6 +98,7 @@ public final class ReplayReportService implements ComparisonWriter {
             reportItemList.add(reportItem);
         }
         requestType.setReportItemList(reportItemList);
+        LOGGER.info("initReport request:{}", requestType);
         Response response = httpWepServiceApiClient.jsonPost(reportInitUrl, requestType,
                 GenericResponseType.class);
         LOGGER.info("initReport request:{}, response:{}", requestType, response);
@@ -153,17 +156,10 @@ public final class ReplayReportService implements ComparisonWriter {
             return true;
         }
         int comparedSize = comparedResult.size();
+
         PushCompareResultsRequestType requestType = new PushCompareResultsRequestType();
-        List<CompareResult> results = new ArrayList<>(comparedSize);
-        CompareResult requestResult;
-        ReplayCompareResult sourceResult;
-        ReportResultConverter converter = ReportResultConverter.DEFAULT;
-        for (int i = 0; i < comparedSize; i++) {
-            sourceResult = comparedResult.get(i);
-            requestResult = converter.to(sourceResult);
-            results.add(requestResult);
-        }
-        requestType.setResults(results);
+        List<String> ids = replayCompareResultRepository.insertAllCompareResults(comparedResult);
+        requestType.setResults();
         Response response = httpWepServiceApiClient.jsonPost(pushReplayCompareResultUrl, requestType,
                 GenericResponseType.class);
         if (response == null || response.getResponseStatusType().hasError()) {
@@ -186,9 +182,11 @@ public final class ReplayReportService implements ComparisonWriter {
             return true;
         }
         PushCompareResultsRequestType requestType = new PushCompareResultsRequestType();
-        List<CompareResult> results = new ArrayList<>();
-        results.add(toQMQCompareResult(caseItem));
-        requestType.setResults(results);
+
+        List<String> ids = this.replayCompareResultRepository.insertAllCompareResults(
+                Collections.singletonList(toQMQCompareResult(caseItem)));
+        requestType.setResults();
+
         Response response = httpWepServiceApiClient.jsonPost(pushReplayCompareResultUrl, requestType,
                 GenericResponseType.class);
         if (response == null || response.getResponseStatusType().hasError()) {
@@ -197,8 +195,8 @@ public final class ReplayReportService implements ComparisonWriter {
         return true;
     }
 
-    private CompareResult toQMQCompareResult(ReplayActionCaseItem caseItem) {
-        CompareResult compareResult = new CompareResult();
+    private ReplayCompareResult toQMQCompareResult(ReplayActionCaseItem caseItem) {
+        ReplayCompareResult compareResult = new ReplayCompareResult();
         ReplayActionItem parent = caseItem.getParent();
         compareResult.setPlanId(parent.getPlanId());
         compareResult.setOperationId(parent.getOperationId());
