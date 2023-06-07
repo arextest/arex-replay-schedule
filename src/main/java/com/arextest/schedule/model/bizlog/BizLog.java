@@ -1,6 +1,5 @@
 package com.arextest.schedule.model.bizlog;
 
-import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
@@ -8,6 +7,7 @@ import com.arextest.schedule.model.ReplayPlan;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.text.MessageFormat;
 import java.util.Collection;
@@ -19,6 +19,7 @@ import java.util.Optional;
  */
 @Data
 @Builder
+@SuppressWarnings("rawtypes")
 public class BizLog {
     private Date date;
     private int level;
@@ -33,7 +34,8 @@ public class BizLog {
     private String actionItemId;
     private String operationName;
 
-    // private Throwable exception;
+    private String exception;
+    private String extra;
 
     public static BizLogBuilder constructBase() {
         return BizLog.builder().date(new Date());
@@ -118,6 +120,16 @@ public class BizLog {
 
         log.postProcessAndEnqueue(plan);
     }
+
+    public static void recordPlanException(ReplayPlan plan, Throwable t) {
+        BizLog log = BizLog.error()
+                .logType(BizLogContent.PLAN_FATAL_ERROR.getType())
+                .message(BizLogContent.PLAN_FATAL_ERROR.format())
+                .exception(BizLogContent.throwableToString(t))
+                .build();
+
+        log.postProcessAndEnqueue(plan);
+    }
     // endregion
 
     // region <Action Level Log>
@@ -166,6 +178,18 @@ public class BizLog {
                         action.getOperationName(),
                         action.getId(),
                         action.getCaseProcessCount()))
+                .build();
+
+        log.postProcessAndEnqueue(action);
+    }
+
+    public static void recordActionItemBatchSent(ReplayActionItem action, int batchSize) {
+        BizLog log = BizLog.info()
+                .logType(BizLogContent.ACTION_ITEM_BATCH_SENT.getType())
+                .message(BizLogContent.ACTION_ITEM_BATCH_SENT.format(
+                        action.getOperationName(),
+                        action.getId(),
+                        batchSize))
                 .build();
 
         log.postProcessAndEnqueue(action);
@@ -231,6 +255,7 @@ public class BizLog {
         PLAN_DONE(3, "Plan send job done normally."),
         PLAN_ASYNC_RUN_START(4, "Plan async task init."),
         PLAN_STATUS_CHANGE(5, "Plan status changed to {0}, because of [{1}]."),
+        PLAN_FATAL_ERROR(6, "Plan execution encountered unchecked exception or error."),
 
         QPS_LIMITER_INIT(100, "Qps limiter init with initial total rate of {0} for {1} instances."),
         QPS_LIMITER_CHANGE(101, "Qps limit changed from {0} to {1}."),
@@ -244,6 +269,7 @@ public class BizLog {
         ACTION_ITEM_INIT_TOTAL_COUNT(302, "Operation: {0} id: {1} init total case count: {2}."),
         ACTION_ITEM_STATUS_CHANGED(303, "Operation: {0} id: {1} status changed to {2}, because of [{3}]."),
         ACTION_ITEM_SENT(304, "All cases of Operation: {0} id: {1} sent, total size: {2}"),
+        ACTION_ITEM_BATCH_SENT(305, "Batch cases of Operation: {0} id: {1} sent, size: {2}"),
         ;
         BizLogContent(int type, String template) {
             this.type = type;
@@ -251,10 +277,10 @@ public class BizLog {
         }
 
         @Getter
-        private String template;
+        private final String template;
 
         @Getter
-        private int type;
+        private final int type;
 
         public String format(Object... args) {
             try {
@@ -262,6 +288,10 @@ public class BizLog {
             } catch (Exception e) {
                 return this.getTemplate();
             }
+        }
+
+        public static String throwableToString(Throwable throwable) {
+            return ExceptionUtils.getStackTrace(throwable);
         }
     }
 }

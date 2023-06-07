@@ -17,6 +17,7 @@ import io.netty.util.internal.MathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -56,7 +57,8 @@ public final class PlanConsumeService {
     @Resource
     private PlanExecutionContextProvider planExecutionContextProvider;
 
-    private static final int LOG_SIZE_TO_SAVE_CHECK = 1000;
+    @Value("${arex.schedule.bizLog.sizeToSave}")
+    private int LOG_SIZE_TO_SAVE_CHECK;
     private static final long LOG_TIME_GAP_TO_SAVE_CHECK = 10 * 1000;
 
 
@@ -98,6 +100,9 @@ public final class PlanConsumeService {
                 if (planSavedCaseSize == 0) {
                     progressEvent.onReplayPlanFinish(replayPlan);
                 }
+            } catch (Throwable t) {
+                BizLog.recordPlanException(replayPlan, t);
+                throw t;
             } finally {
                 replayBizLogRepository.saveAll(replayPlan.getBizLogs());
             }
@@ -279,6 +284,8 @@ public final class PlanConsumeService {
                         break;
                     }
                     sendResult.setCanceled(replayCaseTransmitService.send(replayActionItem));
+
+                    BizLog.recordActionItemBatchSent(replayActionItem, sourceItemList.size());
                 }
         }
     }
