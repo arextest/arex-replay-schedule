@@ -59,7 +59,7 @@ public final class PlanConsumeService {
 
     @Value("${arex.schedule.bizLog.sizeToSave}")
     private int LOG_SIZE_TO_SAVE_CHECK;
-    private static final long LOG_TIME_GAP_TO_SAVE_CHECK = 10 * 1000;
+    private static final long LOG_TIME_GAP_TO_SAVE_CHECK = 10 * 1000L;
 
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
