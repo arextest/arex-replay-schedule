@@ -1,10 +1,10 @@
 package com.arextest.schedule.progress.impl;
 
 import com.arextest.common.cache.CacheProvider;
+import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
-import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +44,7 @@ final class RedisProgressTracerImpl implements ProgressTracer {
         int actionCaseCount;
         for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
             actionCaseCount = replayActionItem.getReplayCaseCount();
-            BizLog.recordActionItemCaseCount(replayActionItem);
+            BizLogger.recordActionItemCaseCount(replayActionItem);
             if (actionCaseCount > 0) {
                 setupRedisNxWithExpire(toPlanActionTotalKeyBytes(replayActionItem.getId()),
                         String.valueOf(actionCaseCount).getBytes(StandardCharsets.UTF_8));

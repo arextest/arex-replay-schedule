@@ -1,7 +1,7 @@
 package com.arextest.schedule.common;
 
+import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.model.ReplayPlan;
-import com.arextest.schedule.model.bizlog.BizLog;
 import com.google.common.util.concurrent.RateLimiter;
 import lombok.Getter;
 import lombok.Setter;
@@ -111,7 +111,7 @@ public final class SendSemaphoreLimiter {
             this.permits = newQps;
             this.rateLimiter.setRate(newQps);
             LOGGER.info("send rate permits: {} -> {} (per second)", originalQps, newQps);
-            BizLog.recordQPSChange(this.replayPlan, originalQps, newQps);
+            BizLogger.recordQPSChange(this.replayPlan, originalQps, newQps);
         }
     }
 

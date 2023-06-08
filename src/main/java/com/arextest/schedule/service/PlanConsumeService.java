@@ -1,5 +1,6 @@
 package com.arextest.schedule.service;
 
+import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
@@ -21,7 +22,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -64,7 +68,7 @@ public final class PlanConsumeService {
 
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
-        BizLog.recordPlanAsyncStart(replayPlan);
+        BizLogger.recordPlanAsyncStart(replayPlan);
         // TODO: remove block thread use async to load & send for all
         preloadExecutorService.execute(new ReplayActionLoadingRunnableImpl(replayPlan));
     }
@@ -81,16 +85,16 @@ public final class PlanConsumeService {
         protected void doWithTracedRunning() {
             try {
                 int planSavedCaseSize = saveActionCaseToSend(replayPlan);
-                BizLog.recordPlanCaseSaved(replayPlan, planSavedCaseSize);
+                BizLogger.recordPlanCaseSaved(replayPlan, planSavedCaseSize);
 
                 replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
-                BizLog.recordContextBuilt(replayPlan);
+                BizLogger.recordContextBuilt(replayPlan);
 
                 if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
                     LOGGER.error("Invalid context built for plan {}", replayPlan);
                     replayPlan.setErrorMessage("Got empty execution context");
                     progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
-                    BizLog.recordPlanStatusChange(replayPlan, ReplayStatusType.FAIL_INTERRUPTED.name(),
+                    BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.FAIL_INTERRUPTED.name(),
                             "NO context to execute");
                     return;
                 }
@@ -102,7 +106,7 @@ public final class PlanConsumeService {
                     progressEvent.onReplayPlanFinish(replayPlan);
                 }
             } catch (Throwable t) {
-                BizLog.recordPlanException(replayPlan, t);
+                BizLogger.recordPlanException(replayPlan, t);
                 throw t;
             } finally {
                 replayBizLogRepository.saveAll(replayPlan.getBizLogs());
@@ -155,7 +159,7 @@ public final class PlanConsumeService {
         qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
         qpsLimiter.setReplayPlan(replayPlan);
 
-        BizLog.recordQpsInit(replayPlan, qpsLimiter.getPermits(), replayPlan.getMinInstanceCount());
+        BizLogger.recordQpsInit(replayPlan, qpsLimiter.getPermits(), replayPlan.getMinInstanceCount());
 
         ExecutionStatus sendResult = ExecutionStatus.buildNormal();
         for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
@@ -165,21 +169,21 @@ public final class PlanConsumeService {
             start = System.currentTimeMillis();
             planExecutionContextProvider.onBeforeContextExecution(executionContext, replayPlan);
             end = System.currentTimeMillis();
-            BizLog.recordContextBeforeRun(executionContext, end - start);
+            BizLogger.recordContextBeforeRun(executionContext, end - start);
 
             executeContext(replayPlan, qpsLimiter, executionContext);
 
             start = System.currentTimeMillis();
             planExecutionContextProvider.onAfterContextExecution(executionContext, replayPlan);
             end = System.currentTimeMillis();
-            BizLog.recordContextAfterRun(executionContext, end - start);
+            BizLogger.recordContextAfterRun(executionContext, end - start);
 
             tryFlushingLogs(replayPlan);
         }
 
         if (sendResult.isCanceled()) {
             progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.CANCELLED);
-            BizLog.recordPlanStatusChange(replayPlan, ReplayStatusType.CANCELLED.name(), "Plan Canceled");
+            BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.CANCELLED.name(), "Plan Canceled");
             return;
         }
 
@@ -187,11 +191,11 @@ public final class PlanConsumeService {
             progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
 
             // todo, fix the qps limiter counter
-            BizLog.recordPlanStatusChange(replayPlan, ReplayStatusType.FAIL_INTERRUPTED.name(),
+            BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.FAIL_INTERRUPTED.name(),
                     "Plan Interrupted by QPS limiter.");
             return;
         }
-        BizLog.recordPlanDone(replayPlan);
+        BizLogger.recordPlanDone(replayPlan);
         LOGGER.info("All the plan action sent,waiting to compare, plan id:{} ,appId: {} ", replayPlan.getId(),
                 replayPlan.getAppId());
     }
@@ -206,7 +210,7 @@ public final class PlanConsumeService {
                 if (replayActionItem.isEmpty()) {
                     replayActionItem.setReplayFinishTime(new Date());
                     progressEvent.onActionComparisonFinish(replayActionItem);
-                    BizLog.recordActionStatusChange(replayActionItem, ReplayStatusType.FINISHED.name(),
+                    BizLogger.recordActionStatusChange(replayActionItem, ReplayStatusType.FINISHED.name(),
                             "No case needs to be sent");
                 }
             }
@@ -226,11 +230,11 @@ public final class PlanConsumeService {
     }
 
     private void sendItemByContext(ReplayActionItem replayActionItem, PlanExecutionContext currentContext) {
-        BizLog.recordActionUnderContext(replayActionItem, currentContext);
+        BizLogger.recordActionUnderContext(replayActionItem, currentContext);
 
         ExecutionStatus sendResult = currentContext.getExecutionStatus();
         if (sendResult.isCanceled() && replayActionItem.getReplayStatus() != ReplayStatusType.CANCELLED.getValue()) {
-            BizLog.recordActionStatusChange(replayActionItem, ReplayStatusType.CANCELLED.name(), "");
+            BizLogger.recordActionStatusChange(replayActionItem, ReplayStatusType.CANCELLED.name(), "");
             progressEvent.onActionCancelled(replayActionItem);
             return;
         }
@@ -254,7 +258,7 @@ public final class PlanConsumeService {
         if (sendResult.isNormal() &&
                 MathUtil.compare(replayActionItem.getReplayCaseCount(), replayActionItem.getCaseProcessCount()) == 0) {
             progressEvent.onActionAfterSend(replayActionItem);
-            BizLog.recordActionItemSent(replayActionItem);
+            BizLogger.recordActionItemSent(replayActionItem);
         }
     }
 
@@ -286,7 +290,7 @@ public final class PlanConsumeService {
                     }
                     sendResult.setCanceled(replayCaseTransmitService.send(replayActionItem));
 
-                    BizLog.recordActionItemBatchSent(replayActionItem, sourceItemList.size());
+                    BizLogger.recordActionItemBatchSent(replayActionItem, sourceItemList.size());
                 }
         }
     }

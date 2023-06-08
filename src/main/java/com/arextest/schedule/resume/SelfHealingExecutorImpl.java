@@ -1,5 +1,6 @@
 package com.arextest.schedule.resume;
 
+import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
@@ -103,7 +104,7 @@ public class SelfHealingExecutorImpl implements SelfHealingExecutor {
         }
         replayPlan.setReplayActionItemList(actionItems);
         replayPlan.setResumed(true);
-        BizLog.recordResumeRun(replayPlan);
+        BizLogger.recordResumeRun(replayPlan);
         doResumeOperationDescriptor(replayPlan);
         doResumeLastRecordTime(actionItems);
         ReplayParentBinder.setupReplayActionParent(actionItems, replayPlan);
