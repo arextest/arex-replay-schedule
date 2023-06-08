@@ -62,14 +62,6 @@ public class ReplayPlanController {
         return CommonResponse.successResponse("success", null);
     }
 
-    @GetMapping("/api/queryPlanLogs/{planId}")
-    @ResponseBody
-    public CommonResponse queryPlanLogs(@PathVariable("planId") String planId) {
-        List<ReplayBizLogCollection> logs = planBizLogService.queryBizLogsByPlanId(planId);
-        return CommonResponse.successResponse("success", logs);
-    }
-
-
     @GetMapping("/progress")
     @ResponseBody
     public CommonResponse progress(String planId) {
