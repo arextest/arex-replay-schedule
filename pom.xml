@@ -26,7 +26,7 @@
         <sonar.exclusions>
             **/controller/**,
             **/model/**,
-            **/mapping/**,
+            **/mapping/**
         </sonar.exclusions>
         <sonar.cpd.exclusions>
             **/model/dao/**
