@@ -15,7 +15,6 @@ import java.util.Optional;
  */
 @Data
 @Builder
-@SuppressWarnings("rawtypes")
 public class BizLog {
     private Date date;
     private int level;
@@ -59,6 +58,7 @@ public class BizLog {
         plan.enqueueBizLog(this);
     }
 
+    @SuppressWarnings("rawtypes")
     public void postProcessAndEnqueue(PlanExecutionContext context) {
         this.setContextName(context.getContextName());
         this.postProcessAndEnqueue(context.getPlan());

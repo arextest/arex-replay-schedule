@@ -15,6 +15,7 @@ public class ReplayBizLogQueryCondition {
     private List<Integer> levels;
     private List<Integer> types;
     private List<String> actionItems;
+    private Boolean resumedExecution;
 
     public void validate() {
         this.pageNum = Optional.ofNullable(this.getPageNum()).filter(i -> i > 0).orElse(1);

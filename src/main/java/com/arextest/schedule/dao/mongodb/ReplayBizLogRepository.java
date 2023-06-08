@@ -37,6 +37,7 @@ public class ReplayBizLogRepository implements RepositoryField {
     private static final String LOG_LEVEL_KEY = "level";
     private static final String LOG_TYPE_KEY = "logType";
     private static final String LOG_ACTION_ID_KEY = "actionItemId";
+    private static final String LOG_RESUME_KEY = "resumedExecution";
     private static final String[] EXCLUSIONS = {"dataChangeCreateTime",
             "dataChangeUpdateTime",
             "dataChangeCreateDate",
@@ -91,6 +92,10 @@ public class ReplayBizLogRepository implements RepositoryField {
 
         if (!CollectionUtils.isEmpty(condition.getActionItems())) {
             query.addCriteria(Criteria.where(LOG_ACTION_ID_KEY).in(condition.getActionItems()));
+        }
+
+        if (condition.getResumedExecution() != null) {
+            query.addCriteria(Criteria.where(LOG_RESUME_KEY).is(condition.getResumedExecution()));
         }
 
         return query;
