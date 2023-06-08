@@ -6,6 +6,7 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Date;
 import java.util.Optional;
@@ -15,6 +16,7 @@ import java.util.Optional;
  */
 @Data
 @Builder
+@Slf4j
 public class BizLog {
     private Date date;
     private int level;
@@ -53,6 +55,10 @@ public class BizLog {
     }
 
     public void postProcessAndEnqueue(ReplayPlan plan) {
+        if (plan == null) {
+            LOGGER.warn("Biz logger got null plan");
+            return;
+        }
         this.setPlanId(plan.getId());
         this.setResumedExecution(plan.isResumed());
         plan.enqueueBizLog(this);
@@ -60,17 +66,29 @@ public class BizLog {
 
     @SuppressWarnings("rawtypes")
     public void postProcessAndEnqueue(PlanExecutionContext context) {
+        if (context == null) {
+            LOGGER.warn("Biz logger got null context");
+            return;
+        }
         this.setContextName(context.getContextName());
         this.postProcessAndEnqueue(context.getPlan());
     }
 
     public void postProcessAndEnqueue(ReplayActionItem action) {
+        if (action == null) {
+            LOGGER.warn("Biz logger got null action");
+            return;
+        }
         this.setActionItemId(action.getId());
         this.setOperationName(action.getOperationName());
         Optional.ofNullable(action.getParent()).ifPresent(this::postProcessAndEnqueue);
     }
 
     public void postProcessAndEnqueue(ReplayActionCaseItem caseItem) {
+        if (caseItem == null) {
+            LOGGER.warn("Biz logger got null caseItem");
+            return;
+        }
         this.setContextIdentifier(caseItem.getContextIdentifier());
         this.setCaseItemId(caseItem.getId());
         Optional.ofNullable(caseItem.getParent()).ifPresent(this::postProcessAndEnqueue);

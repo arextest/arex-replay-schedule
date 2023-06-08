@@ -374,16 +374,20 @@ public final class PlanConsumeService {
     }
 
     private void tryFlushingLogs(ReplayPlan replayPlan) {
-        BlockingQueue<BizLog> logs = replayPlan.getBizLogs();
-        if (logs.size() > LOG_SIZE_TO_SAVE_CHECK
-                || (System.currentTimeMillis() - replayPlan.getLastLogTime()) > LOG_TIME_GAP_TO_SAVE_CHECK_BY_SEC * 1000L) {
-            List<BizLog> logsToSave = new ArrayList<>();
-            int curSize = replayPlan.getBizLogs().size();
-            for (int i = 0; i < curSize; i++) {
-                logsToSave.add(logs.remove());
+        try {
+            BlockingQueue<BizLog> logs = replayPlan.getBizLogs();
+            if (logs.size() > LOG_SIZE_TO_SAVE_CHECK
+                    || (System.currentTimeMillis() - replayPlan.getLastLogTime()) > LOG_TIME_GAP_TO_SAVE_CHECK_BY_SEC * 1000L) {
+                List<BizLog> logsToSave = new ArrayList<>();
+                int curSize = replayPlan.getBizLogs().size();
+                for (int i = 0; i < curSize; i++) {
+                    logsToSave.add(logs.remove());
+                }
+                replayPlan.setLastLogTime(System.currentTimeMillis());
+                replayBizLogRepository.saveAll(logsToSave);
             }
-            replayPlan.setLastLogTime(System.currentTimeMillis());
-            replayBizLogRepository.saveAll(logsToSave);
+        } catch (Throwable t) {
+            LOGGER.error("Error flushing biz logs", t);
         }
     }
 }
