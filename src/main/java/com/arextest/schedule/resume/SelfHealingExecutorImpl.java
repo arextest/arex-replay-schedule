@@ -9,6 +9,7 @@ import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.AppServiceDescriptor;
+import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
@@ -101,6 +102,8 @@ public class SelfHealingExecutorImpl implements SelfHealingExecutor {
             replayPlan.setReplaySendMaxQps(schedule.getSendMaxQps());
         }
         replayPlan.setReplayActionItemList(actionItems);
+        replayPlan.setResumed(true);
+        BizLog.recordResumeRun(replayPlan);
         doResumeOperationDescriptor(replayPlan);
         doResumeLastRecordTime(actionItems);
         ReplayParentBinder.setupReplayActionParent(actionItems, replayPlan);

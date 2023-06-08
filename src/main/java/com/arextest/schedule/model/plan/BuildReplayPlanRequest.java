@@ -12,7 +12,6 @@ import java.util.List;
  */
 @Data
 public class BuildReplayPlanRequest {
-
     private String appId;
 
     private String planName;
@@ -45,6 +44,4 @@ public class BuildReplayPlanRequest {
     private Date caseSourceTo;
 
     private List<OperationCaseInfo> operationCaseInfoList;   //replay_plan_type=1or2的时候 来这里获取 需要回放的接口或case
-
-
 }

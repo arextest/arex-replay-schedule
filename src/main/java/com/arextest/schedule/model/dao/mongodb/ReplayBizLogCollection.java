@@ -20,6 +20,7 @@ public class ReplayBizLogCollection extends ModelBase{
     private int logType;
 
     private String planId;
+    private boolean resumedExecution;
     private String contextName;
 
     private String contextIdentifier;

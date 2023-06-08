@@ -5,7 +5,6 @@ import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
 import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
-import lombok.Getter;
 import lombok.ToString;
 
 import java.util.*;
@@ -75,6 +74,8 @@ public class ReplayPlan {
     @JsonIgnore
     private String errorMessage;
     private transient long planCreateMillis;
+
+    private boolean resumed;
 
     // Min(targetInstanceCount || Int.MAX, sourceInstanceCount || Int.MAX)
     @JsonIgnore
