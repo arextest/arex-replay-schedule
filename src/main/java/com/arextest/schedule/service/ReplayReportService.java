@@ -15,6 +15,7 @@ import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.model.*;
+import com.arextest.web.model.contract.contracts.replay.UpdateReportInfoRequestType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,6 +40,8 @@ public final class ReplayReportService implements ComparisonWriter {
     private String pushReplayCompareResultUrl;
     @Value("${arex.report.push.replayStatus.url}")
     private String pushReplayStatusUrl;
+    @Value("${arex.report.update.report.info.url}")
+    private String updateReportInfoUrl;
 
     private static final String CASE_COUNT_LIMIT_NAME = "caseCountLimit";
 
@@ -95,10 +98,30 @@ public final class ReplayReportService implements ComparisonWriter {
             reportItemList.add(reportItem);
         }
         requestType.setReportItemList(reportItemList);
-        LOGGER.info("initReport request:{}", requestType);
         Response response = httpWepServiceApiClient.jsonPost(reportInitUrl, requestType,
                 GenericResponseType.class);
-        LOGGER.info("initReport response:{}", response);
+        LOGGER.info("initReport request:{}, response:{}", requestType, response);
+    }
+
+    public void updateReportCaseCount(ReplayPlan replayPlan) {
+        UpdateReportInfoRequestType requestType = new UpdateReportInfoRequestType();
+        requestType.setPlanId(replayPlan.getId());
+        requestType.setTotalCaseCount(replayPlan.getCaseTotalCount());
+        List<ReplayActionItem> actionItemList = replayPlan.getReplayActionItemList();
+        if (CollectionUtils.isNotEmpty(actionItemList)) {
+            List<UpdateReportInfoRequestType.UpdateReportItem> updateReportInfoList = new ArrayList<>(actionItemList.size());
+            UpdateReportInfoRequestType.UpdateReportItem reportItem;
+            for (ReplayActionItem actionItem : actionItemList) {
+                reportItem = new UpdateReportInfoRequestType.UpdateReportItem();
+                reportItem.setPlanItemId(actionItem.getId());
+                reportItem.setTotalCaseCount(actionItem.getReplayCaseCount());
+                updateReportInfoList.add(reportItem);
+            }
+            requestType.setUpdateReportItems(updateReportInfoList);
+        }
+        Response response = httpWepServiceApiClient.jsonPost(updateReportInfoUrl, requestType,
+                GenericResponseType.class);
+        LOGGER.info("updateReportCaseCount request:{}, response:{}", requestType, response);
     }
 
     public void pushActionStatus(String planId, ReplayStatusType statusType, String actionId, String errorMessage) {

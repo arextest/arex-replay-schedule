@@ -15,6 +15,8 @@ public interface ProgressTracer {
 
     void finishCaseByAction(ReplayActionItem actionItem);
 
+    void finishCaseByPlan(ReplayPlan replayPlan);
+
     double finishPercent(String planId);
 
     long lastUpdateTime(String planId);

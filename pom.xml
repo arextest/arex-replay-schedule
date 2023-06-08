@@ -6,7 +6,7 @@
     <packaging>${packagingType}</packaging>
     <groupId>com.arextest</groupId>
     <artifactId>arex-schedule-web-api</artifactId>
-    <version>1.0.24-SNAPSHOT</version>
+    <version>1.0.25.1</version>
     <name>${project.groupId}:${project.artifactId}</name>
     <description>AREX schedule is used for replay.</description>
     <url>https://github.com/arextest/arex-replay-schedule</url>
@@ -17,7 +17,7 @@
         <jmockit.version>1.37</jmockit.version>
         <lombok.version>1.18.2</lombok.version>
         <guava.version>20.0</guava.version>
-        <compare-sdk.version>0.1.13</compare-sdk.version>
+        <compare-sdk.version>0.1.16</compare-sdk.version>
         <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
 
         <!-- single jacoco.exec file relative to root directory of the project -->
@@ -129,7 +129,7 @@
             <dependency>
                 <groupId>com.arextest</groupId>
                 <artifactId>arex-web-model-contract</artifactId>
-                <version>0.2.8.2</version>
+                <version>0.3.0.2</version>
             </dependency>
             <dependency>
                 <groupId>com.arextest</groupId>

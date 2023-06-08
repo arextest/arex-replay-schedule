@@ -40,7 +40,6 @@ public class ReplayComparisonConfig {
     @JsonDeserialize(keyUsing = MapKeyDeserializerUtils.class)
     @JsonSerialize(keyUsing = MapKeySerializerUtils.class)
     private Map<List<String>, List<List<String>>> listSortMap;
-    private Map<String, List<List<String>>> decompressConfig;
 
     public final boolean checkIgnoreMockMessageType(String type) {
         // [b_yu] 2022-10-11 Dynamic type does not compare

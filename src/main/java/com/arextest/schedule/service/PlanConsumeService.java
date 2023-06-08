@@ -14,13 +14,11 @@ import com.arextest.schedule.utils.ReplayParentBinder;
 import io.netty.util.internal.MathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
@@ -52,6 +50,8 @@ public final class PlanConsumeService {
     private MetricService metricService;
     @Resource
     private PlanExecutionContextProvider planExecutionContextProvider;
+    @Resource
+    private ReplayReportService replayReportService;
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
         // TODO: remove block thread use async to load & send for all
@@ -95,6 +95,7 @@ public final class PlanConsumeService {
                     replayPlan.getAppId(), replayPlan.getCaseTotalCount(), planSavedCaseSize);
             replayPlan.setCaseTotalCount(planSavedCaseSize);
             replayPlanRepository.updateCaseTotal(replayPlan.getId(), planSavedCaseSize);
+            replayReportService.updateReportCaseCount(replayPlan);
         }
         return planSavedCaseSize;
     }
@@ -106,10 +107,9 @@ public final class PlanConsumeService {
                 planSavedCaseSize += replayActionItem.getReplayCaseCount();
                 continue;
             }
-            int actionSavedCount = streamingCaseItemSave(replayActionItem);
-            replayActionItem.setReplayCaseCount(actionSavedCount);
-            planSavedCaseSize += actionSavedCount;
             int preloaded = replayActionItem.getReplayCaseCount();
+            int actionSavedCount = streamingCaseItemSave(replayActionItem);
+            planSavedCaseSize += actionSavedCount;
             if (preloaded != actionSavedCount) {
                 replayActionItem.setReplayCaseCount(actionSavedCount);
                 LOGGER.warn("The saved case size of actionItem not equals, preloaded size:{},saved size:{}", preloaded,
@@ -125,8 +125,8 @@ public final class PlanConsumeService {
         progressTracer.initTotal(replayPlan);
 
         // limiter shared for entire plan, max qps = maxQps per instance * min instance count
-        final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(
-                replayPlan.getReplaySendMaxQps() * replayPlan.getMinInstanceCount());
+        final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps(),
+                replayPlan.getMinInstanceCount());
 
         qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
 
@@ -260,6 +260,8 @@ public final class PlanConsumeService {
             ReplayActionCaseItem viewReplay = caseRemoteLoadService.viewReplayLoad(caseItem, operationTypes);
             if (viewReplay == null) {
                 caseItem.setSendStatus(CaseSendStatusType.REPLAY_CASE_NOT_FOUND.getValue());
+                caseItem.setSourceResultId(StringUtils.EMPTY);
+                caseItem.setTargetResultId(StringUtils.EMPTY);
             } else {
                 viewReplay.setParent(caseItem.getParent());
                 caseItemList.set(i, viewReplay);
