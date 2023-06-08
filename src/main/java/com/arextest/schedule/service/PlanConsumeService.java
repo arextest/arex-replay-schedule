@@ -150,7 +150,8 @@ public final class PlanConsumeService {
 
     @SuppressWarnings("unchecked")
     private void sendAllActionCase(ReplayPlan replayPlan) {
-        long start, end;
+        long start;
+        long end;
         progressTracer.initTotal(replayPlan);
 
         // limiter shared for entire plan, max qps = maxQps per instance * min instance count
@@ -273,6 +274,7 @@ public final class PlanConsumeService {
 
             case NORMAL:
             default:
+                int contextCount = 0;
                 List<ReplayActionCaseItem> sourceItemList;
                 while (true) {
                     sourceItemList = replayActionCaseItemRepository.waitingSendList(replayActionItem.getId(),
@@ -282,7 +284,9 @@ public final class PlanConsumeService {
                     if (CollectionUtils.isEmpty(sourceItemList)) {
                         break;
                     }
-                    ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
+                    contextCount += sourceItemList.size();
+
+                            ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
                     sendResult.setInterrupted(replayActionItem.getSendRateLimiter().failBreak());
 
                     if (sendResult.isInterrupted() || sendResult.isCanceled()) {
@@ -292,6 +296,7 @@ public final class PlanConsumeService {
 
                     BizLogger.recordActionItemBatchSent(replayActionItem, sourceItemList.size());
                 }
+                BizLogger.recordContextProcessedNormal(executionContext, replayActionItem, contextCount);
         }
     }
 

@@ -2,6 +2,7 @@ package com.arextest.schedule.service;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.model.mock.Mocker;
+import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.comparer.ComparisonWriter;
@@ -120,7 +121,7 @@ public class ReplayCaseTransmitService {
                 progressTracer.finishCaseByAction(replayActionItem);
             }
         }
-
+        BizLogger.recordContextSkipped(executionContext, replayActionItem, contextCasesCount);
         return false;
     }
 

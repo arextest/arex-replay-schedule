@@ -14,6 +14,7 @@ import java.util.Optional;
 /**
  * Created by Qzmo on 2023/6/8
  */
+@SuppressWarnings("rawtypes")
 public class BizLogger {
     // region <Plan Level Log>
     public static void recordPlanStart(ReplayPlan plan) {
@@ -186,6 +187,25 @@ public class BizLogger {
 
         log.postProcessAndEnqueue(context);
     }
+
+    public static void recordContextSkipped(PlanExecutionContext context, ReplayActionItem actionItem, long skipCount) {
+        BizLog log = BizLog.info()
+                .logType(BizLogContent.CONTEXT_SKIP.getType())
+                .message(BizLogContent.CONTEXT_SKIP.format(context.getContextName(), actionItem.getId(), skipCount))
+                .build();
+
+        log.postProcessAndEnqueue(context);
+    }
+
+    public static void recordContextProcessedNormal(PlanExecutionContext context, ReplayActionItem actionItem,
+                                                    long sentCount) {
+        BizLog log = BizLog.info()
+                .logType(BizLogContent.CONTEXT_NORMAL.getType())
+                .message(BizLogContent.CONTEXT_NORMAL.format(context.getContextName(), actionItem.getId(), sentCount))
+                .build();
+
+        log.postProcessAndEnqueue(context);
+    }
     // endregion
 
     // region <Resume run Log>
@@ -214,8 +234,8 @@ public class BizLogger {
 
         CONTEXT_START(200, "Context: {0} init with action: {1}, before hook took {2} ms."),
         CONTEXT_AFTER_RUN(202, "Context: {0} done, after hook took {1} ms."),
-        CONTEXT_SKIP(203, "Context: {0} done, after hook took {1} ms."),
-        CONTEXT_NORMAL(204, "Context: {0} done, after hook took {1} ms."),
+        CONTEXT_SKIP(203, "Context: {0}, Action: {1}, skipped {2} cases "),
+        CONTEXT_NORMAL(204, "Context: {0}, Action: {1} execute normal."),
 
         ACTION_ITEM_EXECUTE_CONTEXT(300, "Operation: {0} id: {1} under context: {2} starts executing action type: {3}."),
         ACTION_ITEM_INIT_TOTAL_COUNT(302, "Operation: {0} id: {1} init total case count: {2}."),
