@@ -59,7 +59,8 @@ public final class PlanConsumeService {
 
     @Value("${arex.schedule.bizLog.sizeToSave}")
     private int LOG_SIZE_TO_SAVE_CHECK;
-    private static final long LOG_TIME_GAP_TO_SAVE_CHECK = 10 * 1000L;
+    @Value("${arex.schedule.bizLog.secondToSave}")
+    private long LOG_TIME_GAP_TO_SAVE_CHECK_BY_SEC;
 
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
@@ -173,7 +174,7 @@ public final class PlanConsumeService {
             end = System.currentTimeMillis();
             BizLog.recordContextAfterRun(executionContext, end - start);
 
-            tryFiringLogs(replayPlan);
+            tryFlushingLogs(replayPlan);
         }
 
         if (sendResult.isCanceled()) {
@@ -363,10 +364,10 @@ public final class PlanConsumeService {
         return totalSize;
     }
 
-    private void tryFiringLogs(ReplayPlan replayPlan) {
+    private void tryFlushingLogs(ReplayPlan replayPlan) {
         BlockingQueue<BizLog> logs = replayPlan.getBizLogs();
         if (logs.size() > LOG_SIZE_TO_SAVE_CHECK
-                || (System.currentTimeMillis() - replayPlan.getLastLogTime()) > LOG_TIME_GAP_TO_SAVE_CHECK) {
+                || (System.currentTimeMillis() - replayPlan.getLastLogTime()) > LOG_TIME_GAP_TO_SAVE_CHECK_BY_SEC * 1000L) {
             List<BizLog> logsToSave = new ArrayList<>();
             int curSize = replayPlan.getBizLogs().size();
             for (int i = 0; i < curSize; i++) {

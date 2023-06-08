@@ -52,24 +52,27 @@ public class BizLog {
     public static BizLogBuilder error() {
         return BizLog.constructBase().level(BizLogLevel.ERROR.getVal());
     }
+    public static BizLogBuilder debug() {
+        return BizLog.constructBase().level(BizLogLevel.DEBUG.getVal());
+    }
 
-    private void postProcessAndEnqueue(ReplayPlan plan) {
+    public void postProcessAndEnqueue(ReplayPlan plan) {
         this.setPlanId(plan.getId());
         plan.enqueueBizLog(this);
     }
 
-    private void postProcessAndEnqueue(PlanExecutionContext context) {
+    public void postProcessAndEnqueue(PlanExecutionContext context) {
         this.setContextName(context.getContextName());
         this.postProcessAndEnqueue(context.getPlan());
     }
 
-    private void postProcessAndEnqueue(ReplayActionItem action) {
+    public void postProcessAndEnqueue(ReplayActionItem action) {
         this.setActionItemId(action.getId());
         this.setOperationName(action.getOperationName());
         Optional.ofNullable(action.getParent()).ifPresent(this::postProcessAndEnqueue);
     }
 
-    private void postProcessAndEnqueue(ReplayActionCaseItem caseItem) {
+    public void postProcessAndEnqueue(ReplayActionCaseItem caseItem) {
         this.setContextIdentifier(caseItem.getContextIdentifier());
         this.setCaseItemId(caseItem.getId());
         Optional.ofNullable(caseItem.getParent()).ifPresent(this::postProcessAndEnqueue);

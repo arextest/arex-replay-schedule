@@ -13,7 +13,7 @@ public enum BizLogLevel {
     ;
 
     @Getter
-    private int val;
+    private final int val;
 
     BizLogLevel(int val) {
         this.val = val;
