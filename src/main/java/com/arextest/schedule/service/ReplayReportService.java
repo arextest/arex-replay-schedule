@@ -6,15 +6,13 @@ import com.arextest.common.model.response.Response;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.model.mock.MockCategoryType;
-import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
-import com.arextest.web.model.contract.contracts.ChangeReplayStatusRequestType;
-import com.arextest.web.model.contract.contracts.PushCompareResultsRequestType;
-import com.arextest.web.model.contract.contracts.ReportInitialRequestType;
-import com.arextest.web.model.contract.contracts.common.CompareResult;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
-import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.comparer.ComparisonWriter;
+import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
 import com.arextest.schedule.model.*;
+import com.arextest.web.model.contract.contracts.ChangeReplayStatusRequestType;
+import com.arextest.web.model.contract.contracts.ReportInitialRequestType;
+import com.arextest.web.model.contract.contracts.replay.AnalyzeCompareResultsRequestType;
 import com.arextest.web.model.contract.contracts.replay.UpdateReportInfoRequestType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -157,10 +155,9 @@ public final class ReplayReportService implements ComparisonWriter {
         }
         int comparedSize = comparedResult.size();
 
-        PushCompareResultsRequestType requestType = new PushCompareResultsRequestType();
-        List<String> ids = replayCompareResultRepository.insertAllCompareResults(comparedResult);
-        requestType.setResults();
-        Response response = httpWepServiceApiClient.jsonPost(pushReplayCompareResultUrl, requestType,
+        AnalyzeCompareResultsRequestType request = new AnalyzeCompareResultsRequestType();
+        request.setIds(replayCompareResultRepository.insertAllCompareResults(comparedResult));
+        Response response = httpWepServiceApiClient.jsonPost(pushReplayCompareResultUrl, request,
                 GenericResponseType.class);
         if (response == null || response.getResponseStatusType().hasError()) {
             LOGGER.warn("push replay compared result to report size: {}, result:{}", comparedSize, response);
@@ -181,13 +178,12 @@ public final class ReplayReportService implements ComparisonWriter {
         if (caseItem == null) {
             return true;
         }
-        PushCompareResultsRequestType requestType = new PushCompareResultsRequestType();
+        AnalyzeCompareResultsRequestType request = new AnalyzeCompareResultsRequestType();
 
-        List<String> ids = this.replayCompareResultRepository.insertAllCompareResults(
-                Collections.singletonList(toQMQCompareResult(caseItem)));
-        requestType.setResults();
+        request.setIds(this.replayCompareResultRepository.insertAllCompareResults(
+                Collections.singletonList(toQMQCompareResult(caseItem))));
 
-        Response response = httpWepServiceApiClient.jsonPost(pushReplayCompareResultUrl, requestType,
+        Response response = httpWepServiceApiClient.jsonPost(pushReplayCompareResultUrl, request,
                 GenericResponseType.class);
         if (response == null || response.getResponseStatusType().hasError()) {
             LOGGER.warn("writeQmqCompareResult to report result:{}", response);
