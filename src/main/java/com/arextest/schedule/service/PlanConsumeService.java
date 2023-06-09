@@ -314,7 +314,6 @@ public final class PlanConsumeService {
     }
 
     private int doFixedCaseSave(List<ReplayActionCaseItem> caseItemList) {
-        caseItemPostProcess(caseItemList);
         int size = 0;
         for (int i = 0; i < caseItemList.size(); i++) {
             ReplayActionCaseItem caseItem = caseItemList.get(i);
@@ -330,6 +329,8 @@ public final class PlanConsumeService {
                 size++;
             }
         }
+
+        caseItemPostProcess(caseItemList);
         replayActionCaseItemRepository.save(caseItemList);
         return size;
     }
