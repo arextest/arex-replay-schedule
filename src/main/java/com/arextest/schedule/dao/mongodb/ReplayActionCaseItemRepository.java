@@ -56,10 +56,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         query.addCriteria(Criteria.where(PLAN_ITEM_ID).is(planItemId));
         query.addCriteria(Criteria.where(SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()));
         query.limit(pageSize);
-        query.with(Sort.by(
-                Sort.Order.asc(DASH_ID),
-                Sort.Order.asc(REPLAY_DEPENDENCE)
-        ));
+        query.with(Sort.by(Sort.Order.asc(DASH_ID)));
         List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query, ReplayRunDetailsCollection.class);
         return replayRunDetailsCollections.stream().map(ReplayRunDetailsConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
     }
