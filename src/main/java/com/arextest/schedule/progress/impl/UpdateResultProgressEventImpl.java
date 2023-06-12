@@ -1,6 +1,5 @@
 package com.arextest.schedule.progress.impl;
 
-import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.model.LogType;
@@ -12,7 +11,6 @@ import com.arextest.schedule.service.MetricService;
 import com.arextest.schedule.service.ReplayReportService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.util.Date;
