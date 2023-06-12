@@ -2,6 +2,7 @@ package com.arextest.schedule.service;
 
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
+import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
@@ -52,9 +53,10 @@ public final class PlanConsumeService {
     private PlanExecutionContextProvider planExecutionContextProvider;
     @Resource
     private ReplayReportService replayReportService;
+    @Resource
+    private CompareConfigService compareConfigService;
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
-        // TODO: remove block thread use async to load & send for all
         preloadExecutorService.execute(new ReplayActionLoadingRunnableImpl(replayPlan));
     }
 
@@ -68,6 +70,7 @@ public final class PlanConsumeService {
         @Override
         @SuppressWarnings("unchecked")
         protected void doWithTracedRunning() {
+            compareConfigService.preload(replayPlan);
             int planSavedCaseSize = saveActionCaseToSend(replayPlan);
             replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
             if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {

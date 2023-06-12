@@ -12,6 +12,7 @@ import com.arextest.schedule.service.MetricService;
 import com.arextest.schedule.service.ReplayReportService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.util.Date;
@@ -30,8 +31,6 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
     @Resource
     private ReplayReportService replayReportService;
     @Resource
-    private CompareConfigService compareConfigService;
-    @Resource
     private MetricService metricService;
 
     public static final long DEFAULT_COUNT = 1L;
@@ -41,7 +40,6 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
     public void onReplayPlanCreated(ReplayPlan replayPlan) {
         try {
             replayReportService.initReportInfo(replayPlan);
-            compareConfigService.preload(replayPlan);
         } catch (Throwable throwable) {
             LOGGER.error("prepare load compare config error: {}, plan id:{}", throwable.getMessage(),
                     replayPlan.getId(), throwable);
