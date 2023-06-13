@@ -4,12 +4,15 @@ import com.arextest.common.utils.SerializationUtils;
 import com.arextest.diff.model.log.LogEntity;
 import com.arextest.schedule.model.ReplayCompareResult;
 import com.arextest.schedule.model.dao.mongodb.ReplayCompareResultCollection;
+import com.arextest.schedule.utils.ZstdUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
+import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -25,7 +28,9 @@ public interface ReplayCompareResultConverter {
             @Mapping(target = "id", expression = "java(null)"),
             @Mapping(target = "dataChangeCreateTime", expression = "java(System.currentTimeMillis())"),
             @Mapping(target = "dataChangeUpdateTime", expression = "java(System.currentTimeMillis())"),
-            @Mapping(target = "dataChangeCreateDate", expression = "java(new java.util.Date())")
+            @Mapping(target = "dataChangeCreateDate", expression = "java(new java.util.Date())"),
+            @Mapping(target = "baseMsg", qualifiedByName = "compressMsg"),
+            @Mapping(target = "testMsg", qualifiedByName = "compressMsg")
     })
     ReplayCompareResultCollection daoFromDto(ReplayCompareResult dto);
 
@@ -35,4 +40,15 @@ public interface ReplayCompareResultConverter {
         }
         return SerializationUtils.useZstdSerializeToBase64(logs.toArray());
     }
+
+    @Named("compressMsg")
+    default String compressMsg(String decompressString) {
+        return ZstdUtils.compressString(decompressString);
+    }
+
+    @Named("decompressMsg")
+    default String decompressMsg(String compressString) {
+        return ZstdUtils.uncompressString(compressString);
+    }
+
 }
