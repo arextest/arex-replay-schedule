@@ -65,14 +65,14 @@ public final class CompareConfigService {
         ReplayComparisonConfig globalConfig = operationCompareConfig.getOrDefault(null, new ReplayComparisonConfig());
         ReplayComparisonConfig operationConfig = operationCompareConfig.getOrDefault(operationId, new ReplayComparisonConfig());
 
-        List<String> ignoreTypeList = new ArrayList<>();
-        ignoreTypeList.addAll(globalConfig.getIgnoreTypeList() == null ? Collections.emptyList() : globalConfig.getIgnoreTypeList());
-        ignoreTypeList.addAll(operationConfig.getIgnoreTypeList() == null ? Collections.emptyList() : operationConfig.getIgnoreTypeList());
+        Set<String> ignoreTypeList = new HashSet<>();
+        ignoreTypeList.addAll(globalConfig.getIgnoreTypeList() == null ? Collections.emptySet() : globalConfig.getIgnoreTypeList());
+        ignoreTypeList.addAll(operationConfig.getIgnoreTypeList() == null ? Collections.emptySet() : operationConfig.getIgnoreTypeList());
         replayComparisonConfig.setIgnoreTypeList(ignoreTypeList);
 
-        List<String> ignoreKeyList = new ArrayList<>();
-        ignoreKeyList.addAll(globalConfig.getIgnoreKeyList() == null ? Collections.emptyList() : globalConfig.getIgnoreKeyList());
-        ignoreKeyList.addAll(operationConfig.getIgnoreKeyList() == null ? Collections.emptyList() : operationConfig.getIgnoreKeyList());
+        Set<String> ignoreKeyList = new HashSet<>();
+        ignoreKeyList.addAll(globalConfig.getIgnoreKeyList() == null ? Collections.emptySet() : globalConfig.getIgnoreKeyList());
+        ignoreKeyList.addAll(operationConfig.getIgnoreKeyList() == null ? Collections.emptySet() : operationConfig.getIgnoreKeyList());
         replayComparisonConfig.setIgnoreKeyList(ignoreKeyList);
 
 
@@ -193,8 +193,8 @@ public final class CompareConfigService {
 
     private ReplayComparisonConfig newEmptyComparisonConfig() {
         ReplayComparisonConfig replayComparisonConfig = new ReplayComparisonConfig();
-        replayComparisonConfig.setIgnoreKeyList(Collections.emptyList());
-        replayComparisonConfig.setIgnoreTypeList(Collections.emptyList());
+        replayComparisonConfig.setIgnoreKeyList(Collections.emptySet());
+        replayComparisonConfig.setIgnoreTypeList(Collections.emptySet());
         replayComparisonConfig.setExclusionList(Collections.emptySet());
         replayComparisonConfig.setInclusionList(Collections.emptySet());
         replayComparisonConfig.setListSortMap(Collections.emptyMap());
