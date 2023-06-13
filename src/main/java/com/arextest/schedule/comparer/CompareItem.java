@@ -10,4 +10,10 @@ public interface CompareItem {
     String getCompareOperation();
 
     String getCompareService();
+
+    String getCompareKey();
+
+    long getCreateTime();
+
+    boolean isEntryPointCategory();
 }
