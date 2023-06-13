@@ -10,6 +10,7 @@ import lombok.Data;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author jmo
@@ -66,6 +67,7 @@ public class ReplayActionItem {
     private ServiceInstanceOperation mappedInstanceOperation;
     private int replayCaseCount;
     private String appId;
+    private Set<String> operationTypes;
     /**
      * the interfaces which don't use the mock when replaying
      */
@@ -96,4 +98,12 @@ public class ReplayActionItem {
 
     @JsonIgnore
     private String errorMessage;
+    @JsonIgnore
+    private boolean itemProcessed;
+    @JsonIgnore
+    private int caseProcessCount;
+
+    public void recordProcessCaseCount(int incoming) {
+        setCaseProcessCount(caseProcessCount + incoming);
+    }
 }

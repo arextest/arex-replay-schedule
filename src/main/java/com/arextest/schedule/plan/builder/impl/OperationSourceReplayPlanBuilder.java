@@ -51,7 +51,6 @@ final class OperationSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
             ReplayActionItem replayActionItem = planContext.toReplayAction(operationDescriptor);
             replayActionItemList.add(replayActionItem);
         }
-        replayActionItemPreprocessService.addExclusionOperation(replayActionItemList, planContext.getAppId());
         return replayActionItemList;
     }
 }

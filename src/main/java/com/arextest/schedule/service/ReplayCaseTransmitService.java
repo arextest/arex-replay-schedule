@@ -8,30 +8,21 @@ import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.model.CaseSendStatusType;
-import com.arextest.schedule.model.LogType;
-import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.model.*;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -48,7 +39,7 @@ public class ReplayCaseTransmitService {
     @Resource
     private ExecutorService sendExecutorService;
     private static final int ACTIVE_SERVICE_RETRY_COUNT = 3;
-    private static final int GROUP_SENT_WAIT_TIMEOUT = 300;
+    private static final int GROUP_SENT_WAIT_TIMEOUT = 500;
     @Resource
     private ReplayResultComparer replayResultComparer;
     @Resource
@@ -66,39 +57,70 @@ public class ReplayCaseTransmitService {
     @Resource
     private MetricService metricService;
 
-    public boolean send(ReplayActionItem replayActionItem, boolean isFirst) {
+    public boolean send(ReplayActionItem replayActionItem) {
         List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
         if (CollectionUtils.isEmpty(sourceItemList)) {
             return false;
         }
-        if (isFirst) {
+
+        // warmUp should be done once for each endpoint
+        if (!replayActionItem.isItemProcessed()) {
             activeRemoteHost(sourceItemList);
         }
-        Map<String, List<ReplayActionCaseItem>> versionGroupedResult = groupByDependencyVersion(sourceItemList);
-        LOGGER.info("found replay send size of group: {}", versionGroupedResult.size());
-        replayActionItem.getSendRateLimiter().reset();
+
         byte[] cancelKey = getCancelKey(replayActionItem.getPlanId());
-        for (Map.Entry<String, List<ReplayActionCaseItem>> versionEntry : versionGroupedResult.entrySet()) {
-            List<ReplayActionCaseItem> groupValues = versionEntry.getValue();
-            if (replayActionItem.getSendRateLimiter().failBreak()) {
-                break;
+
+        if (replayActionItem.getSendRateLimiter().failBreak()) {
+            return false;
+        }
+        if (isCancelled(cancelKey)) {
+            progressEvent.onActionCancelled(replayActionItem);
+            return true;
+        }
+        try {
+            doSendValuesToRemoteHost(sourceItemList);
+        } catch (Throwable throwable) {
+            LOGGER.error("do send error:{}", throwable.getMessage(), throwable);
+            markAllSendStatus(sourceItemList, CaseSendStatusType.EXCEPTION_FAILED);
+        } finally {
+            replayActionItem.recordProcessCaseCount(sourceItemList.size());
+        }
+
+        return false;
+    }
+
+    @SuppressWarnings("rawtypes")
+    public boolean releaseCasesOfContext(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {
+        byte[] cancelKey = getCancelKey(replayActionItem.getPlanId());
+
+        if (isCancelled(cancelKey)) {
+            progressEvent.onActionCancelled(replayActionItem);
+            return true;
+        }
+
+        if (replayActionItem.getSendRateLimiter().failBreak()) {
+            return false;
+        }
+
+        int contextCasesCount = (int) replayActionCaseItemRepository.countWaitingSendList(replayActionItem.getId(),
+                executionContext.getContextCaseQuery());
+
+        replayActionItem.recordProcessCaseCount(contextCasesCount);
+        replayActionItem.getSendRateLimiter().batchRelease(false, contextCasesCount);
+
+        // if we skip the rest of cases remaining in the action item, set its status
+        if (Integer.valueOf(replayActionItem.getReplayCaseCount()).equals(replayActionItem.getCaseProcessCount())) {
+            progressEvent.onActionInterrupted(replayActionItem);
+            ReplayPlan replayPlan = replayActionItem.getParent();
+            for (int i = 0; i < contextCasesCount; i++) {
+                progressTracer.finishCaseByPlan(replayPlan);
             }
-            if (isCancelled(cancelKey)) {
-                progressEvent.onActionCancelled(replayActionItem);
-                return true;
-            }
-            try {
-                if (StringUtils.isEmpty(versionEntry.getKey())) {
-                    doSendValuesToRemoteHost(groupValues);
-                } else {
-                    doSendWithDependencyToRemoteHost(groupValues);
-                }
-            } catch (Throwable throwable) {
-                LOGGER.error("do send error:{} , group key: {}", versionEntry.getKey(), throwable.getMessage()
-                        , throwable);
-                markAllSendStatus(groupValues, CaseSendStatusType.EXCEPTION_FAILED);
+        } else {
+            for (int i = 0; i < contextCasesCount; i++) {
+                progressTracer.finishCaseByAction(replayActionItem);
             }
         }
+
         return false;
     }
 
@@ -112,24 +134,6 @@ public class ReplayCaseTransmitService {
             return false;
         }
         return true;
-    }
-
-    private void doSendWithDependencyToRemoteHost(List<ReplayActionCaseItem> groupValues) {
-        try {
-            ReplayActionCaseItem dependSource = cloneCaseItem(groupValues, 0);
-            if (prepareRemoteDependency(dependSource)) {
-                Thread.sleep(CommonConstant.THREE_SECOND_MILLIS);
-                doSendValuesToRemoteHost(groupValues);
-            } else {
-                markAllSendStatus(groupValues, CaseSendStatusType.READY_DEPENDENCY_FAILED);
-                LOGGER.error("prepare remote dependency false, group key: {} marked failed ,action id:{}",
-                        groupValues.get(0).replayDependency(),
-                        groupValues.get(0).getParent().getId());
-            }
-        } catch (Exception e) {
-            LOGGER.error("do send with dependency to remote host error ,action id:{}",
-                    groupValues.get(0).getParent().getId(), e);
-        }
     }
 
     private ReplayActionCaseItem cloneCaseItem(List<ReplayActionCaseItem> groupValues, int index) {
@@ -165,6 +169,11 @@ public class ReplayCaseTransmitService {
         final SendSemaphoreLimiter semaphore = actionItem.getSendRateLimiter();
         final CountDownLatch groupSentLatch = new CountDownLatch(valueSize);
         for (int i = 0; i < valueSize; i++) {
+            if (semaphore.failBreak()) {
+                groupSentLatch.countDown();
+                continue;
+            }
+
             ReplayActionCaseItem replayActionCaseItem = values.get(i);
             MDCTracer.addDetailId(caseItem.getId());
             try {
@@ -197,12 +206,16 @@ public class ReplayCaseTransmitService {
                 doSendFailedAsFinish(replayActionCaseItem, CaseSendStatusType.EXCEPTION_FAILED);
             }
         }
-        MDCTracer.removeDetailId();
+
         try {
-            groupSentLatch.await(GROUP_SENT_WAIT_TIMEOUT, TimeUnit.SECONDS);
+            boolean clear = groupSentLatch.await(GROUP_SENT_WAIT_TIMEOUT, TimeUnit.SECONDS);
+            if (!clear) {
+                LOGGER.error("Send group failed to await all request of batch");
+            }
         } catch (InterruptedException e) {
             LOGGER.error("send group to remote host error:{}", e.getMessage(), e);
         }
+        MDCTracer.removeDetailId();
     }
 
     void updateSendResult(ReplayActionCaseItem caseItem, CaseSendStatusType sendStatusType) {
@@ -227,23 +240,6 @@ public class ReplayCaseTransmitService {
         }
         LOGGER.warn("find empty ReplaySender for detailId: {}, caseType:{}", caseItem.getId(), caseItem.getCaseType());
         return null;
-    }
-
-    public boolean prepareRemoteDependency(ReplayActionCaseItem caseItem) {
-        StopWatch watch = new StopWatch();
-        watch.start(LogType.SWITCH_DEPENDENCY_VERSION_TIME.getValue());
-        String replayDependency = caseItem.replayDependency();
-        boolean prepareResult = false;
-        ReplaySender replaySender = findReplaySender(caseItem);
-        if (replaySender != null) {
-            prepareResult = replaySender.prepareRemoteDependency(caseItem);
-        }
-        LOGGER.info("prepare remote dependency version: {} , result: {} , {} -> {}", replayDependency, prepareResult,
-                caseItem.getParent().getServiceName(), caseItem.getParent().getOperationName());
-        watch.stop();
-        metricService.recordTimeEvent(LogType.SWITCH_DEPENDENCY_VERSION_TIME.getValue(), caseItem.getParent().getPlanId(),
-                caseItem.getParent().getAppId(), null, watch.getTotalTimeMillis());
-        return prepareResult;
     }
 
     private void activeRemoteHost(List<ReplayActionCaseItem> sourceItemList) {
@@ -292,39 +288,5 @@ public class ReplayCaseTransmitService {
             LOGGER.error("doSendFailedAsFinish error:{}", throwable.getMessage(), throwable);
         }
 
-    }
-
-    private Map<String, List<ReplayActionCaseItem>> groupByDependencyVersion(List<ReplayActionCaseItem> sourceItemList) {
-        if (this.skipDependencyGroupRequested(sourceItemList)) {
-            return Collections.singletonMap(getReplayDependencyKey(sourceItemList.get(0).replayDependency()),
-                    sourceItemList);
-        }
-        SortedMap<String, List<ReplayActionCaseItem>> groupResult = Maps.newTreeMap();
-        for (ReplayActionCaseItem replayActionCaseItem : sourceItemList) {
-            List<ReplayActionCaseItem> values =
-                    groupResult.computeIfAbsent(getReplayDependencyKey(replayActionCaseItem.replayDependency()),
-                            (key) -> new ArrayList<>());
-            values.add(replayActionCaseItem);
-        }
-
-        return groupResult;
-    }
-
-    private boolean skipDependencyGroupRequested(List<ReplayActionCaseItem> sourceItemList) {
-        for (int i = 1; i < sourceItemList.size(); i++) {
-            if (!StringUtils.equals(sourceItemList.get(i).replayDependency(),
-                    sourceItemList.get(i - 1).replayDependency())) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private String getReplayDependencyKey(String key) {
-        String intkey = "";
-        if (StringUtils.isNotBlank(key)) {
-            intkey = key;
-        }
-        return intkey;
     }
 }

@@ -303,7 +303,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         options.putInclusions(compareConfig.getInclusionList());
         options.putListSortConfig(compareConfig.getListSortMap());
         options.putReferenceConfig(compareConfig.getReferenceMap());
-        options.putDecompressConfig(compareConfig.getDecompressConfig());
 
         if (Objects.equals(category, MockCategoryType.DATABASE.getName())) {
             options.putExclusions(ignoreInDataBaseMocker);
