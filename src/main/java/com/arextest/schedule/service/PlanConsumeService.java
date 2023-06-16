@@ -197,6 +197,7 @@ public final class PlanConsumeService {
             end = System.currentTimeMillis();
             BizLogger.recordContextAfterRun(executionContext, end - start);
 
+            // todo move flushing job to external monitor thread
             tryFlushingLogs(replayPlan);
         }
 
