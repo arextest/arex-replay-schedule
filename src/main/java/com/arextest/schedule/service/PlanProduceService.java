@@ -3,7 +3,9 @@ package com.arextest.schedule.service;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
+import com.arextest.schedule.dao.mongodb.ReportPlanStatisticRepository;
 import com.arextest.schedule.mdc.MDCTracer;
+import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.progress.ProgressEvent;
@@ -16,6 +18,7 @@ import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.plan.builder.BuildPlanValidateResult;
 import com.arextest.schedule.plan.builder.ReplayPlanBuilder;
 import com.arextest.schedule.utils.ReplayParentBinder;
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -44,6 +47,8 @@ public class PlanProduceService {
     @Resource
     private ReplayPlanActionRepository replayPlanActionRepository;
     @Resource
+    private ReportPlanStatisticRepository reportPlanStatisticRepository;
+    @Resource
     private PlanConsumeService planConsumeService;
     @Resource
     private ProgressEvent progressEvent;
@@ -55,7 +60,7 @@ public class PlanProduceService {
     public CommonResponse createPlan(BuildReplayPlanRequest request) {
         long planCreateMillis = System.currentTimeMillis();
         String appId = request.getAppId();
-        if (isCreating(appId, request.getTargetEnv())) {
+        if (isCreating(appId, request.getTargetEnv(), request.getSourceEnv())) {
             return CommonResponse.badResponse("This appid is creating plan");
         }
         ReplayPlanBuilder planBuilder = select(request);
@@ -154,22 +159,45 @@ public class PlanProduceService {
         return null;
     }
 
-    public Boolean isCreating(String appId, String targetEnv) {
+    public boolean isCreating(String appId, String targetEnv, String sourceEnv) {
         try {
-            byte[] key = String.format("schedule_creating_%s_%s", appId, targetEnv).getBytes(StandardCharsets.UTF_8);
+
+            List<byte[]> keys = buildKeys(appId, targetEnv, sourceEnv);
+
             byte[] value = appId.getBytes(StandardCharsets.UTF_8);
-            Boolean result = redisCacheProvider.putIfAbsent(key, CREATE_PLAN_REDIS_EXPIRE,value);
-            return !result;
+            boolean result = true;
+            for (int i = 0; i < keys.size(); i++) {
+                result = result && redisCacheProvider.putIfAbsent(keys.get(i), CREATE_PLAN_REDIS_EXPIRE, value);
+            }
+
+            if (!result) {
+                return true;
+            }
+
+            long count = reportPlanStatisticRepository.countReportPlanByEnv(appId, targetEnv, sourceEnv, ReplayStatusType.RUNNING.getValue());
+            return count > 0L;
+
         } catch (Exception e) {
             LOGGER.error("isCreating error : {}", e.getMessage(), e);
             return true;
         }
     }
 
-    public void removeCreating(String appId, String targetEnv) {
+    private List<byte[]> buildKeys(String appId, String targetEnv, String sourceEnv) {
+        List<byte[]> keys = Lists.newArrayList();
+        keys.add(String.format("schedule_creating_%s_%s", appId, targetEnv).getBytes(StandardCharsets.UTF_8));
+        if (StringUtils.isNotEmpty(sourceEnv)) {
+            keys.add(String.format("schedule_creating_%s_%s", appId, sourceEnv).getBytes(StandardCharsets.UTF_8));
+        }
+        return keys;
+    }
+
+    public void removeCreating(String appId, String targetEnv, String sourceEnv) {
         try {
-            byte[] key = String.format("schedule_creating_%s_%s", appId, targetEnv).getBytes(StandardCharsets.UTF_8);
-            redisCacheProvider.remove(key);
+            List<byte[]> keys = buildKeys(appId, targetEnv, sourceEnv);
+            for (int i = 0; i < keys.size(); i++) {
+                redisCacheProvider.remove(keys.get(i));
+            }
         } catch (Exception e) {
             LOGGER.error("removeCreating error : {}", e.getMessage(), e);
         }
