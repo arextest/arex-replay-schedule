@@ -28,6 +28,8 @@ public class DeploymentEnvironment {
     private String ipAddress;
     @JsonAlias("group_id")
     private String groupId;
+    @JsonAlias("context_path")
+    private String contextPath;
 
     @JsonAlias("created_at")
     private String createdAt;
