@@ -30,6 +30,9 @@ public class ReplayCompareResult {
     private int diffResultCode;
     private String baseMsg;
     private String testMsg;
+    private long recordTime;
+    private long replayTime;
+    private String instanceId;
     private List<LogEntity> logs;
 
     public static ReplayCompareResult createFrom(ReplayActionCaseItem caseItem) {

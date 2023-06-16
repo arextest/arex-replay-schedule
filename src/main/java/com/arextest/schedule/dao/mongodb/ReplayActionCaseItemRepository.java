@@ -8,6 +8,7 @@ import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.converter.ReplayRunDetailsConverter;
 import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
 import com.mongodb.client.result.UpdateResult;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -15,7 +16,9 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -24,6 +27,7 @@ import java.util.stream.Collectors;
  * Created by rchen9 on 2022/8/19.
  */
 @Repository
+@Slf4j
 public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayActionCaseItem>, RepositoryField {
 
     @Autowired
@@ -46,6 +50,25 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         return insert.getId() != null;
     }
 
+    @Override
+    public boolean save(List<ReplayActionCaseItem> caseItems) {
+        List<ReplayRunDetailsCollection> replayPlanItemCollections = caseItems.stream()
+                .map(ReplayRunDetailsConverter.INSTANCE::daoFromDto).collect(Collectors.toList());
+
+        List<ReplayRunDetailsCollection> inserted = new ArrayList<>(mongoTemplate
+                .insert(replayPlanItemCollections, ReplayRunDetailsCollection.class));
+
+        if (CollectionUtils.isEmpty(inserted) || inserted.size() != caseItems.size()) {
+            LOGGER.error("Error saving case items, save size does not match source.");
+            return false;
+        }
+
+        for (int i = 0; i < inserted.size(); i++) {
+            caseItems.get(i).setId(inserted.get(i).getId());
+        }
+        return true;
+    }
+
     public List<ReplayActionCaseItem> waitingSendList(String planItemId, int pageSize, List<Criteria> baseCriteria) {
         Query query = new Query();
 
@@ -56,10 +79,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         query.addCriteria(Criteria.where(PLAN_ITEM_ID).is(planItemId));
         query.addCriteria(Criteria.where(SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()));
         query.limit(pageSize);
-        query.with(Sort.by(
-                Sort.Order.asc(DASH_ID),
-                Sort.Order.asc(REPLAY_DEPENDENCE)
-        ));
+        query.with(Sort.by(Sort.Order.asc(DASH_ID)));
         List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query, ReplayRunDetailsCollection.class);
         return replayRunDetailsCollections.stream().map(ReplayRunDetailsConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
     }
