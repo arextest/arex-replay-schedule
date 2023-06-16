@@ -44,10 +44,10 @@ public class BizLogger {
         log.postProcessAndEnqueue(plan);
     }
 
-    public static void recordPlanCaseSaved(ReplayPlan plan, int size) {
+    public static void recordPlanCaseSaved(ReplayPlan plan, int size, long elapsed) {
         BizLog log = BizLog.info()
                 .logType(BizLogContent.PLAN_CASE_SAVED.getType())
-                .message(BizLogContent.PLAN_CASE_SAVED.format(size))
+                .message(BizLogContent.PLAN_CASE_SAVED.format(size, elapsed))
                 .build();
 
         log.postProcessAndEnqueue(plan);
@@ -82,6 +82,18 @@ public class BizLogger {
                         action.getId(),
                         context.getContextName(),
                         context.getActionType().name()))
+                .build();
+
+        log.postProcessAndEnqueue(action);
+    }
+
+    public static void recordActionItemCaseSaved(ReplayActionItem action, int saveCount, long elapsed) {
+        BizLog log = BizLog.info()
+                .logType(BizLogContent.ACTION_ITEM_CASE_SAVED.getType())
+                .message(BizLogContent.ACTION_ITEM_CASE_SAVED.format(
+                        action.getId(),
+                        saveCount,
+                        elapsed))
                 .build();
 
         log.postProcessAndEnqueue(action);
@@ -159,11 +171,11 @@ public class BizLogger {
     // endregion
 
     // region <Context Level Log>
-    public static void recordContextBuilt(ReplayPlan plan) {
+    public static void recordContextBuilt(ReplayPlan plan, long elapsed) {
         BizLog log = BizLog.info()
                 .logType(BizLogContent.PLAN_CONTEXT_BUILT.getType())
                 .message(BizLogContent.PLAN_CONTEXT_BUILT.format(Optional.ofNullable(plan.getExecutionContexts())
-                        .map(Collection::size).orElse(0)))
+                        .map(Collection::size).orElse(0), elapsed))
                 .build();
 
         log.postProcessAndEnqueue(plan);
@@ -221,8 +233,8 @@ public class BizLogger {
 
     public enum BizLogContent {
         PLAN_START(0, "Plan passes validation, starts execution."),
-        PLAN_CASE_SAVED(1, "Plan saved {0} cases to send."),
-        PLAN_CONTEXT_BUILT(2, "{0} execution context built."),
+        PLAN_CASE_SAVED(1, "Plan saved total {0} cases to send, took {1} ms."),
+        PLAN_CONTEXT_BUILT(2, "{0} execution context built, took {1} ms."),
         PLAN_DONE(3, "Plan send job done normally."),
         PLAN_ASYNC_RUN_START(4, "Plan async task init."),
         PLAN_STATUS_CHANGE(5, "Plan status changed to {0}, because of [{1}]."),
@@ -237,6 +249,7 @@ public class BizLogger {
         CONTEXT_SKIP(203, "Context: {0}, Action: {1}, skipped {2} cases "),
         CONTEXT_NORMAL(204, "Context: {0}, Action: {1} execute normal."),
 
+        ACTION_ITEM_CASE_SAVED(1, "Operation id {0} saved total {1} cases to send, took {2} ms."),
         ACTION_ITEM_EXECUTE_CONTEXT(300, "Operation: {0} id: {1} under context: {2} starts executing action type: {3}."),
         ACTION_ITEM_INIT_TOTAL_COUNT(302, "Operation: {0} id: {1} init total case count: {2}."),
         ACTION_ITEM_STATUS_CHANGED(303, "Operation: {0} id: {1} status changed to {2}, because of [{3}]."),

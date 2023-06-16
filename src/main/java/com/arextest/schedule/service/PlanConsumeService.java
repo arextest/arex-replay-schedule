@@ -86,11 +86,19 @@ public final class PlanConsumeService {
         @SuppressWarnings("unchecked")
         protected void doWithTracedRunning() {
             try {
-                int planSavedCaseSize = saveActionCaseToSend(replayPlan);
-                BizLogger.recordPlanCaseSaved(replayPlan, planSavedCaseSize);
+                long start;
+                long end;
 
+                start = System.currentTimeMillis();
+                int planSavedCaseSize = saveActionCaseToSend(replayPlan);
+                end = System.currentTimeMillis();
+                BizLogger.recordPlanCaseSaved(replayPlan, planSavedCaseSize, end - start);
+
+                start = System.currentTimeMillis();
                 replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
-                BizLogger.recordContextBuilt(replayPlan);
+                end = System.currentTimeMillis();
+
+                BizLogger.recordContextBuilt(replayPlan, end - start);
 
                 if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
                     LOGGER.error("Invalid context built for plan {}", replayPlan);
@@ -132,13 +140,21 @@ public final class PlanConsumeService {
 
     private int saveAllActionCase(List<ReplayActionItem> replayActionItemList) {
         int planSavedCaseSize = 0;
+        long start;
+        long end;
+
         for (ReplayActionItem replayActionItem : replayActionItemList) {
             if (replayActionItem.getReplayStatus() != ReplayStatusType.INIT.getValue()) {
                 planSavedCaseSize += replayActionItem.getReplayCaseCount();
                 continue;
             }
             int preloaded = replayActionItem.getReplayCaseCount();
+
+            start = System.currentTimeMillis();
             int actionSavedCount = streamingCaseItemSave(replayActionItem);
+            end = System.currentTimeMillis();
+            BizLogger.recordActionItemCaseSaved(replayActionItem, actionSavedCount, end - start);
+
             planSavedCaseSize += actionSavedCount;
             if (preloaded != actionSavedCount) {
                 replayActionItem.setReplayCaseCount(actionSavedCount);
