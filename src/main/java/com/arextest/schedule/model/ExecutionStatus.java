@@ -16,6 +16,9 @@ public class ExecutionStatus {
     public boolean isNormal() {
         return !canceled.get() && !interrupted.get();
     }
+    public boolean isAbnormal() {
+        return canceled.get() || interrupted.get();
+    }
 
     public boolean isInterrupted() {
         return this.interrupted.get();

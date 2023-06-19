@@ -106,4 +106,6 @@ public class ReplayActionItem {
     public void recordProcessCaseCount(int incoming) {
         setCaseProcessCount(caseProcessCount + incoming);
     }
+
+    public ExecutionStatus planStatus;
 }

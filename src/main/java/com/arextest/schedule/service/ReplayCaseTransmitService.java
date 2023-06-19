@@ -50,17 +50,16 @@ public class ReplayCaseTransmitService {
     private ReplaySenderFactory senderFactory;
     @Resource
     private ComparisonWriter comparisonWriter;
-    @Resource
-    private CacheProvider redisCacheProvider;
+
     @Resource
     private ProgressEvent progressEvent;
     @Resource
     private MetricService metricService;
 
-    public boolean send(ReplayActionItem replayActionItem) {
+    public void send(ReplayActionItem replayActionItem) {
         List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
         if (CollectionUtils.isEmpty(sourceItemList)) {
-            return false;
+            return;
         }
 
         // warmUp should be done once for each endpoint
@@ -68,15 +67,15 @@ public class ReplayCaseTransmitService {
             activeRemoteHost(sourceItemList);
         }
 
-        byte[] cancelKey = getCancelKey(replayActionItem.getPlanId());
+        if (replayActionItem.getPlanStatus().isInterrupted()) {
+            return;
+        }
 
-        if (replayActionItem.getSendRateLimiter().failBreak()) {
-            return false;
-        }
-        if (isCancelled(cancelKey)) {
+        if (replayActionItem.getPlanStatus().isCanceled()) {
             progressEvent.onActionCancelled(replayActionItem);
-            return true;
+            return;
         }
+
         try {
             doSendValuesToRemoteHost(sourceItemList);
         } catch (Throwable throwable) {
@@ -85,21 +84,12 @@ public class ReplayCaseTransmitService {
         } finally {
             replayActionItem.recordProcessCaseCount(sourceItemList.size());
         }
-
-        return false;
     }
 
     @SuppressWarnings("rawtypes")
-    public boolean releaseCasesOfContext(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {
-        byte[] cancelKey = getCancelKey(replayActionItem.getPlanId());
-
-        if (isCancelled(cancelKey)) {
-            progressEvent.onActionCancelled(replayActionItem);
-            return true;
-        }
-
-        if (replayActionItem.getSendRateLimiter().failBreak()) {
-            return false;
+    public void releaseCasesOfContext(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {
+        if (executionContext.getExecutionStatus().isAbnormal()) {
+            return;
         }
 
         int contextCasesCount = (int) replayActionCaseItemRepository.countWaitingSendList(replayActionItem.getId(),
@@ -120,20 +110,6 @@ public class ReplayCaseTransmitService {
                 progressTracer.finishCaseByAction(replayActionItem);
             }
         }
-
-        return false;
-    }
-
-    private byte[] getCancelKey(String planId) {
-        return (STOP_PLAN_REDIS_KEY + planId).getBytes(StandardCharsets.UTF_8);
-    }
-
-    private boolean isCancelled(byte[] rediskey) {
-        byte[] bytes = redisCacheProvider.get(rediskey);
-        if (bytes == null) {
-            return false;
-        }
-        return true;
     }
 
     private ReplayActionCaseItem cloneCaseItem(List<ReplayActionCaseItem> groupValues, int index) {

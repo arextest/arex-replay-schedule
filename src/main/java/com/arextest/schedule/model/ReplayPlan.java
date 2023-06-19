@@ -1,5 +1,6 @@
 package com.arextest.schedule.model;
 
+import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
 import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -75,4 +76,8 @@ public class ReplayPlan {
     // Min(targetInstanceCount || Int.MAX, sourceInstanceCount || Int.MAX)
     @JsonIgnore
     private int minInstanceCount;
+
+    @JsonIgnore
+    private ExecutionStatus planStatus = ExecutionStatus.buildNormal();
+    private SendSemaphoreLimiter limiter;
 }

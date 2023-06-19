@@ -127,13 +127,13 @@ public final class PlanConsumeService {
         // limiter shared for entire plan, max qps = maxQps per instance * min instance count
         final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps(),
                 replayPlan.getMinInstanceCount());
-
         qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
+        replayPlan.setLimiter(qpsLimiter);
 
-        ExecutionStatus sendResult = ExecutionStatus.buildNormal();
+        ExecutionStatus planStatus = replayPlan.getPlanStatus();
 
         for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
-            executionContext.setExecutionStatus(sendResult);
+            executionContext.setExecutionStatus(planStatus);
             planExecutionContextProvider.onBeforeContextExecution(executionContext, replayPlan);
 
             List<CompletableFuture<Void>> contextTasks = new ArrayList<>();
@@ -163,14 +163,14 @@ public final class PlanConsumeService {
             planExecutionContextProvider.onAfterContextExecution(executionContext, replayPlan);
         }
 
-        if (sendResult.isCanceled()) {
+        if (planStatus.isCanceled()) {
             progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.CANCELLED);
             LOGGER.info("The plan was isCancelled, plan id:{} ,appId: {} ", replayPlan.getId(),
                     replayPlan.getAppId());
             return;
         }
 
-        if (sendResult.isInterrupted()) {
+        if (planStatus.isInterrupted()) {
             progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
             LOGGER.info("The plan was interrupted, plan id:{} ,appId: {} ", replayPlan.getId(),
                     replayPlan.getAppId());
@@ -210,12 +210,13 @@ public final class PlanConsumeService {
     }
 
     private void sendByPaging(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {
-        ExecutionStatus sendResult = executionContext.getExecutionStatus();
+        ExecutionStatus planStatus = executionContext.getExecutionStatus();
+        replayActionItem.setPlanStatus(planStatus);
         switch (executionContext.getActionType()) {
             case SKIP_CASE_OF_CONTEXT:
                 // skip all cases of this context leaving the status as default
-                sendResult.setCanceled(replayCaseTransmitService.releaseCasesOfContext(replayActionItem, executionContext));
-                sendResult.setInterrupted(replayActionItem.getSendRateLimiter().failBreak());
+                replayCaseTransmitService.releaseCasesOfContext(replayActionItem, executionContext);
+                planStatus.setInterrupted(replayActionItem.getSendRateLimiter().failBreak());
                 break;
 
             case NORMAL:
@@ -230,12 +231,11 @@ public final class PlanConsumeService {
                         break;
                     }
                     ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
-                    sendResult.setInterrupted(replayActionItem.getSendRateLimiter().failBreak());
 
-                    if (sendResult.isInterrupted() || sendResult.isCanceled()) {
+                    if (planStatus.isAbnormal()) {
                         break;
                     }
-                    sendResult.setCanceled(replayCaseTransmitService.send(replayActionItem));
+                    replayCaseTransmitService.send(replayActionItem);
                 }
         }
     }
