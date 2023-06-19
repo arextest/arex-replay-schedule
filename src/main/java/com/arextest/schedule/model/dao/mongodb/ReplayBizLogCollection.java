@@ -13,7 +13,7 @@ import java.util.Date;
 @Data
 @NoArgsConstructor
 @Document("ReplayBizLog")
-public class ReplayBizLogCollection extends ModelBase{
+public class ReplayBizLogCollection extends ModelBase {
     private Date date;
     private int level;
     private String message;
@@ -27,4 +27,8 @@ public class ReplayBizLogCollection extends ModelBase{
     private String caseItemId;
     private String actionItemId;
     private String operationName;
+
+    private String exception;
+    private String request;
+    private String extra;
 }

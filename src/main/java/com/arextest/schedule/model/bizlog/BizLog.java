@@ -33,6 +33,7 @@ public class BizLog {
     private String operationName;
 
     private String exception;
+    private String request;
     private String extra;
 
     public static BizLogBuilder constructBase() {
