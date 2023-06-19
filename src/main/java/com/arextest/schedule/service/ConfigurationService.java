@@ -45,10 +45,13 @@ public final class ConfigurationService {
         private String appId;
         private Integer offsetDays;
         private Set<String> targetEnv;
+        // replay exclusion operations
         private Map<String, Set<String>> excludeOperationMap;
         private Integer sendMaxQps;
+        // record inclusion operations
+        private Set<String> includeServiceOperationSet;
+        // record exclusion operations
         private Set<String> excludeServiceOperationSet;
-
     }
 
     @Data

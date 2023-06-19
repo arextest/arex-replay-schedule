@@ -100,7 +100,7 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
     @Override
     public List<ReplayActionItem> buildReplayActionList(BuildReplayPlanRequest request, PlanContext planContext) {
         List<ReplayActionItem> replayActionItemList = getReplayActionList(request, planContext);
-        replayActionItemPreprocessService.filterActionItemAndAddExclusionOperation(replayActionItemList, planContext.getAppId());
+        replayActionItemPreprocessService.filterActionItem(replayActionItemList, planContext.getAppId());
         return replayActionItemList;
     }
 
