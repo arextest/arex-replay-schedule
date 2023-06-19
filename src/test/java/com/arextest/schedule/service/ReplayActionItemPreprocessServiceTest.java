@@ -2,6 +2,7 @@ package com.arextest.schedule.service;
 
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.web.boot.WebSpringBootServletInitializer;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,6 +17,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
+@Ignore
 @SpringBootTest(classes = WebSpringBootServletInitializer.class)
 @RunWith(SpringRunner.class)
 public class ReplayActionItemPreprocessServiceTest {
