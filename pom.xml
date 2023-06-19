@@ -17,7 +17,8 @@
         <jmockit.version>1.37</jmockit.version>
         <lombok.version>1.18.2</lombok.version>
         <guava.version>20.0</guava.version>
-        <compare-sdk.version>0.1.16</compare-sdk.version>
+        <compare-sdk.version>0.1.18-SNAPSHOT</compare-sdk.version>
+        <web-contract.version>0.0.0.0-SNAPSHOT</web-contract.version>
         <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
 
         <!-- single jacoco.exec file relative to root directory of the project -->
@@ -129,7 +130,7 @@
             <dependency>
                 <groupId>com.arextest</groupId>
                 <artifactId>arex-web-model-contract</artifactId>
-                <version>0.0.0.0-SNAPSHOT</version>
+                <version>${web-contract.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.arextest</groupId>
