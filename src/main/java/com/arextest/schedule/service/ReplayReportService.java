@@ -156,7 +156,15 @@ public final class ReplayReportService implements ComparisonWriter {
         int comparedSize = comparedResult.size();
 
         AnalyzeCompareResultsRequestType request = new AnalyzeCompareResultsRequestType();
-        request.setIds(replayCompareResultRepository.insertAllCompareResults(comparedResult));
+        ReportResultConverter converter = ReportResultConverter.DEFAULT;
+        List<AnalyzeCompareResultsRequestType.AnalyzeCompareInfoItem> reqItems = new ArrayList<>(comparedSize);
+
+        for (int i = 0; i < comparedSize; i++) {
+            ReplayCompareResult sourceResult = comparedResult.get(i);
+            reqItems.add(converter.to(sourceResult));
+        }
+        request.setAnalyzeCompareInfos(reqItems);
+
         Response response = httpWepServiceApiClient.jsonPost(pushReplayCompareResultUrl, request,
                 GenericResponseType.class);
         if (response == null || response.getResponseStatusType().hasError()) {
@@ -179,9 +187,11 @@ public final class ReplayReportService implements ComparisonWriter {
             return true;
         }
         AnalyzeCompareResultsRequestType request = new AnalyzeCompareResultsRequestType();
+        ReplayCompareResult compareResult = toQMQCompareResult(caseItem);
+        this.replayCompareResultRepository.insertAllCompareResults(Collections.singletonList(compareResult));
 
-        request.setIds(this.replayCompareResultRepository.insertAllCompareResults(
-                Collections.singletonList(toQMQCompareResult(caseItem))));
+        ReportResultConverter converter = ReportResultConverter.DEFAULT;
+        request.setAnalyzeCompareInfos(Collections.singletonList(converter.to(compareResult)));
 
         Response response = httpWepServiceApiClient.jsonPost(pushReplayCompareResultUrl, request,
                 GenericResponseType.class);
