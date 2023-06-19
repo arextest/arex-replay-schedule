@@ -13,6 +13,8 @@ import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_KEY;
@@ -45,20 +47,9 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
 
     @PostConstruct
     public void init() {
-        Thread runner = new Thread(() -> {
-            while (true) {
-                try {
-                    refreshAll();
-                    Thread.sleep(SECOND_TO_REFRESH * 1000);
-                } catch (Throwable t) {
-                    LOGGER.error("Schedule monitor error: ", t);
-                }
-            }
-        });
-
-        runner.setName("Schedule-Monitor");
-        runner.setDaemon(true);
-        runner.start();
+        Timer timer = new Timer();
+        MonitorTask task = new MonitorTask();
+        timer.schedule(task, SECOND_TO_REFRESH * 1000);
     }
 
     private void refreshAll() {
@@ -74,6 +65,15 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
 
     private void refreshInterruptStatus(ReplayPlan plan) {
         plan.getPlanStatus().setInterrupted(interruptMonitor.isPlanNeedToInterrupt(plan));
+    }
+
+    private class MonitorTask extends TimerTask {
+        @Override
+        public void run() {
+            long start;
+            long end;
+            LOGGER.info("Monitor begins task, monitoring {} tasks", tasks.size());
+        }
     }
 
     private class RedisCancelMonitor {
