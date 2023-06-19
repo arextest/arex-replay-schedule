@@ -34,6 +34,8 @@ public class BizLog {
 
     private String exception;
     private String request;
+    private String response;
+    private String traceId;
     private String extra;
 
     public static BizLogBuilder constructBase() {
