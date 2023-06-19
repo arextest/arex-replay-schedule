@@ -36,7 +36,7 @@ import java.util.ServiceLoader;
 @Component
 public class DubboReplaySender extends AbstractReplaySender {
     private static final String JAR_FILE_PATH = "D:\\Users\\yushuwang\\work\\lib\\dubboInvoker-1.0-SNAPSHOT.jar";
-
+    private static final String ADD_URL_FUN_NAME = "addURL";
     @Override
     public boolean isSupported(String categoryType) {
         return MockCategoryType.DUBBO_PROVIDER.getName().equals(categoryType);
@@ -112,7 +112,7 @@ public class DubboReplaySender extends AbstractReplaySender {
         File jarFile = new File(jarPath);
         Method method = null;
         try {
-            method = WebappClassLoaderBase.class.getDeclaredMethod("addUrl", URL.class);
+            method = WebappClassLoaderBase.class.getDeclaredMethod(ADD_URL_FUN_NAME, URL.class);
         } catch (NoSuchMethodException | SecurityException e1) {
             LOGGER.error("getDeclaredMethod failed, jarPath:{}, message:{}", jarPath, e1.getMessage());
         }
