@@ -13,12 +13,16 @@ import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.SenderParameters;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.loader.WebappClassLoaderBase;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +35,7 @@ import java.util.ServiceLoader;
 @Slf4j
 @Component
 public class DubboReplaySender extends AbstractReplaySender {
-    private static final String DUBBO_APP_NAME = "arex-replay";
-    private static final String APPLICATION_JSON = "application/json";
+    private static final String JAR_FILE_PATH = "D:\\Users\\yushuwang\\work\\lib\\dubboInvoker-1.0-SNAPSHOT.jar";
 
     @Override
     public boolean isSupported(String categoryType) {
@@ -72,6 +75,9 @@ public class DubboReplaySender extends AbstractReplaySender {
 
         ReplayInvokeResult replayInvokeResult = null;
         DubboParameters dubboParameters = getDubboParameters(caseItem);
+
+        loadJar(JAR_FILE_PATH);
+
         ServiceLoader<DubboInvoker> loader = ServiceLoader.load(DubboInvoker.class);
         for (DubboInvoker invoker : loader) {
             if (invoker.getName().equalsIgnoreCase("default")) {
@@ -100,6 +106,28 @@ public class DubboReplaySender extends AbstractReplaySender {
         caseItem.setSendStatus(targetSendResult.getStatusType().getValue());
 
         return targetSendResult.success();
+    }
+
+    public static void loadJar(String jarPath) {
+        File jarFile = new File(jarPath);
+        Method method = null;
+        try {
+            method = WebappClassLoaderBase.class.getDeclaredMethod("addUrl", URL.class);
+        } catch (NoSuchMethodException | SecurityException e1) {
+            LOGGER.error("getDeclaredMethod failed, jarPath:{}, message:{}", jarPath, e1.getMessage());
+        }
+        boolean accessible = method.isAccessible();
+        try {
+            method.setAccessible(true);
+            Class<?> clazz = DubboReplaySender.class;
+            ClassLoader classLoader = clazz.getClassLoader();
+            URL url = jarFile.toURI().toURL();
+            method.invoke(classLoader, url);
+        } catch (Exception e2) {
+            LOGGER.error("addUrl failed, jarPath:{}, message:{}", jarPath, e2.getMessage());
+        } finally {
+            method.setAccessible(accessible);
+        }
     }
 
     private ReplaySendResult fromDubboResult(Map<?, ?> requestHeaders, String url, Object result,
