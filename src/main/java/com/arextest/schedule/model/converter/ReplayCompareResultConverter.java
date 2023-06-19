@@ -1,8 +1,10 @@
 package com.arextest.schedule.model.converter;
 
 import com.arextest.common.utils.SerializationUtils;
+import com.arextest.diff.model.MsgInfo;
 import com.arextest.diff.model.log.LogEntity;
 import com.arextest.schedule.model.ReplayCompareResult;
+import com.arextest.schedule.model.dao.mongodb.ReplayCompareMsgInfoCollection;
 import com.arextest.schedule.model.dao.mongodb.ReplayCompareResultCollection;
 import com.arextest.schedule.utils.ZstdUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -30,7 +32,7 @@ public interface ReplayCompareResultConverter {
             @Mapping(target = "dataChangeUpdateTime", expression = "java(System.currentTimeMillis())"),
             @Mapping(target = "dataChangeCreateDate", expression = "java(new java.util.Date())"),
             @Mapping(target = "baseMsg", qualifiedByName = "compressMsg"),
-            @Mapping(target = "testMsg", qualifiedByName = "compressMsg")
+            @Mapping(target = "testMsg", qualifiedByName = "compressMsg"),
     })
     ReplayCompareResultCollection daoFromDto(ReplayCompareResult dto);
 
@@ -39,6 +41,13 @@ public interface ReplayCompareResultConverter {
             return StringUtils.EMPTY;
         }
         return SerializationUtils.useZstdSerializeToBase64(logs.toArray());
+    }
+
+    @Named("msgInfo")
+    default ReplayCompareMsgInfoCollection convertMsg(MsgInfo msgInfo) {
+        ReplayCompareMsgInfoCollection ret = new ReplayCompareMsgInfoCollection();
+        ret.setMsgMiss(msgInfo.getMsgMiss());
+        return ret;
     }
 
     @Named("compressMsg")
