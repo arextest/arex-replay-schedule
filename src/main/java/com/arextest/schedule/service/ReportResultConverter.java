@@ -18,6 +18,7 @@ import java.util.List;
  * @author jmo
  * @since 2022/1/28
  */
+@Mapper
 public interface ReportResultConverter {
     ReportResultConverter DEFAULT = Mappers.getMapper(ReportResultConverter.class);
 
