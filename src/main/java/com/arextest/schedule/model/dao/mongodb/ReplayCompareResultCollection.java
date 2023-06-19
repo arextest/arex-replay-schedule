@@ -1,5 +1,6 @@
 package com.arextest.schedule.model.dao.mongodb;
 
+import com.arextest.diff.model.MsgInfo;
 import lombok.Data;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -41,4 +42,6 @@ public class ReplayCompareResultCollection extends ModelBase {
     private int diffResultCode;
 
     private Date dataCreateTime;
+
+    private ReplayCompareMsgInfoCollection msgInfo;
 }

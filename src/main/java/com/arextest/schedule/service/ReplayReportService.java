@@ -158,6 +158,7 @@ public final class ReplayReportService implements ComparisonWriter {
         AnalyzeCompareResultsRequestType request = new AnalyzeCompareResultsRequestType();
         ReportResultConverter converter = ReportResultConverter.DEFAULT;
         List<AnalyzeCompareResultsRequestType.AnalyzeCompareInfoItem> reqItems = new ArrayList<>(comparedSize);
+        this.replayCompareResultRepository.insertAllCompareResults(comparedResult);
 
         for (int i = 0; i < comparedSize; i++) {
             ReplayCompareResult sourceResult = comparedResult.get(i);
