@@ -3,6 +3,8 @@ package com.arextest.schedule.sender.impl;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.arextest.model.mock.MockCategoryType;
+import com.arextest.schedule.DubboInvoker;
+import com.arextest.schedule.ReplayInvokeResult;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
@@ -14,16 +16,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.dubbo.config.ApplicationConfig;
-import org.apache.dubbo.config.ReferenceConfig;
-import org.apache.dubbo.rpc.RpcContext;
-import org.apache.dubbo.rpc.service.GenericService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 
 /**
  * @author b_yu
@@ -59,27 +58,43 @@ public class DubboReplaySender extends AbstractReplaySender {
     }
 
     private boolean doSend(ReplayActionCaseItem caseItem, Map<String, String> headers) {
+
         ImmutablePair<String, String> interfaceNameAndMethod =
                 getInterfaceNameAndMethod(caseItem.getParent().getOperationName());
         if (interfaceNameAndMethod == null) {
             return false;
         }
-
         ServiceInstance instanceRunner = selectLoadBalanceInstance(caseItem.getId(), caseItem.getParent().getTargetInstance());
         if (instanceRunner == null) {
             return false;
         }
         String url = instanceRunner.getUrl();
-        RpcContext.getServiceContext().setAttachments(headers);
-        GenericService genericService = getReferenceConfig(url, interfaceNameAndMethod.getLeft());
-        if (genericService == null) {
+
+        ReplayInvokeResult replayInvokeResult = null;
+        DubboParameters dubboParameters = getDubboParameters(caseItem);
+        ServiceLoader<DubboInvoker> loader = ServiceLoader.load(DubboInvoker.class);
+        for (DubboInvoker invoker : loader) {
+            if (invoker.getName().equalsIgnoreCase("default")) {
+                replayInvokeResult = invoker.invoke(url, headers,
+                        interfaceNameAndMethod.getLeft(), interfaceNameAndMethod.getRight(),
+                        dubboParameters.parameterTypes, dubboParameters.getParameters());
+            }
+        }
+//        RpcContext.getServiceContext().setAttachments(headers);
+//        GenericService genericService = getReferenceConfig(url, interfaceNameAndMethod.getLeft());
+//        if (genericService == null) {
+//            return false;
+//        }
+//        DubboParameters dubboParameters = getDubboParameters(caseItem);
+//         result = genericService.$invoke(interfaceNameAndMethod.getRight(),
+//                dubboParameters.getParameterTypes().toArray(new String[0]),
+//                dubboParameters.getParameters().toArray());
+//        ReplaySendResult targetSendResult = fromDubboResult(headers, url, result);
+        if (replayInvokeResult == null) {
             return false;
         }
-        DubboParameters dubboParameters = getDubboParameters(caseItem);
-        Object result = genericService.$invoke(interfaceNameAndMethod.getRight(),
-                dubboParameters.getParameterTypes().toArray(new String[0]),
-                dubboParameters.getParameters().toArray());
-        ReplaySendResult targetSendResult = fromDubboResult(headers, url, result);
+        ReplaySendResult targetSendResult = fromDubboResult(headers, url,
+                replayInvokeResult.getResult(), replayInvokeResult.getAttachments());
         caseItem.setSendErrorMessage(targetSendResult.getRemark());
         caseItem.setTargetResultId(targetSendResult.getTraceId());
         caseItem.setSendStatus(targetSendResult.getStatusType().getValue());
@@ -87,11 +102,11 @@ public class DubboReplaySender extends AbstractReplaySender {
         return targetSendResult.success();
     }
 
-    private ReplaySendResult fromDubboResult(Map<?, ?> requestHeaders, String url, Object result) {
+    private ReplaySendResult fromDubboResult(Map<?, ?> requestHeaders, String url, Object result,
+                                             Map<String, String> attachments) {
         String body = encodeResponseAsString(result);
         HttpHeaders responseHeaders = new HttpHeaders();
         String traceId = null;
-        Map<String, String> attachments = RpcContext.getServerContext().getAttachments();
         if (MapUtils.isNotEmpty(attachments)) {
             attachments.forEach(responseHeaders::add);
             traceId = attachments.get(CommonConstant.AREX_REPLAY_ID);
@@ -123,19 +138,19 @@ public class DubboReplaySender extends AbstractReplaySender {
         return ImmutablePair.of(operationName.substring(0, lastDotIndex), operationName.substring(lastDotIndex + 1));
     }
 
-    private GenericService getReferenceConfig(String url, String interfaceName) {
-        try {
-            ReferenceConfig<GenericService> reference = new ReferenceConfig<>();
-            reference.setApplication(new ApplicationConfig(DUBBO_APP_NAME));
-            reference.setUrl(url);
-            reference.setInterface(interfaceName);
-            reference.setGeneric(true);
-            return reference.get();
-        } catch (Exception e) {
-            LOGGER.error("Get dubbo reference config error", e);
-        }
-        return null;
-    }
+//    private GenericService getReferenceConfig(String url, String interfaceName) {
+//        try {
+//            ReferenceConfig<GenericService> reference = new ReferenceConfig<>();
+//            reference.setApplication(new ApplicationConfig(DUBBO_APP_NAME));
+//            reference.setUrl(url);
+//            reference.setInterface(interfaceName);
+//            reference.setGeneric(true);
+//            return reference.get();
+//        } catch (Exception e) {
+//            LOGGER.error("Get dubbo reference config error", e);
+//        }
+//        return null;
+//    }
 
     private DubboParameters getDubboParameters(ReplayActionCaseItem caseItem) {
         String type = caseItem.getTargetRequest().getType();
