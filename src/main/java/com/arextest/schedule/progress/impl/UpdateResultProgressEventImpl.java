@@ -22,8 +22,7 @@ import java.util.Date;
  * @since 2021/10/11
  */
 @Slf4j
-@Component
-final class UpdateResultProgressEventImpl implements ProgressEvent {
+public class UpdateResultProgressEventImpl implements ProgressEvent {
     @Resource
     private ReplayPlanActionRepository replayPlanActionRepository;
     @Resource

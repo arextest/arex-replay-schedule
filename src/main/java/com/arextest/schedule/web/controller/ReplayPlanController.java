@@ -6,6 +6,7 @@ import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.DebugRequestItem;
 import com.arextest.schedule.model.dao.mongodb.ReplayBizLogCollection;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
+import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.service.DebugRequestService;
@@ -38,9 +39,9 @@ public class ReplayPlanController {
     @Resource
     private ProgressTracer progressTracer;
     @Resource
-    private DebugRequestService debugRequestService;
+    private ProgressEvent progressEvent;
     @Resource
-    private PlanBizLogService planBizLogService;
+    private DebugRequestService debugRequestService;
 
 
     @PostMapping(value = "/api/createPlan")
@@ -121,6 +122,7 @@ public class ReplayPlanController {
             return planProduceService.createPlan(request);
         } catch (Throwable e) {
             LOGGER.error("create plan error: {} , request: {}", e.getMessage(), request, e);
+            progressEvent.onReplayPlanCreateException();
             return CommonResponse.badResponse("create plan error！" + e.getMessage());
         } finally {
             MDCTracer.clear();

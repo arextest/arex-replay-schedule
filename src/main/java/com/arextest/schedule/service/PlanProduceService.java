@@ -54,22 +54,28 @@ public class PlanProduceService {
     private CacheProvider redisCacheProvider;
 
     public CommonResponse createPlan(BuildReplayPlanRequest request) {
+        progressEvent.onBeforePlanCreate(request);
+
         long planCreateMillis = System.currentTimeMillis();
         String appId = request.getAppId();
         if (isCreating(appId, request.getTargetEnv())) {
+            progressEvent.onReplayPlanCreateException();
             return CommonResponse.badResponse("This appid is creating plan");
         }
         ReplayPlanBuilder planBuilder = select(request);
         if (planBuilder == null) {
+            progressEvent.onReplayPlanCreateException();
             return CommonResponse.badResponse("appId:" + appId + " unsupported replay planType : " + request.getReplayPlanType());
         }
         PlanContext planContext = planContextCreator.createByAppId(appId);
         BuildPlanValidateResult result = planBuilder.validate(request, planContext);
         if (result.failure()) {
+            progressEvent.onReplayPlanCreateException();
             return CommonResponse.badResponse("appId:" + appId + " error: " + result.getRemark());
         }
         List<ReplayActionItem> replayActionItemList = planBuilder.buildReplayActionList(request, planContext);
         if (CollectionUtils.isEmpty(replayActionItemList)) {
+            progressEvent.onReplayPlanCreateException();
             return CommonResponse.badResponse("appId:" + appId + " error: empty replay actions");
         }
         ReplayPlan replayPlan = build(request, planContext);
@@ -83,10 +89,12 @@ public class PlanProduceService {
         replayPlan.setCaseTotalCount(planCaseCount);
         // todo: add trans
         if (!replayPlanRepository.save(replayPlan)) {
+            progressEvent.onReplayPlanCreateException();
             return CommonResponse.badResponse("save replan plan error, " + replayPlan.toString());
         }
         MDCTracer.addPlanId(replayPlan.getId());
         if (!replayPlanActionRepository.save(replayActionItemList)) {
+            progressEvent.onReplayPlanCreateException();
             return CommonResponse.badResponse("save replay action error, " + replayPlan.toString());
         }
 
