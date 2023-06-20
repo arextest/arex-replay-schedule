@@ -12,6 +12,7 @@ import com.arextest.schedule.model.*;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.MetricService;
+import com.arextest.schedule.model.ReplayActionCaseItem;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -257,8 +258,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     }
 
     private void addMissResult(String category, ReplayComparisonConfig compareConfig,
-                                     List<CompareItem> compareItems,
-                                     ReplayActionCaseItem caseItem, List<ReplayCompareResult> resultList, boolean missRecord) {
+                               List<CompareItem> compareItems,
+                               ReplayActionCaseItem caseItem, List<ReplayCompareResult> resultList, boolean missRecord) {
         if (CollectionUtils.isEmpty(compareItems)) {
             return;
         }

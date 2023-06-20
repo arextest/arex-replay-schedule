@@ -1,5 +1,7 @@
 package com.arextest.schedule.model;
 
+import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.TypeReference;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.Mocker.Target;
 import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
@@ -68,10 +70,12 @@ public class ReplayActionCaseItem {
     @SuppressWarnings("unchecked")
     public Map<String, String> requestHeaders() {
         if (this.targetRequest != null) {
-            Object v = targetRequest.getAttribute(MockAttributeNames.HEADERS);
-            if (v instanceof Map) {
-                return (Map<String, String>) v;
+            Object v = targetRequest.getAttribute("Headers");
+            if (v instanceof String) {
+                return JSONObject.parseObject((String) v, new TypeReference<Map<String, String>>() {});
             }
+            String json =  JSONObject.toJSONString(v);
+            return JSONObject.parseObject(json, new TypeReference<Map<String, String>>() {});
         }
         return null;
     }

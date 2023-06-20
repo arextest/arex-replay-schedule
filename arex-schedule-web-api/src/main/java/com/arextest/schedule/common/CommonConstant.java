@@ -13,6 +13,7 @@ public final class CommonConstant {
     public static final String AREX_RECORD_ID = "arex-record-id";
     public static final String CONFIG_VERSION_HEADER_NAME = "arex_replay_prepare_dependency";
     public static final String AREX_REPLAY_WARM_UP = "arex-replay-warm-up";
+    public static final String AREX_SCHEDULE_REPLAY = "arex-schedule-replay";
     public static final long ONE_DAY_MILLIS = 60 * 60 * 24 * 1000L;
     public static final long THREE_SECOND_MILLIS = 3 * 1000L;
     public static final int OPERATION_MAX_CASE_COUNT = 1000;

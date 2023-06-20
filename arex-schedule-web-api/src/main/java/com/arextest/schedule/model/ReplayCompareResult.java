@@ -5,6 +5,7 @@ import com.arextest.diff.model.CompareResult;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.model.log.LogEntity;
 
+import com.arextest.schedule.model.ReplayActionCaseItem;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
