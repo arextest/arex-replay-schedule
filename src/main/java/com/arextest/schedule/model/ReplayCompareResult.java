@@ -16,6 +16,7 @@ import java.util.List;
  */
 @Data
 public class ReplayCompareResult {
+    private String id;
     private String planId;
     private String planItemId;
     private String operationId;
