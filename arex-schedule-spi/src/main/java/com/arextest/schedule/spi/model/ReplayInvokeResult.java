@@ -11,10 +11,7 @@ public class ReplayInvokeResult {
      */
     private Object result;
 
-    /**
-     * traceId to match record and replay.
-     */
-    private String replayId;
+    private Map<String, String> responseHeaders;
 
     /**
      * if invoke failed.

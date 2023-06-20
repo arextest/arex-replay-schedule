@@ -3,7 +3,6 @@ package com.arextest.schedule.sender.impl;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.arextest.model.mock.MockCategoryType;
-import com.arextest.schedule.common.ClassLoaderUtils;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
@@ -16,15 +15,12 @@ import com.arextest.schedule.spi.model.DubboRequest;
 import com.arextest.schedule.spi.model.ReplayInvokeResult;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +33,8 @@ import java.util.ServiceLoader;
 @Slf4j
 @Component
 public class DubboReplaySender extends AbstractReplaySender {
-    private static final String JAR_FILE_PATH = "D:\\Users\\yushuwang\\work\\lib\\dubboInvoker-1.0-SNAPSHOT-jar-with-dependencies.jar";
+    private static final String DUBBO_EXTENSION_NAME = "DefaultDubbo";
+
     @Override
     public boolean isSupported(String categoryType) {
         return MockCategoryType.DUBBO_PROVIDER.getName().equals(categoryType);
@@ -46,14 +43,8 @@ public class DubboReplaySender extends AbstractReplaySender {
     public boolean send(ReplayActionCaseItem caseItem) {
         ReplayActionItem replayActionItem = caseItem.getParent();
         before(caseItem.getRecordId(), replayActionItem.getParent().getReplayPlanType());
-        Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
-        headers.remove(CommonConstant.AREX_REPLAY_WARM_UP);
-        headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
+        Map<String, String> headers = createHeaders(caseItem);
         headers.put(CommonConstant.AREX_SCHEDULE_REPLAY, Boolean.TRUE.toString());
-        String exclusionOperationConfig = replayActionItem.getExclusionOperationConfig();
-        if (StringUtils.isNotEmpty(exclusionOperationConfig)) {
-            headers.put(CommonConstant.X_AREX_EXCLUSION_OPERATIONS, exclusionOperationConfig);
-        }
         return doSend(caseItem, headers);
     }
 
@@ -95,10 +86,9 @@ public class DubboReplaySender extends AbstractReplaySender {
             return false;
         }
         dubboRequest.setHeaders(headers);
-        //ClassLoaderUtils.loadJar(JAR_FILE_PATH);
         ServiceLoader<ReplaySenderExtension> loader = ServiceLoader.load(ReplaySenderExtension.class);
         for (ReplaySenderExtension sender : loader) {
-            if (sender.getName().equalsIgnoreCase("DefaultDubbo")) {
+            if (sender.getName().equalsIgnoreCase(DUBBO_EXTENSION_NAME)) {
                 replayInvokeResult = sender.invoke(dubboRequest);
             }
         }
@@ -106,7 +96,7 @@ public class DubboReplaySender extends AbstractReplaySender {
             return false;
         }
         ReplaySendResult targetSendResult = fromDubboResult(headers, dubboRequest.getUrl(),
-                replayInvokeResult.getResult(), replayInvokeResult.getReplayId());
+                replayInvokeResult.getResult(), replayInvokeResult.getResponseHeaders());
         caseItem.setSendErrorMessage(targetSendResult.getRemark());
         caseItem.setTargetResultId(targetSendResult.getTraceId());
         caseItem.setSendStatus(targetSendResult.getStatusType().getValue());
@@ -115,9 +105,14 @@ public class DubboReplaySender extends AbstractReplaySender {
     }
 
     private ReplaySendResult fromDubboResult(Map<?, ?> requestHeaders, String url, Object result,
-                                             String traceId) {
+                                             Map<String, String> attachments) {
         String body = encodeResponseAsString(result);
         HttpHeaders responseHeaders = new HttpHeaders();
+        String traceId = null;
+        if (MapUtils.isNotEmpty(attachments)) {
+            attachments.forEach(responseHeaders::add);
+            traceId = attachments.get(CommonConstant.AREX_REPLAY_ID);
+        }
         LOGGER.info("invoke result url:{}, request header:{}, response header:{}, body:{}", url, requestHeaders,
                 responseHeaders, body);
         if (!isReplayRequest(requestHeaders)) {
