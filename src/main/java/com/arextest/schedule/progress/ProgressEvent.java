@@ -15,9 +15,7 @@ public interface ProgressEvent {
      * @param request createPlanReq
      * @return bad response describing the reason blocking plan creation
      */
-    default CommonResponse onBeforePlanCreate(BuildReplayPlanRequest request) {
-        return null;
-    }
+    default void onBeforePlanCreate(BuildReplayPlanRequest request) {}
 
     default void onReplayPlanCreateException() {}
 

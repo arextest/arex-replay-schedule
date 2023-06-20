@@ -54,10 +54,7 @@ public class PlanProduceService {
     private CacheProvider redisCacheProvider;
 
     public CommonResponse createPlan(BuildReplayPlanRequest request) {
-        CommonResponse badRes = progressEvent.onBeforePlanCreate(request);
-        if (badRes != null) {
-            return badRes;
-        }
+        progressEvent.onBeforePlanCreate(request);
 
         long planCreateMillis = System.currentTimeMillis();
         String appId = request.getAppId();
