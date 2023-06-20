@@ -17,7 +17,7 @@ public interface ProgressEvent {
      */
     default void onBeforePlanCreate(BuildReplayPlanRequest request) {}
 
-    default void onReplayPlanCreateException() {}
+    default void onReplayPlanCreateException(BuildReplayPlanRequest request) {}
 
     void onReplayPlanCreated(ReplayPlan replayPlan);
 
