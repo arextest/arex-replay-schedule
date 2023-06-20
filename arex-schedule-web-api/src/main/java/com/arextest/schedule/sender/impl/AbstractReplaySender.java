@@ -2,6 +2,7 @@ package com.arextest.schedule.sender.impl;
 
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.ReplaySender;
@@ -35,6 +36,18 @@ abstract class AbstractReplaySender implements ReplaySender {
         if (StringUtils.isNotEmpty(recordId)) {
             mockCachePreLoader.fillMockSource(recordId, replayPlanType);
         }
+    }
+
+    protected Map<String, String> createHeaders(ReplayActionCaseItem caseItem) {
+        ReplayActionItem replayActionItem = caseItem.getParent();
+        Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
+        headers.remove(CommonConstant.AREX_REPLAY_WARM_UP);
+        headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
+        String exclusionOperationConfig = replayActionItem.getExclusionOperationConfig();
+        if (StringUtils.isNotEmpty(exclusionOperationConfig)) {
+            headers.put(CommonConstant.X_AREX_EXCLUSION_OPERATIONS, exclusionOperationConfig);
+        }
+        return headers;
     }
 
 

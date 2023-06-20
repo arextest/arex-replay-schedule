@@ -110,15 +110,9 @@ public final class HttpServletReplaySender extends AbstractReplaySender {
 
     @Override
     public boolean send(ReplayActionCaseItem caseItem) {
-        Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
+        Map<String, String> headers = createHeaders(caseItem);
         ReplayActionItem replayActionItem = caseItem.getParent();
         before(caseItem.getRecordId(), replayActionItem.getParent().getReplayPlanType());
-        headers.remove(CommonConstant.AREX_REPLAY_WARM_UP);
-        headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
-        String exclusionOperationConfig = replayActionItem.getExclusionOperationConfig();
-        if (StringUtils.isNotEmpty(exclusionOperationConfig)) {
-            headers.put(CommonConstant.X_AREX_EXCLUSION_OPERATIONS, exclusionOperationConfig);
-        }
         return doSend(replayActionItem, caseItem, headers);
     }
 
