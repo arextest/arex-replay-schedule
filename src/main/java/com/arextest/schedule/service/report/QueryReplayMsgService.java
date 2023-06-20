@@ -4,6 +4,7 @@ import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.model.log.LogEntity;
 import com.arextest.diff.model.log.NodeEntity;
 import com.arextest.diff.model.log.UnmatchedPairEntity;
+import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
 import com.arextest.schedule.model.ReplayCompareResult;
 import com.arextest.schedule.model.converter.ReplayCompareResultConverter;
@@ -28,11 +29,23 @@ import java.util.List;
 public class QueryReplayMsgService {
     @Resource
     private ReplayCompareResultRepositoryImpl replayCompareResultRepository;
+    private static final CompareSDK COMPARE_INSTANCE = new CompareSDK();
+
 
     public QueryDiffMsgByIdResponseType queryDiffMsgById(String id) {
         QueryDiffMsgByIdResponseType response = new QueryDiffMsgByIdResponseType();
 
         ReplayCompareResult compareResultBo = replayCompareResultRepository.queryCompareResultsById(id);
+
+        // bo may contain only quick compare result, need to fill log entities into BO
+        if (DiffResultCode.COMPARED_WITH_DIFFERENCE == compareResultBo.getDiffResultCode()
+                && CollectionUtils.isEmpty(compareResultBo.getLogs())) {
+            List<LogEntity> logs =
+                    COMPARE_INSTANCE.compare(compareResultBo.getBaseMsg(), compareResultBo.getTestMsg()).getLogs();
+            compareResultBo.setLogs(logs);
+            replayCompareResultRepository.save(ReplayCompareResultConverter.INSTANCE.daoFromBo(compareResultBo));
+        }
+
         CompareResultDetail compareResultDetail = ReplayCompareResultConverter.INSTANCE.voFromBo(compareResultBo);
 
         fillCompareResultDetail(compareResultBo, compareResultDetail);
