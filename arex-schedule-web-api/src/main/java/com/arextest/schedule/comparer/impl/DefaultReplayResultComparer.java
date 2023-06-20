@@ -272,8 +272,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     }
 
     private void addMissResult(String category, ReplayComparisonConfig compareConfig,
-                                     List<CompareItem> compareItems,
-                                     ReplayActionCaseItem caseItem, List<ReplayCompareResult> resultList, boolean missRecord) {
+                               List<CompareItem> compareItems,
+                               ReplayActionCaseItem caseItem, List<ReplayCompareResult> resultList, boolean missRecord) {
         if (CollectionUtils.isEmpty(compareItems)) {
             return;
         }

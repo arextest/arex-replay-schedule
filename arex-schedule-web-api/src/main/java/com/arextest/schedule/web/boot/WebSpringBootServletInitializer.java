@@ -1,5 +1,6 @@
 package com.arextest.schedule.web.boot;
 
+import com.arextest.schedule.common.ClassLoaderUtils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -15,6 +16,8 @@ import java.net.URI;
  */
 @SpringBootApplication(scanBasePackages = "com.arextest.schedule", exclude = {DataSourceAutoConfiguration.class})
 public class WebSpringBootServletInitializer extends SpringBootServletInitializer {
+    private static final String JAR_FILE_PATH = "D:\\Users\\yushuwang\\work\\lib\\dubboInvoker-1.0-SNAPSHOT-jar-with-dependencies.jar";
+
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
         return application.sources(WebSpringBootServletInitializer.class);
@@ -25,6 +28,8 @@ public class WebSpringBootServletInitializer extends SpringBootServletInitialize
         try {
             SpringApplication.run(WebSpringBootServletInitializer.class, args);
             Desktop.getDesktop().browse(new URI("http://localhost:8080/api/createPlan"));
+
+            ClassLoaderUtils.loadJar(JAR_FILE_PATH);
         } catch (Exception e) {
             e.printStackTrace();
         }

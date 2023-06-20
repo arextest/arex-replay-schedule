@@ -3,18 +3,19 @@ package com.arextest.schedule.sender.impl;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.arextest.model.mock.MockCategoryType;
-import com.arextest.schedule.DubboInvoker;
-import com.arextest.schedule.ReplayInvokeResult;
+import com.arextest.schedule.common.ClassLoaderUtils;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.model.converter.ReplayActionCaseItemConverter;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.SenderParameters;
+import com.arextest.schedule.spi.ReplaySenderExtension;
+import com.arextest.schedule.spi.model.DubboRequest;
+import com.arextest.schedule.spi.model.ReplayInvokeResult;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.catalina.loader.WebappClassLoaderBase;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.http.HttpHeaders;
@@ -36,8 +37,7 @@ import java.util.ServiceLoader;
 @Slf4j
 @Component
 public class DubboReplaySender extends AbstractReplaySender {
-    private static final String JAR_FILE_PATH = "D:\\Users\\yushuwang\\work\\lib\\dubboInvoker-1.0-SNAPSHOT.jar";
-    private static final String ADD_URL_FUN_NAME = "addURL";
+    private static final String JAR_FILE_PATH = "D:\\Users\\yushuwang\\work\\lib\\dubboInvoker-1.0-SNAPSHOT-jar-with-dependencies.jar";
     @Override
     public boolean isSupported(String categoryType) {
         return MockCategoryType.DUBBO_PROVIDER.getName().equals(categoryType);
@@ -49,6 +49,7 @@ public class DubboReplaySender extends AbstractReplaySender {
         Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
         headers.remove(CommonConstant.AREX_REPLAY_WARM_UP);
         headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
+        headers.put(CommonConstant.AREX_SCHEDULE_REPLAY, Boolean.TRUE.toString());
         String exclusionOperationConfig = replayActionItem.getExclusionOperationConfig();
         if (StringUtils.isNotEmpty(exclusionOperationConfig)) {
             headers.put(CommonConstant.X_AREX_EXCLUSION_OPERATIONS, exclusionOperationConfig);
@@ -61,47 +62,51 @@ public class DubboReplaySender extends AbstractReplaySender {
         return null;
     }
 
-    private boolean doSend(ReplayActionCaseItem caseItem, Map<String, String> headers) {
+    DubboRequest generateDubboRequest(ReplayActionCaseItem caseItem) {
+        DubboRequest dubboRequest = ReplayActionCaseItemConverter.INSTANCE.convertDubboRequest(caseItem);
 
         ImmutablePair<String, String> interfaceNameAndMethod =
                 getInterfaceNameAndMethod(caseItem.getParent().getOperationName());
         if (interfaceNameAndMethod == null) {
-            return false;
+            return null;
         }
         ServiceInstance instanceRunner = selectLoadBalanceInstance(caseItem.getId(), caseItem.getParent().getTargetInstance());
         if (instanceRunner == null) {
-            return false;
+            return null;
         }
         String url = instanceRunner.getUrl();
+        dubboRequest.setUrl(url);
+
+        DubboParameters dubboParameters = getDubboParameters(caseItem);
+        dubboRequest.setParameters(dubboParameters.getParameters());
+        dubboRequest.setParameterTypes(dubboParameters.getParameterTypes());
+
+        dubboRequest.setInterfaceName(interfaceNameAndMethod.left);
+        dubboRequest.setMethodName(interfaceNameAndMethod.right);
+        return dubboRequest;
+    }
+
+    private boolean doSend(ReplayActionCaseItem caseItem, Map<String, String> headers) {
 
         ReplayInvokeResult replayInvokeResult = null;
-        DubboParameters dubboParameters = getDubboParameters(caseItem);
 
-        loadJar(JAR_FILE_PATH);
-
-        ServiceLoader<DubboInvoker> loader = ServiceLoader.load(DubboInvoker.class);
-        for (DubboInvoker invoker : loader) {
-            if (invoker.getName().equalsIgnoreCase("default")) {
-                replayInvokeResult = invoker.invoke(url, headers,
-                        interfaceNameAndMethod.getLeft(), interfaceNameAndMethod.getRight(),
-                        dubboParameters.parameterTypes, dubboParameters.getParameters());
+        DubboRequest dubboRequest = generateDubboRequest(caseItem);
+        if (dubboRequest == null) {
+            return false;
+        }
+        dubboRequest.setHeaders(headers);
+        //ClassLoaderUtils.loadJar(JAR_FILE_PATH);
+        ServiceLoader<ReplaySenderExtension> loader = ServiceLoader.load(ReplaySenderExtension.class);
+        for (ReplaySenderExtension sender : loader) {
+            if (sender.getName().equalsIgnoreCase("DefaultDubbo")) {
+                replayInvokeResult = sender.invoke(dubboRequest);
             }
         }
-//        RpcContext.getServiceContext().setAttachments(headers);
-//        GenericService genericService = getReferenceConfig(url, interfaceNameAndMethod.getLeft());
-//        if (genericService == null) {
-//            return false;
-//        }
-//        DubboParameters dubboParameters = getDubboParameters(caseItem);
-//         result = genericService.$invoke(interfaceNameAndMethod.getRight(),
-//                dubboParameters.getParameterTypes().toArray(new String[0]),
-//                dubboParameters.getParameters().toArray());
-//        ReplaySendResult targetSendResult = fromDubboResult(headers, url, result);
         if (replayInvokeResult == null) {
             return false;
         }
-        ReplaySendResult targetSendResult = fromDubboResult(headers, url,
-                replayInvokeResult.getResult(), replayInvokeResult.getAttachments());
+        ReplaySendResult targetSendResult = fromDubboResult(headers, dubboRequest.getUrl(),
+                replayInvokeResult.getResult(), replayInvokeResult.getReplayId());
         caseItem.setSendErrorMessage(targetSendResult.getRemark());
         caseItem.setTargetResultId(targetSendResult.getTraceId());
         caseItem.setSendStatus(targetSendResult.getStatusType().getValue());
@@ -109,54 +114,10 @@ public class DubboReplaySender extends AbstractReplaySender {
         return targetSendResult.success();
     }
 
-    public static void loadJar(String jarPath) {
-        File jarFile = new File(jarPath);
-        Method method = null;
-//        try {
-//            method = WebappClassLoaderBase.class.getDeclaredMethod(ADD_URL_FUN_NAME, URL.class);
-//        } catch (NoSuchMethodException | SecurityException e1) {
-//            LOGGER.error("getDeclaredMethod failed, jarPath:{}, message:{}", jarPath, e1.getMessage());
-//        }
-//        boolean accessible = method.isAccessible();
-//        try {
-//            method.setAccessible(true);
-//            Class<?> clazz = DubboReplaySender.class;
-//            ClassLoader classLoader = clazz.getClassLoader();
-//            URL url = jarFile.toURI().toURL();
-//            method.invoke(classLoader, url);
-//        } catch (Exception e2) {
-//            LOGGER.error("addUrl failed, jarPath:{}, message:{}", jarPath, e2.getMessage());
-//        } finally {
-//            method.setAccessible(accessible);
-//        }
-
-        try {
-            method = URLClassLoader.class.getDeclaredMethod(ADD_URL_FUN_NAME, URL.class);
-        } catch (NoSuchMethodException | SecurityException e1) {
-            LOGGER.error("getDeclaredMethod failed, jarPath:{}, message:{}", jarPath, e1.getMessage());
-        }
-        boolean accessible = method.isAccessible();
-        try {
-            method.setAccessible(true);
-            URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-            URL url = jarFile.toURI().toURL();
-            method.invoke(classLoader, url);
-        } catch (Exception e2) {
-            LOGGER.error("addUrl failed, jarPath:{}, message:{}", jarPath, e2.getMessage());
-        } finally {
-            method.setAccessible(accessible);
-        }
-    }
-
     private ReplaySendResult fromDubboResult(Map<?, ?> requestHeaders, String url, Object result,
-                                             Map<String, String> attachments) {
+                                             String traceId) {
         String body = encodeResponseAsString(result);
         HttpHeaders responseHeaders = new HttpHeaders();
-        String traceId = null;
-        if (MapUtils.isNotEmpty(attachments)) {
-            attachments.forEach(responseHeaders::add);
-            traceId = attachments.get(CommonConstant.AREX_REPLAY_ID);
-        }
         LOGGER.info("invoke result url:{}, request header:{}, response header:{}, body:{}", url, requestHeaders,
                 responseHeaders, body);
         if (!isReplayRequest(requestHeaders)) {
@@ -183,20 +144,6 @@ public class DubboReplaySender extends AbstractReplaySender {
         }
         return ImmutablePair.of(operationName.substring(0, lastDotIndex), operationName.substring(lastDotIndex + 1));
     }
-
-//    private GenericService getReferenceConfig(String url, String interfaceName) {
-//        try {
-//            ReferenceConfig<GenericService> reference = new ReferenceConfig<>();
-//            reference.setApplication(new ApplicationConfig(DUBBO_APP_NAME));
-//            reference.setUrl(url);
-//            reference.setInterface(interfaceName);
-//            reference.setGeneric(true);
-//            return reference.get();
-//        } catch (Exception e) {
-//            LOGGER.error("Get dubbo reference config error", e);
-//        }
-//        return null;
-//    }
 
     private DubboParameters getDubboParameters(ReplayActionCaseItem caseItem) {
         String type = caseItem.getTargetRequest().getType();
