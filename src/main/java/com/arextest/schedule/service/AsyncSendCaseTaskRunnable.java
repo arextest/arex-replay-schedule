@@ -38,6 +38,8 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
         boolean success = false;
         Throwable t = null;
         try {
+
+            // todo: ignore this in the error counter
             if (this.limiter.failBreak()) {
                 return;
             }

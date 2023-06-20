@@ -4,10 +4,12 @@ import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.DebugRequestItem;
+import com.arextest.schedule.model.dao.mongodb.ReplayBizLogCollection;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.service.DebugRequestService;
+import com.arextest.schedule.service.PlanBizLogService;
 import com.arextest.schedule.service.PlanProduceService;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
@@ -15,17 +17,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -40,9 +37,10 @@ public class ReplayPlanController {
     private PlanProduceService planProduceService;
     @Resource
     private ProgressTracer progressTracer;
-
     @Resource
     private DebugRequestService debugRequestService;
+    @Resource
+    private PlanBizLogService planBizLogService;
 
 
     @PostMapping(value = "/api/createPlan")

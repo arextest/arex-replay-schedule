@@ -1,5 +1,7 @@
 package com.arextest.schedule.common;
 
+import com.arextest.schedule.bizlog.BizLogger;
+import com.arextest.schedule.model.ReplayPlan;
 import com.google.common.util.concurrent.RateLimiter;
 import lombok.Getter;
 import lombok.Setter;
@@ -32,9 +34,11 @@ public final class SendSemaphoreLimiter {
     public final static int CONTINUOUS_FAIL_TOTAL = 2 * SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
     public final static int SUCCESS_COUNT_TO_BALANCE_WITH_ERROR = 5 * SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
     public final static double ERROR_BREAK_RATE = 0.1;
-
     private final int sendMaxRate;
     private final int sendInitialRate;
+
+    @Setter
+    private ReplayPlan replayPlan;
 
     @Getter
     private volatile int permits;
@@ -107,6 +111,7 @@ public final class SendSemaphoreLimiter {
             this.permits = newQps;
             this.rateLimiter.setRate(newQps);
             LOGGER.info("send rate permits: {} -> {} (per second)", originalQps, newQps);
+            BizLogger.recordQPSChange(this.replayPlan, originalQps, newQps);
         }
     }
 
@@ -116,6 +121,14 @@ public final class SendSemaphoreLimiter {
             return 1;
         }
         return rate;
+    }
+
+    public int totalError() {
+        return this.checker.failCounter.get();
+    }
+
+    public int continuousError() {
+        return this.checker.continuousSuccessCounter.get();
     }
 
     private final class ReplayHealthy {
