@@ -6,6 +6,7 @@ import com.arextest.diff.model.log.LogEntity;
 import com.arextest.schedule.model.ReplayCompareResult;
 import com.arextest.schedule.model.dao.mongodb.ReplayCompareMsgInfoCollection;
 import com.arextest.schedule.model.dao.mongodb.ReplayCompareResultCollection;
+import com.arextest.schedule.model.report.CompareResultDetail;
 import com.arextest.schedule.utils.ZstdUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
@@ -16,6 +17,8 @@ import org.mapstruct.factory.Mappers;
 
 import java.util.Arrays;
 import java.util.List;
+
+;
 
 /**
  * Created by qzmo on 2023/06/05.
@@ -34,7 +37,16 @@ public interface ReplayCompareResultConverter {
             @Mapping(target = "baseMsg", qualifiedByName = "compressMsg"),
             @Mapping(target = "testMsg", qualifiedByName = "compressMsg"),
     })
-    ReplayCompareResultCollection daoFromDto(ReplayCompareResult dto);
+    ReplayCompareResultCollection daoFromBo(ReplayCompareResult bo);
+
+    @Mappings({
+            @Mapping(target = "baseMsg", qualifiedByName = "decompressMsg"),
+            @Mapping(target = "testMsg", qualifiedByName = "decompressMsg")
+    })
+    ReplayCompareResult boFromDao(ReplayCompareResultCollection dao);
+
+    CompareResultDetail voFromBo(ReplayCompareResult bo);
+
 
     default String map(List<LogEntity> logs) {
         if (logs == null) {
@@ -43,10 +55,25 @@ public interface ReplayCompareResultConverter {
         return SerializationUtils.useZstdSerializeToBase64(logs.toArray());
     }
 
+    default List<LogEntity> map(String logs) {
+        LogEntity[] logEntities = SerializationUtils.useZstdDeserialize(logs, LogEntity[].class);
+        if (logEntities == null) {
+            return null;
+        }
+        return Arrays.asList(logEntities);
+    }
+
     @Named("msgInfo")
     default ReplayCompareMsgInfoCollection convertMsg(MsgInfo msgInfo) {
         ReplayCompareMsgInfoCollection ret = new ReplayCompareMsgInfoCollection();
         ret.setMsgMiss(msgInfo.getMsgMiss());
+        return ret;
+    }
+
+    @Named("msgInfo")
+    default MsgInfo convertMsg(ReplayCompareMsgInfoCollection source) {
+        MsgInfo ret = new MsgInfo();
+        ret.setMsgMiss(source.getMsgMiss());
         return ret;
     }
 
