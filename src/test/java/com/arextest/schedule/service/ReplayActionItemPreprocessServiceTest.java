@@ -1,14 +1,11 @@
 package com.arextest.schedule.service;
 
 import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.web.boot.WebSpringBootServletInitializer;
-import org.junit.Ignore;
+import mockit.Injectable;
+import mockit.integration.junit4.JMockit;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
-import javax.annotation.Resource;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -17,13 +14,11 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
-@Ignore
-@SpringBootTest(classes = WebSpringBootServletInitializer.class)
-@RunWith(SpringRunner.class)
+@RunWith(JMockit.class)
 public class ReplayActionItemPreprocessServiceTest {
 
-    @Resource
-    private ReplayActionItemPreprocessService service = new ReplayActionItemPreprocessService();
+    @Injectable
+    private ReplayActionItemPreprocessService service;
     @Test
     public void testIncludeFilter() throws Exception {
         Method filterMethod =
