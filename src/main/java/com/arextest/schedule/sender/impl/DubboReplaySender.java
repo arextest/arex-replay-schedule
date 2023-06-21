@@ -205,7 +205,7 @@ public class DubboReplaySender extends AbstractReplaySender {
             if (array == null) {
                 parameterTypes.add(type);
             } else {
-                parameterTypes.addAll(array.toList(String.class));
+                parameterTypes.addAll(array.toJavaList(String.class));
             }
         }
         return parameterTypes;
