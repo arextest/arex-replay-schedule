@@ -47,6 +47,7 @@ public class ServiceInstance {
      */
     private String status;
     private String serviceId;
+    private String contextPath;
     private List<ServiceInstanceOperation> operationList;
     private Env metadata;
 

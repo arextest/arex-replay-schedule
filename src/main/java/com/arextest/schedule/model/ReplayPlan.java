@@ -1,6 +1,7 @@
 package com.arextest.schedule.model;
 
 import com.arextest.schedule.common.SendSemaphoreLimiter;
+import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
 import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -8,6 +9,8 @@ import lombok.Data;
 import lombok.ToString;
 
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * @author jmo
@@ -73,6 +76,8 @@ public class ReplayPlan {
     private String errorMessage;
     private transient long planCreateMillis;
 
+    private boolean resumed;
+
     // Min(targetInstanceCount || Int.MAX, sourceInstanceCount || Int.MAX)
     @JsonIgnore
     private int minInstanceCount;
@@ -80,4 +85,14 @@ public class ReplayPlan {
     @JsonIgnore
     private ExecutionStatus planStatus = ExecutionStatus.buildNormal();
     private SendSemaphoreLimiter limiter;
+
+    @JsonIgnore
+    private long lastLogTime = System.currentTimeMillis();
+
+    @JsonIgnore
+    private BlockingQueue<BizLog> bizLogs = new LinkedBlockingQueue<>();
+
+    public void enqueueBizLog(BizLog log) {
+        this.bizLogs.add(log);
+    }
 }

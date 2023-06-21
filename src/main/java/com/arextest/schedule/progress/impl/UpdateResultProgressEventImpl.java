@@ -7,6 +7,7 @@ import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
+import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.service.MetricService;
 import com.arextest.schedule.service.ReplayReportService;
@@ -21,8 +22,7 @@ import java.util.Date;
  * @since 2021/10/11
  */
 @Slf4j
-@Component
-final class UpdateResultProgressEventImpl implements ProgressEvent {
+public class UpdateResultProgressEventImpl implements ProgressEvent {
     @Resource
     private ReplayPlanActionRepository replayPlanActionRepository;
     @Resource
@@ -64,7 +64,7 @@ final class UpdateResultProgressEventImpl implements ProgressEvent {
         replayPlan.setPlanFinishTime(new Date());
         String planId = replayPlan.getId();
         boolean result = replayPlanRepository.finish(planId);
-        LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
+        LOGGER.info("The plan was interrupted, plan id:{} ,appId: {} ", replayPlan.getId(), replayPlan.getAppId());
         metricService.recordCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
         replayReportService.pushPlanStatus(planId, reason, replayPlan.getErrorMessage());
         recordPlanExecutionTime(replayPlan);

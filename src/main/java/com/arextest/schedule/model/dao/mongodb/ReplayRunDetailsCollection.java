@@ -14,6 +14,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @NoArgsConstructor
 @Document("ReplayRunDetails")
 public class ReplayRunDetailsCollection extends ModelBase {
+    private String planId;
     private String planItemId;
     private String operationId;
     @NonNull
