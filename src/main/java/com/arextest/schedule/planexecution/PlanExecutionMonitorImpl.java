@@ -38,7 +38,7 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
 
     @PostConstruct
     public void init() {
-        Timer timer = new Timer();
+        Timer timer = new Timer("Execution_monitor_timer", true);
         MonitorTask task = new MonitorTask();
         timer.scheduleAtFixedRate(task, 0, SECOND_TO_REFRESH * 1000);
     }
@@ -121,8 +121,9 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
         }
     }
 
-    private class QpsLimiterInterruptMonitor {
+    private static class QpsLimiterInterruptMonitor {
         private boolean isPlanNeedToInterrupt(ReplayPlan plan) {
+            // status might need to be checked when qps limiter has not been init
             return Optional.ofNullable(plan.getLimiter())
                     .map(SendSemaphoreLimiter::failBreak)
                     .orElse(false);
