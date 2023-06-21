@@ -86,6 +86,10 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
     }
 
     private void refreshCancelStatus(ReplayPlan plan) {
+        // to avoid unnecessary redis query
+        if (plan.getPlanStatus().isCanceled()) {
+            return;
+        }
         boolean planCanceled = cancelMonitor.isPlanCanceled(plan);
         if (planCanceled) {
             LOGGER.info("Plan {} cancel status set to true", plan.getId());

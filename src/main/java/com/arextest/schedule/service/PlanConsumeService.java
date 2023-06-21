@@ -260,16 +260,9 @@ public final class PlanConsumeService {
         ExecutionStatus executionStatus = currentContext.getExecutionStatus();
         replayActionItem.setPlanStatus(executionStatus);
 
-        if (executionStatus.isCanceled() && replayActionItem.getReplayStatus() != ReplayStatusType.CANCELLED.getValue()) {
-            BizLogger.recordActionStatusChange(replayActionItem, ReplayStatusType.CANCELLED.name(), "");
-            progressEvent.onActionCancelled(replayActionItem);
+        if (checkExecutionBreak(replayActionItem, executionStatus)) {
             return;
-        }
-
-        if (executionStatus.isInterrupted() && replayActionItem.getReplayStatus() != ReplayStatusType.FAIL_INTERRUPTED.getValue()) {
-            progressEvent.onActionInterrupted(replayActionItem);
-            return;
-        }
+        };
 
         if (replayActionItem.getReplayFinishTime() == null
                 && replayActionItem.getReplayStatus() != ReplayStatusType.RUNNING.getValue()) {
@@ -278,15 +271,28 @@ public final class PlanConsumeService {
 
         this.sendByPaging(replayActionItem, currentContext);
 
-        if (executionStatus.isInterrupted() && replayActionItem.getReplayStatus() != ReplayStatusType.FAIL_INTERRUPTED.getValue()) {
-            progressEvent.onActionInterrupted(replayActionItem);
-        }
+        checkExecutionBreak(replayActionItem, executionStatus);
 
         if (executionStatus.isNormal() &&
                 MathUtil.compare(replayActionItem.getReplayCaseCount(), replayActionItem.getCaseProcessCount()) == 0) {
             progressEvent.onActionAfterSend(replayActionItem);
             BizLogger.recordActionItemSent(replayActionItem);
         }
+    }
+
+    private boolean checkExecutionBreak(ReplayActionItem replayActionItem, ExecutionStatus executionStatus) {
+        if (executionStatus.isCanceled() && replayActionItem.getReplayStatus() != ReplayStatusType.CANCELLED.getValue()) {
+            BizLogger.recordActionStatusChange(replayActionItem, ReplayStatusType.CANCELLED.name(), "");
+            progressEvent.onActionCancelled(replayActionItem);
+            return true;
+        }
+
+        if (executionStatus.isInterrupted() && replayActionItem.getReplayStatus() != ReplayStatusType.FAIL_INTERRUPTED.getValue()) {
+            BizLogger.recordActionStatusChange(replayActionItem, ReplayStatusType.FAIL_INTERRUPTED.name(), "");
+            progressEvent.onActionInterrupted(replayActionItem);
+            return true;
+        }
+        return false;
     }
 
     private void sendByPaging(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {
