@@ -47,6 +47,7 @@
         <maven.source.skip>false</maven.source.skip>
         <!-- Users could specify this property as true to skip the deploy process -->
         <maven.deploy.skip>false</maven.deploy.skip>
+        <fastjson2.version>2.0.23</fastjson2.version>
     </properties>
 
     <dependencyManagement>
@@ -141,6 +142,11 @@
                 <groupId>com.arextest</groupId>
                 <artifactId>arex-common</artifactId>
                 <version>0.1.2</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.fastjson2</groupId>
+                <artifactId>fastjson2</artifactId>
+                <version>${fastjson2.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
