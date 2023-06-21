@@ -188,7 +188,12 @@ public class PlanProduceService {
 
     public void stopPlan(String planId) {
         try {
-            redisCacheProvider.putIfAbsent(buildStopPlanRedisKey(planId), STOP_PLAN_REDIS_EXPIRE, planId.getBytes(StandardCharsets.UTF_8));
+            // set key for other instance to stop internal execution
+            redisCacheProvider.putIfAbsent(buildStopPlanRedisKey(planId),
+                    STOP_PLAN_REDIS_EXPIRE, planId.getBytes(StandardCharsets.UTF_8));
+
+            // set the canceled status immediately to give quick response to user
+            progressEvent.onReplayPlanTerminate(planId);
         } catch (Exception e) {
             LOGGER.error("stopPlan error, planId: {}, message: {}", planId, e.getMessage());
         }

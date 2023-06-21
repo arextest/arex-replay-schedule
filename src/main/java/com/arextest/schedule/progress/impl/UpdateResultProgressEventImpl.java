@@ -70,6 +70,12 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
         recordPlanExecutionTime(replayPlan);
     }
 
+    @Override
+    public void onReplayPlanTerminate(String replayId) {
+        boolean result = replayPlanRepository.finish(replayId);
+        replayReportService.pushPlanStatus(replayId, ReplayStatusType.CANCELLED, null);
+    }
+
     private void recordPlanExecutionTime(ReplayPlan replayPlan) {
         Date planCreateTime = replayPlan.getPlanCreateTime();
         long planFinishMills = replayPlan.getPlanFinishTime() == null ? System.currentTimeMillis() : replayPlan.getPlanFinishTime().getTime();
