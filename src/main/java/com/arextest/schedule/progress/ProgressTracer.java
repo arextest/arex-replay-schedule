@@ -20,4 +20,5 @@ public interface ProgressTracer {
     double finishPercent(String planId);
 
     long lastUpdateTime(String planId);
+    void refreshUpdateTime(String planId);
 }

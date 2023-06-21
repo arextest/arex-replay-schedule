@@ -6,6 +6,6 @@ import com.arextest.schedule.model.ReplayPlan;
  * Created by Qzmo on 2023/6/16
  */
 public interface PlanExecutionMonitor {
-    void join(ReplayPlan plan);
-    void exit(ReplayPlan plan);
+    void register(ReplayPlan plan);
+    void deregister(ReplayPlan plan);
 }

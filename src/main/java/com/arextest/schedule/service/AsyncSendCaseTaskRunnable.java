@@ -4,6 +4,7 @@ import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSendStatusType;
+import com.arextest.schedule.model.ExecutionStatus;
 import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.sender.ReplaySender;
@@ -25,6 +26,7 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
     private transient ReplayActionCaseItem caseItem;
     private transient CountDownLatch groupSentLatch;
     private transient SendSemaphoreLimiter limiter;
+    private transient ExecutionStatus executionStatus;
     private transient final ReplayCaseTransmitService transmitService;
     private transient MetricService metricService;
 
@@ -40,7 +42,7 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
         try {
 
             // todo: ignore this in the error counter
-            if (this.limiter.failBreak()) {
+            if (this.executionStatus.isAbnormal()) {
                 return;
             }
 

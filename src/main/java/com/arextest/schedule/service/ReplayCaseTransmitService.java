@@ -1,6 +1,5 @@
 package com.arextest.schedule.service;
 
-import com.arextest.common.cache.CacheProvider;
 import com.arextest.model.mock.Mocker;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
@@ -22,13 +21,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_KEY;
 
 /**
  * @author jmo
@@ -57,7 +54,7 @@ public class ReplayCaseTransmitService {
     @Resource
     private MetricService metricService;
 
-    public void send(ReplayActionItem replayActionItem) {
+    public void send(ReplayActionItem replayActionItem, ExecutionStatus executionStatus) {
         List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
         if (CollectionUtils.isEmpty(sourceItemList)) {
             return;
@@ -78,15 +75,13 @@ public class ReplayCaseTransmitService {
         }
 
         try {
-            doSendValuesToRemoteHost(sourceItemList);
+            doSendValuesToRemoteHost(sourceItemList, executionStatus);
         } catch (Throwable throwable) {
             LOGGER.error("do send error:{}", throwable.getMessage(), throwable);
             markAllSendStatus(sourceItemList, CaseSendStatusType.EXCEPTION_FAILED);
         } finally {
             replayActionItem.recordProcessCaseCount(sourceItemList.size());
         }
-
-        return false;
     }
 
     @SuppressWarnings("rawtypes")
@@ -142,18 +137,13 @@ public class ReplayCaseTransmitService {
     }
 
 
-    private void doSendValuesToRemoteHost(List<ReplayActionCaseItem> values) {
+    private void doSendValuesToRemoteHost(List<ReplayActionCaseItem> values, ExecutionStatus executionStatus) {
         final int valueSize = values.size();
         final ReplayActionCaseItem caseItem = values.get(0);
         final ReplayActionItem actionItem = caseItem.getParent();
         final SendSemaphoreLimiter semaphore = actionItem.getSendRateLimiter();
         final CountDownLatch groupSentLatch = new CountDownLatch(valueSize);
         for (int i = 0; i < valueSize; i++) {
-            if (semaphore.failBreak()) {
-                groupSentLatch.countDown();
-                continue;
-            }
-
             ReplayActionCaseItem replayActionCaseItem = values.get(i);
             MDCTracer.addDetailId(caseItem.getId());
             try {
@@ -163,13 +153,14 @@ public class ReplayCaseTransmitService {
                     doSendFailedAsFinish(replayActionCaseItem, CaseSendStatusType.READY_DEPENDENCY_FAILED);
                     continue;
                 }
-                if (semaphore.failBreak()) {
+                if (executionStatus.isAbnormal()) {
                     LOGGER.info("replay interrupted,case item id:{}", replayActionCaseItem.getId());
                     MDCTracer.removeDetailId();
                     return;
                 }
                 semaphore.acquire();
                 AsyncSendCaseTaskRunnable taskRunnable = new AsyncSendCaseTaskRunnable(this);
+                taskRunnable.setExecutionStatus(executionStatus);
                 taskRunnable.setCaseItem(replayActionCaseItem);
                 taskRunnable.setReplaySender(replaySender);
                 taskRunnable.setGroupSentLatch(groupSentLatch);

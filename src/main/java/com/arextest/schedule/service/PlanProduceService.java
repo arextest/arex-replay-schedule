@@ -188,10 +188,13 @@ public class PlanProduceService {
 
     public void stopPlan(String planId) {
         try {
-            String redisKey = STOP_PLAN_REDIS_KEY + planId;
-            redisCacheProvider.putIfAbsent(redisKey.getBytes(StandardCharsets.UTF_8), STOP_PLAN_REDIS_EXPIRE, planId.getBytes(StandardCharsets.UTF_8));
+            redisCacheProvider.putIfAbsent(buildStopPlanRedisKey(planId), STOP_PLAN_REDIS_EXPIRE, planId.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             LOGGER.error("stopPlan error, planId: {}, message: {}", planId, e.getMessage());
         }
+    }
+
+    public static byte[] buildStopPlanRedisKey(String planId) {
+        return (STOP_PLAN_REDIS_KEY + planId).getBytes(StandardCharsets.UTF_8);
     }
 }

@@ -172,7 +172,8 @@ final class RedisProgressTracerImpl implements ProgressTracer {
         return ByteBuffer.wrap(bytes).getLong();
     }
 
-    private void refreshUpdateTime(String planId) {
+    @Override
+    public void refreshUpdateTime(String planId) {
         long now = System.currentTimeMillis();
         try {
             redisCacheProvider.put(toPlanUpdateTimeKeyBytes(planId), SEVEN_DAYS_EXPIRE, valueToBytes(now));
