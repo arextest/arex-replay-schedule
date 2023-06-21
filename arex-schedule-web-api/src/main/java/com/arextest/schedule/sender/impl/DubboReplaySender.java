@@ -92,6 +92,7 @@ public class DubboReplaySender extends AbstractReplaySender {
                 replayInvokeResult = sender.invoke(dubboRequest);
             }
         }
+        //replayInvokeResult = defaultDubboInvoker.invoke(dubboRequest);
         if (replayInvokeResult == null) {
             return false;
         }
@@ -144,19 +145,43 @@ public class DubboReplaySender extends AbstractReplaySender {
         String type = caseItem.getTargetRequest().getType();
         String body = caseItem.getTargetRequest().getBody();
 
-        List<Object> parameters = new ArrayList<>();
+        DubboParameters dubboParameters = new DubboParameters();
+        dubboParameters.setParameterTypes(toParameterTypes(type));
+        dubboParameters.setParameters(toParameters(body, type));
+        return dubboParameters;
+    }
 
-        if (StringUtils.isNotEmpty(body)) {
-            parameters.add(toParameter(body));
-        }
+    private List<String> toParameterTypes(String type) {
         List<String> parameterTypes = new ArrayList<>();
         if (StringUtils.isNotEmpty(type)) {
-            parameterTypes.add(type);
+            JSONArray array = null;
+            if (type.startsWith(CommonConstant.JSON_ARRAY_START)) {
+                array = tryParseJsonArray(type);
+            }
+            if (array == null) {
+                parameterTypes.add(type);
+            } else {
+                parameterTypes.addAll(array.toJavaList(String.class));
+            }
         }
-        DubboParameters dubboParameters = new DubboParameters();
-        dubboParameters.setParameterTypes(parameterTypes);
-        dubboParameters.setParameters(parameters);
-        return dubboParameters;
+        return parameterTypes;
+    }
+
+    private List<Object> toParameters(String body, String type) {
+        List<Object> parameters = new ArrayList<>();
+        if (StringUtils.isNotEmpty(body)) {
+            JSONArray array = null;
+            //type starts with "[", cuz single-object body could start with "["
+            if (type.startsWith(CommonConstant.JSON_ARRAY_START)) {
+                array = tryParseJsonArray(body);
+            }
+            if (array == null) {
+                parameters.add(toParameter(body));
+            } else {
+                parameters.addAll(array);
+            }
+        }
+        return parameters;
     }
 
     private Object toParameter(String body) {
