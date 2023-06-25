@@ -36,6 +36,7 @@ public class ExecutionStatus {
     public static ExecutionStatus buildNormal(SendSemaphoreLimiter limiter) {
         return ExecutionStatus.builder()
                 .canceled(new AtomicReference<>(false))
+                .limiter(limiter)
                 .build();
     }
 }
