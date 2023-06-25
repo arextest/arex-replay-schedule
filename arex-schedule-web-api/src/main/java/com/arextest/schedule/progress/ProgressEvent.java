@@ -1,6 +1,5 @@
 package com.arextest.schedule.progress;
 
-import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;

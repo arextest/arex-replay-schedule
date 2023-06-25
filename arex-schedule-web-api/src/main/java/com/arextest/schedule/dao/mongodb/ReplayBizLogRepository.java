@@ -1,26 +1,18 @@
 package com.arextest.schedule.dao.mongodb;
 
-import com.arextest.schedule.dao.mongodb.util.MongoHelper;
-import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.model.bizlog.ReplayBizLogQueryCondition;
 import com.arextest.schedule.model.converter.ReplayBizLogConverter;
-import com.arextest.schedule.model.converter.ReplayPlanConverter;
 import com.arextest.schedule.model.dao.mongodb.ReplayBizLogCollection;
-import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
-import com.mongodb.client.result.UpdateResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
 
-import java.time.Duration;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 

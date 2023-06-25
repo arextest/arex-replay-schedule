@@ -6,15 +6,17 @@ import com.arextest.common.model.response.Response;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.model.mock.MockCategoryType;
-import com.arextest.schedule.model.bizlog.BizLog;
+import com.arextest.schedule.client.HttpWepServiceApiClient;
+import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.model.ReplayCompareResult;
+import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.web.model.contract.contracts.ChangeReplayStatusRequestType;
 import com.arextest.web.model.contract.contracts.PushCompareResultsRequestType;
 import com.arextest.web.model.contract.contracts.ReportInitialRequestType;
 import com.arextest.web.model.contract.contracts.common.CompareResult;
-import com.arextest.schedule.client.HttpWepServiceApiClient;
-import com.arextest.schedule.comparer.ComparisonWriter;
-import com.arextest.schedule.model.*;
 import com.arextest.web.model.contract.contracts.replay.UpdateReportInfoRequestType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -22,7 +24,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by wang_yc on 2021/10/19

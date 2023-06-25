@@ -1,9 +1,7 @@
 package com.arextest.schedule.model.converter;
 
-import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.model.dao.mongodb.ReplayBizLogCollection;
-import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
