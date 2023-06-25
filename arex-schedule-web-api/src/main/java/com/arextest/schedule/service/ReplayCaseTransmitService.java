@@ -164,7 +164,7 @@ public class ReplayCaseTransmitService {
     }
 
 
-    private void doSendValuesToRemoteHost(List<ReplayActionCaseItem> values) throws InterruptedException {
+    private void doSendValuesToRemoteHost(List<ReplayActionCaseItem> values) {
         final int valueSize = values.size();
         final ReplayActionCaseItem caseItem = values.get(0);
         final ReplayActionItem actionItem = caseItem.getParent();
