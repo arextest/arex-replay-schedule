@@ -8,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -21,6 +20,8 @@ import java.util.List;
 public class DeployedEnvironmentService {
     private final List<DeploymentEnvironmentProvider> environmentProviderList;
 
+    private static final int FIRST_INDEX = 0;
+
     public DeployedEnvironmentService(List<DeploymentEnvironmentProvider> environmentProviderList) {
         this.environmentProviderList = environmentProviderList;
     }
@@ -29,36 +30,21 @@ public class DeployedEnvironmentService {
         if (CollectionUtils.isEmpty(this.environmentProviderList)) {
             return null;
         }
-        DeploymentVersion deploymentVersion = null;
-        for (DeploymentEnvironmentProvider provider : this.environmentProviderList) {
-            deploymentVersion = provider.getVersion(appId, env);
-            break;
-        }
-        return deploymentVersion;
+        return this.environmentProviderList.get(FIRST_INDEX).getVersion(appId, env);
     }
 
     public List<ServiceInstance> getActiveInstanceList(AppServiceDescriptor serviceDescriptor, String env) {
         if (CollectionUtils.isEmpty(this.environmentProviderList)) {
             return Collections.emptyList();
         }
-        List<ServiceInstance> serviceInstanceList = new ArrayList<>();
-        for (DeploymentEnvironmentProvider provider : this.environmentProviderList) {
-            serviceInstanceList = provider.getActiveInstanceList(serviceDescriptor, env);
-            break;
-        }
-        return serviceInstanceList;
+        return this.environmentProviderList.get(FIRST_INDEX).getActiveInstanceList(serviceDescriptor, env);
     }
 
     public ServiceInstance getActiveInstance(AppServiceDescriptor serviceDescriptor, String host) {
         if (CollectionUtils.isEmpty(this.environmentProviderList)) {
             return null;
         }
-        ServiceInstance serviceInstance = null;
-        for (DeploymentEnvironmentProvider provider : this.environmentProviderList) {
-            serviceInstance =  provider.getActiveInstance(serviceDescriptor, host);
-            break;
-        }
-        return serviceInstance;
+        return this.environmentProviderList.get(FIRST_INDEX).getActiveInstance(serviceDescriptor, host);
     }
 
 }
