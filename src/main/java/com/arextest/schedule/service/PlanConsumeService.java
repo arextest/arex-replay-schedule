@@ -208,6 +208,7 @@ public final class PlanConsumeService {
             tryFlushingLogs(replayPlan);
         }
 
+        planExecutionMonitor.refresh(replayPlan);
         if (executionStatus.isCanceled()) {
             progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.CANCELLED);
             BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.CANCELLED.name(), "Plan Canceled");

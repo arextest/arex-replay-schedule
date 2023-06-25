@@ -1,7 +1,6 @@
 package com.arextest.schedule.planexecution;
 
 import com.arextest.common.cache.CacheProvider;
-import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.PlanProduceService;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,11 +57,11 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
 
     private void monitorAll() {
         this.tasks.forEach((taskId, task) -> {
-            monitorOne(task);
+            refresh(task);
         });
     }
 
-    private void monitorOne(ReplayPlan task) {
+    public void refresh(ReplayPlan task) {
         LOGGER.info("Monitoring task {}", task.getId());
         refreshLastUpdateTime(task);
         refreshCancelStatus(task);

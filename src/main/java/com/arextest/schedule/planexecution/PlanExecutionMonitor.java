@@ -8,4 +8,5 @@ import com.arextest.schedule.model.ReplayPlan;
 public interface PlanExecutionMonitor {
     void register(ReplayPlan plan);
     void deregister(ReplayPlan plan);
+    void refresh(ReplayPlan plan);
 }
