@@ -67,7 +67,11 @@ public class ReplayCaseTransmitService {
 
         // warmUp should be done once for each endpoint
         if (!replayActionItem.isItemProcessed()) {
-            activeRemoteHost(sourceItemList);
+            try {
+                activeRemoteHost(sourceItemList);
+            } catch (Exception e) {
+                LOGGER.error("activeRemoteHost failed:{}", e.getMessage(), e);
+            }
         }
 
         byte[] cancelKey = getCancelKey(replayActionItem.getPlanId());
@@ -164,7 +168,7 @@ public class ReplayCaseTransmitService {
     }
 
 
-    private void doSendValuesToRemoteHost(List<ReplayActionCaseItem> values) {
+    private void doSendValuesToRemoteHost(List<ReplayActionCaseItem> values) throws InterruptedException {
         final int valueSize = values.size();
         final ReplayActionCaseItem caseItem = values.get(0);
         final ReplayActionItem actionItem = caseItem.getParent();
@@ -216,6 +220,7 @@ public class ReplayCaseTransmitService {
             }
         } catch (InterruptedException e) {
             LOGGER.error("send group to remote host error:{}", e.getMessage(), e);
+            throw e;
         }
         MDCTracer.removeDetailId();
     }
@@ -244,7 +249,7 @@ public class ReplayCaseTransmitService {
         return null;
     }
 
-    private void activeRemoteHost(List<ReplayActionCaseItem> sourceItemList) {
+    private void activeRemoteHost(List<ReplayActionCaseItem> sourceItemList) throws InterruptedException {
         try {
             for (int i = 0; i < ACTIVE_SERVICE_RETRY_COUNT && i < sourceItemList.size(); i++) {
                 ReplayActionCaseItem caseItem = cloneCaseItem(sourceItemList, i);
@@ -258,7 +263,8 @@ public class ReplayCaseTransmitService {
                 Thread.sleep(CommonConstant.THREE_SECOND_MILLIS);
             }
         } catch (Exception ex) {
-            LOGGER.error("active remote host error:{}",ex.getMessage(), ex);
+            LOGGER.error("active remote host error", ex);
+            throw ex;
         }
     }
 
