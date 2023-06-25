@@ -93,6 +93,16 @@ public final class PlanConsumeService {
                 long start;
                 long end;
 
+                // limiter shared for entire plan, max qps = maxQps per instance * min instance count
+                final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps(),
+                        replayPlan.getMinInstanceCount());
+                qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
+                qpsLimiter.setReplayPlan(replayPlan);
+                replayPlan.setPlanStatus(ExecutionStatus.buildNormal(qpsLimiter));
+                replayPlan.setLimiter(qpsLimiter);
+
+                BizLogger.recordQpsInit(replayPlan, qpsLimiter.getPermits(), replayPlan.getMinInstanceCount());
+
                 start = System.currentTimeMillis();
                 int planSavedCaseSize = saveActionCaseToSend(replayPlan);
                 end = System.currentTimeMillis();
@@ -178,16 +188,6 @@ public final class PlanConsumeService {
         long end;
         progressTracer.initTotal(replayPlan);
 
-        // limiter shared for entire plan, max qps = maxQps per instance * min instance count
-        final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps(),
-                replayPlan.getMinInstanceCount());
-        replayPlan.setLimiter(qpsLimiter);
-        replayPlan.setPlanStatus(ExecutionStatus.buildNormal(qpsLimiter));
-        qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
-        qpsLimiter.setReplayPlan(replayPlan);
-
-        BizLogger.recordQpsInit(replayPlan, qpsLimiter.getPermits(), replayPlan.getMinInstanceCount());
-
         for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
             executionContext.setExecutionStatus(executionStatus);
             executionContext.setPlan(replayPlan);
@@ -197,7 +197,7 @@ public final class PlanConsumeService {
             end = System.currentTimeMillis();
             BizLogger.recordContextBeforeRun(executionContext, end - start);
 
-            executeContext(replayPlan, qpsLimiter, executionContext);
+            executeContext(replayPlan, executionContext);
 
             start = System.currentTimeMillis();
             planExecutionContextProvider.onAfterContextExecution(executionContext, replayPlan);
@@ -227,13 +227,13 @@ public final class PlanConsumeService {
                 replayPlan.getAppId());
     }
 
-    private void executeContext(ReplayPlan replayPlan, SendSemaphoreLimiter qpsLimiter, PlanExecutionContext executionContext) {
+    private void executeContext(ReplayPlan replayPlan, PlanExecutionContext executionContext) {
         List<CompletableFuture<Void>> contextTasks = new ArrayList<>();
         for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
             if (!replayActionItem.isItemProcessed()) {
                 replayActionItem.setItemProcessed(true);
                 MDCTracer.addActionId(replayActionItem.getId());
-                replayActionItem.setSendRateLimiter(qpsLimiter);
+                replayActionItem.setSendRateLimiter(replayPlan.getLimiter());
                 if (replayActionItem.isEmpty()) {
                     replayActionItem.setReplayFinishTime(new Date());
                     progressEvent.onActionComparisonFinish(replayActionItem);
