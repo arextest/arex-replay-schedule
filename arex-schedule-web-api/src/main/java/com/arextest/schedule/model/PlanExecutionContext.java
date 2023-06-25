@@ -11,6 +11,9 @@ import java.util.List;
  */
 @Data
 public class PlanExecutionContext<T> {
+    @JsonIgnore
+    private ReplayPlan plan;
+
     private String contextName;
     private ExecutionContextActionType actionType = ExecutionContextActionType.NORMAL;
 

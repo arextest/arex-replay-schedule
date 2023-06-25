@@ -5,21 +5,35 @@ import com.arextest.diff.model.CompareOptions;
 import com.arextest.diff.model.CompareResult;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.model.mock.MockCategoryType;
-import com.arextest.schedule.comparer.*;
+import com.arextest.schedule.comparer.CategoryComparisonHolder;
+import com.arextest.schedule.comparer.CompareConfigService;
+import com.arextest.schedule.comparer.CompareItem;
+import com.arextest.schedule.comparer.ComparisonWriter;
+import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.model.*;
+import com.arextest.schedule.model.CaseSendStatusType;
+import com.arextest.schedule.model.CompareProcessStatusType;
+import com.arextest.schedule.model.LogType;
+import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.model.ReplayCompareResult;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.MetricService;
-import com.arextest.schedule.model.ReplayActionCaseItem;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.StopWatch;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -63,7 +77,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 }
                 compareReplayResult(bindHolder, compareConfig, caseItem, replayCompareResults);
             }
-            if (CollectionUtils.isEmpty(replayCompareResults) && !useReplayId) {
+            if (CollectionUtils.isEmpty(replayCompareResults) &&
+                MockCategoryType.Q_MESSAGE_CONSUMER.getName().equalsIgnoreCase(caseItem.getCaseType())) {
                 return comparisonOutputWriter.writeQmqCompareResult(caseItem);
             }
             return comparisonOutputWriter.write(replayCompareResults);

@@ -22,6 +22,7 @@ import java.util.Map;
 public class ReplayActionCaseItem {
     private String id;
     private String planItemId;
+    private String planId;
     private String recordId;
     private String targetResultId;
     private String sourceResultId;

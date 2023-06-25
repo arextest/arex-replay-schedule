@@ -6,6 +6,7 @@ import com.arextest.common.model.response.Response;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.model.mock.MockCategoryType;
+import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.web.model.contract.contracts.ChangeReplayStatusRequestType;
 import com.arextest.web.model.contract.contracts.PushCompareResultsRequestType;
