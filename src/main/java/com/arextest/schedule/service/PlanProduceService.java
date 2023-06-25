@@ -84,6 +84,7 @@ public class PlanProduceService {
         ReplayParentBinder.setupReplayActionParent(replayActionItemList, replayPlan);
         int planCaseCount = planBuilder.buildReplayCaseCount(replayActionItemList);
         if (planCaseCount == 0) {
+            progressEvent.onReplayPlanCreateException(request);
             return CommonResponse.badResponse("loaded empty case,try change time range submit again ");
         }
         replayPlan.setCaseTotalCount(planCaseCount);

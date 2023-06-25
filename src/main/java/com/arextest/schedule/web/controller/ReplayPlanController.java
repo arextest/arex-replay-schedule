@@ -122,7 +122,7 @@ public class ReplayPlanController {
             return planProduceService.createPlan(request);
         } catch (Throwable e) {
             LOGGER.error("create plan error: {} , request: {}", e.getMessage(), request, e);
-            progressEvent.onReplayPlanCreateException(request);
+            progressEvent.onReplayPlanCreateException(request, e);
             return CommonResponse.badResponse("create plan error！" + e.getMessage());
         } finally {
             MDCTracer.clear();
