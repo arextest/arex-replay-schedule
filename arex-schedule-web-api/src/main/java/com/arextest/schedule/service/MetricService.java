@@ -72,10 +72,7 @@ public class MetricService {
             LOGGER.warn("generateMessageId could not found consoleLogEvent");
             return null;
         }
-        for (MetricListener listener : this.metricListeners) {
-            return listener.generateMessageId(headers, url);
-        }
-        return null;
+        return this.metricListeners.get(0).generateMessageId(headers, url);
     }
 
     /**
