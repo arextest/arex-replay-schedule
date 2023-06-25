@@ -260,6 +260,7 @@ public final class PlanConsumeService {
         ExecutionStatus executionStatus = currentContext.getExecutionStatus();
         replayActionItem.setPlanStatus(executionStatus);
 
+        // checkpoint: before sending grouping of action item
         if (checkExecutionBreak(replayActionItem, executionStatus)) {
             return;
         };
@@ -321,6 +322,7 @@ public final class PlanConsumeService {
 
                     executionStatus.setInterrupted(replayActionItem.getSendRateLimiter().failBreak());
 
+                    // checkpoint: before sending page of cases
                     if (executionStatus.isAbnormal()) {
                         break;
                     }

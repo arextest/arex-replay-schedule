@@ -65,6 +65,7 @@ public class ReplayCaseTransmitService {
             activeRemoteHost(sourceItemList);
         }
 
+        // checkpoint: after JIT warm up, before sending page of cases
         if (replayActionItem.getPlanStatus().isInterrupted()) {
             return;
         }
@@ -86,6 +87,7 @@ public class ReplayCaseTransmitService {
 
     @SuppressWarnings("rawtypes")
     public void releaseCasesOfContext(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {
+        // checkpoint: before skipping batch of group
         if (executionContext.getExecutionStatus().isAbnormal()) {
             return;
         }
@@ -153,6 +155,7 @@ public class ReplayCaseTransmitService {
                     doSendFailedAsFinish(replayActionCaseItem, CaseSendStatusType.READY_DEPENDENCY_FAILED);
                     continue;
                 }
+                // checkpoint: before init case runnable
                 if (executionStatus.isAbnormal()) {
                     LOGGER.info("replay interrupted,case item id:{}", replayActionCaseItem.getId());
                     MDCTracer.removeDetailId();

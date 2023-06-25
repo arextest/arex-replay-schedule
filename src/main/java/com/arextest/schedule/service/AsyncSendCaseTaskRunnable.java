@@ -42,6 +42,7 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
         try {
 
             // todo: ignore this in the error counter
+            // checkpoint: before sending single case
             if (this.executionStatus.isAbnormal()) {
                 transmitService.updateSendResult(caseItem, CaseSendStatusType.EXCEPTION_FAILED);
                 return;
