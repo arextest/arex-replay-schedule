@@ -20,7 +20,6 @@ public interface ProgressEvent {
     /**
      * call when create plan encounter logical or unchecked runtime exception
      * @param request the request of create plan
-     * @param t null if encountered logical issue, throwable for all unchecked exceptions
      */
     default void onReplayPlanCreateException(BuildReplayPlanRequest request, Throwable t) {}
 
