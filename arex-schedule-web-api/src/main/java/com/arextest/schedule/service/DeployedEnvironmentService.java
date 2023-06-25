@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,30 +29,36 @@ public class DeployedEnvironmentService {
         if (CollectionUtils.isEmpty(this.environmentProviderList)) {
             return null;
         }
+        DeploymentVersion deploymentVersion = null;
         for (DeploymentEnvironmentProvider provider : this.environmentProviderList) {
-            return provider.getVersion(appId, env);
+            deploymentVersion = provider.getVersion(appId, env);
+            break;
         }
-        return null;
+        return deploymentVersion;
     }
 
     public List<ServiceInstance> getActiveInstanceList(AppServiceDescriptor serviceDescriptor, String env) {
         if (CollectionUtils.isEmpty(this.environmentProviderList)) {
             return Collections.emptyList();
         }
+        List<ServiceInstance> serviceInstanceList = new ArrayList<>();
         for (DeploymentEnvironmentProvider provider : this.environmentProviderList) {
-            return provider.getActiveInstanceList(serviceDescriptor, env);
+            serviceInstanceList = provider.getActiveInstanceList(serviceDescriptor, env);
+            break;
         }
-        return Collections.emptyList();
+        return serviceInstanceList;
     }
 
     public ServiceInstance getActiveInstance(AppServiceDescriptor serviceDescriptor, String host) {
         if (CollectionUtils.isEmpty(this.environmentProviderList)) {
             return null;
         }
+        ServiceInstance serviceInstance = null;
         for (DeploymentEnvironmentProvider provider : this.environmentProviderList) {
-            return provider.getActiveInstance(serviceDescriptor, host);
+            serviceInstance =  provider.getActiveInstance(serviceDescriptor, host);
+            break;
         }
-        return null;
+        return serviceInstance;
     }
 
 }
