@@ -17,7 +17,12 @@ public interface ProgressEvent {
      */
     default void onBeforePlanCreate(BuildReplayPlanRequest request) {}
 
-    default void onReplayPlanCreateException(BuildReplayPlanRequest request) {}
+    /**
+     * call when create plan encounter logical or unchecked runtime exception
+     * @param request the request of create plan
+     * @param t null if encountered logical issue, throwable for all unchecked exceptions
+     */
+    default void onReplayPlanCreateException(BuildReplayPlanRequest request, Throwable t) {}
 
     void onReplayPlanCreated(ReplayPlan replayPlan);
 
