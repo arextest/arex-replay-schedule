@@ -31,7 +31,6 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
 
     private final RedisCancelMonitor cancelMonitor = new RedisCancelMonitor();
     private final ProgressMonitor progressMonitor = new ProgressMonitor();
-    private final QpsLimiterInterruptMonitor interruptMonitor = new QpsLimiterInterruptMonitor();
 
     @Value("${arex.schedule.monitor.secondToRefresh}")
     public Integer SECOND_TO_REFRESH;
@@ -67,7 +66,6 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
     private void monitorOne(ReplayPlan task) {
         LOGGER.info("Monitoring task {}", task.getId());
         refreshLastUpdateTime(task);
-        refreshInterruptStatus(task);
         refreshCancelStatus(task);
     }
 
@@ -97,10 +95,6 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
         }
     }
 
-    private void refreshInterruptStatus(ReplayPlan plan) {
-        plan.getPlanStatus().setInterrupted(interruptMonitor.isPlanNeedToInterrupt(plan));
-    }
-
     private class RedisCancelMonitor {
         private boolean isPlanCanceled(ReplayPlan plan) {
             return isPlanCanceled(plan.getId());
@@ -118,15 +112,6 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
     private class ProgressMonitor {
         private void refreshLastUpdateTime(String planId) {
             progressTracer.refreshUpdateTime(planId);
-        }
-    }
-
-    private static class QpsLimiterInterruptMonitor {
-        private boolean isPlanNeedToInterrupt(ReplayPlan plan) {
-            // status might need to be checked when qps limiter has not been init
-            return Optional.ofNullable(plan.getLimiter())
-                    .map(SendSemaphoreLimiter::failBreak)
-                    .orElse(false);
         }
     }
 }

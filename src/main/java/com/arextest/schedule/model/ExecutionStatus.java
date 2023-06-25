@@ -1,5 +1,6 @@
 package com.arextest.schedule.model;
 
+import com.arextest.schedule.common.SendSemaphoreLimiter;
 import lombok.Builder;
 import lombok.Data;
 
@@ -11,21 +12,17 @@ import java.util.concurrent.atomic.AtomicReference;
 @Builder
 public class ExecutionStatus {
     private AtomicReference<Boolean> canceled;
-    private AtomicReference<Boolean> interrupted;
+    private SendSemaphoreLimiter limiter;
 
     public boolean isNormal() {
-        return !canceled.get() && !interrupted.get();
+        return !canceled.get() && !isInterrupted();
     }
     public boolean isAbnormal() {
-        return canceled.get() || interrupted.get();
+        return canceled.get() || isInterrupted();
     }
 
     public boolean isInterrupted() {
-        return this.interrupted.get();
-    }
-
-    public void setInterrupted(boolean newVal) {
-        this.interrupted.getAndUpdate((old) -> old || newVal);
+        return this.limiter.failBreak();
     }
 
     public boolean isCanceled() {
@@ -36,10 +33,9 @@ public class ExecutionStatus {
         this.canceled.getAndUpdate((old) -> old || newVal);
     }
 
-    public static ExecutionStatus buildNormal() {
+    public static ExecutionStatus buildNormal(SendSemaphoreLimiter limiter) {
         return ExecutionStatus.builder()
                 .canceled(new AtomicReference<>(false))
-                .interrupted(new AtomicReference<>(false))
                 .build();
     }
 }

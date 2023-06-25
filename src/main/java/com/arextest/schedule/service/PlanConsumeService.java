@@ -182,6 +182,7 @@ public final class PlanConsumeService {
         final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps(),
                 replayPlan.getMinInstanceCount());
         replayPlan.setLimiter(qpsLimiter);
+        replayPlan.setPlanStatus(ExecutionStatus.buildNormal(qpsLimiter));
         qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
         qpsLimiter.setReplayPlan(replayPlan);
 
@@ -302,7 +303,6 @@ public final class PlanConsumeService {
             case SKIP_CASE_OF_CONTEXT:
                 // skip all cases of this context leaving the status as default
                 replayCaseTransmitService.releaseCasesOfContext(replayActionItem, executionContext);
-                executionStatus.setInterrupted(replayActionItem.getSendRateLimiter().failBreak());
                 break;
 
             case NORMAL:
@@ -320,7 +320,6 @@ public final class PlanConsumeService {
                     contextCount += sourceItemList.size();
                     ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
 
-                    executionStatus.setInterrupted(replayActionItem.getSendRateLimiter().failBreak());
 
                     // checkpoint: before sending page of cases
                     if (executionStatus.isAbnormal()) {

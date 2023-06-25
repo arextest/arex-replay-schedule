@@ -83,7 +83,7 @@ public class ReplayPlan {
     private int minInstanceCount;
 
     @JsonIgnore
-    private ExecutionStatus planStatus = ExecutionStatus.buildNormal();
+    private ExecutionStatus planStatus;
     @JsonIgnore
     private SendSemaphoreLimiter limiter;
 
