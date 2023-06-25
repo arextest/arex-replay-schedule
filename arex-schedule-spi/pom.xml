@@ -31,4 +31,8 @@
 <!--        </dependency>-->
     </dependencies>
 
+    <build>
+        <finalName>arex-schedule-spi</finalName>
+    </build>
+
 </project>
