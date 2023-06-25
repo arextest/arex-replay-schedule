@@ -22,6 +22,7 @@ public interface ProgressEvent {
      * @param request the request of create plan
      */
     default void onReplayPlanCreateException(BuildReplayPlanRequest request, Throwable t) {}
+    default void onReplayPlanCreateException(BuildReplayPlanRequest request) {}
 
     void onReplayPlanCreated(ReplayPlan replayPlan);
 

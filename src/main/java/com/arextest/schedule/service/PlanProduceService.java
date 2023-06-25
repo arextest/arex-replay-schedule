@@ -59,23 +59,23 @@ public class PlanProduceService {
         long planCreateMillis = System.currentTimeMillis();
         String appId = request.getAppId();
         if (isCreating(appId, request.getTargetEnv())) {
-            progressEvent.onReplayPlanCreateException(request, new RuntimeException("This appid is creating plan"));
+            progressEvent.onReplayPlanCreateException(request);
             return CommonResponse.badResponse("This appid is creating plan");
         }
         ReplayPlanBuilder planBuilder = select(request);
         if (planBuilder == null) {
-            progressEvent.onReplayPlanCreateException(request, new RuntimeException("Bad Request"));
+            progressEvent.onReplayPlanCreateException(request);
             return CommonResponse.badResponse("appId:" + appId + " unsupported replay planType : " + request.getReplayPlanType());
         }
         PlanContext planContext = planContextCreator.createByAppId(appId);
         BuildPlanValidateResult result = planBuilder.validate(request, planContext);
         if (result.failure()) {
-            progressEvent.onReplayPlanCreateException(request, new RuntimeException("Plan validation failed"));
+            progressEvent.onReplayPlanCreateException(request);
             return CommonResponse.badResponse("appId:" + appId + " error: " + result.getRemark());
         }
         List<ReplayActionItem> replayActionItemList = planBuilder.buildReplayActionList(request, planContext);
         if (CollectionUtils.isEmpty(replayActionItemList)) {
-            progressEvent.onReplayPlanCreateException(request, new RuntimeException("No interface to replay"));
+            progressEvent.onReplayPlanCreateException(request);
             return CommonResponse.badResponse("appId:" + appId + " error: empty replay actions");
         }
         ReplayPlan replayPlan = build(request, planContext);
@@ -84,18 +84,18 @@ public class PlanProduceService {
         ReplayParentBinder.setupReplayActionParent(replayActionItemList, replayPlan);
         int planCaseCount = planBuilder.buildReplayCaseCount(replayActionItemList);
         if (planCaseCount == 0) {
-            progressEvent.onReplayPlanCreateException(request, new RuntimeException("No case to replay"));
+            progressEvent.onReplayPlanCreateException(request);
             return CommonResponse.badResponse("loaded empty case,try change time range submit again ");
         }
         replayPlan.setCaseTotalCount(planCaseCount);
         // todo: add trans
         if (!replayPlanRepository.save(replayPlan)) {
-            progressEvent.onReplayPlanCreateException(request, new RuntimeException("Db error saving cases to send"));
+            progressEvent.onReplayPlanCreateException(request);
             return CommonResponse.badResponse("save replan plan error, " + replayPlan.toString());
         }
         MDCTracer.addPlanId(replayPlan.getId());
         if (!replayPlanActionRepository.save(replayActionItemList)) {
-            progressEvent.onReplayPlanCreateException(request, new RuntimeException("Db error saving action item"));
+            progressEvent.onReplayPlanCreateException(request);
             return CommonResponse.badResponse("save replay action error, " + replayPlan.toString());
         }
 
