@@ -265,7 +265,7 @@ public final class PlanConsumeService {
         // checkpoint: before sending grouping of action item
         if (checkExecutionBreak(replayActionItem, executionStatus)) {
             return;
-        };
+        }
 
         if (replayActionItem.getReplayFinishTime() == null
                 && replayActionItem.getReplayStatus() != ReplayStatusType.RUNNING.getValue()) {
