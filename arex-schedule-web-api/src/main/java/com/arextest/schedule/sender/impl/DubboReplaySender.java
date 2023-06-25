@@ -10,7 +10,7 @@ import com.arextest.schedule.model.converter.ReplayActionCaseItemConverter;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.SenderParameters;
-import com.arextest.schedule.spi.ReplaySenderExtension;
+import com.arextest.schedule.spi.ReplayInvokerExtension;
 import com.arextest.schedule.spi.model.DubboRequest;
 import com.arextest.schedule.spi.model.ReplayInvokeResult;
 import lombok.Data;
@@ -86,13 +86,13 @@ public class DubboReplaySender extends AbstractReplaySender {
             return false;
         }
         dubboRequest.setHeaders(headers);
-        ServiceLoader<ReplaySenderExtension> loader = ServiceLoader.load(ReplaySenderExtension.class);
-        for (ReplaySenderExtension sender : loader) {
-            if (sender.getName().equalsIgnoreCase(DUBBO_EXTENSION_NAME)) {
-                replayInvokeResult = sender.invoke(dubboRequest);
+        ServiceLoader<ReplayInvokerExtension> loader = ServiceLoader.load(ReplayInvokerExtension.class);
+        for (ReplayInvokerExtension invoker : loader) {
+            if (invoker.getName().equalsIgnoreCase(DUBBO_EXTENSION_NAME)
+                    && invoker.isSupported(caseItem.getCaseType())) {
+                replayInvokeResult = invoker.invoke(dubboRequest);
             }
         }
-        //replayInvokeResult = defaultDubboInvoker.invoke(dubboRequest);
         if (replayInvokeResult == null) {
             return false;
         }

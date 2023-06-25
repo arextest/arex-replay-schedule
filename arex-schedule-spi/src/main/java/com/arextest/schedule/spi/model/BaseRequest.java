@@ -7,7 +7,7 @@ import java.util.Map;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class BaseRequest extends ReplayActionCaseItem{
+public class BaseRequest extends ReplayInvokeRequest {
     private String url;
     private Map<String, String> headers;
 }

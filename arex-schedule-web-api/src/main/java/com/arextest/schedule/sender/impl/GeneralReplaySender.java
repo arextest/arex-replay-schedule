@@ -8,7 +8,7 @@ import com.arextest.schedule.model.converter.ReplayActionCaseItemConverter;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.SenderParameters;
-import com.arextest.schedule.spi.ReplaySenderExtension;
+import com.arextest.schedule.spi.ReplayInvokerExtension;
 import com.arextest.schedule.spi.model.BaseRequest;
 import com.arextest.schedule.spi.model.ReplayInvokeResult;
 import lombok.extern.slf4j.Slf4j;
@@ -40,8 +40,8 @@ public class GeneralReplaySender extends AbstractReplaySender {
         baseRequest.setHeaders(headers);
 
         ReplayInvokeResult replayInvokeResult = null;
-        ServiceLoader<ReplaySenderExtension> loader = ServiceLoader.load(ReplaySenderExtension.class);
-        for (ReplaySenderExtension sender : loader) {
+        ServiceLoader<ReplayInvokerExtension> loader = ServiceLoader.load(ReplayInvokerExtension.class);
+        for (ReplayInvokerExtension sender : loader) {
             if (sender.getName().equalsIgnoreCase(EXTENSION_NAME)) {
                 replayInvokeResult = sender.invoke(baseRequest);
             }

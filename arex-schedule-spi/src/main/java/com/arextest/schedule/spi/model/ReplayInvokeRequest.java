@@ -5,7 +5,7 @@ import lombok.Data;
 import java.util.Map;
 
 @Data
-public class ReplayActionCaseItem {
+public class ReplayInvokeRequest {
     private String id;
     private String planItemId;
     private String recordId;
