@@ -258,7 +258,7 @@ public class ReplayCaseTransmitService {
                 Thread.sleep(CommonConstant.THREE_SECOND_MILLIS);
             }
         } catch (Exception ex) {
-            LOGGER.error("active remote host error", ex);
+            LOGGER.error("active remote host error:{}",ex.getMessage(), ex);
         }
     }
 
