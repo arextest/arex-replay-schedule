@@ -1,8 +1,8 @@
 package com.arextest.schedule.model.dao.mongodb;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
@@ -10,6 +10,7 @@ import java.util.Date;
 /**
  * Created by qzmo on 2023/5/31.
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 @Document("ReplayBizLog")
