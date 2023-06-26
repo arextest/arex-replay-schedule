@@ -311,6 +311,11 @@ public final class PlanConsumeService {
                 int contextCount = 0;
                 List<ReplayActionCaseItem> sourceItemList;
                 while (true) {
+                    // checkpoint: before sending page of cases
+                    if (executionStatus.isAbnormal()) {
+                        break;
+                    }
+
                     sourceItemList = replayActionCaseItemRepository.waitingSendList(replayActionItem.getId(),
                             CommonConstant.MAX_PAGE_SIZE, executionContext.getContextCaseQuery());
 
@@ -320,12 +325,6 @@ public final class PlanConsumeService {
                     }
                     contextCount += sourceItemList.size();
                     ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
-
-
-                    // checkpoint: before sending page of cases
-                    if (executionStatus.isAbnormal()) {
-                        break;
-                    }
                     replayCaseTransmitService.send(replayActionItem, executionStatus);
 
                     BizLogger.recordActionItemBatchSent(replayActionItem, sourceItemList.size());
