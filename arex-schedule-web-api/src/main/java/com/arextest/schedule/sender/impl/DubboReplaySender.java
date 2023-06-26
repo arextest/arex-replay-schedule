@@ -4,15 +4,14 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.common.CommonConstant;
+import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
+import com.arextest.schedule.extension.model.ReplayInvokeResult;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.converter.ReplayActionCaseItemConverter;
 import com.arextest.schedule.model.deploy.ServiceInstance;
+import com.arextest.schedule.model.extension.DubboInvocation;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.SenderParameters;
-import com.arextest.schedule.spi.ReplayInvokerExtension;
-import com.arextest.schedule.spi.model.DubboRequest;
-import com.arextest.schedule.spi.model.ReplayInvokeResult;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
@@ -24,7 +23,6 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 
 /**
  * @author b_yu
@@ -33,8 +31,6 @@ import java.util.ServiceLoader;
 @Slf4j
 @Component
 public class DubboReplaySender extends AbstractReplaySender {
-    private static final String DUBBO_EXTENSION_NAME = "DefaultDubbo";
-
     @Override
     public boolean isSupported(String categoryType) {
         return MockCategoryType.DUBBO_PROVIDER.getName().equals(categoryType);
@@ -53,8 +49,7 @@ public class DubboReplaySender extends AbstractReplaySender {
         return null;
     }
 
-    DubboRequest generateDubboRequest(ReplayActionCaseItem caseItem) {
-        DubboRequest dubboRequest = ReplayActionCaseItemConverter.INSTANCE.convertDubboRequest(caseItem);
+    DubboInvocation generateDubboInvocation(ReplayActionCaseItem caseItem, Map<String, String> headers) {
 
         ImmutablePair<String, String> interfaceNameAndMethod =
                 getInterfaceNameAndMethod(caseItem.getParent().getOperationName());
@@ -66,38 +61,31 @@ public class DubboReplaySender extends AbstractReplaySender {
             return null;
         }
         String url = instanceRunner.getUrl();
-        dubboRequest.setUrl(url);
-
         DubboParameters dubboParameters = getDubboParameters(caseItem);
-        dubboRequest.setParameters(dubboParameters.getParameters());
-        dubboRequest.setParameterTypes(dubboParameters.getParameterTypes());
-
-        dubboRequest.setInterfaceName(interfaceNameAndMethod.left);
-        dubboRequest.setMethodName(interfaceNameAndMethod.right);
-        return dubboRequest;
+        return new DubboInvocation(url, headers, interfaceNameAndMethod.left, interfaceNameAndMethod.right,
+                dubboParameters.getParameterTypes(), dubboParameters.getParameters());
     }
 
     private boolean doSend(ReplayActionCaseItem caseItem, Map<String, String> headers) {
 
         ReplayInvokeResult replayInvokeResult = null;
 
-        DubboRequest dubboRequest = generateDubboRequest(caseItem);
-        if (dubboRequest == null) {
+        DubboInvocation dubboInvocation = generateDubboInvocation(caseItem, headers);
+        if (dubboInvocation == null) {
             return false;
         }
-        dubboRequest.setHeaders(headers);
-        ServiceLoader<ReplayInvokerExtension> loader = ServiceLoader.load(ReplayInvokerExtension.class);
-        for (ReplayInvokerExtension invoker : loader) {
-            if (invoker.getName().equalsIgnoreCase(DUBBO_EXTENSION_NAME)
-                    && invoker.isSupported(caseItem.getCaseType())) {
-                replayInvokeResult = invoker.invoke(dubboRequest);
+        for (ReplayExtensionInvoker invoker : AbstractReplaySender.loader) {
+            if (invoker.isSupported(caseItem.getCaseType())) {
+                dubboInvocation.setInvoker(invoker);
+                replayInvokeResult = invoker.invoke(dubboInvocation);
+                break;
             }
         }
         if (replayInvokeResult == null) {
             return false;
         }
-        ReplaySendResult targetSendResult = fromDubboResult(headers, dubboRequest.getUrl(),
-                replayInvokeResult.getResult(), replayInvokeResult.getResponseHeaders());
+        ReplaySendResult targetSendResult = fromDubboResult(headers, dubboInvocation.getUrl(),
+                replayInvokeResult.getResult(), replayInvokeResult.getResponseProperties());
         caseItem.setSendErrorMessage(targetSendResult.getRemark());
         caseItem.setTargetResultId(targetSendResult.getTraceId());
         caseItem.setSendStatus(targetSendResult.getStatusType().getValue());

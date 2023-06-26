@@ -6,7 +6,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>arex-schedule-web-api</module>
-        <module>arex-schedule-spi</module>
+        <module>arex-schedule-extension</module>
     </modules>
     <groupId>com.arextest</groupId>
     <artifactId>arex-schedule-parent</artifactId>

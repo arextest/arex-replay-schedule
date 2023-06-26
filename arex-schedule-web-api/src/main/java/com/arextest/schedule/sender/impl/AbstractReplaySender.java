@@ -1,6 +1,7 @@
 package com.arextest.schedule.sender.impl;
 
 import com.arextest.schedule.common.CommonConstant;
+import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.deploy.ServiceInstance;
@@ -18,10 +19,14 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 
 
 @Slf4j
 abstract class AbstractReplaySender implements ReplaySender {
+
+    protected static final ServiceLoader<ReplayExtensionInvoker> loader = ServiceLoader.load(ReplayExtensionInvoker.class);
+
     @Resource
     private MockCachePreLoader mockCachePreLoader;
     @Resource

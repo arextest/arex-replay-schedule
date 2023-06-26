@@ -104,7 +104,7 @@
         </dependency>
         <dependency>
             <groupId>com.arextest</groupId>
-            <artifactId>arex-schedule-spi</artifactId>
+            <artifactId>arex-schedule-extension</artifactId>
             <version>1.0.25.2</version>
             <scope>compile</scope>
         </dependency>
