@@ -60,18 +60,4 @@ public class ClassLoaderUtils {
         }
         return Integer.parseInt(version);
     }
-    //            Method method = null;
-    //            boolean accessible;
-    //            if (classLoader instanceof URLClassLoader) {
-    //                //method = WebappClassLoaderBase.class.getDeclaredMethod(ADD_URL_FUN_NAME, URL.class);
-    //                while (method == null && classLoader.getParent() != null) {
-    //                    method = classLoader.getClass().getDeclaredMethod(ADD_URL_FUN_NAME, URL.class);
-    //                    classLoader = classLoader.getParent();
-    //                }
-    //                accessible = method.isAccessible();
-    //                method.setAccessible(true);
-    //                method.invoke(ClassLoaderUtils.class.getClassLoader(), jarFile.toURI().toURL());
-    //                method.setAccessible(accessible);
-    //            }
-
 }
