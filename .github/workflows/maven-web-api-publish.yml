@@ -32,7 +32,7 @@ jobs:
 
       - name: Publish to Apache Maven Central
         run: mvn deploy -DskipTests=true -pl arex-schedule-web-api -Pjar.
-             mvn clean deploy -N -DskipTests=true.
+             mvn deploy -N -DskipTests=true.
         env:
           MAVEN_USERNAME: ${{ secrets.MAVEN_OSSRH_USERNAME }}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_OSSRH_TOKEN }}
