@@ -54,6 +54,7 @@ public class ReplayActionItem {
     private Date replayBeginTime;
     @JsonIgnore
     private Date replayFinishTime;
+    private Date replayCaseLoadedTime;
 
     /**
      * see defined {@link MockCategoryType} for all entry points

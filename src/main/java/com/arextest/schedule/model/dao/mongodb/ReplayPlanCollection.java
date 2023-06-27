@@ -13,7 +13,7 @@ import java.util.Date;
 @Data
 @NoArgsConstructor
 @Document("ReplayPlan")
-public class ReplayPlanCollection extends ModelBase{
+public class ReplayPlanCollection extends ModelBase {
     @NonNull
     private String appId;
     @NonNull
