@@ -10,7 +10,7 @@
     </modules>
     <groupId>com.arextest</groupId>
     <artifactId>arex-schedule-parent</artifactId>
-    <version>1.0.28</version>
+    <version>1.0.29</version>
     <name>${project.groupId}:${project.artifactId}</name>
     <description>AREX schedule is used for replay.</description>
     <url>https://github.com/arextest/arex-replay-schedule</url>
@@ -48,6 +48,8 @@
         <!-- Users could specify this property as true to skip the deploy process -->
         <maven.deploy.skip>false</maven.deploy.skip>
         <fastjson2.version>2.0.23</fastjson2.version>
+        <releases.repo>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</releases.repo>
+        <snapshots.repo>https://s01.oss.sonatype.org/content/repositories/snapshots/</snapshots.repo>
     </properties>
 
     <dependencyManagement>
@@ -150,7 +152,16 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
+    <distributionManagement>
+        <repository>
+            <id>releases</id>
+            <url>${releases.repo}</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <url>${snapshots.repo}</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <licenses>
         <license>

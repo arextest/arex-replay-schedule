@@ -28,7 +28,7 @@ jobs:
           gpg-passphrase: MAVEN_GPG_PASSPHRASE # env variable for GPG private key passphrase
 
       - name: Build with Maven
-        run: mvn -B -ntp clean package -DskipTests=true -pl arex-schedule-extension
+        run: mvn -B -ntp clean package -DskipTests=true -Pjar
 
       - name: Publish to Apache Maven Central
         run: mvn deploy -DskipTests=true -pl arex-schedule-extension
