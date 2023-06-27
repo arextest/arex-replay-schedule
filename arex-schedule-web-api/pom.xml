@@ -199,16 +199,6 @@
             </plugin>
         </plugins>
     </build>
-    <distributionManagement>
-        <repository>
-            <id>releases</id>
-            <url>${releases.repo}</url>
-        </repository>
-        <snapshotRepository>
-            <id>snapshots</id>
-            <url>${snapshots.repo}</url>
-        </snapshotRepository>
-    </distributionManagement>
     <profiles>
         <profile>
             <id>war</id>

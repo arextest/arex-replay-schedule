@@ -30,9 +30,15 @@ jobs:
       - name: Build with Maven
         run: mvn -B -ntp clean package -DskipTests=true -Pjar
 
-      - name: Publish to Apache Maven Central
-        run: mvn deploy -DskipTests=true -pl arex-schedule-web-api -Pjar.
-             mvn deploy -N -DskipTests=true.
+      - name: Publish parent to Apache Maven Central
+        run: mvn deploy -N -DskipTests=true
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_OSSRH_USERNAME }}
+          MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+
+      - name: Publish web-api to Apache Maven Central
+        run: mvn deploy -DskipTests=true -pl arex-schedule-web-api -Pjar
         env:
           MAVEN_USERNAME: ${{ secrets.MAVEN_OSSRH_USERNAME }}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_OSSRH_TOKEN }}
