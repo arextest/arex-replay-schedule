@@ -25,6 +25,7 @@ public class WebSpringBootServletInitializer extends SpringBootServletInitialize
 
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+        //If no invoker is specified by JAR_FILE_PATH, load default DubboInvoker. This mechanism is to avoid dependency conflicts.
         String loadJarFilePath = StringUtils.isEmpty(JAR_FILE_PATH) ? TOMCAT_JAR_FILE_PATH : JAR_FILE_PATH;
         ClassLoaderUtils.loadJar(loadJarFilePath);
         return application.sources(WebSpringBootServletInitializer.class);
