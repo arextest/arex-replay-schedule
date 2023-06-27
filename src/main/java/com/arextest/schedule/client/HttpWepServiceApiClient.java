@@ -29,7 +29,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
+import javax.net.ssl.*;
+import java.security.cert.X509Certificate;
 /**
  * @author jmo
  * @since 2021/9/15
@@ -46,7 +47,8 @@ public final class HttpWepServiceApiClient {
     private int connectTimeOut;
     @Value("${arex.read.time.out}")
     private int readTimeOut;
-
+    @Value("${arex.client.https.cert.disable:#{false}}")
+    private boolean disableCertCheck;
 
     @PostConstruct
     private void initRestTemplate() {
@@ -67,6 +69,10 @@ public final class HttpWepServiceApiClient {
         httpMessageConverterList.add(converter);
         this.restTemplate = new RestTemplate(httpMessageConverterList);
         this.restTemplate.setRequestFactory(requestFactory);
+
+        if (disableCertCheck) {
+            disableSSLVerification();
+        }
     }
 
     public <TResponse> TResponse get(String url, Map<String, ?> urlVariables, Class<TResponse> responseType) {
@@ -138,5 +144,35 @@ public final class HttpWepServiceApiClient {
                                                                              Class<TResponse> responseType) throws RestClientException {
         return restTemplate.postForEntity(url, wrapJsonContentType(request), responseType);
 
+    }
+
+    public static void disableSSLVerification() {
+        try {
+            TrustManager[] trustAllCerts = new TrustManager[] {
+                    new X509TrustManager() {
+                        public X509Certificate[] getAcceptedIssuers() {
+                            return null;
+                        }
+                        public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                        }
+                        public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                        }
+                    }
+            };
+
+            SSLContext sc = SSLContext.getInstance("SSL");
+            sc.init(null, trustAllCerts, new java.security.SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+
+            HostnameVerifier allHostsValid = new HostnameVerifier() {
+                public boolean verify(String hostname, SSLSession session) {
+                    return true;
+                }
+            };
+
+            HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+        } catch (Exception e) {
+            LOGGER.error("Ignore SSL cert check failed", e);
+        }
     }
 }
