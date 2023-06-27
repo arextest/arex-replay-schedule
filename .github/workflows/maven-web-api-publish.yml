@@ -28,10 +28,11 @@ jobs:
           gpg-passphrase: MAVEN_GPG_PASSPHRASE # env variable for GPG private key passphrase
 
       - name: Build with Maven
-        run: mvn -B -ntp clean package -DskipTests=true -pl arex-schedule-web-api -Pjar
+        run: mvn -B -ntp clean package -DskipTests=true -Pjar
 
       - name: Publish to Apache Maven Central
-        run: mvn deploy -DskipTests=true -pl arex-schedule-web-api -Pjar
+        run: mvn deploy -DskipTests=true -pl arex-schedule-web-api -Pjar.
+             mvn clean deploy -N -DskipTests=true.
         env:
           MAVEN_USERNAME: ${{ secrets.MAVEN_OSSRH_USERNAME }}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_OSSRH_TOKEN }}
