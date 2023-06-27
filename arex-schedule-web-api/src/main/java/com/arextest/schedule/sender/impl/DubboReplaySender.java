@@ -9,7 +9,7 @@ import com.arextest.schedule.extension.model.ReplayInvokeResult;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.deploy.ServiceInstance;
-import com.arextest.schedule.model.extension.DubboInvocation;
+import com.arextest.schedule.model.invocation.DubboInvocation;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.SenderParameters;
 import lombok.Data;
@@ -74,7 +74,7 @@ public class DubboReplaySender extends AbstractReplaySender {
         if (dubboInvocation == null) {
             return false;
         }
-        for (ReplayExtensionInvoker invoker : AbstractReplaySender.loader) {
+        for (ReplayExtensionInvoker invoker : AbstractReplaySender.INVOKERS) {
             if (invoker.isSupported(caseItem.getCaseType())) {
                 dubboInvocation.setInvoker(invoker);
                 replayInvokeResult = invoker.invoke(dubboInvocation);

@@ -25,7 +25,7 @@ import java.util.ServiceLoader;
 @Slf4j
 abstract class AbstractReplaySender implements ReplaySender {
 
-    protected static final ServiceLoader<ReplayExtensionInvoker> loader = ServiceLoader.load(ReplayExtensionInvoker.class);
+    protected static final ServiceLoader<ReplayExtensionInvoker> INVOKERS = ServiceLoader.load(ReplayExtensionInvoker.class);
 
     @Resource
     private MockCachePreLoader mockCachePreLoader;
