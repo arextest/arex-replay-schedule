@@ -6,11 +6,11 @@
     <parent>
         <groupId>com.arextest</groupId>
         <artifactId>arex-schedule-parent</artifactId>
-        <version>1.0.28</version>
+        <version>1.0.29</version>
     </parent>
     <packaging>${packagingType}</packaging>
     <artifactId>arex-schedule-web-api</artifactId>
-    <version>1.0.28</version>
+    <version>1.0.29</version>
     <name>${project.groupId}:${project.artifactId}</name>
 
     <dependencies>
@@ -199,16 +199,6 @@
             </plugin>
         </plugins>
     </build>
-    <distributionManagement>
-        <repository>
-            <id>releases</id>
-            <url>${releases.repo}</url>
-        </repository>
-        <snapshotRepository>
-            <id>snapshots</id>
-            <url>${snapshots.repo}</url>
-        </snapshotRepository>
-    </distributionManagement>
     <profiles>
         <profile>
             <id>war</id>
@@ -263,6 +253,7 @@
                 <snapshots.repo>https://s01.oss.sonatype.org/content/repositories/snapshots/</snapshots.repo>
             </properties>
             <build>
+                <finalName>arex-schedule-web-api</finalName>
                 <resources>
                     <resource>
                         <directory>arex-replay-schedule</directory>
