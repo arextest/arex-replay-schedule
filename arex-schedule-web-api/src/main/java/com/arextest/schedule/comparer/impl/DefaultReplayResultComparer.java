@@ -193,7 +193,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                                          ReplayComparisonConfig compareConfig) {
         CompareOptions options = buildCompareRequest(category, compareConfig);
         try {
-            return COMPARE_INSTANCE.compare(record, result, options);
+            return COMPARE_INSTANCE.quickCompare(record, result, options);
         } catch (Throwable e) {
             LOGGER.error("run compare sdk process error:{} ,source: {} ,target:{}", e.getMessage(), record, result);
             return CompareSDK.fromException(record, result, e.getMessage());
@@ -266,6 +266,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         diffResult.setBaseMsg(sdkResult.getProcessedBaseMsg());
         diffResult.setTestMsg(sdkResult.getProcessedTestMsg());
         diffResult.setLogs(sdkResult.getLogs());
+        diffResult.setMsgInfo(sdkResult.getMsgInfo());
         diffResult.setDiffResultCode(sdkResult.getCode());
         diffResult.setRecordTime(recordTime);
         diffResult.setReplayTime(replayTime);

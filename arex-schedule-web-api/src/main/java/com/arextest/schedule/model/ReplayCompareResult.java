@@ -4,7 +4,7 @@ package com.arextest.schedule.model;
 import com.arextest.diff.model.CompareResult;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.model.log.LogEntity;
-
+import com.arextest.diff.model.MsgInfo;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
@@ -16,6 +16,7 @@ import java.util.List;
  */
 @Data
 public class ReplayCompareResult {
+    private String id;
     private String planId;
     private String planItemId;
     private String operationId;
@@ -35,6 +36,7 @@ public class ReplayCompareResult {
     private long replayTime;
     private String instanceId;
     private List<LogEntity> logs;
+    private MsgInfo msgInfo;
 
     public static ReplayCompareResult createFrom(ReplayActionCaseItem caseItem) {
         ReplayCompareResult newResult = new ReplayCompareResult();
@@ -52,6 +54,7 @@ public class ReplayCompareResult {
     public static ReplayCompareResult createFrom(ReplayActionCaseItem caseItem, CompareResult sdkResult) {
         ReplayCompareResult newResult = createFrom(caseItem);
         newResult.setOperationName(caseItem.getParent().getOperationName());
+        newResult.setMsgInfo(sdkResult.getMsgInfo());
         newResult.setCategoryName(caseItem.getCaseType());
         newResult.setBaseMsg(sdkResult.getProcessedBaseMsg());
         newResult.setTestMsg(sdkResult.getProcessedTestMsg());

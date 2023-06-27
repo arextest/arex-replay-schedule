@@ -19,6 +19,7 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
     private static final int CORE_POOL_SIZE = 2 * Runtime.getRuntime().availableProcessors();
     private static final int MAXIMUM_POOL_SIZE = 2 * CORE_POOL_SIZE;
     private static final int SEND_QUEUE_MAX_CAPACITY_SIZE = 4000;
+    private static final int COMPARE_QUEUE_MAX_CAPACITY_SIZE = 2000;
     private static final int PRELOAD_QUEUE_MAX_CAPACITY_SIZE = 100;
     private final int SEND_POOL_SIZE = calculateIOPoolSize();
 
@@ -49,7 +50,25 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
                 .setUncaughtExceptionHandler(this)
                 .build();
         return new ThreadPoolExecutor(SEND_POOL_SIZE, SEND_POOL_SIZE, KEEP_ALIVE_TIME,
-                TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(SEND_QUEUE_MAX_CAPACITY_SIZE), threadFactory);
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(SEND_QUEUE_MAX_CAPACITY_SIZE),
+                threadFactory,
+                new ThreadPoolExecutor.CallerRunsPolicy());
+    }
+
+
+    @Bean
+    public ExecutorService compareExecutorService() {
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("replay-compare-%d")
+                .setDaemon(true)
+                .setUncaughtExceptionHandler(this)
+                .build();
+        return new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_POOL_SIZE, KEEP_ALIVE_TIME,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(COMPARE_QUEUE_MAX_CAPACITY_SIZE),
+                threadFactory,
+                new ThreadPoolExecutor.CallerRunsPolicy());
+
     }
 
     @Bean
