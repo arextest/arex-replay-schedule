@@ -36,7 +36,7 @@ public class ReplayCompareResultRepositoryImpl implements RepositoryWriter<Repla
 
     @Override
     public boolean save(ReplayCompareResultCollection item) {
-        mongoTemplate.insert(item);
+        mongoTemplate.save(item);
         return true;
     }
 
