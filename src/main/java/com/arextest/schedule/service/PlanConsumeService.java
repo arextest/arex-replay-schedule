@@ -148,6 +148,8 @@ public final class PlanConsumeService {
                 planSavedCaseSize += replayActionItem.getReplayCaseCount();
                 continue;
             }
+
+
             int preloaded = replayActionItem.getReplayCaseCount();
 
             start = System.currentTimeMillis();

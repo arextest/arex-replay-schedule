@@ -89,8 +89,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
 
     @Override
     public void onActionBeforeSend(ReplayActionItem actionItem) {
-        actionItem.setReplayBeginTime(new Date());
-        updateReplayActionStatus(actionItem, ReplayStatusType.RUNNING, null);
+
     }
 
     private void updateReplayActionStatus(ReplayActionItem actionItem, ReplayStatusType replayStatusType, String errorMessage) {
@@ -112,7 +111,9 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
             LOGGER.info("loaded empty case , action id:{} , should skip it all", actionItem.getId());
             return;
         }
-        replayPlanActionRepository.update(actionItem);
+
+        actionItem.setReplayBeginTime(new Date());
+        updateReplayActionStatus(actionItem, ReplayStatusType.RUNNING, null);
         LOGGER.info("update the replay action case count, action id:{} , size: {}", actionItem.getId(),
                 actionItem.getReplayCaseCount());
     }
