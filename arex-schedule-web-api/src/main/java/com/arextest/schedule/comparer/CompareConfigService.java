@@ -152,8 +152,13 @@ public final class CompareConfigService {
     }
 
     public ReplayComparisonConfig loadConfig(ReplayActionItem actionItem) {
+        return this.loadConfig(actionItem.getId());
+    }
+
+
+    public ReplayComparisonConfig loadConfig(String actionItemId) {
         try {
-            String redisKey = key(actionItem.getId());
+            String redisKey = key(actionItemId);
             byte[] json = redisCacheProvider.get(redisKey.getBytes(StandardCharsets.UTF_8));
             if (json == null) {
                 return newEmptyComparisonConfig();

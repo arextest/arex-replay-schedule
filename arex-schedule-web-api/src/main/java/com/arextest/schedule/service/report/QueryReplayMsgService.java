@@ -1,13 +1,16 @@
 package com.arextest.schedule.service.report;
 
+import com.arextest.diff.model.CompareOptions;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.model.log.LogEntity;
 import com.arextest.diff.model.log.NodeEntity;
 import com.arextest.diff.model.log.UnmatchedPairEntity;
 import com.arextest.diff.sdk.CompareSDK;
+import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.comparer.impl.DefaultReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
 import com.arextest.schedule.model.ReplayCompareResult;
+import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.model.converter.ReplayCompareResultConverter;
 import com.arextest.schedule.model.report.QueryDiffMsgByIdResponseType;
 import com.arextest.schedule.model.report.QueryLogEntityRequestTye;
@@ -30,6 +33,8 @@ import java.util.List;
 public class QueryReplayMsgService {
     @Resource
     private ReplayCompareResultRepositoryImpl replayCompareResultRepository;
+    @Resource
+    private CompareConfigService compareConfigService;
     private static final CompareSDK COMPARE_INSTANCE = DefaultReplayResultComparer.getCompareSDKInstance();
 
 
@@ -37,12 +42,16 @@ public class QueryReplayMsgService {
         QueryDiffMsgByIdResponseType response = new QueryDiffMsgByIdResponseType();
 
         ReplayCompareResult compareResultBo = replayCompareResultRepository.queryCompareResultsById(id);
+        ReplayComparisonConfig compareConfig = compareConfigService.loadConfig(compareResultBo.getPlanItemId());
+        CompareOptions compareOptions = DefaultReplayResultComparer
+                .buildCompareRequest(compareResultBo.getCategoryName(), compareConfig);
 
         // bo may contain only quick compare result, need to fill log entities into BO
         if (DiffResultCode.COMPARED_WITH_DIFFERENCE == compareResultBo.getDiffResultCode()
                 && CollectionUtils.isEmpty(compareResultBo.getLogs())) {
-            List<LogEntity> logs =
-                    COMPARE_INSTANCE.compare(compareResultBo.getBaseMsg(), compareResultBo.getTestMsg()).getLogs();
+            List<LogEntity> logs = COMPARE_INSTANCE.compare(compareResultBo.getBaseMsg(),
+                    compareResultBo.getTestMsg(), compareOptions).getLogs();
+
             compareResultBo.setLogs(logs);
             replayCompareResultRepository.save(ReplayCompareResultConverter.INSTANCE.daoFromBo(compareResultBo));
         }

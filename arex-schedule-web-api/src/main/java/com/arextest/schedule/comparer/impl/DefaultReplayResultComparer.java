@@ -313,7 +313,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         return compareConfigService.loadConfig(actionItem);
     }
 
-    private CompareOptions buildCompareRequest(String category, ReplayComparisonConfig compareConfig) {
+    public static CompareOptions buildCompareRequest(String category, ReplayComparisonConfig compareConfig) {
         CompareOptions options = new CompareOptions();
         options.putCategoryType(category);
         // todo: the switch of "sqlBodyParse" and "onlyCompareCoincidentColumn"
