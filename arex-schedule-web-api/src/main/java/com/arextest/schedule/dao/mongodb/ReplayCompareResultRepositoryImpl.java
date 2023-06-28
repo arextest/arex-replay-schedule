@@ -24,7 +24,8 @@ public class ReplayCompareResultRepositoryImpl implements RepositoryWriter<Repla
 
     @Override
     public boolean save(List<ReplayCompareResult> itemList) {
-        mongoTemplate.insertAll(itemList);
+        mongoTemplate.insertAll(itemList.stream().map(ReplayCompareResultConverter.INSTANCE::daoFromBo)
+                .collect(Collectors.toList()));
         return true;
     }
 
