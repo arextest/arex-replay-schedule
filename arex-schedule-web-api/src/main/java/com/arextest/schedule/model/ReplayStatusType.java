@@ -16,7 +16,7 @@ public enum ReplayStatusType {
      */
     CASE_LOADED(5),
     /**
-     * Processing cases
+     * Processing(send, compare) cases
      */
     RUNNING(1),
     /**
