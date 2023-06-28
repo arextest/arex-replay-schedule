@@ -112,7 +112,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
             LOGGER.info("loaded empty case , action id:{} , should skip it all", actionItem.getId());
             return;
         }
-        actionItem.setReplayCaseLoadedTime(new Date());
+        actionItem.setReplayStatus(ReplayStatusType.CASE_LOADED.getValue());
         replayPlanActionRepository.update(actionItem);
         LOGGER.info("update the replay action case count, action id:{} , size: {}", actionItem.getId(),
                 actionItem.getReplayCaseCount());

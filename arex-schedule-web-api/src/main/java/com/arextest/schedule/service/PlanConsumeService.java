@@ -144,8 +144,7 @@ public final class PlanConsumeService {
         long end;
 
         for (ReplayActionItem replayActionItem : replayActionItemList) {
-            if (replayActionItem.getReplayStatus() != ReplayStatusType.INIT.getValue()
-                    || replayActionItem.getReplayCaseLoadedTime() != null) {
+            if (replayActionItem.getReplayStatus() != ReplayStatusType.INIT.getValue()) {
                 planSavedCaseSize += replayActionItem.getReplayCaseCount();
                 continue;
             }
