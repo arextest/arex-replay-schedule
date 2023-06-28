@@ -17,26 +17,20 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
-public class ReplayCompareResultRepositoryImpl implements RepositoryWriter<ReplayCompareResultCollection>, RepositoryField  {
+public class ReplayCompareResultRepositoryImpl implements RepositoryWriter<ReplayCompareResult>, RepositoryField  {
 
     @Resource
     private MongoTemplate mongoTemplate;
 
-    public void insertAllCompareResults(List<ReplayCompareResult> results) {
-        List<ReplayCompareResultCollection> pes = results
-                .stream().map(ReplayCompareResultConverter.INSTANCE::daoFromBo).collect(Collectors.toList());
-        this.save(pes);
-    }
-
     @Override
-    public boolean save(List<ReplayCompareResultCollection> itemList) {
+    public boolean save(List<ReplayCompareResult> itemList) {
         mongoTemplate.insertAll(itemList);
         return true;
     }
 
     @Override
-    public boolean save(ReplayCompareResultCollection item) {
-        mongoTemplate.save(item);
+    public boolean save(ReplayCompareResult item) {
+        mongoTemplate.save(ReplayCompareResultConverter.INSTANCE.daoFromBo(item));
         return true;
     }
 

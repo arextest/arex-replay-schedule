@@ -168,7 +168,7 @@ public final class ReplayReportService implements ComparisonWriter {
         AnalyzeCompareResultsRequestType request = new AnalyzeCompareResultsRequestType();
         ReportResultConverter converter = ReportResultConverter.DEFAULT;
         List<AnalyzeCompareResultsRequestType.AnalyzeCompareInfoItem> reqItems = new ArrayList<>(comparedSize);
-        this.replayCompareResultRepository.insertAllCompareResults(comparedResult);
+        this.replayCompareResultRepository.save(comparedResult);
 
         for (int i = 0; i < comparedSize; i++) {
             ReplayCompareResult sourceResult = comparedResult.get(i);
@@ -199,7 +199,7 @@ public final class ReplayReportService implements ComparisonWriter {
         }
         AnalyzeCompareResultsRequestType request = new AnalyzeCompareResultsRequestType();
         ReplayCompareResult compareResult = toQMQCompareResult(caseItem);
-        this.replayCompareResultRepository.insertAllCompareResults(Collections.singletonList(compareResult));
+        this.replayCompareResultRepository.save(Collections.singletonList(compareResult));
 
         ReportResultConverter converter = ReportResultConverter.DEFAULT;
         request.setAnalyzeCompareInfos(Collections.singletonList(converter.to(compareResult)));

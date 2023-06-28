@@ -53,7 +53,7 @@ public class QueryReplayMsgService {
                     compareResultBo.getTestMsg(), compareOptions).getLogs();
 
             compareResultBo.setLogs(logs);
-            replayCompareResultRepository.save(ReplayCompareResultConverter.INSTANCE.daoFromBo(compareResultBo));
+            replayCompareResultRepository.save(compareResultBo);
         }
 
         CompareResultDetail compareResultDetail = ReplayCompareResultConverter.INSTANCE.voFromBo(compareResultBo);
