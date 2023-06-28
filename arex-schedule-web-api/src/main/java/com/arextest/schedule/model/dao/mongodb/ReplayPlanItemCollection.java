@@ -26,5 +26,4 @@ public class ReplayPlanItemCollection extends ModelBase {
     private int replayCaseCount;
     @NonNull
     private String appId;
-
 }
