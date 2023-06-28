@@ -55,6 +55,10 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         COMPARE_INSTANCE.getGlobalOptions().putNameToLower(true).putNullEqualsEmpty(true).putIgnoredTimePrecision(1000);
     }
 
+    public static CompareSDK getCompareSDKInstance() {
+        return COMPARE_INSTANCE;
+    }
+
     @Override
     public boolean compare(ReplayActionCaseItem caseItem, boolean useReplayId) {
         StopWatch compareWatch = new StopWatch();

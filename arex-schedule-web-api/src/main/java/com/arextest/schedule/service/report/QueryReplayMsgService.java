@@ -5,6 +5,7 @@ import com.arextest.diff.model.log.LogEntity;
 import com.arextest.diff.model.log.NodeEntity;
 import com.arextest.diff.model.log.UnmatchedPairEntity;
 import com.arextest.diff.sdk.CompareSDK;
+import com.arextest.schedule.comparer.impl.DefaultReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
 import com.arextest.schedule.model.ReplayCompareResult;
 import com.arextest.schedule.model.converter.ReplayCompareResultConverter;
@@ -29,7 +30,7 @@ import java.util.List;
 public class QueryReplayMsgService {
     @Resource
     private ReplayCompareResultRepositoryImpl replayCompareResultRepository;
-    private static final CompareSDK COMPARE_INSTANCE = new CompareSDK();
+    private static final CompareSDK COMPARE_INSTANCE = DefaultReplayResultComparer.getCompareSDKInstance();
 
 
     public QueryDiffMsgByIdResponseType queryDiffMsgById(String id) {

@@ -236,9 +236,6 @@ public class ReplayCaseTransmitService {
             AsyncCompareCaseTaskRunnable compareTask = new AsyncCompareCaseTaskRunnable(caseItem);
             compareExecutorService.execute(compareTask);
             LOGGER.info("Async compare task distributed, case id: {}", caseItem.getId());
-        }
-        if (sendStatusType == CaseSendStatusType.SUCCESS && replayResultComparer.compare(caseItem, true)) {
-            replayActionCaseItemRepository.updateSendResult(caseItem);
         } else {
             doSendFailedAsFinish(caseItem, sendStatusType);
         }
