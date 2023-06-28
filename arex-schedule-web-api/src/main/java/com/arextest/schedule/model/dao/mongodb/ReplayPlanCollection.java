@@ -13,7 +13,7 @@ import java.util.Date;
 @Data
 @NoArgsConstructor
 @Document("ReplayPlan")
-public class ReplayPlanCollection extends ModelBase{
+public class ReplayPlanCollection extends ModelBase {
 
     @NonNull
     private String appId;
@@ -44,5 +44,5 @@ public class ReplayPlanCollection extends ModelBase{
     private int caseTotalCount;
     private int caseSourceType;
     private int replayPlanType;
-
+    private int caseCountLimit;
 }

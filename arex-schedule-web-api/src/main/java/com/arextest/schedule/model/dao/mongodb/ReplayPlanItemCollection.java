@@ -21,10 +21,10 @@ public class ReplayPlanItemCollection extends ModelBase {
     @NonNull
     private int replayStatus;
     private Date replayBeginTime;
+    private Date replayCaseLoadedTime;
     private Date replayFinishTime;
     @NonNull
     private int replayCaseCount;
     @NonNull
     private String appId;
-
 }
