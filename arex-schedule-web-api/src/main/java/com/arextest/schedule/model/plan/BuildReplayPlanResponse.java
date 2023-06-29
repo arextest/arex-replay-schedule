@@ -19,7 +19,4 @@ public class BuildReplayPlanResponse {
         this.reasonCode = BuildReplayFailReasonEnum.NORMAL.getCode();
         this.replayPlanId = replayPlanId;
     }
-
-
-
 }

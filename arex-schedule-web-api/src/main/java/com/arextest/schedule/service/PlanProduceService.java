@@ -208,6 +208,9 @@ public class PlanProduceService {
         }
     }
 
+    /**
+     * map internal validation code to VO reason code
+     */
     private BuildReplayFailReasonEnum validateToResultReason(BuildPlanValidateResult validateResult) {
         switch (validateResult.getCodeValue()) {
             case BuildPlanValidateResult.REQUESTED_EMPTY_OPERATION:
