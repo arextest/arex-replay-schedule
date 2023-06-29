@@ -4,7 +4,9 @@ import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.DebugRequestItem;
+import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
+import com.arextest.schedule.model.plan.BuildReplayPlanResponse;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySendResult;
@@ -123,7 +125,8 @@ public class ReplayPlanController {
         } catch (Throwable e) {
             LOGGER.error("create plan error: {} , request: {}", e.getMessage(), request, e);
             progressEvent.onReplayPlanCreateException(request, e);
-            return CommonResponse.badResponse("create plan error！" + e.getMessage());
+            return CommonResponse.badResponse("create plan error！" + e.getMessage(),
+                    new BuildReplayPlanResponse(BuildReplayFailReasonEnum.UNKNOWN));
         } finally {
             MDCTracer.clear();
             planProduceService.removeCreating(request.getAppId(), request.getTargetEnv());

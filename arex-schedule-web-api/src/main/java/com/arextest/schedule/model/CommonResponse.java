@@ -33,4 +33,8 @@ public class CommonResponse {
     public static CommonResponse badResponse(String desc) {
         return new CommonResponse(2, desc);
     }
+
+    public static CommonResponse badResponse(String desc, Object data) {
+        return new CommonResponse(2, desc, data);
+    }
 }

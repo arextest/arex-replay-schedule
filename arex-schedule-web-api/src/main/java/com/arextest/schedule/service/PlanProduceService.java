@@ -5,6 +5,8 @@ import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.MDCTracer;
+import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
+import com.arextest.schedule.model.plan.BuildReplayPlanResponse;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.progress.ProgressEvent;
@@ -60,24 +62,30 @@ public class PlanProduceService {
         String appId = request.getAppId();
         if (isCreating(appId, request.getTargetEnv())) {
             progressEvent.onReplayPlanCreateException(request);
-            return CommonResponse.badResponse("This appid is creating plan");
+            return CommonResponse.badResponse("This appid is creating plan",
+                    new BuildReplayPlanResponse(BuildReplayFailReasonEnum.CREATING));
         }
         ReplayPlanBuilder planBuilder = select(request);
         if (planBuilder == null) {
             progressEvent.onReplayPlanCreateException(request);
-            return CommonResponse.badResponse("appId:" + appId + " unsupported replay planType : " + request.getReplayPlanType());
+            return CommonResponse.badResponse("appId:" + appId + " unsupported replay planType : " + request.getReplayPlanType(),
+                    new BuildReplayPlanResponse(BuildReplayFailReasonEnum.INVALID_REPLAY_TYPE));
         }
         PlanContext planContext = planContextCreator.createByAppId(appId);
         BuildPlanValidateResult result = planBuilder.validate(request, planContext);
         if (result.failure()) {
             progressEvent.onReplayPlanCreateException(request);
-            return CommonResponse.badResponse("appId:" + appId + " error: " + result.getRemark());
+            return CommonResponse.badResponse("appId:" + appId + " error: " + result.getRemark(),
+                    new BuildReplayPlanResponse(this.validateToResultReason(result)));
         }
+
         List<ReplayActionItem> replayActionItemList = planBuilder.buildReplayActionList(request, planContext);
         if (CollectionUtils.isEmpty(replayActionItemList)) {
             progressEvent.onReplayPlanCreateException(request);
-            return CommonResponse.badResponse("appId:" + appId + " error: empty replay actions");
+            return CommonResponse.badResponse("appId:" + appId + " error: empty replay actions",
+                    new BuildReplayPlanResponse(BuildReplayFailReasonEnum.NO_INTERFACE_FOUND));
         }
+
         ReplayPlan replayPlan = build(request, planContext);
         replayPlan.setPlanCreateMillis(planCreateMillis);
         replayPlan.setReplayActionItemList(replayActionItemList);
@@ -85,24 +93,28 @@ public class PlanProduceService {
         int planCaseCount = planBuilder.buildReplayCaseCount(replayActionItemList);
         if (planCaseCount == 0) {
             progressEvent.onReplayPlanCreateException(request);
-            return CommonResponse.badResponse("loaded empty case,try change time range submit again ");
+            return CommonResponse.badResponse("loaded empty case,try change time range submit again ",
+                    new BuildReplayPlanResponse(BuildReplayFailReasonEnum.NO_CASE_IN_RANGE));
         }
         replayPlan.setCaseTotalCount(planCaseCount);
         // todo: add trans
         if (!replayPlanRepository.save(replayPlan)) {
             progressEvent.onReplayPlanCreateException(request);
-            return CommonResponse.badResponse("save replan plan error, " + replayPlan.toString());
+            return CommonResponse.badResponse("save replan plan error, " + replayPlan.toString(),
+                    new BuildReplayPlanResponse(BuildReplayFailReasonEnum.DB_ERROR));
         }
         MDCTracer.addPlanId(replayPlan.getId());
         if (!replayPlanActionRepository.save(replayActionItemList)) {
             progressEvent.onReplayPlanCreateException(request);
-            return CommonResponse.badResponse("save replay action error, " + replayPlan.toString());
+            return CommonResponse.badResponse("save replay action error, " + replayPlan.toString(),
+                    new BuildReplayPlanResponse(BuildReplayFailReasonEnum.DB_ERROR));
         }
 
         BizLogger.recordPlanStart(replayPlan);
         progressEvent.onReplayPlanCreated(replayPlan);
         planConsumeService.runAsyncConsume(replayPlan);
-        return CommonResponse.successResponse("create plan success！" + result.getRemark(), replayPlan.getId());
+        return CommonResponse.successResponse("create plan success！" + result.getRemark(),
+                new BuildReplayPlanResponse(replayPlan.getId()));
     }
 
     private ReplayPlan build(BuildReplayPlanRequest request, PlanContext planContext) {
@@ -193,6 +205,25 @@ public class PlanProduceService {
             redisCacheProvider.putIfAbsent(redisKey.getBytes(StandardCharsets.UTF_8), STOP_PLAN_REDIS_EXPIRE, planId.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             LOGGER.error("stopPlan error, planId: {}, message: {}", planId, e.getMessage());
+        }
+    }
+
+    private BuildReplayFailReasonEnum validateToResultReason(BuildPlanValidateResult validateResult) {
+        switch (validateResult.getCodeValue()) {
+            case BuildPlanValidateResult.REQUESTED_EMPTY_OPERATION:
+                return BuildReplayFailReasonEnum.NO_INTERFACE_FOUND;
+
+            case BuildPlanValidateResult.UNSUPPORTED_CASE_SOURCE_TYPE:
+                return BuildReplayFailReasonEnum.INVALID_SOURCE_TYPE;
+
+            case BuildPlanValidateResult.REQUESTED_CASE_TIME_RANGE_UNSUPPORTED:
+                return BuildReplayFailReasonEnum.INVALID_CASE_RANGE;
+
+            case BuildPlanValidateResult.REQUESTED_TARGET_ENV_UNAVAILABLE:
+            case BuildPlanValidateResult.REQUESTED_SOURCE_ENV_UNAVAILABLE:
+                return BuildReplayFailReasonEnum.NO_ACTIVE_SERVICE_INSTANCE;
+            default:
+                return BuildReplayFailReasonEnum.UNKNOWN;
         }
     }
 }
