@@ -55,7 +55,7 @@ public final class CompareConfigService {
             String redisKey = key(actionItem.getId());
             String json = objectToJsonString(config);
             redisCacheProvider.put(redisKey.getBytes(StandardCharsets.UTF_8),
-                    7200L, json.getBytes(StandardCharsets.UTF_8));
+                    4 * 24 * 60 * 60L, json.getBytes(StandardCharsets.UTF_8));
             LOGGER.info("prepare load compare config, action id:{} ,result: {}", actionItem.getId(), json);
         }
     }
@@ -152,8 +152,13 @@ public final class CompareConfigService {
     }
 
     public ReplayComparisonConfig loadConfig(ReplayActionItem actionItem) {
+        return this.loadConfig(actionItem.getId());
+    }
+
+
+    public ReplayComparisonConfig loadConfig(String actionItemId) {
         try {
-            String redisKey = key(actionItem.getId());
+            String redisKey = key(actionItemId);
             byte[] json = redisCacheProvider.get(redisKey.getBytes(StandardCharsets.UTF_8));
             if (json == null) {
                 return newEmptyComparisonConfig();

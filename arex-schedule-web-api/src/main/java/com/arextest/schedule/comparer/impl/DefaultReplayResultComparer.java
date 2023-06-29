@@ -55,6 +55,10 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         COMPARE_INSTANCE.getGlobalOptions().putNameToLower(true).putNullEqualsEmpty(true).putIgnoredTimePrecision(1000);
     }
 
+    public static CompareSDK getCompareSDKInstance() {
+        return COMPARE_INSTANCE;
+    }
+
     @Override
     public boolean compare(ReplayActionCaseItem caseItem, boolean useReplayId) {
         StopWatch compareWatch = new StopWatch();
@@ -193,7 +197,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                                          ReplayComparisonConfig compareConfig) {
         CompareOptions options = buildCompareRequest(category, compareConfig);
         try {
-            return COMPARE_INSTANCE.compare(record, result, options);
+            return COMPARE_INSTANCE.quickCompare(record, result, options);
         } catch (Throwable e) {
             LOGGER.error("run compare sdk process error:{} ,source: {} ,target:{}", e.getMessage(), record, result);
             return CompareSDK.fromException(record, result, e.getMessage());
@@ -266,6 +270,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         diffResult.setBaseMsg(sdkResult.getProcessedBaseMsg());
         diffResult.setTestMsg(sdkResult.getProcessedTestMsg());
         diffResult.setLogs(sdkResult.getLogs());
+        diffResult.setMsgInfo(sdkResult.getMsgInfo());
         diffResult.setDiffResultCode(sdkResult.getCode());
         diffResult.setRecordTime(recordTime);
         diffResult.setReplayTime(replayTime);
@@ -308,7 +313,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         return compareConfigService.loadConfig(actionItem);
     }
 
-    private CompareOptions buildCompareRequest(String category, ReplayComparisonConfig compareConfig) {
+    public static CompareOptions buildCompareRequest(String category, ReplayComparisonConfig compareConfig) {
         CompareOptions options = new CompareOptions();
         options.putCategoryType(category);
         // todo: the switch of "sqlBodyParse" and "onlyCompareCoincidentColumn"

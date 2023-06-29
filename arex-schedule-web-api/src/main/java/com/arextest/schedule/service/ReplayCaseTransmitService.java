@@ -8,6 +8,7 @@ import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
+import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.*;
 import com.arextest.schedule.progress.ProgressEvent;
@@ -40,6 +41,8 @@ import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_KEY;
 public class ReplayCaseTransmitService {
     @Resource
     private ExecutorService sendExecutorService;
+    @Resource
+    private ExecutorService compareExecutorService;
     private static final int ACTIVE_SERVICE_RETRY_COUNT = 3;
     private static final int GROUP_SENT_WAIT_TIMEOUT = 500;
     @Resource
@@ -229,8 +232,10 @@ public class ReplayCaseTransmitService {
             caseItem.setTargetResultId(StringUtils.EMPTY);
         }
         caseItem.setSendStatus(sendStatusType.getValue());
-        if (sendStatusType == CaseSendStatusType.SUCCESS && replayResultComparer.compare(caseItem, true)) {
-            replayActionCaseItemRepository.updateSendResult(caseItem);
+        if (sendStatusType == CaseSendStatusType.SUCCESS) {
+            AsyncCompareCaseTaskRunnable compareTask = new AsyncCompareCaseTaskRunnable(caseItem);
+            compareExecutorService.execute(compareTask);
+            LOGGER.info("Async compare task distributed, case id: {}", caseItem.getId());
         } else {
             doSendFailedAsFinish(caseItem, sendStatusType);
         }
@@ -292,5 +297,24 @@ public class ReplayCaseTransmitService {
             LOGGER.error("doSendFailedAsFinish error:{}", throwable.getMessage(), throwable);
         }
 
+    }
+
+
+    private class AsyncCompareCaseTaskRunnable extends AbstractTracedRunnable {
+        private ReplayActionCaseItem caseItem;
+
+        AsyncCompareCaseTaskRunnable(ReplayActionCaseItem caseItem) {
+            this.caseItem = caseItem;
+        }
+
+        @Override
+        protected void doWithTracedRunning() {
+            boolean result = replayResultComparer.compare(caseItem, true);
+            if (result) {
+                replayActionCaseItemRepository.updateSendResult(caseItem);
+            } else {
+                LOGGER.error("Comparer returned false, case id: {}", caseItem.getId());
+            }
+        }
     }
 }
