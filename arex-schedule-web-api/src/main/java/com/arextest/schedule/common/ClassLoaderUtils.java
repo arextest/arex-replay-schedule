@@ -16,6 +16,10 @@ public class ClassLoaderUtils {
             int javaVersion = getJavaVersion();
             ClassLoader classLoader = ClassLoaderUtils.class.getClassLoader();
             File jarFile = new File(jarPath);
+            if (!jarFile.exists()) {
+                LOGGER.error("JarFile doesn't exist! path:{}", jarPath);
+            }
+
             Method addURL = Class.forName("java.net.URLClassLoader").getDeclaredMethod("addURL", URL.class);
             addURL.setAccessible(true);
 
@@ -44,7 +48,7 @@ public class ClassLoaderUtils {
 
             }
         } catch (Exception e) {
-            LOGGER.error("addUrl failed, jarPath:{}, message:{}", jarPath, e.getMessage());
+            LOGGER.error("loadJar failed, jarPath:{}, message:{}", jarPath, e.getMessage());
         }
     }
 

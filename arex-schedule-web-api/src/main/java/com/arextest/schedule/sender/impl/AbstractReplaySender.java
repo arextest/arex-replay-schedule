@@ -1,5 +1,6 @@
 package com.arextest.schedule.sender.impl;
 
+import com.arextest.schedule.common.ClassLoaderUtils;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
 import com.arextest.schedule.model.ReplayActionCaseItem;
@@ -15,6 +16,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -25,7 +27,18 @@ import java.util.ServiceLoader;
 @Slf4j
 abstract class AbstractReplaySender implements ReplaySender {
 
-    protected static final ServiceLoader<ReplayExtensionInvoker> INVOKERS = ServiceLoader.load(ReplayExtensionInvoker.class);
+    private static final String JAR_FILE_PATH = System.getProperty("replay.sender.extension.jarPath");
+
+    private static final String TOMCAT_JAR_FILE_PATH = "/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/lib/dubboInvoker.jar";
+
+    protected static final List<ReplayExtensionInvoker> INVOKERS = new ArrayList<>();
+
+    static {
+        //If no invoker is specified by JAR_FILE_PATH, load default DubboInvoker. This mechanism is to avoid dependency conflicts.
+        String loadJarFilePath = StringUtils.isEmpty(JAR_FILE_PATH) ? TOMCAT_JAR_FILE_PATH : JAR_FILE_PATH;
+        ClassLoaderUtils.loadJar(loadJarFilePath);
+        ServiceLoader.load(ReplayExtensionInvoker.class).forEach(INVOKERS::add);
+    }
 
     @Resource
     private MockCachePreLoader mockCachePreLoader;
