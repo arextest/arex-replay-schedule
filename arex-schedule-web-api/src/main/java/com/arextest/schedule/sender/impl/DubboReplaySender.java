@@ -14,6 +14,7 @@ import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.SenderParameters;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -73,6 +74,9 @@ public class DubboReplaySender extends AbstractReplaySender {
         DubboInvocation dubboInvocation = generateDubboInvocation(caseItem, headers);
         if (dubboInvocation == null) {
             return false;
+        }
+        if (CollectionUtils.isEmpty(INVOKERS)) {
+            LOGGER.error("no invokers");
         }
         for (ReplayExtensionInvoker invoker : AbstractReplaySender.INVOKERS) {
             if (invoker.isSupported(caseItem.getCaseType())) {
