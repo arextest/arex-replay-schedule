@@ -1,8 +1,6 @@
 package com.arextest.schedule.web.boot;
 
-import com.arextest.schedule.common.ClassLoaderUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -19,15 +17,9 @@ import java.net.URI;
 @Slf4j
 @SpringBootApplication(scanBasePackages = "com.arextest.schedule", exclude = {DataSourceAutoConfiguration.class})
 public class WebSpringBootServletInitializer extends SpringBootServletInitializer {
-    private static final String JAR_FILE_PATH = System.getProperty("replay.sender.extension.jarPath");
-
-    private static final String TOMCAT_JAR_FILE_PATH = "../webapps/arex-schedule-web-api/WEB-INF/classes/lib/dubboInvoker.jar";
 
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-        //If no invoker is specified by JAR_FILE_PATH, load default DubboInvoker. This mechanism is to avoid dependency conflicts.
-        String loadJarFilePath = StringUtils.isEmpty(JAR_FILE_PATH) ? TOMCAT_JAR_FILE_PATH : JAR_FILE_PATH;
-        ClassLoaderUtils.loadJar(loadJarFilePath);
         return application.sources(WebSpringBootServletInitializer.class);
     }
 
