@@ -5,7 +5,6 @@ import com.arextest.schedule.model.dao.mongodb.ReplayPlanItemCollection;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.deploy.ServiceInstanceOperation;
 import com.arextest.model.mock.MockCategoryType;
-import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
@@ -107,4 +106,6 @@ public class ReplayActionItem {
     public void recordProcessCaseCount(int incoming) {
         setCaseProcessCount(caseProcessCount + incoming);
     }
+
+    public ExecutionStatus planStatus;
 }

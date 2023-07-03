@@ -33,6 +33,8 @@ public interface ProgressEvent {
 
     void onReplayPlanInterrupt(ReplayPlan replayPlan, ReplayStatusType reason);
 
+    void onReplayPlanTerminate(String replayId);
+
     void onActionComparisonFinish(ReplayActionItem actionItem);
 
     void onActionBeforeSend(ReplayActionItem actionItem);

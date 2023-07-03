@@ -11,6 +11,7 @@ import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.*;
 import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
+import com.arextest.schedule.planexecution.PlanExecutionMonitor;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.model.ReplayActionCaseItem;
@@ -61,7 +62,10 @@ public final class PlanConsumeService {
     @Resource
     private PlanExecutionContextProvider planExecutionContextProvider;
     @Resource
+    private PlanExecutionMonitor planExecutionMonitor;
+    @Resource
     private ReplayReportService replayReportService;
+
 
     @Value("${arex.schedule.bizLog.sizeToSave}")
     private int LOG_SIZE_TO_SAVE_CHECK;
@@ -79,7 +83,16 @@ public final class PlanConsumeService {
         private final ReplayPlan replayPlan;
 
         private ReplayActionLoadingRunnableImpl(ReplayPlan replayPlan) {
+            planExecutionMonitor.register(replayPlan);
             this.replayPlan = replayPlan;
+            // limiter shared for entire plan, max qps = maxQps per instance * min instance count
+            final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps(),
+                    replayPlan.getMinInstanceCount());
+            qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
+            qpsLimiter.setReplayPlan(replayPlan);
+            replayPlan.setPlanStatus(ExecutionStatus.buildNormal(qpsLimiter));
+            replayPlan.setLimiter(qpsLimiter);
+            BizLogger.recordQpsInit(replayPlan, qpsLimiter.getPermits(), replayPlan.getMinInstanceCount());
         }
 
         @Override
@@ -119,6 +132,7 @@ public final class PlanConsumeService {
                 BizLogger.recordPlanException(replayPlan, t);
                 throw t;
             } finally {
+                planExecutionMonitor.deregister(replayPlan);
                 replayBizLogRepository.saveAll(replayPlan.getBizLogs());
             }
         }
@@ -168,21 +182,14 @@ public final class PlanConsumeService {
 
     @SuppressWarnings("unchecked")
     private void sendAllActionCase(ReplayPlan replayPlan) {
+        ExecutionStatus executionStatus = replayPlan.getPlanStatus();
+
         long start;
         long end;
         progressTracer.initTotal(replayPlan);
 
-        // limiter shared for entire plan, max qps = maxQps per instance * min instance count
-        final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps(),
-                replayPlan.getMinInstanceCount());
-        qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
-        qpsLimiter.setReplayPlan(replayPlan);
-
-        BizLogger.recordQpsInit(replayPlan, qpsLimiter.getPermits(), replayPlan.getMinInstanceCount());
-
-        ExecutionStatus sendResult = ExecutionStatus.buildNormal();
         for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
-            executionContext.setExecutionStatus(sendResult);
+            executionContext.setExecutionStatus(executionStatus);
             executionContext.setPlan(replayPlan);
 
             start = System.currentTimeMillis();
@@ -190,7 +197,7 @@ public final class PlanConsumeService {
             end = System.currentTimeMillis();
             BizLogger.recordContextBeforeRun(executionContext, end - start);
 
-            executeContext(replayPlan, qpsLimiter, executionContext);
+            executeContext(replayPlan, executionContext);
 
             start = System.currentTimeMillis();
             planExecutionContextProvider.onAfterContextExecution(executionContext, replayPlan);
@@ -201,13 +208,14 @@ public final class PlanConsumeService {
             tryFlushingLogs(replayPlan);
         }
 
-        if (sendResult.isCanceled()) {
+        planExecutionMonitor.refresh(replayPlan);
+        if (executionStatus.isCanceled()) {
             progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.CANCELLED);
             BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.CANCELLED.name(), "Plan Canceled");
             return;
         }
 
-        if (sendResult.isInterrupted()) {
+        if (executionStatus.isInterrupted()) {
             progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
 
             // todo, fix the qps limiter counter
@@ -220,13 +228,13 @@ public final class PlanConsumeService {
                 replayPlan.getAppId());
     }
 
-    private void executeContext(ReplayPlan replayPlan, SendSemaphoreLimiter qpsLimiter, PlanExecutionContext executionContext) {
+    private void executeContext(ReplayPlan replayPlan, PlanExecutionContext executionContext) {
         List<CompletableFuture<Void>> contextTasks = new ArrayList<>();
         for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
             if (!replayActionItem.isItemProcessed()) {
                 replayActionItem.setItemProcessed(true);
                 MDCTracer.addActionId(replayActionItem.getId());
-                replayActionItem.setSendRateLimiter(qpsLimiter);
+                replayActionItem.setSendRateLimiter(replayPlan.getLimiter());
                 if (replayActionItem.isEmpty()) {
                     replayActionItem.setReplayFinishTime(new Date());
                     progressEvent.onActionComparisonFinish(replayActionItem);
@@ -251,16 +259,11 @@ public final class PlanConsumeService {
 
     private void sendItemByContext(ReplayActionItem replayActionItem, PlanExecutionContext currentContext) {
         BizLogger.recordActionUnderContext(replayActionItem, currentContext);
+        ExecutionStatus executionStatus = currentContext.getExecutionStatus();
+        replayActionItem.setPlanStatus(executionStatus);
 
-        ExecutionStatus sendResult = currentContext.getExecutionStatus();
-        if (sendResult.isCanceled() && replayActionItem.getReplayStatus() != ReplayStatusType.CANCELLED.getValue()) {
-            BizLogger.recordActionStatusChange(replayActionItem, ReplayStatusType.CANCELLED.name(), "");
-            progressEvent.onActionCancelled(replayActionItem);
-            return;
-        }
-
-        if (sendResult.isInterrupted() && replayActionItem.getReplayStatus() != ReplayStatusType.FAIL_INTERRUPTED.getValue()) {
-            progressEvent.onActionInterrupted(replayActionItem);
+        // checkpoint: before sending grouping of action item
+        if (checkExecutionBreak(replayActionItem, executionStatus)) {
             return;
         }
 
@@ -271,23 +274,37 @@ public final class PlanConsumeService {
 
         this.sendByPaging(replayActionItem, currentContext);
 
-        if (sendResult.isInterrupted() && replayActionItem.getReplayStatus() != ReplayStatusType.FAIL_INTERRUPTED.getValue()) {
-            progressEvent.onActionInterrupted(replayActionItem);
-        }
+        checkExecutionBreak(replayActionItem, executionStatus);
 
-        if (sendResult.isNormal() && (replayActionItem.getReplayCaseCount() == replayActionItem.getCaseProcessCount())) {
+        if (executionStatus.isNormal() && (replayActionItem.getReplayCaseCount() == replayActionItem.getCaseProcessCount())) {
             progressEvent.onActionAfterSend(replayActionItem);
             BizLogger.recordActionItemSent(replayActionItem);
         }
     }
 
+
+    private boolean checkExecutionBreak(ReplayActionItem replayActionItem, ExecutionStatus executionStatus) {
+        if (executionStatus.isCanceled() && replayActionItem.getReplayStatus() != ReplayStatusType.CANCELLED.getValue()) {
+            BizLogger.recordActionStatusChange(replayActionItem, ReplayStatusType.CANCELLED.name(), "");
+            progressEvent.onActionCancelled(replayActionItem);
+            return true;
+        }
+
+        if (executionStatus.isInterrupted() && replayActionItem.getReplayStatus() != ReplayStatusType.FAIL_INTERRUPTED.getValue()) {
+            BizLogger.recordActionStatusChange(replayActionItem, ReplayStatusType.FAIL_INTERRUPTED.name(), "");
+            progressEvent.onActionInterrupted(replayActionItem);
+            return true;
+        }
+        return false;
+    }
+
     private void sendByPaging(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {
-        ExecutionStatus sendResult = executionContext.getExecutionStatus();
+        ExecutionStatus executionStatus = executionContext.getExecutionStatus();
+
         switch (executionContext.getActionType()) {
             case SKIP_CASE_OF_CONTEXT:
                 // skip all cases of this context leaving the status as default
-                sendResult.setCanceled(replayCaseTransmitService.releaseCasesOfContext(replayActionItem, executionContext));
-                sendResult.setInterrupted(replayActionItem.getSendRateLimiter().failBreak());
+                replayCaseTransmitService.releaseCasesOfContext(replayActionItem, executionContext);
                 break;
 
             case NORMAL:
@@ -295,6 +312,11 @@ public final class PlanConsumeService {
                 int contextCount = 0;
                 List<ReplayActionCaseItem> sourceItemList;
                 while (true) {
+                    // checkpoint: before sending page of cases
+                    if (executionStatus.isAbnormal()) {
+                        break;
+                    }
+
                     sourceItemList = replayActionCaseItemRepository.waitingSendList(replayActionItem.getId(),
                             CommonConstant.MAX_PAGE_SIZE, executionContext.getContextCaseQuery());
 
@@ -303,14 +325,9 @@ public final class PlanConsumeService {
                         break;
                     }
                     contextCount += sourceItemList.size();
+                    ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
 
-                            ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
-                    sendResult.setInterrupted(replayActionItem.getSendRateLimiter().failBreak());
-
-                    if (sendResult.isInterrupted() || sendResult.isCanceled()) {
-                        break;
-                    }
-                    sendResult.setCanceled(replayCaseTransmitService.send(replayActionItem));
+                    replayCaseTransmitService.send(replayActionItem, executionStatus);
 
                     BizLogger.recordActionItemBatchSent(replayActionItem, sourceItemList.size());
                 }

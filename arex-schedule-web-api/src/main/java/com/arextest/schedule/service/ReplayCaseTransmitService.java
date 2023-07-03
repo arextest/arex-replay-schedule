@@ -56,16 +56,14 @@ public class ReplayCaseTransmitService {
     @Resource
     private ComparisonWriter comparisonWriter;
     @Resource
-    private CacheProvider redisCacheProvider;
-    @Resource
     private ProgressEvent progressEvent;
     @Resource
     private MetricService metricService;
 
-    public boolean send(ReplayActionItem replayActionItem) {
+    public void send(ReplayActionItem replayActionItem, ExecutionStatus executionStatus) {
         List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
         if (CollectionUtils.isEmpty(sourceItemList)) {
-            return false;
+            return;
         }
 
         // warmUp should be done once for each endpoint
@@ -73,38 +71,31 @@ public class ReplayCaseTransmitService {
             activeRemoteHost(sourceItemList);
         }
 
-        byte[] cancelKey = getCancelKey(replayActionItem.getPlanId());
+        // checkpoint: after JIT warm up, before sending page of cases
+        if (replayActionItem.getPlanStatus().isInterrupted()) {
+            return;
+        }
 
-        if (replayActionItem.getSendRateLimiter().failBreak()) {
-            return false;
-        }
-        if (isCancelled(cancelKey)) {
+        if (replayActionItem.getPlanStatus().isCanceled()) {
             progressEvent.onActionCancelled(replayActionItem);
-            return true;
+            return;
         }
+
         try {
-            doSendValuesToRemoteHost(sourceItemList);
+            doSendValuesToRemoteHost(sourceItemList, executionStatus);
         } catch (Throwable throwable) {
             LOGGER.error("do send error:{}", throwable.getMessage(), throwable);
             markAllSendStatus(sourceItemList, CaseSendStatusType.EXCEPTION_FAILED);
         } finally {
             replayActionItem.recordProcessCaseCount(sourceItemList.size());
         }
-
-        return false;
     }
 
     @SuppressWarnings("rawtypes")
-    public boolean releaseCasesOfContext(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {
-        byte[] cancelKey = getCancelKey(replayActionItem.getPlanId());
-
-        if (isCancelled(cancelKey)) {
-            progressEvent.onActionCancelled(replayActionItem);
-            return true;
-        }
-
-        if (replayActionItem.getSendRateLimiter().failBreak()) {
-            return false;
+    public void releaseCasesOfContext(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {
+        // checkpoint: before skipping batch of group
+        if (executionContext.getExecutionStatus().isAbnormal()) {
+            return;
         }
 
         int contextCasesCount = (int) replayActionCaseItemRepository.countWaitingSendList(replayActionItem.getId(),
@@ -126,19 +117,6 @@ public class ReplayCaseTransmitService {
             }
         }
         BizLogger.recordContextSkipped(executionContext, replayActionItem, contextCasesCount);
-        return false;
-    }
-
-    private byte[] getCancelKey(String planId) {
-        return (STOP_PLAN_REDIS_KEY + planId).getBytes(StandardCharsets.UTF_8);
-    }
-
-    private boolean isCancelled(byte[] rediskey) {
-        byte[] bytes = redisCacheProvider.get(rediskey);
-        if (bytes == null) {
-            return false;
-        }
-        return true;
     }
 
     private ReplayActionCaseItem cloneCaseItem(List<ReplayActionCaseItem> groupValues, int index) {
@@ -167,18 +145,14 @@ public class ReplayCaseTransmitService {
     }
 
 
-    private void doSendValuesToRemoteHost(List<ReplayActionCaseItem> values) {
+    private void doSendValuesToRemoteHost(List<ReplayActionCaseItem> values, ExecutionStatus executionStatus) {
         final int valueSize = values.size();
         final ReplayActionCaseItem caseItem = values.get(0);
         final ReplayActionItem actionItem = caseItem.getParent();
         final SendSemaphoreLimiter semaphore = actionItem.getSendRateLimiter();
         final CountDownLatch groupSentLatch = new CountDownLatch(valueSize);
-        for (int i = 0; i < valueSize; i++) {
-            if (semaphore.failBreak()) {
-                groupSentLatch.countDown();
-                continue;
-            }
 
+        for (int i = 0; i < valueSize; i++) {
             ReplayActionCaseItem replayActionCaseItem = values.get(i);
             MDCTracer.addDetailId(caseItem.getId());
             try {
@@ -188,13 +162,15 @@ public class ReplayCaseTransmitService {
                     doSendFailedAsFinish(replayActionCaseItem, CaseSendStatusType.READY_DEPENDENCY_FAILED);
                     continue;
                 }
-                if (semaphore.failBreak()) {
+                // checkpoint: before init case runnable
+                if (executionStatus.isAbnormal()) {
                     LOGGER.info("replay interrupted,case item id:{}", replayActionCaseItem.getId());
                     MDCTracer.removeDetailId();
                     return;
                 }
                 semaphore.acquire();
                 AsyncSendCaseTaskRunnable taskRunnable = new AsyncSendCaseTaskRunnable(this);
+                taskRunnable.setExecutionStatus(executionStatus);
                 taskRunnable.setCaseItem(replayActionCaseItem);
                 taskRunnable.setReplaySender(replaySender);
                 taskRunnable.setGroupSentLatch(groupSentLatch);
