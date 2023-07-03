@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import javax.annotation.PostConstruct;
 import java.util.concurrent.*;
 
 /**
@@ -21,7 +22,6 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
     private static final int SEND_QUEUE_MAX_CAPACITY_SIZE = 4000;
     private static final int COMPARE_QUEUE_MAX_CAPACITY_SIZE = 2000;
     private static final int PRELOAD_QUEUE_MAX_CAPACITY_SIZE = 100;
-    private final int SEND_POOL_SIZE = calculateIOPoolSize();
 
     @Value("${arex.schedule.pool.io.cpuratio}")
     private int cpuRatio;
@@ -49,7 +49,7 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
                 .setDaemon(true)
                 .setUncaughtExceptionHandler(this)
                 .build();
-        return new ThreadPoolExecutor(SEND_POOL_SIZE, SEND_POOL_SIZE, KEEP_ALIVE_TIME,
+        return new ThreadPoolExecutor(calculateIOPoolSize(), calculateIOPoolSize(), KEEP_ALIVE_TIME,
                 TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(SEND_QUEUE_MAX_CAPACITY_SIZE),
                 threadFactory,
