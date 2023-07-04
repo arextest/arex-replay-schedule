@@ -48,7 +48,7 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
     public void init() {
         Timer timer = new Timer("Execution_monitor_timer", true);
         MonitorTask task = new MonitorTask();
-        timer.scheduleAtFixedRate(task, 0, SECOND_TO_REFRESH * 1000);
+        timer.scheduleAtFixedRate(task, 0, SECOND_TO_REFRESH * 1000L);
     }
 
     private class MonitorTask extends TimerTask {
