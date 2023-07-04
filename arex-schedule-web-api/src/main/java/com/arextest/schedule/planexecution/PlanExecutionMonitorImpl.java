@@ -145,10 +145,11 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
             try {
                 BlockingQueue<BizLog> logs = replayPlan.getBizLogs();
                 List<BizLog> logsToSave = new ArrayList<>();
-                int curSize = replayPlan.getBizLogs().size();
-                for (int i = 0; i < curSize; i++) {
+
+                while (!logs.isEmpty()) {
                     logsToSave.add(logs.remove());
                 }
+
                 replayPlan.setLastLogTime(System.currentTimeMillis());
                 replayBizLogRepository.saveAll(logsToSave);
             } catch (Throwable t) {
