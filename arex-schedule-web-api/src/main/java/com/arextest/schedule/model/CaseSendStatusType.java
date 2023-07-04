@@ -9,6 +9,7 @@ import lombok.Getter;
 public enum CaseSendStatusType {
     WAIT_HANDLING(0),
     SUCCESS(1),
+    CANCELED(2),
     EXCEPTION_FAILED(100),
     READY_DEPENDENCY_FAILED(101),
     REPLAY_CASE_NOT_FOUND(102),

@@ -43,10 +43,16 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
 
             // todo: ignore this in the error counter
             // checkpoint: before sending single case
-            if (this.executionStatus.isAbnormal()) {
+            if (this.executionStatus.isInterrupted()) {
                 transmitService.updateSendResult(caseItem, CaseSendStatusType.EXCEPTION_FAILED);
                 return;
             }
+
+            if (this.executionStatus.isCanceled()) {
+                transmitService.updateSendResult(caseItem, CaseSendStatusType.CANCELED);
+                return;
+            }
+
 
             MDCTracer.addDetailId(caseItem.getId());
             long caseExecutionStartMillis = System.currentTimeMillis();
