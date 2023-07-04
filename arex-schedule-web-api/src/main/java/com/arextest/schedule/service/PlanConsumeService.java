@@ -14,7 +14,6 @@ import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.planexecution.PlanExecutionMonitor;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
-import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -37,7 +36,7 @@ import java.util.concurrent.ExecutorService;
  */
 @Slf4j
 @Service
-@SuppressWarnings("rawtypes")
+@SuppressWarnings({"rawtypes", "unchecked"})
 public final class PlanConsumeService {
     @Resource
     private ReplayCaseRemoteLoadService caseRemoteLoadService;
@@ -66,12 +65,11 @@ public final class PlanConsumeService {
     @Resource
     private ReplayReportService replayReportService;
 
-
     @Value("${arex.schedule.bizLog.sizeToSave}")
     private int LOG_SIZE_TO_SAVE_CHECK;
+
     @Value("${arex.schedule.bizLog.secondToSave}")
     private long LOG_TIME_GAP_TO_SAVE_CHECK_BY_SEC;
-
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
         BizLogger.recordPlanAsyncStart(replayPlan);
@@ -83,8 +81,10 @@ public final class PlanConsumeService {
         private final ReplayPlan replayPlan;
 
         private ReplayActionLoadingRunnableImpl(ReplayPlan replayPlan) {
-            planExecutionMonitor.register(replayPlan);
             this.replayPlan = replayPlan;
+        }
+
+        private void init() {
             // limiter shared for entire plan, max qps = maxQps per instance * min instance count
             final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps(),
                     replayPlan.getMinInstanceCount());
@@ -92,15 +92,16 @@ public final class PlanConsumeService {
             qpsLimiter.setReplayPlan(replayPlan);
             replayPlan.setPlanStatus(ExecutionStatus.buildNormal(qpsLimiter));
             replayPlan.setLimiter(qpsLimiter);
+            planExecutionMonitor.register(replayPlan);
             BizLogger.recordQpsInit(replayPlan, qpsLimiter.getPermits(), replayPlan.getMinInstanceCount());
         }
-
         @Override
-        @SuppressWarnings("unchecked")
         protected void doWithTracedRunning() {
             try {
                 long start;
                 long end;
+
+                this.init();
 
                 start = System.currentTimeMillis();
                 int planSavedCaseSize = saveActionCaseToSend(replayPlan);
@@ -180,7 +181,6 @@ public final class PlanConsumeService {
         return planSavedCaseSize;
     }
 
-    @SuppressWarnings("unchecked")
     private void sendAllActionCase(ReplayPlan replayPlan) {
         ExecutionStatus executionStatus = replayPlan.getPlanStatus();
 
@@ -228,8 +228,25 @@ public final class PlanConsumeService {
                 replayPlan.getAppId());
     }
 
+
+    private final class ReplayActionItemRunnableImpl extends AbstractTracedRunnable {
+        private final ReplayActionItem actionItem;
+        private final PlanExecutionContext context;
+
+        ReplayActionItemRunnableImpl(ReplayActionItem actionItem, PlanExecutionContext context) {
+            this.actionItem = actionItem;
+            this.context = context;
+        }
+
+        @Override
+        protected void doWithTracedRunning() {
+            sendItemByContext(this.actionItem, this.context);
+        }
+    }
+
     private void executeContext(ReplayPlan replayPlan, PlanExecutionContext executionContext) {
-        List<CompletableFuture<Void>> contextTasks = new ArrayList<>();
+        List<CompletableFuture> contextTasks = new ArrayList<>();
+        ReplayActionItemRunnableImpl task;
         for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
             if (!replayActionItem.isItemProcessed()) {
                 replayActionItem.setItemProcessed(true);
@@ -248,12 +265,9 @@ public final class PlanConsumeService {
                         replayActionItem.getAppId(), replayActionItem.finished(), replayActionItem.isEmpty());
                 continue;
             }
-            CompletableFuture<Void> task = CompletableFuture.runAsync(
-                    () -> sendItemByContext(replayActionItem, executionContext),
-                    actionItemParallelPool);
-            contextTasks.add(task);
+            task = new ReplayActionItemRunnableImpl(replayActionItem, executionContext);
+            contextTasks.add(CompletableFuture.runAsync(task, actionItemParallelPool));
         }
-
         CompletableFuture.allOf(contextTasks.toArray(new CompletableFuture[0])).join();
     }
 
@@ -281,7 +295,6 @@ public final class PlanConsumeService {
             BizLogger.recordActionItemSent(replayActionItem);
         }
     }
-
 
     private boolean checkExecutionBreak(ReplayActionItem replayActionItem, ExecutionStatus executionStatus) {
         if (executionStatus.isCanceled() && replayActionItem.getReplayStatus() != ReplayStatusType.CANCELLED.getValue()) {
