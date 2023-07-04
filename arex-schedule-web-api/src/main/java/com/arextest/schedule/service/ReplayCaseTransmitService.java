@@ -150,18 +150,19 @@ public class ReplayCaseTransmitService {
         for (int i = 0; i < valueSize; i++) {
             ReplayActionCaseItem replayActionCaseItem = values.get(i);
             MDCTracer.addDetailId(caseItem.getId());
+            // checkpoint: before init case runnable
+            if (executionStatus.isAbnormal()) {
+                LOGGER.info("replay interrupted,case item id:{}", replayActionCaseItem.getId());
+                MDCTracer.removeDetailId();
+                return;
+            }
+
             try {
                 ReplaySender replaySender = findReplaySender(replayActionCaseItem);
                 if (replaySender == null) {
                     groupSentLatch.countDown();
                     doSendFailedAsFinish(replayActionCaseItem, CaseSendStatusType.READY_DEPENDENCY_FAILED);
                     continue;
-                }
-                // checkpoint: before init case runnable
-                if (executionStatus.isAbnormal()) {
-                    LOGGER.info("replay interrupted,case item id:{}", replayActionCaseItem.getId());
-                    MDCTracer.removeDetailId();
-                    return;
                 }
                 semaphore.acquire();
                 AsyncSendCaseTaskRunnable taskRunnable = new AsyncSendCaseTaskRunnable(this);
