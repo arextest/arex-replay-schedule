@@ -4,12 +4,10 @@ import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
-import com.arextest.schedule.dao.mongodb.ReplayBizLogRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.*;
-import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.planexecution.PlanExecutionMonitor;
 import com.arextest.schedule.progress.ProgressEvent;
@@ -18,7 +16,6 @@ import com.arextest.schedule.utils.ReplayParentBinder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -26,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
@@ -42,8 +38,6 @@ public final class PlanConsumeService {
     private ReplayCaseRemoteLoadService caseRemoteLoadService;
     @Resource
     private ReplayActionCaseItemRepository replayActionCaseItemRepository;
-    @Resource
-    private ReplayBizLogRepository replayBizLogRepository;
     @Resource
     private ReplayCaseTransmitService replayCaseTransmitService;
     @Resource
@@ -65,11 +59,6 @@ public final class PlanConsumeService {
     @Resource
     private ReplayReportService replayReportService;
 
-    @Value("${arex.schedule.bizLog.sizeToSave}")
-    private int LOG_SIZE_TO_SAVE_CHECK;
-
-    @Value("${arex.schedule.bizLog.secondToSave}")
-    private long LOG_TIME_GAP_TO_SAVE_CHECK_BY_SEC;
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
         BizLogger.recordPlanAsyncStart(replayPlan);
@@ -134,7 +123,6 @@ public final class PlanConsumeService {
                 throw t;
             } finally {
                 planExecutionMonitor.deregister(replayPlan);
-                replayBizLogRepository.saveAll(replayPlan.getBizLogs());
             }
         }
     }
@@ -203,9 +191,6 @@ public final class PlanConsumeService {
             planExecutionContextProvider.onAfterContextExecution(executionContext, replayPlan);
             end = System.currentTimeMillis();
             BizLogger.recordContextAfterRun(executionContext, end - start);
-
-            // todo move flushing job to external monitor thread
-            tryFlushingLogs(replayPlan);
         }
 
         planExecutionMonitor.refresh(replayPlan);
@@ -420,23 +405,5 @@ public final class PlanConsumeService {
             replayActionItem.setLastRecordTime(beginTimeMills);
         }
         return totalSize;
-    }
-
-    private void tryFlushingLogs(ReplayPlan replayPlan) {
-        try {
-            BlockingQueue<BizLog> logs = replayPlan.getBizLogs();
-            if (logs.size() > LOG_SIZE_TO_SAVE_CHECK
-                    || (System.currentTimeMillis() - replayPlan.getLastLogTime()) > LOG_TIME_GAP_TO_SAVE_CHECK_BY_SEC * 1000L) {
-                List<BizLog> logsToSave = new ArrayList<>();
-                int curSize = replayPlan.getBizLogs().size();
-                for (int i = 0; i < curSize; i++) {
-                    logsToSave.add(logs.remove());
-                }
-                replayPlan.setLastLogTime(System.currentTimeMillis());
-                replayBizLogRepository.saveAll(logsToSave);
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error flushing biz logs", t);
-        }
     }
 }

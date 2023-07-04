@@ -1,7 +1,9 @@
 package com.arextest.schedule.planexecution;
 
 import com.arextest.common.cache.CacheProvider;
+import com.arextest.schedule.dao.mongodb.ReplayBizLogRepository;
 import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.PlanProduceService;
 import lombok.extern.slf4j.Slf4j;
@@ -10,9 +12,8 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -26,12 +27,22 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
     private CacheProvider redisCacheProvider;
     @Resource
     private ProgressTracer progressTracer;
-
-    private final RedisCancelMonitor cancelMonitor = new RedisCancelMonitor();
-    private final ProgressMonitor progressMonitor = new ProgressMonitor();
+    @Resource
+    private ReplayBizLogRepository replayBizLogRepository;
 
     @Value("${arex.schedule.monitor.secondToRefresh}")
     public Integer SECOND_TO_REFRESH;
+
+    @Value("${arex.schedule.bizLog.sizeToSave}")
+    private int LOG_SIZE_TO_SAVE_CHECK;
+
+    @Value("${arex.schedule.bizLog.secondToSave}")
+    private long LOG_TIME_GAP_TO_SAVE_CHECK_BY_SEC;
+
+
+    private final RedisCancelMonitor cancelMonitor = new RedisCancelMonitor();
+    private final ProgressMonitor progressMonitor = new ProgressMonitor();
+    private final BizLoggerMonitor bizLoggerMonitor = new BizLoggerMonitor();
 
     @PostConstruct
     public void init() {
@@ -62,9 +73,14 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
     }
 
     public void refresh(ReplayPlan task) {
-        LOGGER.info("Monitoring task {}", task.getId());
-        refreshLastUpdateTime(task);
-        refreshCancelStatus(task);
+        try {
+            LOGGER.info("Monitoring task {}", task.getId());
+            refreshLastUpdateTime(task);
+            refreshCancelStatus(task);
+            this.bizLoggerMonitor.tryFlushingLogs(task);
+        } catch (Throwable t) {
+            LOGGER.error("Monitor failed refreshing task " + task.getId(), t);
+        }
     }
 
     @Override
@@ -75,6 +91,7 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
     @Override
     public void deregister(ReplayPlan plan) {
         tasks.remove(plan.getId());
+        this.bizLoggerMonitor.flushLogs(plan);
     }
 
     private void refreshLastUpdateTime(ReplayPlan plan) {
@@ -110,6 +127,32 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
     private class ProgressMonitor {
         private void refreshLastUpdateTime(String planId) {
             progressTracer.refreshUpdateTime(planId);
+        }
+    }
+
+    private class BizLoggerMonitor {
+        private void tryFlushingLogs(ReplayPlan replayPlan) {
+            BlockingQueue<BizLog> logs = replayPlan.getBizLogs();
+            long elapsed = System.currentTimeMillis() - replayPlan.getLastLogTime();
+            boolean needFlush = logs.size() > LOG_SIZE_TO_SAVE_CHECK || elapsed > LOG_TIME_GAP_TO_SAVE_CHECK_BY_SEC * 1000L;
+            if (needFlush) {
+                flushLogs(replayPlan);
+            }
+        }
+
+        private void flushLogs(ReplayPlan replayPlan) {
+            try {
+                BlockingQueue<BizLog> logs = replayPlan.getBizLogs();
+                List<BizLog> logsToSave = new ArrayList<>();
+                int curSize = replayPlan.getBizLogs().size();
+                for (int i = 0; i < curSize; i++) {
+                    logsToSave.add(logs.remove());
+                }
+                replayPlan.setLastLogTime(System.currentTimeMillis());
+                replayBizLogRepository.saveAll(logsToSave);
+            } catch (Throwable t) {
+                LOGGER.error("Error flushing biz logs", t);
+            }
         }
     }
 }
