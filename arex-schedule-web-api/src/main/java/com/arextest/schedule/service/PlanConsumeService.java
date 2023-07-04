@@ -193,7 +193,7 @@ public final class PlanConsumeService {
             BizLogger.recordContextAfterRun(executionContext, end - start);
         }
 
-        planExecutionMonitor.refresh(replayPlan);
+        planExecutionMonitor.monitorOne(replayPlan);
         if (executionStatus.isCanceled()) {
             progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.CANCELLED);
             BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.CANCELLED.name(), "Plan Canceled");

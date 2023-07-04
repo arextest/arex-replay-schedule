@@ -68,11 +68,12 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
 
     private void monitorAll() {
         this.tasks.forEach((taskId, task) -> {
-            refresh(task);
+            monitorOne(task);
         });
     }
 
-    public void refresh(ReplayPlan task) {
+    @Override
+    public void monitorOne(ReplayPlan task) {
         try {
             LOGGER.info("Monitoring task {}", task.getId());
             refreshLastUpdateTime(task);
