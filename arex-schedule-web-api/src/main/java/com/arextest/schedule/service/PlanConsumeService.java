@@ -245,14 +245,9 @@ public final class PlanConsumeService {
                 }
             }
 
-            if (replayActionItem.finished() || replayActionItem.isEmpty()) {
-                LOGGER.warn("Skipped action item: {}, finished: {}, empty: {}",
-                        replayActionItem.getAppId(), replayActionItem.finished(), replayActionItem.isEmpty());
-                continue;
-            }
-
             // checkpoint: before action item parallel
-            if (checkExecutionBreak(replayActionItem, executionContext.getExecutionStatus())) {
+            if (replayActionItem.finalized() || replayActionItem.isEmpty()
+                    || checkExecutionBreak(replayActionItem, executionContext.getExecutionStatus())) {
                 continue;
             }
 
@@ -288,18 +283,16 @@ public final class PlanConsumeService {
     }
 
     private boolean checkExecutionBreak(ReplayActionItem replayActionItem, ExecutionStatus executionStatus) {
-        if (executionStatus.isCanceled() && replayActionItem.getReplayStatus() != ReplayStatusType.CANCELLED.getValue()) {
+        if (executionStatus.isCanceled() && !replayActionItem.finalized()) {
             BizLogger.recordActionStatusChange(replayActionItem, ReplayStatusType.CANCELLED.name(), "");
             progressEvent.onActionCancelled(replayActionItem);
-            return true;
         }
 
-        if (executionStatus.isInterrupted() && replayActionItem.getReplayStatus() != ReplayStatusType.FAIL_INTERRUPTED.getValue()) {
+        if (executionStatus.isInterrupted() && !replayActionItem.finalized()) {
             BizLogger.recordActionStatusChange(replayActionItem, ReplayStatusType.FAIL_INTERRUPTED.name(), "");
             progressEvent.onActionInterrupted(replayActionItem);
-            return true;
         }
-        return false;
+        return executionStatus.isAbnormal();
     }
 
     private void sendByPaging(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {

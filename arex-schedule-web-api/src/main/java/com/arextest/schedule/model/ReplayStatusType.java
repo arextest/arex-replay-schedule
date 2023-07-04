@@ -1,6 +1,11 @@
 package com.arextest.schedule.model;
 
+import com.google.common.collect.Lists;
 import lombok.Getter;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author jmo
@@ -32,6 +37,12 @@ public enum ReplayStatusType {
      * Cancelled by user
      */
     CANCELLED(4);
+
+    public static final Set<ReplayStatusType> FINALISED =
+            new HashSet<>(Lists.newArrayList(FINISHED, FAIL_INTERRUPTED, CANCELLED));
+
+    public static final Set<Integer> FINALISED_CODE =
+            FINALISED.stream().map(ReplayStatusType::getValue).collect(Collectors.toSet());
 
     @Getter
     final int value;

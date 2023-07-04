@@ -92,8 +92,8 @@ public class ReplayActionItem {
         return replayCaseCount == 0;
     }
 
-    public boolean finished() {
-        return replayStatus == ReplayStatusType.FINISHED.getValue();
+    public boolean finalized() {
+        return ReplayStatusType.FINALISED_CODE.contains(replayStatus);
     }
 
     @JsonIgnore
