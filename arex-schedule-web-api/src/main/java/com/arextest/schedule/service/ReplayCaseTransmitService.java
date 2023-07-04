@@ -67,12 +67,7 @@ public class ReplayCaseTransmitService {
         }
 
         // checkpoint: after JIT warm up, before sending page of cases
-        if (replayActionItem.getPlanStatus().isInterrupted()) {
-            return;
-        }
-
-        if (replayActionItem.getPlanStatus().isCanceled()) {
-            progressEvent.onActionCancelled(replayActionItem);
+        if (replayActionItem.getPlanStatus().isAbnormal()) {
             return;
         }
 

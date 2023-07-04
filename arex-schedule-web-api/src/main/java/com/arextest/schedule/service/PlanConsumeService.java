@@ -250,6 +250,12 @@ public final class PlanConsumeService {
                         replayActionItem.getAppId(), replayActionItem.finished(), replayActionItem.isEmpty());
                 continue;
             }
+
+            // checkpoint: before action item parallel
+            if (checkExecutionBreak(replayActionItem, executionContext.getExecutionStatus())) {
+                continue;
+            }
+
             task = new ReplayActionItemRunnableImpl(replayActionItem, executionContext);
             contextTasks.add(CompletableFuture.runAsync(task, actionItemParallelPool));
         }
