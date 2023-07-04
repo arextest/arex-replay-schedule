@@ -60,7 +60,7 @@ public class ReplayCaseTransmitService {
     @Resource
     private MetricService metricService;
 
-    public void send(ReplayActionItem replayActionItem, ExecutionStatus executionStatus) {
+    public void send(ReplayActionItem replayActionItem) {
         List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
         if (CollectionUtils.isEmpty(sourceItemList)) {
             return;
@@ -82,7 +82,7 @@ public class ReplayCaseTransmitService {
         }
 
         try {
-            doSendValuesToRemoteHost(sourceItemList, executionStatus);
+            doSendValuesToRemoteHost(sourceItemList, replayActionItem.getPlanStatus());
         } catch (Throwable throwable) {
             LOGGER.error("do send error:{}", throwable.getMessage(), throwable);
             markAllSendStatus(sourceItemList, CaseSendStatusType.EXCEPTION_FAILED);

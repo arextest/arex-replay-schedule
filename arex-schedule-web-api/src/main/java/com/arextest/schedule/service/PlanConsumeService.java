@@ -324,8 +324,7 @@ public final class PlanConsumeService {
                     }
                     contextCount += sourceItemList.size();
                     ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
-
-                    replayCaseTransmitService.send(replayActionItem, executionStatus);
+                    replayCaseTransmitService.send(replayActionItem);
 
                     BizLogger.recordActionItemBatchSent(replayActionItem, sourceItemList.size());
                 }
