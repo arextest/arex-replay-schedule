@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author jmo
@@ -117,5 +116,6 @@ public class ReplayActionItem {
         return this.caseProcessCount.get() >= this.getReplayCaseCount();
     }
 
+    @JsonIgnore
     public ExecutionStatus planStatus;
 }
