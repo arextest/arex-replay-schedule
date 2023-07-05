@@ -76,8 +76,6 @@ public class ReplayCaseTransmitService {
         } catch (Throwable throwable) {
             LOGGER.error("do send error:{}", throwable.getMessage(), throwable);
             markAllSendStatus(sourceItemList, CaseSendStatusType.EXCEPTION_FAILED);
-        } finally {
-            replayActionItem.recordProcessCaseCount(sourceItemList.size());
         }
     }
 
@@ -176,6 +174,8 @@ public class ReplayCaseTransmitService {
                 LOGGER.error("send group to remote host error:{} ,case item id:{}", throwable.getMessage(),
                         replayActionCaseItem.getId(), throwable);
                 doSendFailedAsFinish(replayActionCaseItem, CaseSendStatusType.EXCEPTION_FAILED);
+            } finally {
+                actionItem.recordProcessOne();
             }
         }
 

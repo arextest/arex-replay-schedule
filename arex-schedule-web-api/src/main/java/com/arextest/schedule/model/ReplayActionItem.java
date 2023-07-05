@@ -11,6 +11,8 @@ import lombok.Data;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author jmo
@@ -101,10 +103,18 @@ public class ReplayActionItem {
     @JsonIgnore
     private boolean itemProcessed;
     @JsonIgnore
-    private int caseProcessCount;
+    private AtomicInteger caseProcessCount = new AtomicInteger();
 
     public void recordProcessCaseCount(int incoming) {
-        setCaseProcessCount(caseProcessCount + incoming);
+        this.caseProcessCount.addAndGet(incoming);
+    }
+
+    public void recordProcessOne() {
+        this.caseProcessCount.incrementAndGet();
+    }
+
+    public boolean sendDone() {
+        return this.caseProcessCount.get() >= this.getReplayCaseCount();
     }
 
     public ExecutionStatus planStatus;
