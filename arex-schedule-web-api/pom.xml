@@ -10,7 +10,7 @@
     </parent>
     <packaging>${packagingType}</packaging>
     <artifactId>arex-schedule-web-api</artifactId>
-    <version>1.0.30</version>
+    <version>1.0.31</version>
     <name>${project.groupId}:${project.artifactId}</name>
 
     <dependencies>

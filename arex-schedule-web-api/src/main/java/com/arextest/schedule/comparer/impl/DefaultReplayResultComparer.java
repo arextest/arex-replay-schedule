@@ -85,6 +85,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 MockCategoryType.Q_MESSAGE_CONSUMER.getName().equalsIgnoreCase(caseItem.getCaseType())) {
                 return comparisonOutputWriter.writeQmqCompareResult(caseItem);
             }
+
+            caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.PASS.getValue());
             return comparisonOutputWriter.write(replayCompareResults);
         } catch (Throwable throwable) {
             caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.ERROR.getValue());
@@ -94,7 +96,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             // don't send again
             return true;
         } finally {
-            caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.PASS.getValue());
             progressTracer.finishOne(caseItem);
             compareWatch.stop();
             metricService.recordTimeEvent(LogType.COMPARE.getValue(), planId, caseItem.getParent().getAppId(), null,
