@@ -9,15 +9,9 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
-import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.ReplayCompareResult;
-import com.arextest.schedule.model.ReplayPlan;
-import com.arextest.schedule.model.ReplayStatusType;
+import com.arextest.schedule.model.*;
 import com.arextest.web.model.contract.contracts.ChangeReplayStatusRequestType;
-import com.arextest.web.model.contract.contracts.PushCompareResultsRequestType;
 import com.arextest.web.model.contract.contracts.ReportInitialRequestType;
-import com.arextest.web.model.contract.contracts.common.CompareResult;
 import com.arextest.web.model.contract.contracts.replay.AnalyzeCompareResultsRequestType;
 import com.arextest.web.model.contract.contracts.replay.UpdateReportInfoRequestType;
 import lombok.extern.slf4j.Slf4j;
@@ -26,11 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by wang_yc on 2021/10/19
@@ -179,7 +169,7 @@ public final class ReplayReportService implements ComparisonWriter {
         Response response = httpWepServiceApiClient.jsonPost(pushReplayCompareResultUrl, request,
                 GenericResponseType.class);
         if (response == null || response.getResponseStatusType().hasError()) {
-            LOGGER.warn("push replay compared result to report size: {}, result:{}", comparedSize, response);
+            LOGGER.error("push replay compared result to report size: {}, result:{}", comparedSize, response);
         }
         return true;
     }
@@ -207,7 +197,7 @@ public final class ReplayReportService implements ComparisonWriter {
         Response response = httpWepServiceApiClient.jsonPost(pushReplayCompareResultUrl, request,
                 GenericResponseType.class);
         if (response == null || response.getResponseStatusType().hasError()) {
-            LOGGER.warn("writeQmqCompareResult to report result:{}", response);
+            LOGGER.error("writeQmqCompareResult to report result:{}", response);
         }
         return true;
     }
