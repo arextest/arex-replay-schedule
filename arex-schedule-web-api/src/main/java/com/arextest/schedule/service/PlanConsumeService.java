@@ -127,6 +127,11 @@ public final class PlanConsumeService {
         progressTracer.initTotal(replayPlan);
 
         for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
+            // checkpoint: before each context
+            if (executionStatus.isAbnormal()) {
+                break;
+            }
+
             executionContext.setExecutionStatus(executionStatus);
             executionContext.setPlan(replayPlan);
 
