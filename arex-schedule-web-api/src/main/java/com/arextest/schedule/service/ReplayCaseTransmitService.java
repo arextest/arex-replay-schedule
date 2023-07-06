@@ -232,7 +232,11 @@ public class ReplayCaseTransmitService {
             caseItem.setTargetResultId(StringUtils.EMPTY);
         }
         caseItem.setSendStatus(sendStatusType.getValue());
+
         if (sendStatusType == CaseSendStatusType.SUCCESS) {
+            replayActionCaseItemRepository.updateSendResult(caseItem);
+
+            // async compare task
             AsyncCompareCaseTaskRunnable compareTask = new AsyncCompareCaseTaskRunnable(caseItem);
             compareExecutorService.execute(compareTask);
             LOGGER.info("Async compare task distributed, case id: {}", caseItem.getId());
@@ -309,11 +313,14 @@ public class ReplayCaseTransmitService {
 
         @Override
         protected void doWithTracedRunning() {
-            boolean result = replayResultComparer.compare(caseItem, true);
-            if (result) {
-                replayActionCaseItemRepository.updateSendResult(caseItem);
-            } else {
-                LOGGER.error("Comparer returned false, case id: {}", caseItem.getId());
+            boolean compareSuccess = replayResultComparer.compare(caseItem, true);
+            if (!compareSuccess) {
+                LOGGER.error("Comparer returned false, retry, case id: {}", caseItem.getId());
+                compareSuccess = replayResultComparer.compare(caseItem, true);
+
+                if (!compareSuccess) {
+                    LOGGER.error("Comparer failed twice, case id: {}", caseItem.getId());
+                }
             }
         }
     }
