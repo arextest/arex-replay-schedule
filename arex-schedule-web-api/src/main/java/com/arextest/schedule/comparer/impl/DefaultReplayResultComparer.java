@@ -64,6 +64,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         StopWatch compareWatch = new StopWatch();
         compareWatch.start(LogType.COMPARE.getValue());
         String planId = caseItem.getParent().getPlanId();
+        boolean success = true;
+
         try {
             MDCTracer.addPlanId(planId);
             MDCTracer.addPlanItemId(caseItem.getPlanItemId());
@@ -83,11 +85,13 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             }
             if (CollectionUtils.isEmpty(replayCompareResults) &&
                 MockCategoryType.Q_MESSAGE_CONSUMER.getName().equalsIgnoreCase(caseItem.getCaseType())) {
-                return comparisonOutputWriter.writeQmqCompareResult(caseItem);
+                success = comparisonOutputWriter.writeQmqCompareResult(caseItem);
+                return success;
             }
 
             caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.PASS.getValue());
-            return comparisonOutputWriter.write(replayCompareResults);
+            success = comparisonOutputWriter.write(replayCompareResults);
+            return success;
         } catch (Throwable throwable) {
             caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.ERROR.getValue());
             comparisonOutputWriter.writeIncomparable(caseItem, throwable.getMessage());
@@ -96,7 +100,11 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             // don't send again
             return true;
         } finally {
-            progressTracer.finishOne(caseItem);
+            // return false will trigger retry
+            if (success) {
+                progressTracer.finishOne(caseItem);
+            }
+
             compareWatch.stop();
             metricService.recordTimeEvent(LogType.COMPARE.getValue(), planId, caseItem.getParent().getAppId(), null,
                     compareWatch.getTotalTimeMillis());

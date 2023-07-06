@@ -319,6 +319,7 @@ public class ReplayCaseTransmitService {
                 compareSuccess = replayResultComparer.compare(caseItem, true);
 
                 if (!compareSuccess) {
+                    progressTracer.finishOne(caseItem);
                     LOGGER.error("Comparer failed twice, case id: {}", caseItem.getId());
                 }
             }
