@@ -39,10 +39,6 @@ public enum ReplayStatusType {
      */
     CANCELLED(4);
 
-    public static final Set<ReplayStatusType> FINALISED = Sets.newHashSet(FINISHED, FAIL_INTERRUPTED, CANCELLED);
-    public static final Set<Integer> FINALISED_CODE = FINALISED.stream().map(ReplayStatusType::getValue)
-            .collect(Collectors.toSet());
-
     @Getter
     final int value;
 
