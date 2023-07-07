@@ -101,8 +101,7 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
         if (plan.getPlanStatus().isCanceled()) {
             return;
         }
-        boolean planCanceled = cancelMonitor.isPlanCanceled(plan);
-        if (planCanceled) {
+        if (cancelMonitor.isPlanCanceled(plan)) {
             LOGGER.info("Plan {} cancel status set to true", plan.getId());
             plan.getPlanStatus().setCanceled(true);
         }
@@ -117,8 +116,7 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
         }
 
         private boolean isCancelled(byte[] redisKey) {
-            byte[] bytes = redisCacheProvider.get(redisKey);
-            return bytes != null;
+            return redisCacheProvider.get(redisKey) != null;
         }
     }
 
