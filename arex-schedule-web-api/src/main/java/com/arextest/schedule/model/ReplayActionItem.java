@@ -94,7 +94,7 @@ public class ReplayActionItem {
     }
 
     public boolean finalized() {
-        return ReplayStatusType.FINALISED_CODE.contains(replayStatus);
+        return ReplayStatusType.ofCode(this.getReplayStatus()).finalized();
     }
 
     @JsonIgnore

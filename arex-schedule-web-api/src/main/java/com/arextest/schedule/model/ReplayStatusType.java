@@ -49,4 +49,17 @@ public enum ReplayStatusType {
     ReplayStatusType(int value) {
         this.value = value;
     }
+
+    public boolean finalized() {
+        return this == FINISHED || this == FAIL_INTERRUPTED || this == CANCELLED;
+    }
+
+    public static ReplayStatusType ofCode(int code) {
+        for (ReplayStatusType status : ReplayStatusType.values()) {
+            if (code == status.getValue()) {
+                return status;
+            }
+        }
+        return INIT;
+    }
 }
