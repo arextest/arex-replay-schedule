@@ -2,6 +2,7 @@ package com.arextest.schedule.planexecution;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.dao.mongodb.ReplayBizLogRepository;
+import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.progress.ProgressTracer;
@@ -10,11 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 
 /**
  * Created by Qzmo on 2023/6/16
@@ -22,7 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 @Slf4j
 public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
-    private final Map<String, ReplayPlan> tasks = new ConcurrentHashMap<>();
     @Resource
     private CacheProvider redisCacheProvider;
     @Resource
@@ -30,8 +28,11 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
     @Resource
     private ReplayBizLogRepository replayBizLogRepository;
 
+    @Resource
+    private ScheduledExecutorService monitorScheduler;
+
     @Value("${arex.schedule.monitor.secondToRefresh}")
-    public Integer SECOND_TO_REFRESH;
+    public int SECOND_TO_REFRESH;
 
     @Value("${arex.schedule.bizLog.sizeToSave}")
     private int LOG_SIZE_TO_SAVE_CHECK;
@@ -39,59 +40,55 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
     @Value("${arex.schedule.bizLog.secondToSave}")
     private long LOG_TIME_GAP_TO_SAVE_CHECK_BY_SEC;
 
-
     private final RedisCancelMonitor cancelMonitor = new RedisCancelMonitor();
     private final ProgressMonitor progressMonitor = new ProgressMonitor();
     private final BizLoggerMonitor bizLoggerMonitor = new BizLoggerMonitor();
 
-    @PostConstruct
-    public void init() {
-        Timer timer = new Timer("Execution_monitor_timer", true);
-        MonitorTask task = new MonitorTask();
-        timer.scheduleAtFixedRate(task, 0, SECOND_TO_REFRESH * 1000L);
-    }
 
-    private class MonitorTask extends TimerTask {
+    /**
+     * Monitor task for each Replay plan
+     */
+    private class MonitorTask implements Runnable {
+        ReplayPlan replayPlan;
+
+        MonitorTask(ReplayPlan replayPlan) {
+            this.replayPlan = replayPlan;
+        }
+
         @Override
         public void run() {
+            MDCTracer.addPlanId(replayPlan.getId());
             try {
-                long start = System.currentTimeMillis();
-                LOGGER.info("Monitor begins task, monitoring {} tasks", tasks.size());
-                monitorAll();
-                long end = System.currentTimeMillis();
-                LOGGER.info("Monitor begins done, took {} ms", end - start);
+                monitorOne(replayPlan);
             } catch (Throwable t) {
-                LOGGER.error("Monitor thread got error", t);
+                LOGGER.error("Error monitoring plan", t);
+            } finally {
+                MDCTracer.clear();
             }
         }
     }
 
-    private void monitorAll() {
-        this.tasks.forEach((taskId, task) -> {
-            monitorOne(task);
-        });
-    }
-
     @Override
     public void monitorOne(ReplayPlan task) {
-        try {
-            LOGGER.info("Monitoring task {}", task.getId());
-            refreshLastUpdateTime(task);
-            refreshCancelStatus(task);
-            this.bizLoggerMonitor.tryFlushingLogs(task);
-        } catch (Throwable t) {
-            LOGGER.error("Monitor failed refreshing task " + task.getId(), t);
-        }
+        LOGGER.info("Monitoring task {}", task.getId());
+        refreshLastUpdateTime(task);
+        refreshCancelStatus(task);
+        this.bizLoggerMonitor.tryFlushingLogs(task);
     }
 
     @Override
     public void register(ReplayPlan plan) {
-        tasks.put(plan.getId(), plan);
+        MonitorTask task = new MonitorTask(plan);
+        ScheduledFuture<?> monitorFuture = monitorScheduler
+                .scheduleAtFixedRate(task, 0, SECOND_TO_REFRESH, TimeUnit.SECONDS);
+        plan.setMonitorFuture(monitorFuture);
     }
 
     @Override
     public void deregister(ReplayPlan plan) {
-        tasks.remove(plan.getId());
+        plan.getMonitorFuture().cancel(false);
+        LOGGER.info("deregister monitor task, planId: {}", plan.getId());
+
         this.bizLoggerMonitor.flushLogs(plan);
     }
 

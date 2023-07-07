@@ -11,6 +11,7 @@ import lombok.ToString;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledFuture;
 
 /**
  * @author jmo
@@ -96,4 +97,7 @@ public class ReplayPlan {
     public void enqueueBizLog(BizLog log) {
         this.bizLogs.add(log);
     }
+
+    @JsonIgnore
+    private ScheduledFuture<?> monitorFuture;
 }
