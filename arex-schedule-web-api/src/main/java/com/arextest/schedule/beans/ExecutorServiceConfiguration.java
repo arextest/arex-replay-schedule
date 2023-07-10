@@ -103,6 +103,6 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
                 .setUncaughtExceptionHandler(this)
                 .build();
 
-        return new ScheduledThreadPoolExecutor(CORE_POOL_SIZE, threadFactory);
+        return new ScheduledThreadPoolExecutor(1, threadFactory);
     }
 }
