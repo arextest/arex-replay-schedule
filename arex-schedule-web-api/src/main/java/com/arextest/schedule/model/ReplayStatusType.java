@@ -51,11 +51,22 @@ public enum ReplayStatusType {
     }
 
     public static ReplayStatusType ofCode(int code) {
-        for (ReplayStatusType status : ReplayStatusType.values()) {
-            if (code == status.getValue()) {
-                return status;
-            }
+        // return corresponding enum value, or INIT if not found
+        switch (code) {
+            case 0:
+                return INIT;
+            case 1:
+                return RUNNING;
+            case 2:
+                return FINISHED;
+            case 3:
+                return FAIL_INTERRUPTED;
+            case 4:
+                return CANCELLED;
+            case 5:
+                return CASE_LOADED;
+            default:
+                return INIT;
         }
-        return INIT;
     }
 }
