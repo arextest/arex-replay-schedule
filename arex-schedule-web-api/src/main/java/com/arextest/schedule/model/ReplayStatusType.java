@@ -1,6 +1,12 @@
 package com.arextest.schedule.model;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import lombok.Getter;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author jmo
@@ -38,5 +44,29 @@ public enum ReplayStatusType {
 
     ReplayStatusType(int value) {
         this.value = value;
+    }
+
+    public boolean finalized() {
+        return this == FINISHED || this == FAIL_INTERRUPTED || this == CANCELLED;
+    }
+
+    public static ReplayStatusType ofCode(int code) {
+        // return corresponding enum value, or INIT if not found
+        switch (code) {
+            case 0:
+                return INIT;
+            case 1:
+                return RUNNING;
+            case 2:
+                return FINISHED;
+            case 3:
+                return FAIL_INTERRUPTED;
+            case 4:
+                return CANCELLED;
+            case 5:
+                return CASE_LOADED;
+            default:
+                return INIT;
+        }
     }
 }

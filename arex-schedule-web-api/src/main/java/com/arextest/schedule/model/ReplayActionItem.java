@@ -5,13 +5,13 @@ import com.arextest.schedule.model.dao.mongodb.ReplayPlanItemCollection;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.deploy.ServiceInstanceOperation;
 import com.arextest.model.mock.MockCategoryType;
-import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author jmo
@@ -93,8 +93,8 @@ public class ReplayActionItem {
         return replayCaseCount == 0;
     }
 
-    public boolean finished() {
-        return replayStatus == ReplayStatusType.FINISHED.getValue();
+    public boolean finalized() {
+        return ReplayStatusType.ofCode(this.getReplayStatus()).finalized();
     }
 
     @JsonIgnore
@@ -102,9 +102,20 @@ public class ReplayActionItem {
     @JsonIgnore
     private boolean itemProcessed;
     @JsonIgnore
-    private int caseProcessCount;
+    private AtomicInteger caseProcessCount = new AtomicInteger();
 
     public void recordProcessCaseCount(int incoming) {
-        setCaseProcessCount(caseProcessCount + incoming);
+        this.caseProcessCount.addAndGet(incoming);
     }
+
+    public void recordProcessOne() {
+        this.caseProcessCount.incrementAndGet();
+    }
+
+    public boolean sendDone() {
+        return this.caseProcessCount.get() >= this.getReplayCaseCount();
+    }
+
+    @JsonIgnore
+    public ExecutionStatus planStatus;
 }

@@ -63,12 +63,19 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     public void onReplayPlanInterrupt(ReplayPlan replayPlan, ReplayStatusType reason) {
         replayPlan.setPlanFinishTime(new Date());
         String planId = replayPlan.getId();
-        boolean result = replayPlanRepository.finish(planId);
+        replayPlanRepository.finish(planId);
         LOGGER.info("The plan was interrupted, plan id:{} ,appId: {} ", replayPlan.getId(), replayPlan.getAppId());
         metricService.recordCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
         replayReportService.pushPlanStatus(planId, reason, replayPlan.getErrorMessage());
         recordPlanExecutionTime(replayPlan);
     }
+
+    @Override
+    public void onReplayPlanTerminate(String replayId) {
+        replayPlanRepository.finish(replayId);
+        replayReportService.pushPlanStatus(replayId, ReplayStatusType.CANCELLED, null);
+    }
+
 
     private void recordPlanExecutionTime(ReplayPlan replayPlan) {
         Date planCreateTime = replayPlan.getPlanCreateTime();

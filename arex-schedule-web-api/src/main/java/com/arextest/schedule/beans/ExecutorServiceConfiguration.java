@@ -95,4 +95,14 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
         int optimalThreadPoolSize = (int) Math.ceil(nThreads * targetCPUUtilization * (1 + wC));
         return optimalThreadPoolSize;
     }
+
+    @Bean
+    public ScheduledExecutorService monitorScheduler() {
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("replay-monitor-%d")
+                .setDaemon(true)
+                .setUncaughtExceptionHandler(this)
+                .build();
+
+        return new ScheduledThreadPoolExecutor(1, threadFactory);
+    }
 }
