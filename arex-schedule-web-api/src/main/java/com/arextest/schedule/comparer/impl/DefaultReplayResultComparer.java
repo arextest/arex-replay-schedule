@@ -27,13 +27,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.StopWatch;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -174,7 +168,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
 
         String depKey = category + "_" + compareItem.getCompareOperation();
-        return operationConfig.getDependencyConfigMap().getOrDefault(depKey, new ReplayComparisonConfig());
+        return Optional.ofNullable(operationConfig.getDependencyConfigMap())
+                .map(dependencyConfig -> dependencyConfig.get(depKey))
+                .orElse(new ReplayComparisonConfig());
     }
 
     private ReplayCompareResult compareRecordAndResult(ReplayComparisonConfig operationConfig, ReplayActionCaseItem caseItem,
