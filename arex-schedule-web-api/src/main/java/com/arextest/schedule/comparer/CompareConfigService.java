@@ -6,6 +6,7 @@ import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
+import com.arextest.web.model.contract.contracts.config.replay.ComparisonSummaryConfiguration;
 import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
@@ -42,6 +43,7 @@ public final class CompareConfigService {
 
     public void preload(ReplayPlan plan) {
         Map<String, ReplayComparisonConfig> operationCompareConfig = getReplayComparisonConfig(plan);
+
         if (operationCompareConfig.isEmpty()) {
             LOGGER.warn("no compare config found, plan id:{}", plan.getId());
             return;
@@ -49,53 +51,17 @@ public final class CompareConfigService {
 
         for (ReplayActionItem actionItem : plan.getReplayActionItemList()) {
             String operationId = actionItem.getOperationId();
-            ReplayComparisonConfig config = build(operationCompareConfig, operationId);
+
+            ReplayComparisonConfig config = operationCompareConfig.getOrDefault(operationId, new ReplayComparisonConfig());
+
             customComparisonConfigurationHandler.build(config, actionItem);
-            String redisKey = key(actionItem.getId());
-            String json = objectToJsonString(config);
-            redisCacheProvider.put(redisKey.getBytes(StandardCharsets.UTF_8),
-                    4 * 24 * 60 * 60L, json.getBytes(StandardCharsets.UTF_8));
-            LOGGER.info("prepare load compare config, action id:{} ,result: {}", actionItem.getId(), json);
+
+            redisCacheProvider.put(key(actionItem.getId()).getBytes(StandardCharsets.UTF_8),
+                    4 * 24 * 60 * 60L,
+                    objectToJsonString(config).getBytes(StandardCharsets.UTF_8));
+
+            LOGGER.info("prepare load compare config, action id:{}", actionItem.getId());
         }
-    }
-
-    private ReplayComparisonConfig build(Map<String, ReplayComparisonConfig> operationCompareConfig, String operationId) {
-        ReplayComparisonConfig replayComparisonConfig = new ReplayComparisonConfig();
-        ReplayComparisonConfig globalConfig = operationCompareConfig.getOrDefault(null, new ReplayComparisonConfig());
-        ReplayComparisonConfig operationConfig = operationCompareConfig.getOrDefault(operationId, new ReplayComparisonConfig());
-
-        Set<String> ignoreTypeList = new HashSet<>();
-        ignoreTypeList.addAll(globalConfig.getIgnoreTypeList() == null ? Collections.emptySet() : globalConfig.getIgnoreTypeList());
-        ignoreTypeList.addAll(operationConfig.getIgnoreTypeList() == null ? Collections.emptySet() : operationConfig.getIgnoreTypeList());
-        replayComparisonConfig.setIgnoreTypeList(ignoreTypeList);
-
-        Set<String> ignoreKeyList = new HashSet<>();
-        ignoreKeyList.addAll(globalConfig.getIgnoreKeyList() == null ? Collections.emptySet() : globalConfig.getIgnoreKeyList());
-        ignoreKeyList.addAll(operationConfig.getIgnoreKeyList() == null ? Collections.emptySet() : operationConfig.getIgnoreKeyList());
-        replayComparisonConfig.setIgnoreKeyList(ignoreKeyList);
-
-
-        Set<List<String>> exclusions = new HashSet<>();
-        exclusions.addAll(globalConfig.getExclusionList() == null ? Collections.emptySet() : globalConfig.getExclusionList());
-        exclusions.addAll(operationConfig.getExclusionList() == null ? Collections.emptySet() : operationConfig.getExclusionList());
-        replayComparisonConfig.setExclusionList(exclusions);
-
-        Set<List<String>> inclusions = new HashSet<>();
-        inclusions.addAll(globalConfig.getInclusionList() == null ? Collections.emptyList() : globalConfig.getInclusionList());
-        inclusions.addAll(operationConfig.getInclusionList() == null ? Collections.emptyList() : operationConfig.getInclusionList());
-        replayComparisonConfig.setInclusionList(inclusions);
-
-        Map<List<String>, List<List<String>>> listSortMap = new HashMap<>();
-        listSortMap.putAll(globalConfig.getListSortMap() == null ? Collections.emptyMap() : globalConfig.getListSortMap());
-        listSortMap.putAll(operationConfig.getListSortMap() == null ? Collections.emptyMap() : operationConfig.getListSortMap());
-        replayComparisonConfig.setListSortMap(listSortMap);
-
-        Map<List<String>, List<String>> referenceMap = new HashMap<>();
-        referenceMap.putAll(globalConfig.getReferenceMap() == null ? Collections.emptyMap() : globalConfig.getReferenceMap());
-        referenceMap.putAll(operationConfig.getReferenceMap() == null ? Collections.emptyMap() : operationConfig.getReferenceMap());
-        replayComparisonConfig.setReferenceMap(referenceMap);
-
-        return replayComparisonConfig;
     }
 
     private Map<String, ReplayComparisonConfig> getReplayComparisonConfig(ReplayPlan plan) {
@@ -116,31 +82,60 @@ public final class CompareConfigService {
     }
 
     private static Map<String, ReplayComparisonConfig> convertOperationConfig(List<ReplayCompareConfig.ReplayComparisonItem> operationConfigs) {
-        Map<String, ReplayComparisonConfig> operationCompareConfig = new HashMap<>();
+        Map<String, ReplayComparisonConfig> res = new HashMap<>();
 
         for (ReplayCompareConfig.ReplayComparisonItem source : operationConfigs) {
             String operationId = source.getOperationId();
-            ReplayComparisonConfig converted = new ReplayComparisonConfig();
+            if (StringUtils.isBlank(operationId)) {
+                continue;
+            }
 
-            if (source.getExclusionList() != null) {
-                converted.setExclusionList(source.getExclusionList());
-            }
-            if (source.getInclusionList() != null) {
-                converted.setInclusionList(source.getInclusionList());
-            }
-            if (source.getReferenceMap() != null) {
-                converted.setReferenceMap(source.getReferenceMap());
-            }
-            if (source.getListSortMap() != null) {
-                converted.setListSortMap(source.getListSortMap());
-            }
-            operationCompareConfig.put(operationId, converted);
+            ReplayComparisonConfig converted = convertCompareItem(source);
+            List<ReplayCompareConfig.DependencyComparisonItem> sourceDependencyConfigs = source.getDependencyComparisonItems();
+            converted.setDependencyConfigMap(convertDependencyConfig(sourceDependencyConfigs));
+            res.put(operationId, converted);
         }
 
-        return operationCompareConfig;
+        return res;
     }
 
+    private static Map<String, ReplayComparisonConfig> convertDependencyConfig(List<ReplayCompareConfig.DependencyComparisonItem> dependencyConfigs) {
+        Map<String, ReplayComparisonConfig> res = new HashMap<>();
 
+        for (ReplayCompareConfig.DependencyComparisonItem source : dependencyConfigs) {
+            String dependencyKey = dependencyKey(source);
+            if (StringUtils.isBlank(dependencyKey)) {
+                continue;
+            }
+
+            ReplayComparisonConfig converted = convertCompareItem(source);
+            res.put(dependencyKey, converted);
+        }
+
+        return res;
+    }
+
+    private static ReplayComparisonConfig convertCompareItem(ComparisonSummaryConfiguration source) {
+        ReplayComparisonConfig converted = new ReplayComparisonConfig();
+
+        if (source.getExclusionList() != null) {
+            converted.setExclusionList(source.getExclusionList());
+        }
+        if (source.getInclusionList() != null) {
+            converted.setInclusionList(source.getInclusionList());
+        }
+        if (source.getReferenceMap() != null) {
+            converted.setReferenceMap(source.getReferenceMap());
+        }
+        if (source.getListSortMap() != null) {
+            converted.setListSortMap(source.getListSortMap());
+        }
+        return converted;
+    }
+
+    public static String dependencyKey(ReplayCompareConfig.DependencyComparisonItem dependencyConfig) {
+        return dependencyConfig.getDependencyType() + dependencyConfig.getDependencyName();
+    }
 
     @Data
     private final static class GenericResponseType<T> {
