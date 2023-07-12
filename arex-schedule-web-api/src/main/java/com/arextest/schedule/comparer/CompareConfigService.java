@@ -191,8 +191,6 @@ public final class CompareConfigService {
 
     private ReplayComparisonConfig newEmptyComparisonConfig() {
         ReplayComparisonConfig replayComparisonConfig = new ReplayComparisonConfig();
-        replayComparisonConfig.setIgnoreKeyList(Collections.emptySet());
-        replayComparisonConfig.setIgnoreTypeList(Collections.emptySet());
         replayComparisonConfig.setExclusionList(Collections.emptySet());
         replayComparisonConfig.setInclusionList(Collections.emptySet());
         replayComparisonConfig.setListSortMap(Collections.emptyMap());

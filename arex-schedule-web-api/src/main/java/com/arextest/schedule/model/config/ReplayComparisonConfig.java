@@ -24,12 +24,6 @@ import java.util.Set;
  */
 @Data
 public class ReplayComparisonConfig {
-
-    // ignore according to type
-    private Set<String> ignoreTypeList;
-    // ignore according to interface
-    private Set<String> ignoreKeyList;
-
     private Set<List<String>> exclusionList;
     private Set<List<String>> inclusionList;
 
@@ -54,7 +48,7 @@ public class ReplayComparisonConfig {
         if (Objects.equals(type, MockCategoryType.Q_MESSAGE_CONSUMER.getName())) {
             return true;
         }
-        return ignoreTypeList != null && ignoreTypeList.contains(type);
+        return false;
     }
 
     private static class MapKeyDeserializerUtils extends KeyDeserializer {
