@@ -136,7 +136,11 @@ public final class CompareConfigService {
     }
 
     public static String dependencyKey(ReplayCompareConfig.DependencyComparisonItem dependencyConfig) {
-        return dependencyConfig.getDependencyType() + "_" + dependencyConfig.getDependencyName();
+        return dependencyKey(dependencyConfig.getDependencyType(), dependencyConfig.getDependencyName());
+    }
+
+    public static String dependencyKey(String type, String name) {
+        return type + "_" + name;
     }
 
     @Data

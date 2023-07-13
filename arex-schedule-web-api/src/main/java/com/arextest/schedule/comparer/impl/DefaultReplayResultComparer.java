@@ -167,7 +167,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             return operationConfig;
         }
 
-        String depKey = category + "_" + compareItem.getCompareOperation();
+        String depKey = CompareConfigService.dependencyKey(category, compareItem.getCompareOperation());
         return Optional.ofNullable(operationConfig.getDependencyConfigMap())
                 .map(dependencyConfig -> dependencyConfig.get(depKey))
                 .orElse(new ReplayComparisonConfig());
