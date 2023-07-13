@@ -105,7 +105,7 @@ public final class CompareConfigService {
         Map<String, ReplayComparisonConfig> res = new HashMap<>();
 
         for (ReplayCompareConfig.DependencyComparisonItem source : dependencyConfigs) {
-            if (CollectionUtils.isEmpty(source.getOperationType()) || StringUtils.isBlank(source.getOperationName())) {
+            if (CollectionUtils.isEmpty(source.getOperationTypes()) || StringUtils.isBlank(source.getOperationName())) {
                 LOGGER.warn("dependency type or name is blank, dependencyId: {}", source.getDependencyId());
                 continue;
             }
@@ -120,7 +120,7 @@ public final class CompareConfigService {
 
     private static ReplayComparisonConfig convertCompareItem(ComparisonSummaryConfiguration source) {
         ReplayComparisonConfig converted = new ReplayComparisonConfig();
-        converted.setOperationType(source.getOperationType());
+        converted.setOperationType(source.getOperationTypes());
         converted.setOperationName(source.getOperationName());
         converted.setExclusionList(source.getExclusionList());
         converted.setInclusionList(source.getInclusionList());
@@ -130,7 +130,7 @@ public final class CompareConfigService {
     }
 
     public static String dependencyKey(ReplayCompareConfig.DependencyComparisonItem dependencyConfig) {
-        return dependencyKey(dependencyConfig.getOperationType().get(0), dependencyConfig.getOperationName());
+        return dependencyKey(dependencyConfig.getOperationTypes().get(0), dependencyConfig.getOperationName());
     }
 
     public static String dependencyKey(String type, String name) {
