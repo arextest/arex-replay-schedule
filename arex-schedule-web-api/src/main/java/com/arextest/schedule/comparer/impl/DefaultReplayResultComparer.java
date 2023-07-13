@@ -162,20 +162,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         return compareResults;
     }
 
-    private ReplayComparisonConfig pickConfig(CompareItem compareItem, ReplayComparisonConfig operationConfig, String category) {
-        if (compareItem.isEntryPointCategory()) {
-            return operationConfig;
-        }
-
-        String depKey = CompareConfigService.dependencyKey(category, compareItem.getCompareOperation());
-        return Optional.ofNullable(operationConfig.getDependencyConfigMap())
-                .map(dependencyConfig -> dependencyConfig.get(depKey))
-                .orElse(new ReplayComparisonConfig());
-    }
-
     private ReplayCompareResult compareRecordAndResult(ReplayComparisonConfig operationConfig, ReplayActionCaseItem caseItem,
                                                        String category, CompareItem target, CompareItem source) {
-        ReplayComparisonConfig itemConfig = pickConfig(target, operationConfig, category);
+        ReplayComparisonConfig itemConfig = CompareConfigService.pickConfig(target, operationConfig, category);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start(LogType.COMPARE_SDK.getValue());
@@ -280,7 +269,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
         String operation;
         for (CompareItem item : compareItems) {
-            ReplayComparisonConfig itemConfig = pickConfig(item, operationConfig, category);
+            ReplayComparisonConfig itemConfig = CompareConfigService.pickConfig(item, operationConfig, category);
             operation = item.getCompareOperation();
             CompareResult comparedResult = null;
             if (missRecord) {

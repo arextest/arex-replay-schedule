@@ -143,6 +143,17 @@ public final class CompareConfigService {
         return type + "_" + name;
     }
 
+    public static ReplayComparisonConfig pickConfig(CompareItem compareItem, ReplayComparisonConfig operationConfig, String category) {
+        if (compareItem.isEntryPointCategory()) {
+            return operationConfig;
+        }
+
+        String depKey = CompareConfigService.dependencyKey(category, compareItem.getCompareOperation());
+        return Optional.ofNullable(operationConfig.getDependencyConfigMap())
+                .map(dependencyConfig -> dependencyConfig.get(depKey))
+                .orElse(new ReplayComparisonConfig());
+    }
+
     @Data
     private final static class GenericResponseType<T> {
         private T body;
