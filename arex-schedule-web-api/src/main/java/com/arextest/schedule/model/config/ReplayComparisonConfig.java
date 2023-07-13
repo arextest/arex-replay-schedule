@@ -24,6 +24,8 @@ import java.util.Set;
  */
 @Data
 public class ReplayComparisonConfig {
+    private String operationName;
+    private List<String> operationType;
     private Set<List<String>> exclusionList;
     private Set<List<String>> inclusionList;
 

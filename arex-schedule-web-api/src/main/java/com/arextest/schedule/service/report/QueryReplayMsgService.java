@@ -42,9 +42,13 @@ public class QueryReplayMsgService {
         QueryDiffMsgByIdResponseType response = new QueryDiffMsgByIdResponseType();
 
         ReplayCompareResult compareResultBo = replayCompareResultRepository.queryCompareResultsById(id);
-        ReplayComparisonConfig compareConfig = compareConfigService.loadConfig(compareResultBo.getPlanItemId());
+
+        ReplayComparisonConfig operationConfig = compareConfigService.loadConfig(compareResultBo.getPlanItemId());
+        ReplayComparisonConfig itemConfig = CompareConfigService.pickConfig(operationConfig,
+                compareResultBo.getCategoryName(), compareResultBo.getOperationName());
+
         CompareOptions compareOptions = DefaultReplayResultComparer
-                .buildCompareRequest(compareResultBo.getCategoryName(), compareConfig);
+                .buildCompareRequest(compareResultBo.getCategoryName(), itemConfig);
 
         // bo may contain only quick compare result, need to fill log entities into BO
         if (DiffResultCode.COMPARED_WITH_DIFFERENCE == compareResultBo.getDiffResultCode()

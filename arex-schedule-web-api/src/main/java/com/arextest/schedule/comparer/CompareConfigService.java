@@ -11,6 +11,7 @@ import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConf
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -104,7 +105,7 @@ public final class CompareConfigService {
         Map<String, ReplayComparisonConfig> res = new HashMap<>();
 
         for (ReplayCompareConfig.DependencyComparisonItem source : dependencyConfigs) {
-            if (StringUtils.isBlank(source.getDependencyType()) || StringUtils.isBlank(source.getDependencyName())) {
+            if (CollectionUtils.isEmpty(source.getOperationType()) || StringUtils.isBlank(source.getOperationName())) {
                 LOGGER.warn("dependency type or name is blank, dependencyId: {}", source.getDependencyId());
                 continue;
             }
@@ -119,24 +120,17 @@ public final class CompareConfigService {
 
     private static ReplayComparisonConfig convertCompareItem(ComparisonSummaryConfiguration source) {
         ReplayComparisonConfig converted = new ReplayComparisonConfig();
-
-        if (source.getExclusionList() != null) {
-            converted.setExclusionList(source.getExclusionList());
-        }
-        if (source.getInclusionList() != null) {
-            converted.setInclusionList(source.getInclusionList());
-        }
-        if (source.getReferenceMap() != null) {
-            converted.setReferenceMap(source.getReferenceMap());
-        }
-        if (source.getListSortMap() != null) {
-            converted.setListSortMap(source.getListSortMap());
-        }
+        converted.setOperationType(source.getOperationType());
+        converted.setOperationName(source.getOperationName());
+        converted.setExclusionList(source.getExclusionList());
+        converted.setInclusionList(source.getInclusionList());
+        converted.setReferenceMap(source.getReferenceMap());
+        converted.setListSortMap(source.getListSortMap());
         return converted;
     }
 
     public static String dependencyKey(ReplayCompareConfig.DependencyComparisonItem dependencyConfig) {
-        return dependencyKey(dependencyConfig.getDependencyType(), dependencyConfig.getDependencyName());
+        return dependencyKey(dependencyConfig.getOperationType().get(0), dependencyConfig.getOperationName());
     }
 
     public static String dependencyKey(String type, String name) {
@@ -149,6 +143,22 @@ public final class CompareConfigService {
         }
 
         String depKey = CompareConfigService.dependencyKey(category, compareItem.getCompareOperation());
+        return Optional.ofNullable(operationConfig.getDependencyConfigMap())
+                .map(dependencyConfig -> dependencyConfig.get(depKey))
+                .orElse(new ReplayComparisonConfig());
+    }
+
+    public static ReplayComparisonConfig pickConfig(ReplayComparisonConfig operationConfig, String category, String operationName) {
+        boolean mainEntryType = Optional.ofNullable(operationConfig.getOperationType())
+                .map(types -> types.contains(category)).orElse(false);
+        boolean mainEntryNameMatched = Optional.ofNullable(operationConfig.getOperationName())
+                .map(name -> name.equals(operationName)).orElse(false);
+
+        if (mainEntryType && mainEntryNameMatched) {
+            return operationConfig;
+        }
+
+        String depKey = CompareConfigService.dependencyKey(category, operationName);
         return Optional.ofNullable(operationConfig.getDependencyConfigMap())
                 .map(dependencyConfig -> dependencyConfig.get(depKey))
                 .orElse(new ReplayComparisonConfig());
