@@ -6,6 +6,7 @@ import com.arextest.schedule.model.ReplayPlan;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author jmo
@@ -25,13 +26,14 @@ public final class ReplayParentBinder {
         }
     }
 
-    public static void setupCaseItemParent(List<ReplayActionCaseItem> sourceItemList, ReplayActionItem parent) {
+    public static void setupCaseItemParent(List<ReplayActionCaseItem> sourceItemList, ReplayPlan replayPlan) {
         if (CollectionUtils.isEmpty(sourceItemList)) {
             return;
         }
+        Map<String, ReplayActionItem> actionItems = replayPlan.getActionItemMap();
         for (ReplayActionCaseItem caseItem : sourceItemList) {
-            caseItem.setParent(parent);
-            caseItem.setPlanId(parent.getPlanId());
+            caseItem.setParent(actionItems.get(caseItem.getPlanItemId()));
+            caseItem.setPlanId(replayPlan.getId());
         }
     }
 }

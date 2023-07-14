@@ -68,7 +68,7 @@ public class ReplayPlan {
     @JsonIgnore
     private List<ReplayActionItem> replayActionItemList;
     @JsonIgnore
-    private List<PlanExecutionContext> executionContexts;
+    private List<PlanExecutionContext<?>> executionContexts;
     @JsonIgnore
     private String appName;
     @JsonIgnore
@@ -100,4 +100,11 @@ public class ReplayPlan {
 
     @JsonIgnore
     private ScheduledFuture<?> monitorFuture;
+
+    @JsonIgnore
+    private Map<String, ReplayActionItem> actionItemMap = new HashMap<>();
+
+    public void buildActionItemMap() {
+        this.getReplayActionItemList().forEach(replayActionItem -> this.actionItemMap.put(replayActionItem.getId(), replayActionItem));
+    }
 }

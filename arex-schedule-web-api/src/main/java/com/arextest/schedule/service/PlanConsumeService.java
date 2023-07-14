@@ -5,7 +5,6 @@ import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
-import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.*;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.planexecution.PlanExecutionMonitor;
@@ -17,10 +16,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -39,8 +35,6 @@ public final class PlanConsumeService {
     private ReplayCaseTransmitService replayCaseTransmitService;
     @Resource
     private ExecutorService preloadExecutorService;
-    @Resource
-    private ExecutorService actionItemParallelPool;
     @Resource
     private ProgressTracer progressTracer;
     @Resource
@@ -71,6 +65,7 @@ public final class PlanConsumeService {
             qpsLimiter.setReplayPlan(replayPlan);
             replayPlan.setPlanStatus(ExecutionStatus.buildNormal(qpsLimiter));
             replayPlan.setLimiter(qpsLimiter);
+            replayPlan.buildActionItemMap();
             planExecutionMonitor.register(replayPlan);
             BizLogger.recordQpsInit(replayPlan, qpsLimiter.getPermits(), replayPlan.getMinInstanceCount());
         }
@@ -151,111 +146,45 @@ public final class PlanConsumeService {
     }
 
     private void consumeContext(ReplayPlan replayPlan, PlanExecutionContext executionContext) {
-        List<CompletableFuture> contextTasks = new ArrayList<>();
-        ReplayActionItemRunnableImpl task;
-        for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
-            MDCTracer.addActionId(replayActionItem.getId());
-            if (!replayActionItem.isItemProcessed()) {
-                replayActionItem.setItemProcessed(true);
-                replayActionItem.setSendRateLimiter(replayPlan.getLimiter());
-                if (replayActionItem.isEmpty()) {
-                    replayActionItem.setReplayFinishTime(new Date());
-                    progressEvent.onActionComparisonFinish(replayActionItem);
-                    BizLogger.recordActionStatusChange(replayActionItem, ReplayStatusType.FINISHED.name(),
-                            "No case needs to be sent");
-                }
-            }
-
-            // checkpoint: before action item parallel
-            if (replayActionItem.finalized()
-                    || replayActionItem.isEmpty()
-                    || executionContext.getExecutionStatus().isAbnormal()) {
-                continue;
-            }
-
-            // dispatch action item task
-            task = new ReplayActionItemRunnableImpl(replayActionItem, executionContext);
-            contextTasks.add(CompletableFuture.runAsync(task, actionItemParallelPool));
-        }
-        CompletableFuture.allOf(contextTasks.toArray(new CompletableFuture[0])).join();
-    }
-
-
-    /**
-     * Cases of one action item and one context consume Task
-     */
-    private final class ReplayActionItemRunnableImpl extends AbstractTracedRunnable {
-        private final ReplayActionItem actionItem;
-        private final PlanExecutionContext context;
-
-        ReplayActionItemRunnableImpl(ReplayActionItem actionItem, PlanExecutionContext context) {
-            this.actionItem = actionItem;
-            this.context = context;
-        }
-
-        @Override
-        protected void doWithTracedRunning() {
-            consumeActionItemWithContext(this.actionItem, this.context);
-        }
-    }
-
-    private void consumeActionItemWithContext(ReplayActionItem replayActionItem, PlanExecutionContext currentContext) {
-        BizLogger.recordActionUnderContext(replayActionItem, currentContext);
-        ExecutionStatus executionStatus = currentContext.getExecutionStatus();
-        replayActionItem.setPlanStatus(executionStatus);
-
-        // checkpoint: before sending grouping of action item
-        if (executionStatus.isAbnormal()) {
+        if (executionContext.getExecutionStatus().isAbnormal()) {
             return;
         }
-
-        if (replayActionItem.getReplayFinishTime() == null
-                && replayActionItem.getReplayStatus() != ReplayStatusType.RUNNING.getValue()) {
-            progressEvent.onActionBeforeSend(replayActionItem);
-        }
-
-        this.sendByPaging(replayActionItem, currentContext);
-
-        if (executionStatus.isNormal() && replayActionItem.sendDone()) {
-            progressEvent.onActionAfterSend(replayActionItem);
-            BizLogger.recordActionItemSent(replayActionItem);
-        }
-    }
-
-    private void sendByPaging(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {
-        ExecutionStatus executionStatus = executionContext.getExecutionStatus();
-
         switch (executionContext.getActionType()) {
             case SKIP_CASE_OF_CONTEXT:
                 // skip all cases of this context leaving the status as default
-                replayCaseTransmitService.releaseCasesOfContext(replayActionItem, executionContext);
+                replayCaseTransmitService.releaseCasesOfContext(replayPlan, executionContext);
                 break;
-
             case NORMAL:
             default:
-                int contextCount = 0;
-                List<ReplayActionCaseItem> sourceItemList;
-                while (true) {
-                    // checkpoint: before sending page of cases
-                    if (executionStatus.isAbnormal()) {
-                        break;
-                    }
-
-                    sourceItemList = replayActionCaseItemRepository.waitingSendList(replayActionItem.getId(),
-                            CommonConstant.MAX_PAGE_SIZE, executionContext.getContextCaseQuery());
-
-                    replayActionItem.setCaseItemList(sourceItemList);
-                    if (CollectionUtils.isEmpty(sourceItemList)) {
-                        break;
-                    }
-                    contextCount += sourceItemList.size();
-                    ReplayParentBinder.setupCaseItemParent(sourceItemList, replayActionItem);
-                    replayCaseTransmitService.send(replayActionItem);
-
-                    BizLogger.recordActionItemBatchSent(replayActionItem, sourceItemList.size());
-                }
-                BizLogger.recordContextProcessedNormal(executionContext, replayActionItem, contextCount);
+                this.sendByPaging(replayPlan, executionContext);
         }
+    }
+
+
+    private void sendByPaging(ReplayPlan replayPlan, PlanExecutionContext executionContext) {
+        ExecutionStatus executionStatus = executionContext.getExecutionStatus();
+
+        int contextCount = 0;
+        List<ReplayActionCaseItem> caseItems = Collections.emptyList();
+        while (true) {
+            // checkpoint: before sending page of cases
+            if (executionStatus.isAbnormal()) {
+                break;
+            }
+            ReplayActionCaseItem lastItem = caseItems.size() > 0 ? caseItems.get(caseItems.size() - 1) : null;
+            caseItems = replayActionCaseItemRepository.waitingSendList(replayPlan.getId(),
+                    CommonConstant.MAX_PAGE_SIZE,
+                    executionContext.getContextCaseQuery(),
+                    Optional.ofNullable(lastItem).map(ReplayActionCaseItem::getId).orElse(null));
+
+            if (CollectionUtils.isEmpty(caseItems)) {
+                break;
+            }
+            contextCount += caseItems.size();
+            ReplayParentBinder.setupCaseItemParent(caseItems, replayPlan);
+            replayCaseTransmitService.send(caseItems, executionContext);
+        }
+        BizLogger.recordContextProcessedNormal(executionContext, contextCount);
     }
 
     private void finalizePlanStatus(ReplayPlan replayPlan) {
