@@ -61,19 +61,11 @@ public class ReplayCaseTransmitService {
     public void send(List<ReplayActionCaseItem> caseItems, PlanExecutionContext<?> executionContext) {
         ExecutionStatus executionStatus = executionContext.getExecutionStatus();
 
-        if (CollectionUtils.isEmpty(caseItems) || executionStatus.isAbnormal()) {
+        if (executionStatus.isAbnormal()) {
             return;
         }
 
-        caseItems.stream()
-                .collect(Collectors.groupingBy(ReplayActionCaseItem::getParent))
-                .forEach((actionItem, casesOfAction) -> {
-                    // warmUp should be done once for each endpoint
-                    if (!actionItem.isItemProcessed()) {
-                        actionItem.setItemProcessed(true);
-                        activeRemoteHost(casesOfAction);
-                    }
-                });
+        prepareActionItems(caseItems, executionContext);
 
         try {
             doSendValuesToRemoteHost(caseItems, executionStatus);
@@ -81,6 +73,23 @@ public class ReplayCaseTransmitService {
             LOGGER.error("do send error:{}", throwable.getMessage(), throwable);
             markAllSendStatus(caseItems, CaseSendStatusType.EXCEPTION_FAILED);
         }
+    }
+
+    private void prepareActionItems(List<ReplayActionCaseItem> caseItems, PlanExecutionContext<?> executionContext) {
+        Map<ReplayActionItem, List<ReplayActionCaseItem>> actionsOfBatch = caseItems.stream()
+                .collect(Collectors.groupingBy(ReplayActionCaseItem::getParent));
+
+        actionsOfBatch.forEach((actionItem, casesOfAction) -> {
+                    // warmUp should be done once for each endpoint
+                    if (!actionItem.isItemProcessed()) {
+                        actionItem.setItemProcessed(true);
+                        progressEvent.onActionBeforeSend(actionItem);
+                        // todo add biz log
+                        activeRemoteHost(casesOfAction);
+                    }
+                });
+
+        executionContext.getActionItemSet().addAll(actionsOfBatch.keySet());
     }
 
     public void releaseCasesOfContext(ReplayPlan replayPlan, PlanExecutionContext<?> executionContext) {
@@ -117,6 +126,7 @@ public class ReplayCaseTransmitService {
     private ReplayActionCaseItem cloneCaseItem(List<ReplayActionCaseItem> groupValues, int index) {
         ReplayActionCaseItem caseItem = new ReplayActionCaseItem();
         ReplayActionCaseItem source = groupValues.get(index);
+        caseItem.setId(source.getId());
         caseItem.setRecordId(source.getRecordId());
         caseItem.setTargetResultId(source.getTargetResultId());
         caseItem.setCaseType(source.getCaseType());

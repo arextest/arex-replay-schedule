@@ -65,6 +65,7 @@ public final class PlanConsumeService {
             qpsLimiter.setReplayPlan(replayPlan);
             replayPlan.setPlanStatus(ExecutionStatus.buildNormal(qpsLimiter));
             replayPlan.setLimiter(qpsLimiter);
+            replayPlan.getReplayActionItemList().forEach(replayActionItem -> replayActionItem.setSendRateLimiter(qpsLimiter));
             replayPlan.buildActionItemMap();
             planExecutionMonitor.register(replayPlan);
             BizLogger.recordQpsInit(replayPlan, qpsLimiter.getPermits(), replayPlan.getMinInstanceCount());
@@ -156,12 +157,12 @@ public final class PlanConsumeService {
                 break;
             case NORMAL:
             default:
-                this.sendByPaging(replayPlan, executionContext);
+                this.consumeContextPaged(replayPlan, executionContext);
         }
     }
 
 
-    private void sendByPaging(ReplayPlan replayPlan, PlanExecutionContext executionContext) {
+    private void consumeContextPaged(ReplayPlan replayPlan, PlanExecutionContext executionContext) {
         ExecutionStatus executionStatus = executionContext.getExecutionStatus();
 
         int contextCount = 0;
