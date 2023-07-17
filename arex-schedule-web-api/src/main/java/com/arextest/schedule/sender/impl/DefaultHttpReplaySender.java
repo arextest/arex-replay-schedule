@@ -27,10 +27,9 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-
 @Slf4j
 @Component
-public final class HttpServletReplaySender extends AbstractReplaySender {
+public final class DefaultHttpReplaySender extends AbstractReplaySender {
     @Resource
     private HttpWepServiceApiClient httpWepServiceApiClient;
 
@@ -43,6 +42,11 @@ public final class HttpServletReplaySender extends AbstractReplaySender {
     @Override
     public boolean isSupported(String category) {
         return MockCategoryType.SERVLET.getName().equals(category);
+    }
+
+    @Override
+    public int getOrder() {
+        return -1;
     }
 
     @Override

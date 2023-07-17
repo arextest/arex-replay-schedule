@@ -40,7 +40,7 @@
       ```
   1. **Extends the replay sender if you have a requirement**
   
-     There is a `DefaultHttpServletReplaySender` implemented `ReplaySender` used to handle http request,such as:put,get,post,delete etc.
+     There is a `DefaultHttpReplaySender` implemented `ReplaySender` used to handle http request,such as:put,get,post,delete etc.
      
      You should be write another implementation which loaded by spring,the `ReplaySender` defined as following:
      
