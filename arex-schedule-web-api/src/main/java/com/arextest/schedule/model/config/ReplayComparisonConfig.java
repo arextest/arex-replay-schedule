@@ -2,6 +2,7 @@ package com.arextest.schedule.model.config;
 
 
 import com.arextest.model.mock.MockCategoryType;
+import com.arextest.schedule.common.CommonConstant;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -14,10 +15,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by wang_yc on 2021/10/14
@@ -36,8 +34,6 @@ public class ReplayComparisonConfig {
     @JsonDeserialize(keyUsing = MapKeyDeserializerUtils.class)
     @JsonSerialize(keyUsing = MapKeySerializerUtils.class)
     private Map<List<String>, List<List<String>>> listSortMap;
-
-    private Map<String, ReplayComparisonConfig> dependencyConfigMap;
 
     public final boolean checkIgnoreMockMessageType(String type) {
         // [b_yu] 2022-10-11 Dynamic type does not compare
@@ -76,4 +72,10 @@ public class ReplayComparisonConfig {
         }
     }
 
+    public void fillCommonFields() {
+        this.setExclusionList(Collections.emptySet());
+        this.setInclusionList(Collections.emptySet());
+        this.setListSortMap(Collections.emptyMap());
+        this.setReferenceMap(Collections.emptyMap());
+    }
 }

@@ -18,6 +18,7 @@ import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayCompareResult;
+import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.MetricService;
@@ -62,7 +63,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             MDCTracer.addPlanId(planId);
             MDCTracer.addPlanItemId(caseItem.getPlanItemId());
 
-            ReplayComparisonConfig operationConfig = getCompareConfig(caseItem.getParent());
+            ComparisonInterfaceConfig operationConfig = getInterfaceConfig(caseItem.getParent());
 
             List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
             List<CategoryComparisonHolder> waitCompareMap = buildWaitCompareList(caseItem, useReplayId);
@@ -108,7 +109,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
      * 1. record and replay data through compareKey.
      */
     private List<ReplayCompareResult> compareReplayResult(CategoryComparisonHolder bindHolder,
-                                     ReplayComparisonConfig operationConfig, ReplayActionCaseItem caseItem) {
+                                                          ComparisonInterfaceConfig operationConfig, ReplayActionCaseItem caseItem) {
         List<ReplayCompareResult> compareResults = new ArrayList<>();
         List<CompareItem> recordResults = bindHolder.getRecord();
         List<CompareItem> replayResults = bindHolder.getReplayResult();
@@ -162,7 +163,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         return compareResults;
     }
 
-    private ReplayCompareResult compareRecordAndResult(ReplayComparisonConfig operationConfig, ReplayActionCaseItem caseItem,
+    private ReplayCompareResult compareRecordAndResult(ComparisonInterfaceConfig operationConfig, ReplayActionCaseItem caseItem,
                                                        String category, CompareItem target, CompareItem source) {
         ReplayComparisonConfig itemConfig = CompareConfigService.pickConfig(target, operationConfig, category);
 
@@ -262,7 +263,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         diffResult.setInstanceId(instanceId);
     }
 
-    private void addMissResult(String category, ReplayComparisonConfig operationConfig, List<CompareItem> compareItems,
+    private void addMissResult(String category, ComparisonInterfaceConfig operationConfig, List<CompareItem> compareItems,
                                ReplayActionCaseItem caseItem, List<ReplayCompareResult> resultList, boolean missRecord) {
         if (CollectionUtils.isEmpty(compareItems)) {
             return;
@@ -290,8 +291,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
     }
 
-    private ReplayComparisonConfig getCompareConfig(ReplayActionItem actionItem) {
-        return compareConfigService.loadConfig(actionItem);
+    private ComparisonInterfaceConfig getInterfaceConfig(ReplayActionItem actionItem) {
+        return compareConfigService.loadInterfaceConfig(actionItem);
     }
 
     public static CompareOptions buildCompareRequest(String category, ReplayComparisonConfig compareConfig) {
