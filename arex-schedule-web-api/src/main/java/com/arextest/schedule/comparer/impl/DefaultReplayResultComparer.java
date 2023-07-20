@@ -65,7 +65,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             MDCTracer.addPlanId(planId);
             MDCTracer.addPlanItemId(caseItem.getPlanItemId());
 
-            ComparisonInterfaceConfig operationConfig = getInterfaceConfig(caseItem.getParent());
+            ComparisonInterfaceConfig operationConfig = compareConfigService.loadInterfaceConfig(caseItem.getParent());
             ComparisonGlobalConfig globalConfig = compareConfigService.loadGlobalConfig(planId);
 
             List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
@@ -304,10 +304,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             resultList.add(resultItem);
         }
         return resultList;
-    }
-
-    private ComparisonInterfaceConfig getInterfaceConfig(ReplayActionItem actionItem) {
-        return compareConfigService.loadInterfaceConfig(actionItem);
     }
 
     public static CompareOptions buildCompareRequest(String category, ReplayComparisonConfig compareConfig) {
