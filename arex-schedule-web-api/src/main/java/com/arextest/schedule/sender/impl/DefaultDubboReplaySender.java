@@ -31,10 +31,14 @@ import java.util.Map;
  */
 @Slf4j
 @Component
-public class DubboReplaySender extends AbstractReplaySender {
+public class DefaultDubboReplaySender extends AbstractReplaySender {
     @Override
     public boolean isSupported(String categoryType) {
         return MockCategoryType.DUBBO_PROVIDER.getName().equals(categoryType);
+    }
+    @Override
+    public int getOrder() {
+        return -1;
     }
     @Override
     public boolean send(ReplayActionCaseItem caseItem) {

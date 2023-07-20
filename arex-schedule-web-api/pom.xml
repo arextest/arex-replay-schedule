@@ -195,7 +195,6 @@
                         <configuration>
                             <excludes>
                                 <exclude>**/WebSpringBootServletInitializer.java</exclude>
-                                <exclude>**/DubboReplaySender.java</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
@@ -250,7 +249,6 @@
                         <configuration>
                             <excludes>
                                 <exclude>**/WebSpringBootServletInitializer.java</exclude>
-                                <exclude>**/DubboReplaySender.java</exclude>
                             </excludes>
                         </configuration>
                     </plugin>

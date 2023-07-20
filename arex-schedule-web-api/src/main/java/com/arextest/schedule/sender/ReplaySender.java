@@ -2,8 +2,6 @@ package com.arextest.schedule.sender;
 
 import com.arextest.schedule.model.ReplayActionCaseItem;
 
-import java.util.Map;
-
 /**
  * @author jmo
  * @since 2021/9/16
@@ -30,5 +28,15 @@ public interface ReplaySender {
      */
     default boolean activeRemoteService(ReplayActionCaseItem caseItem) {
         return true;
+    }
+
+    /**
+     * The value is optional and represents an order value. Higher values have higher priority.
+     * The default value is 0. For the same category type sender if you want to implement it,
+     * make sure that the order is greater than default implement.
+     * @return order
+     */
+    default int getOrder() {
+        return 0;
     }
 }
