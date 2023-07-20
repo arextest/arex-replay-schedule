@@ -152,7 +152,7 @@ public final class CompareConfigService {
 
     public static ReplayComparisonConfig pickConfig(ComparisonGlobalConfig globalConfig, ComparisonInterfaceConfig operationConfig,
                                                     String category, String operationName) {
-        boolean mainEntryType = Optional.ofNullable(operationConfig.getOperationType())
+        boolean mainEntryType = Optional.ofNullable(operationConfig.getOperationTypes())
                 .map(types -> types.contains(category)).orElse(false);
         boolean mainEntryNameMatched = Optional.ofNullable(operationConfig.getOperationName())
                 .map(name -> name.equals(operationName)).orElse(false);

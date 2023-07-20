@@ -2,7 +2,6 @@ package com.arextest.schedule.model.config;
 
 
 import com.arextest.model.mock.MockCategoryType;
-import com.arextest.schedule.common.CommonConstant;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -23,7 +22,7 @@ import java.util.*;
 @Data
 public class ReplayComparisonConfig {
     private String operationName;
-    private List<String> operationType;
+    private List<String> operationTypes;
     private Set<List<String>> exclusionList;
     private Set<List<String>> inclusionList;
 
