@@ -10,6 +10,7 @@ import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
 import com.mongodb.client.result.UpdateResult;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -81,7 +82,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
         query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()));
         if (StringUtils.hasText(lastId)) {
-            query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_ID).gt(lastId));
+            query.addCriteria(Criteria.where(DASH_ID).gt(new ObjectId(lastId)));
         }
         query.limit(pageSize);
         query.with(Sort.by(Sort.Order.asc(DASH_ID)));
