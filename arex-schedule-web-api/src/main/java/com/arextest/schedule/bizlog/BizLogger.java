@@ -209,8 +209,17 @@ public class BizLogger {
         CONTEXT_NORMAL(204, "Context: {0}, execute normal, {1} cases sent."),
 
         ACTION_ITEM_CASE_SAVED(306, "Operation id {0} saved total {1} cases to send, took {2} ms."),
+
+        @Deprecated
+        ACTION_ITEM_EXECUTE_CONTEXT(300, "Operation: {0} id: {1} under context: {2} starts executing action type: {3}."),
         ACTION_ITEM_INIT_TOTAL_COUNT(302, "Operation: {0} id: {1} init total case count: {2}."),
         ACTION_ITEM_STATUS_CHANGED(303, "Operation: {0} id: {1} status changed to {2}, because of [{3}]."),
+
+        @Deprecated
+        ACTION_ITEM_SENT(304, "All cases of Operation: {0} id: {1} sent, total size: {2}"),
+        @Deprecated
+        ACTION_ITEM_BATCH_SENT(305, "Batch cases of Operation: {0} id: {1} sent, size: {2}"),
+
         RESUME_START(400, "Plan resumed with action size of {0}"),
 
         ;
