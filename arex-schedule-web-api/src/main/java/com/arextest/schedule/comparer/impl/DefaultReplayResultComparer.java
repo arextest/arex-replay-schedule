@@ -18,6 +18,7 @@ import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayCompareResult;
+import com.arextest.schedule.model.config.ComparisonGlobalConfig;
 import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.progress.ProgressTracer;
@@ -26,6 +27,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.util.StopWatch;
 
 import java.util.*;
@@ -42,9 +44,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     private static final int INDEX_NOT_FOUND = -1;
     private static final CompareSDK COMPARE_INSTANCE = new CompareSDK();
     private final MetricService metricService;
-    private static List<String> ignoreInDataBaseMocker = Collections.singletonList("body");
+    private static final List<String> ignoreInDataBaseMocker = Collections.singletonList("body");
 
-    private static long MAX_TIME = Long.MAX_VALUE;
+    private static final long MAX_TIME = Long.MAX_VALUE;
 
     static {
         COMPARE_INSTANCE.getGlobalOptions().putNameToLower(true).putNullEqualsEmpty(true).putIgnoredTimePrecision(1000);
@@ -64,6 +66,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             MDCTracer.addPlanItemId(caseItem.getPlanItemId());
 
             ComparisonInterfaceConfig operationConfig = getInterfaceConfig(caseItem.getParent());
+            ComparisonGlobalConfig globalConfig = compareConfigService.loadGlobalConfig(planId);
 
             List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
             List<CategoryComparisonHolder> waitCompareMap = buildWaitCompareList(caseItem, useReplayId);
@@ -76,7 +79,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 if (operationConfig.checkIgnoreMockMessageType(bindHolder.getCategoryName())) {
                     continue;
                 }
-                replayCompareResults.addAll(compareReplayResult(bindHolder, operationConfig, caseItem));
+                replayCompareResults.addAll(compareReplayResult(bindHolder, caseItem, operationConfig, globalConfig));
             }
             if (CollectionUtils.isEmpty(replayCompareResults) &&
                 MockCategoryType.Q_MESSAGE_CONSUMER.getName().equalsIgnoreCase(caseItem.getCaseType())) {
@@ -109,7 +112,10 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
      * 1. record and replay data through compareKey.
      */
     private List<ReplayCompareResult> compareReplayResult(CategoryComparisonHolder bindHolder,
-                                                          ComparisonInterfaceConfig operationConfig, ReplayActionCaseItem caseItem) {
+                                                          ReplayActionCaseItem caseItem,
+                                                          ComparisonInterfaceConfig operationConfig,
+                                                          ComparisonGlobalConfig comparisonGlobalConfig) {
+        Pair<ComparisonGlobalConfig, ComparisonInterfaceConfig> configPair = Pair.of(comparisonGlobalConfig, operationConfig);
         List<ReplayCompareResult> compareResults = new ArrayList<>();
         List<CompareItem> recordResults = bindHolder.getRecord();
         List<CompareItem> replayResults = bindHolder.getReplayResult();
@@ -120,8 +126,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
         final String category = bindHolder.getCategoryName();
         if (sourceEmpty || targetEmpty) {
-            addMissResult(category, operationConfig, recordResults, caseItem, compareResults, false);
-            addMissResult(category, operationConfig, replayResults, caseItem, compareResults, true);
+            compareResults.addAll(calculateMissResult(category, configPair, recordResults, caseItem, false));
+            compareResults.addAll(calculateMissResult(category, configPair, replayResults, caseItem, true));
             return compareResults;
         }
 
@@ -140,7 +146,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             }
 
             if (StringUtils.isEmpty(compareKey)) {
-                addMissResult(category, operationConfig, Collections.singletonList(resultCompareItem), caseItem, compareResults, true);
+                compareResults.addAll(calculateMissResult(category, configPair, Collections.singletonList(resultCompareItem), caseItem, true));
                 continue;
             }
 
@@ -149,27 +155,30 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 if (CollectionUtils.isEmpty(recordCompareItems)) {
                     continue;
                 }
-                compareResults.add(compareRecordAndResult(operationConfig, caseItem, category, resultCompareItem, recordCompareItems.get(0)));
+                ReplayComparisonConfig compareConfig = CompareConfigService
+                        .pickConfig(comparisonGlobalConfig, operationConfig, recordCompareItems.get(0), category);
+                compareResults.add(compareRecordAndResult(compareConfig, caseItem, category, resultCompareItem, recordCompareItems.get(0)));
                 usedRecordKeys.add(compareKey);
             } else {
-                addMissResult(category, operationConfig, Collections.singletonList(resultCompareItem), caseItem, compareResults, true);
+                compareResults.addAll(calculateMissResult(category, configPair, Collections.singletonList(resultCompareItem), caseItem, true));
             }
         }
 
         recordMap.keySet()
                 .stream()
                 .filter(key -> !usedRecordKeys.contains(key)) // unused keys
-                .forEach(key -> addMissResult(category, operationConfig, recordMap.get(key), caseItem, compareResults, false));
+                .forEach(key -> {
+                    compareResults.addAll(calculateMissResult(category, configPair, recordMap.get(key), caseItem, false));
+                });
         return compareResults;
     }
 
-    private ReplayCompareResult compareRecordAndResult(ComparisonInterfaceConfig operationConfig, ReplayActionCaseItem caseItem,
+    private ReplayCompareResult compareRecordAndResult(ReplayComparisonConfig compareConfig, ReplayActionCaseItem caseItem,
                                                        String category, CompareItem target, CompareItem source) {
-        ReplayComparisonConfig itemConfig = CompareConfigService.pickConfig(target, operationConfig, category);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start(LogType.COMPARE_SDK.getValue());
-        CompareResult comparedResult = compareProcess(category, source.getCompareContent(), target.getCompareContent(), itemConfig);
+        CompareResult comparedResult = compareProcess(category, source.getCompareContent(), target.getCompareContent(), compareConfig);
         stopWatch.stop();
         metricService.recordTimeEvent(LogType.COMPARE_SDK.getValue(), caseItem.getParent().getPlanId(),
                 caseItem.getParent().getAppId(), source.getCompareContent(), stopWatch.getTotalTimeMillis());
@@ -263,14 +272,19 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         diffResult.setInstanceId(instanceId);
     }
 
-    private void addMissResult(String category, ComparisonInterfaceConfig operationConfig, List<CompareItem> compareItems,
-                               ReplayActionCaseItem caseItem, List<ReplayCompareResult> resultList, boolean missRecord) {
+    /**
+     * Call if one of the compare item is missed
+     */
+    private List<ReplayCompareResult> calculateMissResult(String category, Pair<ComparisonGlobalConfig, ComparisonInterfaceConfig> configPair,
+                                                          List<CompareItem> compareItems, ReplayActionCaseItem caseItem, boolean missRecord) {
         if (CollectionUtils.isEmpty(compareItems)) {
-            return;
+            return Collections.emptyList();
         }
+        List<ReplayCompareResult> resultList = new ArrayList<>();
+
         String operation;
         for (CompareItem item : compareItems) {
-            ReplayComparisonConfig itemConfig = CompareConfigService.pickConfig(item, operationConfig, category);
+            ReplayComparisonConfig itemConfig = CompareConfigService.pickConfig(configPair.getLeft(), configPair.getRight(), item, category);
             operation = item.getCompareOperation();
             CompareResult comparedResult = null;
             if (missRecord) {
@@ -289,6 +303,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             resultItem.setServiceName(item.getCompareService());
             resultList.add(resultItem);
         }
+        return resultList;
     }
 
     private ComparisonInterfaceConfig getInterfaceConfig(ReplayActionItem actionItem) {

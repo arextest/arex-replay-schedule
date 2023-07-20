@@ -137,15 +137,17 @@ public final class CompareConfigService {
         return res;
     }
 
-    public static ReplayComparisonConfig pickConfig(CompareItem compareItem, ComparisonInterfaceConfig operationConfig, String category) {
+    public static ReplayComparisonConfig pickConfig(ComparisonGlobalConfig comparisonGlobalConfig,
+                                                    ComparisonInterfaceConfig operationConfig,
+                                                    CompareItem compareItem,  String category) {
         if (compareItem.isEntryPointCategory()) {
             return operationConfig;
         }
 
         String depKey = ComparisonDependencyConfig.dependencyKey(category, compareItem.getCompareOperation());
-        return Optional.ofNullable(operationConfig.getDependencyConfigMap())
-                .map(dependencyConfig -> dependencyConfig.get(depKey))
-                .orElse(new ComparisonDependencyConfig());
+        Optional<ComparisonDependencyConfig> matchedDep = Optional.ofNullable(operationConfig.getDependencyConfigMap())
+                .map(dependencyConfig -> dependencyConfig.get(depKey));
+        return matchedDep.isPresent() ? matchedDep.get() : comparisonGlobalConfig;
     }
 
     public static ReplayComparisonConfig pickConfig(ComparisonGlobalConfig globalConfig, ComparisonInterfaceConfig operationConfig,
