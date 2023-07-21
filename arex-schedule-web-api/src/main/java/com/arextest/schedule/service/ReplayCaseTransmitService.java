@@ -152,14 +152,13 @@ public class ReplayCaseTransmitService {
 
     private void doSendValuesToRemoteHost(List<ReplayActionCaseItem> values, ExecutionStatus executionStatus) {
         final int valueSize = values.size();
-        final ReplayActionCaseItem caseItem = values.get(0);
-        final ReplayActionItem actionItem = caseItem.getParent();
-        final SendSemaphoreLimiter semaphore = actionItem.getSendRateLimiter();
+        final SendSemaphoreLimiter semaphore = executionStatus.getLimiter();
         final CountDownLatch groupSentLatch = new CountDownLatch(valueSize);
 
         for (int i = 0; i < valueSize; i++) {
             ReplayActionCaseItem replayActionCaseItem = values.get(i);
-            MDCTracer.addDetailId(caseItem.getId());
+            ReplayActionItem actionItem = replayActionCaseItem.getParent();
+            MDCTracer.addDetailId(replayActionCaseItem.getId());
             // checkpoint: before init case runnable
             if (executionStatus.isAbnormal()) {
                 LOGGER.info("replay interrupted,case item id:{}", replayActionCaseItem.getId());
@@ -289,7 +288,7 @@ public class ReplayCaseTransmitService {
 
 
     private class AsyncCompareCaseTaskRunnable extends AbstractTracedRunnable {
-        private ReplayActionCaseItem caseItem;
+        private final ReplayActionCaseItem caseItem;
 
         AsyncCompareCaseTaskRunnable(ReplayActionCaseItem caseItem) {
             this.caseItem = caseItem;
