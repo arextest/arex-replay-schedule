@@ -12,6 +12,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -101,10 +102,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
                 Aggregation.match(criteria),
                 Aggregation.match(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId)),
                 Aggregation.match(Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue())),
-                Aggregation.group(ReplayActionCaseItem.FIELD_PLAN_ITEM_ID)
-                        .first(ReplayActionCaseItem.FIELD_PLAN_ITEM_ID).as(ReplayActionCaseItem.FIELD_PLAN_ITEM_ID) // to include this field in the result entity
-                        .count().as(COUNT_FIELD),
-                Aggregation.project(ReplayActionCaseItem.FIELD_PLAN_ITEM_ID, COUNT_FIELD)
+                Aggregation.group(ReplayActionCaseItem.FIELD_PLAN_ITEM_ID).count().as(COUNT_FIELD)
         );
         List<GroupCountRes> aggRes = mongoTemplate.aggregate(aggregation, ReplayRunDetailsCollection.class, GroupCountRes.class).getMappedResults();
         Map<String, Long> res = new HashMap<>();
@@ -116,6 +114,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
     @Data
     private static class GroupCountRes {
+        @Id
         private String planItemId;
         private Long count;
     }
