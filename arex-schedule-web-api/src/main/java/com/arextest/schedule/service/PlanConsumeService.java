@@ -209,6 +209,7 @@ public final class PlanConsumeService {
             return;
         }
 
+        // TODO: 2023/7/20 rerun 
         if (replayActionItem.getReplayFinishTime() == null
                 && replayActionItem.getReplayStatus() != ReplayStatusType.RUNNING.getValue()) {
             progressEvent.onActionBeforeSend(replayActionItem);
