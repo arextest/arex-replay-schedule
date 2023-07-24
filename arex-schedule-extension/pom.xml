@@ -7,11 +7,11 @@
     <parent>
         <groupId>com.arextest</groupId>
         <artifactId>arex-schedule-parent</artifactId>
-        <version>1.0.30</version>
+        <version>1.0.32</version>
     </parent>
 
     <artifactId>arex-schedule-extension</artifactId>
-    <version>1.0.30</version>
+    <version>1.0.32</version>
     <name>${project.groupId}:${project.artifactId}</name>
 
     <dependencies>
