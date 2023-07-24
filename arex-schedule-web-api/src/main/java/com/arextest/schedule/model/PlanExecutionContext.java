@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.springframework.data.mongodb.core.query.Criteria;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Created by Qzmo on 2023/5/15
@@ -28,7 +26,4 @@ public class PlanExecutionContext<T> {
 
     @JsonIgnore
     private T dependencies;
-
-    @JsonIgnore
-    private Set<ReplayActionItem> actionItemSet = new HashSet<>();
 }

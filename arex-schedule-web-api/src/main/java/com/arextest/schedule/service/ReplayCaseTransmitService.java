@@ -88,8 +88,6 @@ public class ReplayCaseTransmitService {
                         activeRemoteHost(casesOfAction);
                     }
                 });
-
-        executionContext.getActionItemSet().addAll(actionsOfBatch.keySet());
     }
 
     public void releaseCasesOfContext(ReplayPlan replayPlan, PlanExecutionContext<?> executionContext) {
