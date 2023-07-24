@@ -93,7 +93,7 @@ public class ReplayCaseTransmitService {
         replayActionItem.getSendRateLimiter().batchRelease(false, contextCasesCount);
 
         // if we skip the rest of cases remaining in the action item, set its status
-        if (Integer.valueOf(replayActionItem.getReplayCaseCount()).equals(replayActionItem.getCaseProcessCount())) {
+        if (replayActionItem.getReplayCaseCount() == replayActionItem.getCaseProcessCount().get()) {
             progressEvent.onActionInterrupted(replayActionItem);
             ReplayPlan replayPlan = replayActionItem.getParent();
             for (int i = 0; i < contextCasesCount; i++) {
