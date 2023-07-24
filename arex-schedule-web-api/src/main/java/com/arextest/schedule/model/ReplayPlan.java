@@ -4,6 +4,7 @@ import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
 import com.arextest.schedule.model.plan.BuildReplayPlanType;
+import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
@@ -100,4 +101,6 @@ public class ReplayPlan {
 
     @JsonIgnore
     private ScheduledFuture<?> monitorFuture;
+
+    private List<ReplayPlanStageInfo> replayPlanStageList;
 }

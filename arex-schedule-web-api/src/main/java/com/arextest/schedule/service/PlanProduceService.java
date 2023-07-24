@@ -7,6 +7,9 @@ import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
 import com.arextest.schedule.model.plan.BuildReplayPlanResponse;
+import com.arextest.schedule.model.plan.PlanStageEnum;
+import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
+import com.arextest.schedule.model.plan.StageStatusEnum;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.progress.ProgressEvent;
@@ -19,6 +22,7 @@ import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.plan.builder.BuildPlanValidateResult;
 import com.arextest.schedule.plan.builder.ReplayPlanBuilder;
 import com.arextest.schedule.utils.ReplayParentBinder;
+import java.util.ArrayList;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -163,6 +167,15 @@ public class PlanProduceService {
 
         replayPlan.setMinInstanceCount(planContext.determineMinInstanceCount());
         return replayPlan;
+    }
+
+    private List<ReplayPlanStageInfo> initReplayPlanStageList() {
+        List<ReplayPlanStageInfo> replayPlanStageList = new ArrayList<>(PlanStageEnum.MAIN_PROCESS_STAGE_NUM);
+        replayPlanStageList.add(ReplayPlanStageInfo.initStage(PlanStageEnum.INIT));
+        replayPlanStageList.add(ReplayPlanStageInfo.initStage(PlanStageEnum.PRE_LOAD));
+        replayPlanStageList.add(ReplayPlanStageInfo.initStage(PlanStageEnum.RUN));
+        replayPlanStageList.add(ReplayPlanStageInfo.initStage(PlanStageEnum.FINISH));
+        return replayPlanStageList;
     }
 
     private String getIpAddress(List<ServiceInstance> serviceInstances) {
