@@ -73,7 +73,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         return true;
     }
 
-    public List<ReplayActionCaseItem> waitingSendList(String planId, int pageSize, List<Criteria> baseCriteria, String lastId) {
+    public List<ReplayActionCaseItem> waitingSendList(String planId, int pageSize, List<Criteria> baseCriteria, String minId) {
         Query query = new Query();
 
         Optional.ofNullable(baseCriteria).ifPresent(criteria -> {
@@ -82,8 +82,8 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
         query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
         query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()));
-        if (StringUtils.hasText(lastId)) {
-            query.addCriteria(Criteria.where(DASH_ID).gt(new ObjectId(lastId)));
+        if (StringUtils.hasText(minId)) {
+            query.addCriteria(Criteria.where(DASH_ID).gt(new ObjectId(minId)));
         }
         query.limit(pageSize);
         query.with(Sort.by(Sort.Order.asc(DASH_ID)));
