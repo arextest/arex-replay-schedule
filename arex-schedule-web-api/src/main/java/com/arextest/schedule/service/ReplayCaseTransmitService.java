@@ -84,8 +84,7 @@ public class ReplayCaseTransmitService {
                     if (!actionItem.isItemProcessed()) {
                         actionItem.setItemProcessed(true);
                         progressEvent.onActionBeforeSend(actionItem);
-                        // todo add biz log
-                        activeRemoteHost(casesOfAction);
+                        // activeRemoteHost(casesOfAction);
                     }
                 });
     }
@@ -235,6 +234,7 @@ public class ReplayCaseTransmitService {
         return null;
     }
 
+    // todo: handle this before version recovery
     private void activeRemoteHost(List<ReplayActionCaseItem> sourceItemList) {
         try {
             for (int i = 0; i < ACTIVE_SERVICE_RETRY_COUNT && i < sourceItemList.size(); i++) {
