@@ -76,7 +76,7 @@ public class BizLogger {
         BizLog log = BizLog.info()
                 .logType(BizLogContent.ACTION_ITEM_CASE_SAVED.getType())
                 .message(BizLogContent.ACTION_ITEM_CASE_SAVED.format(
-                        action.getId(),
+                        action.getOperationName(),
                         saveCount,
                         elapsed))
                 .build();
@@ -208,7 +208,7 @@ public class BizLogger {
         CONTEXT_SKIP(203, "Context: {0}, Action: {1}, skipped {2} cases "),
         CONTEXT_NORMAL(204, "Context: {0}, execute normal, {1} cases sent."),
 
-        ACTION_ITEM_CASE_SAVED(306, "Operation id {0} saved total {1} cases to send, took {2} ms."),
+        ACTION_ITEM_CASE_SAVED(306, "Operation {0} saved total {1} cases to send, took {2} ms."),
 
         @Deprecated
         ACTION_ITEM_EXECUTE_CONTEXT(300, "Operation: {0} id: {1} under context: {2} starts executing action type: {3}."),
