@@ -65,7 +65,7 @@ public class ReplayCaseTransmitService {
             return;
         }
 
-        prepareActionItems(caseItems, executionContext);
+        prepareActionItems(caseItems);
 
         try {
             doSendValuesToRemoteHost(caseItems, executionStatus);
@@ -75,7 +75,7 @@ public class ReplayCaseTransmitService {
         }
     }
 
-    private void prepareActionItems(List<ReplayActionCaseItem> caseItems, PlanExecutionContext<?> executionContext) {
+    private void prepareActionItems(List<ReplayActionCaseItem> caseItems) {
         Map<ReplayActionItem, List<ReplayActionCaseItem>> actionsOfBatch = caseItems.stream()
                 .collect(Collectors.groupingBy(ReplayActionCaseItem::getParent));
 
