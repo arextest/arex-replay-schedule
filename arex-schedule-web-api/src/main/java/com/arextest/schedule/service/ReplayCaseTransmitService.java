@@ -84,7 +84,7 @@ public class ReplayCaseTransmitService {
                     if (!actionItem.isItemProcessed()) {
                         actionItem.setItemProcessed(true);
                         progressEvent.onActionBeforeSend(actionItem);
-                        // activeRemoteHost(casesOfAction);
+                        // todo possible Jit warmup point
                     }
                 });
     }
@@ -234,25 +234,6 @@ public class ReplayCaseTransmitService {
         return null;
     }
 
-    // todo: handle this before version recovery
-    private void activeRemoteHost(List<ReplayActionCaseItem> sourceItemList) {
-        try {
-            for (int i = 0; i < ACTIVE_SERVICE_RETRY_COUNT && i < sourceItemList.size(); i++) {
-                ReplayActionCaseItem caseItem = cloneCaseItem(sourceItemList, i);
-                ReplaySender replaySender = findReplaySender(caseItem);
-                if (replaySender == null) {
-                    continue;
-                }
-                if (replaySender.activeRemoteService(caseItem)) {
-                    return;
-                }
-                Thread.sleep(CommonConstant.THREE_SECOND_MILLIS);
-            }
-        } catch (Exception ex) {
-            LOGGER.error("active remote host error", ex);
-            Thread.currentThread().interrupt();
-        }
-    }
 
     private void markAllSendStatus(List<ReplayActionCaseItem> sourceItemList, CaseSendStatusType sendStatusType) {
         for (ReplayActionCaseItem caseItem : sourceItemList) {

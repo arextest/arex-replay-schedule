@@ -172,7 +172,7 @@ public final class PlanConsumeService {
             if (executionStatus.isAbnormal()) {
                 break;
             }
-            ReplayActionCaseItem lastItem = caseItems.size() > 0 ? caseItems.get(caseItems.size() - 1) : null;
+            ReplayActionCaseItem lastItem = CollectionUtils.isNotEmpty(caseItems) ? caseItems.get(caseItems.size() - 1) : null;
             caseItems = replayActionCaseItemRepository.waitingSendList(replayPlan.getId(),
                     CommonConstant.MAX_PAGE_SIZE,
                     executionContext.getContextCaseQuery(),
