@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 public final class CommonConstant {
     public static final int MAX_PAGE_SIZE = 1000;
     public static final String COMPARE_CONFIG_REDIS_KEY = "compare.config.";
+    public static final String COMPARE_GLOBAL_CONFIG_REDIS_KEY = "compare.config.global";
     public static final String AREX_REPLAY_ID = "arex-replay-id";
     public static final String AREX_RECORD_ID = "arex-record-id";
     public static final String CONFIG_VERSION_HEADER_NAME = "arex_replay_prepare_dependency";

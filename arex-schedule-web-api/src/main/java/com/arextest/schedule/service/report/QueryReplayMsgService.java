@@ -10,6 +10,8 @@ import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.comparer.impl.DefaultReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
 import com.arextest.schedule.model.ReplayCompareResult;
+import com.arextest.schedule.model.config.ComparisonGlobalConfig;
+import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.model.converter.ReplayCompareResultConverter;
 import com.arextest.schedule.model.report.QueryDiffMsgByIdResponseType;
@@ -42,9 +44,16 @@ public class QueryReplayMsgService {
         QueryDiffMsgByIdResponseType response = new QueryDiffMsgByIdResponseType();
 
         ReplayCompareResult compareResultBo = replayCompareResultRepository.queryCompareResultsById(id);
-        ReplayComparisonConfig compareConfig = compareConfigService.loadConfig(compareResultBo.getPlanItemId());
+
+        ComparisonInterfaceConfig operationConfig = compareConfigService.loadInterfaceConfig(compareResultBo.getPlanItemId());
+        ComparisonGlobalConfig globalConfig = compareConfigService.loadGlobalConfig(compareResultBo.getPlanId());
+
+
+        ReplayComparisonConfig itemConfig = CompareConfigService.pickConfig(globalConfig, operationConfig,
+                compareResultBo.getCategoryName(), compareResultBo.getOperationName());
+
         CompareOptions compareOptions = DefaultReplayResultComparer
-                .buildCompareRequest(compareResultBo.getCategoryName(), compareConfig);
+                .buildCompareRequest(compareResultBo.getCategoryName(), itemConfig);
 
         // bo may contain only quick compare result, need to fill log entities into BO
         if (DiffResultCode.COMPARED_WITH_DIFFERENCE == compareResultBo.getDiffResultCode()

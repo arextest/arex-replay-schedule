@@ -14,22 +14,15 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by wang_yc on 2021/10/14
  */
 @Data
 public class ReplayComparisonConfig {
-
-    // ignore according to type
-    private Set<String> ignoreTypeList;
-    // ignore according to interface
-    private Set<String> ignoreKeyList;
-
+    private String operationName;
+    private List<String> operationTypes;
     private Set<List<String>> exclusionList;
     private Set<List<String>> inclusionList;
 
@@ -52,7 +45,7 @@ public class ReplayComparisonConfig {
         if (Objects.equals(type, MockCategoryType.Q_MESSAGE_CONSUMER.getName())) {
             return true;
         }
-        return ignoreTypeList != null && ignoreTypeList.contains(type);
+        return false;
     }
 
     private static class MapKeyDeserializerUtils extends KeyDeserializer {
@@ -78,4 +71,10 @@ public class ReplayComparisonConfig {
         }
     }
 
+    public void fillCommonFields() {
+        this.setExclusionList(Collections.emptySet());
+        this.setInclusionList(Collections.emptySet());
+        this.setListSortMap(Collections.emptyMap());
+        this.setReferenceMap(Collections.emptyMap());
+    }
 }
