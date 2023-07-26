@@ -14,7 +14,6 @@ import java.util.Optional;
 /**
  * Created by Qzmo on 2023/6/8
  */
-@SuppressWarnings("rawtypes")
 public class BizLogger {
     // region <Plan Level Log>
     public static void recordPlanStart(ReplayPlan plan) {
@@ -73,25 +72,11 @@ public class BizLogger {
     }
     // endregion
 
-    // region <Action Level Log>
-    public static void recordActionUnderContext(ReplayActionItem action, PlanExecutionContext context) {
-        BizLog log = BizLog.info()
-                .logType(BizLogContent.ACTION_ITEM_EXECUTE_CONTEXT.getType())
-                .message(BizLogContent.ACTION_ITEM_EXECUTE_CONTEXT.format(
-                        action.getOperationName(),
-                        action.getId(),
-                        context.getContextName(),
-                        context.getActionType().name()))
-                .build();
-
-        log.postProcessAndEnqueue(action);
-    }
-
     public static void recordActionItemCaseSaved(ReplayActionItem action, int saveCount, long elapsed) {
         BizLog log = BizLog.info()
                 .logType(BizLogContent.ACTION_ITEM_CASE_SAVED.getType())
                 .message(BizLogContent.ACTION_ITEM_CASE_SAVED.format(
-                        action.getId(),
+                        action.getOperationName(),
                         saveCount,
                         elapsed))
                 .build();
@@ -123,31 +108,6 @@ public class BizLogger {
 
         log.postProcessAndEnqueue(action);
     }
-
-    public static void recordActionItemSent(ReplayActionItem action) {
-        BizLog log = BizLog.info()
-                .logType(BizLogContent.ACTION_ITEM_SENT.getType())
-                .message(BizLogContent.ACTION_ITEM_SENT.format(
-                        action.getOperationName(),
-                        action.getId(),
-                        action.getCaseProcessCount()))
-                .build();
-
-        log.postProcessAndEnqueue(action);
-    }
-
-    public static void recordActionItemBatchSent(ReplayActionItem action, int batchSize) {
-        BizLog log = BizLog.info()
-                .logType(BizLogContent.ACTION_ITEM_BATCH_SENT.getType())
-                .message(BizLogContent.ACTION_ITEM_BATCH_SENT.format(
-                        action.getOperationName(),
-                        action.getId(),
-                        batchSize))
-                .build();
-
-        log.postProcessAndEnqueue(action);
-    }
-    // endregion
 
     // region <QPS>
     public static void recordQpsInit(ReplayPlan plan, int initQps, int instanceCount) {
@@ -181,7 +141,7 @@ public class BizLogger {
         log.postProcessAndEnqueue(plan);
     }
 
-    public static void recordContextBeforeRun(PlanExecutionContext context, long elapsed) {
+    public static void recordContextBeforeRun(PlanExecutionContext<?> context, long elapsed) {
         BizLog log = BizLog.info()
                 .logType(BizLogContent.CONTEXT_START.getType())
                 .message(BizLogContent.CONTEXT_START.format(context.getContextName(),
@@ -191,7 +151,7 @@ public class BizLogger {
         log.postProcessAndEnqueue(context);
     }
 
-    public static void recordContextAfterRun(PlanExecutionContext context, long elapsed) {
+    public static void recordContextAfterRun(PlanExecutionContext<?> context, long elapsed) {
         BizLog log = BizLog.info()
                 .logType(BizLogContent.CONTEXT_AFTER_RUN.getType())
                 .message(BizLogContent.CONTEXT_AFTER_RUN.format(context.getContextName(), elapsed))
@@ -200,7 +160,7 @@ public class BizLogger {
         log.postProcessAndEnqueue(context);
     }
 
-    public static void recordContextSkipped(PlanExecutionContext context, ReplayActionItem actionItem, long skipCount) {
+    public static void recordContextSkipped(PlanExecutionContext<?> context, ReplayActionItem actionItem, long skipCount) {
         BizLog log = BizLog.info()
                 .logType(BizLogContent.CONTEXT_SKIP.getType())
                 .message(BizLogContent.CONTEXT_SKIP.format(context.getContextName(), actionItem.getId(), skipCount))
@@ -209,11 +169,10 @@ public class BizLogger {
         log.postProcessAndEnqueue(context);
     }
 
-    public static void recordContextProcessedNormal(PlanExecutionContext context, ReplayActionItem actionItem,
-                                                    long sentCount) {
+    public static void recordContextProcessedNormal(PlanExecutionContext<?> context, long sentCount) {
         BizLog log = BizLog.info()
                 .logType(BizLogContent.CONTEXT_NORMAL.getType())
-                .message(BizLogContent.CONTEXT_NORMAL.format(context.getContextName(), actionItem.getId(), sentCount))
+                .message(BizLogContent.CONTEXT_NORMAL.format(context.getContextName(), sentCount))
                 .build();
 
         log.postProcessAndEnqueue(context);
@@ -247,13 +206,18 @@ public class BizLogger {
         CONTEXT_START(200, "Context: {0} init with action: {1}, before hook took {2} ms."),
         CONTEXT_AFTER_RUN(202, "Context: {0} done, after hook took {1} ms."),
         CONTEXT_SKIP(203, "Context: {0}, Action: {1}, skipped {2} cases "),
-        CONTEXT_NORMAL(204, "Context: {0}, Action: {1} execute normal."),
+        CONTEXT_NORMAL(204, "Context: {0}, execute normal, {1} cases sent."),
 
-        ACTION_ITEM_CASE_SAVED(306, "Operation id {0} saved total {1} cases to send, took {2} ms."),
+        ACTION_ITEM_CASE_SAVED(306, "Operation {0} saved total {1} cases to send, took {2} ms."),
+
+        @Deprecated
         ACTION_ITEM_EXECUTE_CONTEXT(300, "Operation: {0} id: {1} under context: {2} starts executing action type: {3}."),
         ACTION_ITEM_INIT_TOTAL_COUNT(302, "Operation: {0} id: {1} init total case count: {2}."),
         ACTION_ITEM_STATUS_CHANGED(303, "Operation: {0} id: {1} status changed to {2}, because of [{3}]."),
+
+        @Deprecated
         ACTION_ITEM_SENT(304, "All cases of Operation: {0} id: {1} sent, total size: {2}"),
+        @Deprecated
         ACTION_ITEM_BATCH_SENT(305, "Batch cases of Operation: {0} id: {1} sent, size: {2}"),
 
         RESUME_START(400, "Plan resumed with action size of {0}"),

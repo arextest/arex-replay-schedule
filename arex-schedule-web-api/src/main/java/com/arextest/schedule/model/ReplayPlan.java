@@ -6,6 +6,7 @@ import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
 import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.util.*;
@@ -20,6 +21,7 @@ import java.util.concurrent.ScheduledFuture;
  */
 @Data
 @ToString(of = {"id", "appId", "sourceEnv", "sourceHost", "targetEnv", "targetHost"})
+@EqualsAndHashCode(of = {"id"})
 public class ReplayPlan {
     private String id;
     private String appId;
@@ -68,7 +70,7 @@ public class ReplayPlan {
     @JsonIgnore
     private List<ReplayActionItem> replayActionItemList;
     @JsonIgnore
-    private List<PlanExecutionContext> executionContexts;
+    private List<PlanExecutionContext<?>> executionContexts;
     @JsonIgnore
     private String appName;
     @JsonIgnore
@@ -100,4 +102,11 @@ public class ReplayPlan {
 
     @JsonIgnore
     private ScheduledFuture<?> monitorFuture;
+
+    @JsonIgnore
+    private Map<String, ReplayActionItem> actionItemMap = new HashMap<>();
+
+    public void buildActionItemMap() {
+        this.getReplayActionItemList().forEach(replayActionItem -> this.actionItemMap.put(replayActionItem.getId(), replayActionItem));
+    }
 }

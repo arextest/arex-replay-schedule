@@ -2,6 +2,7 @@ package com.arextest.schedule.model;
 
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import lombok.Builder;
+import lombok.Getter;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -11,6 +12,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @Builder
 public class ExecutionStatus {
     private AtomicReference<Boolean> canceled;
+    @Getter
     private SendSemaphoreLimiter limiter;
 
     public boolean isNormal() {
