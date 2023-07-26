@@ -6,6 +6,7 @@ import com.arextest.schedule.model.converter.ReplayPlanConverter;
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
 import com.mongodb.client.result.UpdateResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -29,6 +30,7 @@ public class ReplayPlanRepository implements RepositoryField {
     private static final String CASE_TOTAL_COUNT = "caseTotalCount";
     private static final String PLAN_FINISH_TIME = "planFinishTime";
     private static final String PLAN_CREATE_TIME = "planCreateTime";
+    private static final String REPLAY_PLAN_STAGE_LIST = "replayPlanStageList";
 
 
     public boolean save(ReplayPlan replayPlan) {
@@ -64,5 +66,15 @@ public class ReplayPlanRepository implements RepositoryField {
         query.addCriteria(Criteria.where(PLAN_CREATE_TIME).gte(new Date(to)).lte(new Date(from)));
         List<ReplayPlanCollection> replayPlanCollections = mongoTemplate.find(query, ReplayPlanCollection.class);
         return replayPlanCollections.stream().map(ReplayPlanConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
+    }
+
+    public boolean updateStage(ReplayPlan replayPlan) {
+        ReplayPlanCollection replayPlanCollection = ReplayPlanConverter.INSTANCE.daoFromDto(replayPlan);
+        Query query = Query.query(Criteria.where(DASH_ID).is(replayPlan.getId()));
+        Update update = MongoHelper.getUpdate();
+        update.set(REPLAY_PLAN_STAGE_LIST, replayPlan.getReplayPlanStageList());
+        ReplayPlanCollection plan = mongoTemplate.findAndModify(query, update,
+            FindAndModifyOptions.options().returnNew(false), ReplayPlanCollection.class);
+        return true;
     }
 }

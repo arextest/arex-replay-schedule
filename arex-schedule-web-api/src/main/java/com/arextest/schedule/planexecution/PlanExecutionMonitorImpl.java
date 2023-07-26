@@ -22,14 +22,13 @@ import java.util.concurrent.*;
 @Slf4j
 public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
     @Resource
-    private CacheProvider redisCacheProvider;
-    @Resource
     private ProgressTracer progressTracer;
     @Resource
     private ReplayBizLogRepository replayBizLogRepository;
-
     @Resource
     private ScheduledExecutorService monitorScheduler;
+    @Resource
+    private RedisCancelMonitor cancelMonitor;
 
     @Value("${arex.schedule.monitor.secondToRefresh}")
     public int SECOND_TO_REFRESH;
@@ -40,7 +39,6 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
     @Value("${arex.schedule.bizLog.secondToSave}")
     private long LOG_TIME_GAP_TO_SAVE_CHECK_BY_SEC;
 
-    private final RedisCancelMonitor cancelMonitor = new RedisCancelMonitor();
     private final ProgressMonitor progressMonitor = new ProgressMonitor();
     private final BizLoggerMonitor bizLoggerMonitor = new BizLoggerMonitor();
 
@@ -104,19 +102,6 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
         if (cancelMonitor.isPlanCanceled(plan)) {
             LOGGER.info("Plan {} cancel status set to true", plan.getId());
             plan.getPlanStatus().setCanceled(true);
-        }
-    }
-
-    private class RedisCancelMonitor {
-        private boolean isPlanCanceled(ReplayPlan plan) {
-            return isPlanCanceled(plan.getId());
-        }
-        private boolean isPlanCanceled(String planId) {
-            return isCancelled(PlanProduceService.buildStopPlanRedisKey(planId));
-        }
-
-        private boolean isCancelled(byte[] redisKey) {
-            return redisCacheProvider.get(redisKey) != null;
         }
     }
 

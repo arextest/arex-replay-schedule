@@ -102,5 +102,8 @@ public class ReplayPlan {
     @JsonIgnore
     private ScheduledFuture<?> monitorFuture;
 
+    @JsonIgnore
+    private ScheduledFuture<?> stageFuture;
+
     private List<ReplayPlanStageInfo> replayPlanStageList;
 }

@@ -6,6 +6,9 @@ import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
+import com.arextest.schedule.model.plan.PlanStageEnum;
+import com.arextest.schedule.model.plan.StageStatusEnum;
+import com.arextest.schedule.utils.StageUtils;
 import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
@@ -42,11 +45,17 @@ public final class CompareConfigService {
 
     public void preload(ReplayPlan plan) {
         Map<String, ReplayComparisonConfig> operationCompareConfig = new HashMap<>();
+        StageUtils.updateStage(PlanStageEnum.LOADING_CONFIG, System.currentTimeMillis(), null,
+            StageStatusEnum.ONGOING, null, plan.getReplayPlanStageList());
 
         if (!getReplayComparisonConfig(operationCompareConfig, plan)) {
             LOGGER.warn("prepare load appId comparison config empty");
+            StageUtils.updateStage(PlanStageEnum.LOADING_CONFIG, null, System.currentTimeMillis(),
+                StageStatusEnum.FAILED, null, plan.getReplayPlanStageList());
             return;
         }
+        StageUtils.updateStage(PlanStageEnum.LOADING_CONFIG, null, System.currentTimeMillis(),
+            StageStatusEnum.SUCCEEDED, null, plan.getReplayPlanStageList());
 
         for (ReplayActionItem actionItem : plan.getReplayActionItemList()) {
             String operationId = actionItem.getOperationId();

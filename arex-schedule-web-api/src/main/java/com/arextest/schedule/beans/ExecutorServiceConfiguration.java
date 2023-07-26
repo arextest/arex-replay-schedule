@@ -105,4 +105,14 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
 
         return new ScheduledThreadPoolExecutor(1, threadFactory);
     }
+
+    @Bean
+    public ScheduledExecutorService updatePlanStageScheduler() {
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("replay-updatePlanStage-%d")
+            .setDaemon(true)
+            .setUncaughtExceptionHandler(this)
+            .build();
+
+        return new ScheduledThreadPoolExecutor(1, threadFactory);
+    }
 }

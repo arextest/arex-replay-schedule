@@ -8,10 +8,10 @@ import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
 import com.arextest.schedule.model.plan.BuildReplayPlanResponse;
 import com.arextest.schedule.model.plan.PlanStageEnum;
-import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
 import com.arextest.schedule.model.plan.StageStatusEnum;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
+import com.arextest.schedule.planexecution.PlanExecutionMonitor;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.ReplayActionItem;
@@ -22,7 +22,7 @@ import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.plan.builder.BuildPlanValidateResult;
 import com.arextest.schedule.plan.builder.ReplayPlanBuilder;
 import com.arextest.schedule.utils.ReplayParentBinder;
-import java.util.ArrayList;
+import com.arextest.schedule.utils.StageUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -58,6 +58,8 @@ public class PlanProduceService {
     private ConfigurationService configurationService;
     @Resource
     private CacheProvider redisCacheProvider;
+    @Resource
+    private PlanExecutionMonitor planStageMonitorImpl;
 
     public CommonResponse createPlan(BuildReplayPlanRequest request) {
         progressEvent.onBeforePlanCreate(request);
@@ -102,18 +104,22 @@ public class PlanProduceService {
         }
         replayPlan.setCaseTotalCount(planCaseCount);
         // todo: add trans
+        StageUtils.updateStage(PlanStageEnum.SAVE_PLAN, System.currentTimeMillis(), null,
+            StageStatusEnum.ONGOING, null, replayPlan.getReplayPlanStageList());
         if (!replayPlanRepository.save(replayPlan)) {
             progressEvent.onReplayPlanCreateException(request);
-            return CommonResponse.badResponse("save replan plan error, " + replayPlan.toString(),
+            return CommonResponse.badResponse("save replan plan error, " + replayPlan,
                     new BuildReplayPlanResponse(BuildReplayFailReasonEnum.DB_ERROR));
         }
+        planStageMonitorImpl.register(replayPlan);
         MDCTracer.addPlanId(replayPlan.getId());
         if (!replayPlanActionRepository.save(replayActionItemList)) {
             progressEvent.onReplayPlanCreateException(request);
-            return CommonResponse.badResponse("save replay action error, " + replayPlan.toString(),
+            return CommonResponse.badResponse("save replay action error, " + replayPlan,
                     new BuildReplayPlanResponse(BuildReplayFailReasonEnum.DB_ERROR));
         }
-
+        StageUtils.updateStage(PlanStageEnum.SAVE_PLAN, System.currentTimeMillis(), null,
+            StageStatusEnum.SUCCEEDED, null, replayPlan.getReplayPlanStageList());
         BizLogger.recordPlanStart(replayPlan);
         progressEvent.onReplayPlanCreated(replayPlan);
         planConsumeService.runAsyncConsume(replayPlan);
@@ -124,6 +130,12 @@ public class PlanProduceService {
     private ReplayPlan build(BuildReplayPlanRequest request, PlanContext planContext) {
         String appId = request.getAppId();
         ReplayPlan replayPlan = new ReplayPlan();
+
+        // init
+        replayPlan.setReplayPlanStageList(StageUtils.initPlanStageList(StageUtils.INITIAL_STAGES));
+        StageUtils.updateStage( PlanStageEnum.BUILD_PLAN, System.currentTimeMillis(), null,
+            StageStatusEnum.ONGOING, null, replayPlan.getReplayPlanStageList());
+
         replayPlan.setAppId(appId);
         replayPlan.setPlanName(request.getPlanName());
         DeploymentVersion deploymentVersion = planContext.getTargetVersion();
@@ -166,16 +178,9 @@ public class PlanProduceService {
         }
 
         replayPlan.setMinInstanceCount(planContext.determineMinInstanceCount());
+        StageUtils.updateStage(PlanStageEnum.BUILD_PLAN, null, System.currentTimeMillis(),
+            StageStatusEnum.SUCCEEDED, null, replayPlan.getReplayPlanStageList());
         return replayPlan;
-    }
-
-    private List<ReplayPlanStageInfo> initReplayPlanStageList() {
-        List<ReplayPlanStageInfo> replayPlanStageList = new ArrayList<>(PlanStageEnum.MAIN_PROCESS_STAGE_NUM);
-        replayPlanStageList.add(ReplayPlanStageInfo.initStage(PlanStageEnum.INIT));
-        replayPlanStageList.add(ReplayPlanStageInfo.initStage(PlanStageEnum.PRE_LOAD));
-        replayPlanStageList.add(ReplayPlanStageInfo.initStage(PlanStageEnum.RUN));
-        replayPlanStageList.add(ReplayPlanStageInfo.initStage(PlanStageEnum.FINISH));
-        return replayPlanStageList;
     }
 
     private String getIpAddress(List<ServiceInstance> serviceInstances) {
@@ -195,7 +200,7 @@ public class PlanProduceService {
         try {
             byte[] key = String.format("schedule_creating_%s_%s", appId, targetEnv).getBytes(StandardCharsets.UTF_8);
             byte[] value = appId.getBytes(StandardCharsets.UTF_8);
-            Boolean result = redisCacheProvider.putIfAbsent(key, CREATE_PLAN_REDIS_EXPIRE,value);
+            boolean result = redisCacheProvider.putIfAbsent(key, CREATE_PLAN_REDIS_EXPIRE,value);
             return !result;
         } catch (Exception e) {
             LOGGER.error("isCreating error : {}", e.getMessage(), e);
