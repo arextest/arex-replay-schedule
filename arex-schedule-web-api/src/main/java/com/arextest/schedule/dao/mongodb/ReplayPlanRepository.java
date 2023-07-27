@@ -69,12 +69,11 @@ public class ReplayPlanRepository implements RepositoryField {
     }
 
     public boolean updateStage(ReplayPlan replayPlan) {
-        ReplayPlanCollection replayPlanCollection = ReplayPlanConverter.INSTANCE.daoFromDto(replayPlan);
         Query query = Query.query(Criteria.where(DASH_ID).is(replayPlan.getId()));
         Update update = MongoHelper.getUpdate();
         update.set(REPLAY_PLAN_STAGE_LIST, replayPlan.getReplayPlanStageList());
-        ReplayPlanCollection plan = mongoTemplate.findAndModify(query, update,
-            FindAndModifyOptions.options().returnNew(false), ReplayPlanCollection.class);
+        mongoTemplate.findAndModify(query, update, FindAndModifyOptions.options().returnNew(false),
+            ReplayPlanCollection.class);
         return true;
     }
 }
