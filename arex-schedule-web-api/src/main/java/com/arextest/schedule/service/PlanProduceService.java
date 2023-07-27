@@ -4,6 +4,7 @@ import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
+import com.arextest.schedule.exceptions.CreatePlanException;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
 import com.arextest.schedule.model.plan.BuildReplayPlanResponse;
@@ -55,7 +56,7 @@ public class PlanProduceService {
     @Resource
     private CacheProvider redisCacheProvider;
 
-    public CommonResponse createPlan(BuildReplayPlanRequest request) {
+    public CommonResponse createPlan(BuildReplayPlanRequest request) throws CreatePlanException {
         progressEvent.onBeforePlanCreate(request);
 
         long planCreateMillis = System.currentTimeMillis();
