@@ -72,8 +72,7 @@ public class ReplayPlanRepository implements RepositoryField {
         Query query = Query.query(Criteria.where(DASH_ID).is(replayPlan.getId()));
         Update update = MongoHelper.getUpdate();
         update.set(REPLAY_PLAN_STAGE_LIST, replayPlan.getReplayPlanStageList());
-        mongoTemplate.findAndModify(query, update, FindAndModifyOptions.options().returnNew(false),
-            ReplayPlanCollection.class);
+        mongoTemplate.findAndModify(query, update, ReplayPlanCollection.class);
         return true;
     }
 }

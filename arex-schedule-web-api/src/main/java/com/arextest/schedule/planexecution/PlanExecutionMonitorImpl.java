@@ -84,7 +84,7 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
             this.bizLoggerMonitor.tryFlushingLogs(task);
 
             if (!task.getReplayPlanStageList().equals(replayPlanStageListMap.get(task.getId()))) {
-                replayPlanStageListMap.put(task.getId(), task.getReplayPlanStageList());
+                replayPlanStageListMap.put(task.getId(), new ArrayList<>(task.getReplayPlanStageList()));
                 replayPlanRepository.updateStage(task);
             }
         }

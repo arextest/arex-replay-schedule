@@ -59,7 +59,6 @@ public class PlanConsumePrepareService {
         long end;
 
         for (ReplayActionItem replayActionItem : replayActionItemList) {
-            // TODO: 2023/7/20 rerun
             if (replayActionItem.getReplayStatus() != ReplayStatusType.INIT.getValue()) {
                 planSavedCaseSize += replayActionItem.getReplayCaseCount();
                 continue;
