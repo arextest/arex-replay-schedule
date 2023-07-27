@@ -20,7 +20,9 @@ public class StageUtils {
     public static final List<PlanStageEnum> INITIAL_STAGES = Arrays.asList(PlanStageEnum.INIT, PlanStageEnum.PRE_LOAD,
         PlanStageEnum.RUN, PlanStageEnum.FINISH);
     private static final String MSG_FORMAT = "%s is %s";
-    public static final String RUN_MSG_FORMAT = "Total batches:%d, %d has been executed.";
+    public static final String RUN_MSG_FORMAT_SINGLE = "Total batches:%d, %d batch has been executed.";
+    public static final String RUN_MSG_FORMAT = "Total batches:%d, %d batches have been executed.";
+
 
     private static ReplayPlanStageInfo initEmptyStage(PlanStageEnum planStageEnum) {
         ReplayPlanStageInfo stageInfo = new ReplayPlanStageInfo();

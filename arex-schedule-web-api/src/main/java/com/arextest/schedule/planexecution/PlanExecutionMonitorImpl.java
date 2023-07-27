@@ -2,9 +2,13 @@ package com.arextest.schedule.planexecution;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.dao.mongodb.ReplayBizLogRepository;
+import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.bizlog.BizLog;
+import com.arextest.schedule.model.plan.PlanStageEnum;
+import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
+import com.arextest.schedule.model.plan.StageStatusEnum;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.PlanProduceService;
 import lombok.extern.slf4j.Slf4j;
@@ -22,13 +26,15 @@ import java.util.concurrent.*;
 @Slf4j
 public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
     @Resource
+    private CacheProvider redisCacheProvider;
+    @Resource
     private ProgressTracer progressTracer;
     @Resource
     private ReplayBizLogRepository replayBizLogRepository;
     @Resource
     private ScheduledExecutorService monitorScheduler;
     @Resource
-    private RedisCancelMonitor cancelMonitor;
+    private ReplayPlanRepository replayPlanRepository;
 
     @Value("${arex.schedule.monitor.secondToRefresh}")
     public int SECOND_TO_REFRESH;
@@ -41,6 +47,9 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
 
     private final ProgressMonitor progressMonitor = new ProgressMonitor();
     private final BizLoggerMonitor bizLoggerMonitor = new BizLoggerMonitor();
+    private final RedisCancelMonitor redisCancelMonitor = new RedisCancelMonitor();
+    private static final ConcurrentHashMap<String, List<ReplayPlanStageInfo>> replayPlanStageListMap =
+        new ConcurrentHashMap<>();
 
 
     /**
@@ -68,10 +77,18 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
 
     @Override
     public void monitorOne(ReplayPlan task) {
-        LOGGER.info("Monitoring task {}", task.getId());
-        refreshLastUpdateTime(task);
-        refreshCancelStatus(task);
-        this.bizLoggerMonitor.tryFlushingLogs(task);
+        if (task != null) {
+            LOGGER.info("Monitoring task {}", task.getId());
+            refreshLastUpdateTime(task);
+            refreshCancelStatus(task);
+            this.bizLoggerMonitor.tryFlushingLogs(task);
+
+            if (!task.getReplayPlanStageList().equals(replayPlanStageListMap.get(task.getId()))) {
+                replayPlanStageListMap.put(task.getId(), task.getReplayPlanStageList());
+                replayPlanRepository.updateStage(task);
+            }
+        }
+
     }
 
     @Override
@@ -88,6 +105,7 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
         LOGGER.info("deregister monitor task, planId: {}", plan.getId());
 
         this.bizLoggerMonitor.flushLogs(plan);
+        replayPlanRepository.updateStage(plan);
     }
 
     private void refreshLastUpdateTime(ReplayPlan plan) {
@@ -95,13 +113,12 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
     }
 
     private void refreshCancelStatus(ReplayPlan plan) {
-        // to avoid unnecessary redis query
-        if (plan.getPlanStatus().isCanceled()) {
-            return;
-        }
-        if (cancelMonitor.isPlanCanceled(plan)) {
+        if ((plan.getPlanStatus() != null && plan.getPlanStatus().isCanceled())
+            || redisCancelMonitor.isPlanCanceled(plan)) {
             LOGGER.info("Plan {} cancel status set to true", plan.getId());
+            addCancelStage(plan);
             plan.getPlanStatus().setCanceled(true);
+            plan.getMonitorFuture().cancel(false);
         }
     }
 
@@ -136,5 +153,33 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
                 LOGGER.error("Error flushing biz logs", t);
             }
         }
+    }
+
+    private class RedisCancelMonitor {
+        boolean isPlanCanceled(ReplayPlan plan) {
+            return isPlanCanceled(plan.getId());
+        }
+        private boolean isPlanCanceled(String planId) {
+            return isCancelled(PlanProduceService.buildStopPlanRedisKey(planId));
+        }
+
+        private boolean isCancelled(byte[] redisKey) {
+            return redisCacheProvider.get(redisKey) != null;
+        }
+    }
+
+    private void addCancelStage(ReplayPlan replayPlan) {
+        int index = 0;
+        for (; index < replayPlan.getReplayPlanStageList().size(); index++) {
+            if (replayPlan.getReplayPlanStageList().get(index).getStageStatus() == StageStatusEnum.PENDING.getCode()) {
+                break;
+            }
+        }
+        ReplayPlanStageInfo cancelStage = new ReplayPlanStageInfo();
+        cancelStage.setStageStatus(StageStatusEnum.SUCCEEDED.getCode());
+        cancelStage.setStageType(PlanStageEnum.CANCEL.getCode());
+        cancelStage.setStageName(PlanStageEnum.CANCEL.name());
+        replayPlan.getReplayPlanStageList().add(index - 1, cancelStage);
+        replayPlanRepository.updateStage(replayPlan);
     }
 }

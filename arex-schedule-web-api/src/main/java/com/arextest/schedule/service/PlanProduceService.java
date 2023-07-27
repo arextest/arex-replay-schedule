@@ -59,7 +59,7 @@ public class PlanProduceService {
     @Resource
     private CacheProvider redisCacheProvider;
     @Resource
-    private PlanExecutionMonitor planStageMonitorImpl;
+    private PlanExecutionMonitor planExecutionMonitorImpl;
 
     public CommonResponse createPlan(BuildReplayPlanRequest request) {
         progressEvent.onBeforePlanCreate(request);
@@ -111,7 +111,7 @@ public class PlanProduceService {
             return CommonResponse.badResponse("save replan plan error, " + replayPlan,
                     new BuildReplayPlanResponse(BuildReplayFailReasonEnum.DB_ERROR));
         }
-        planStageMonitorImpl.register(replayPlan);
+        planExecutionMonitorImpl.register(replayPlan);
         MDCTracer.addPlanId(replayPlan.getId());
         if (!replayPlanActionRepository.save(replayActionItemList)) {
             progressEvent.onReplayPlanCreateException(request);

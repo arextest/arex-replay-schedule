@@ -46,8 +46,6 @@ public final class PlanConsumeService {
     private PlanExecutionContextProvider planExecutionContextProvider;
     @Resource
     private PlanExecutionMonitor planExecutionMonitorImpl;
-    @Resource
-    private PlanExecutionMonitor planStageMonitorImpl;
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
         BizLogger.recordPlanAsyncStart(replayPlan);
@@ -72,7 +70,6 @@ public final class PlanConsumeService {
             replayPlan.setLimiter(qpsLimiter);
             replayPlan.getReplayActionItemList().forEach(replayActionItem -> replayActionItem.setSendRateLimiter(qpsLimiter));
             replayPlan.buildActionItemMap();
-            planExecutionMonitorImpl.register(replayPlan);
             BizLogger.recordQpsInit(replayPlan, qpsLimiter.getPermits(), replayPlan.getMinInstanceCount());
         }
         @Override
@@ -129,7 +126,6 @@ public final class PlanConsumeService {
                 throw t;
             } finally {
                 planExecutionMonitorImpl.deregister(replayPlan);
-                planStageMonitorImpl.deregister(replayPlan);
             }
         }
     }
@@ -166,12 +162,16 @@ public final class PlanConsumeService {
 
             StageStatusEnum stageStatusEnum = null;
             Long endTime = null;
+            String format = StageUtils.RUN_MSG_FORMAT;
             if (index == total) {
                 stageStatusEnum = StageStatusEnum.SUCCEEDED;
                 endTime = System.currentTimeMillis();
             }
+            if (index == 1) {
+                format = StageUtils.RUN_MSG_FORMAT_SINGLE;
+            }
             StageUtils.updateStage(PlanStageEnum.RUN, null, endTime, stageStatusEnum,
-                String.format(StageUtils.RUN_MSG_FORMAT, index, total), replayPlan.getReplayPlanStageList());
+                String.format(format, index, total), replayPlan.getReplayPlanStageList());
         }
     }
 

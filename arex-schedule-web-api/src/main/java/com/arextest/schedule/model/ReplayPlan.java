@@ -111,8 +111,5 @@ public class ReplayPlan {
         this.getReplayActionItemList().forEach(replayActionItem -> this.actionItemMap.put(replayActionItem.getId(), replayActionItem));
     }
 
-    @JsonIgnore
-    private ScheduledFuture<?> stageFuture;
-
     private List<ReplayPlanStageInfo> replayPlanStageList;
 }
