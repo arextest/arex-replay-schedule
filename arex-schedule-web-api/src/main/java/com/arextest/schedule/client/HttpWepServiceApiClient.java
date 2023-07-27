@@ -2,6 +2,7 @@ package com.arextest.schedule.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -129,9 +130,12 @@ public final class HttpWepServiceApiClient {
         return httpJsonEntity;
     }
 
+    /**
+     * When restTemplate sends a replay request, it needs to pass the URI object to avoid the url encode parameter parsing exception.
+     */
     public <TResponse> ResponseEntity<TResponse> exchange(String url, HttpMethod method, HttpEntity<?> requestEntity,
                                                           Class<TResponse> responseType) throws RestClientException {
-        return restTemplate.exchange(url, method, requestEntity, responseType);
+        return restTemplate.exchange(URI.create(url), method, requestEntity, responseType);
     }
 
     public <TRequest, TResponse> ResponseEntity<TResponse> jsonPostWithThrow(String url, HttpEntity<TRequest> request,
