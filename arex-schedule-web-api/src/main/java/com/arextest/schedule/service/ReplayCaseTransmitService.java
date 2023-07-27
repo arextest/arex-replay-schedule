@@ -23,9 +23,12 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @author jmo
@@ -55,61 +58,72 @@ public class ReplayCaseTransmitService {
     @Resource
     private MetricService metricService;
 
-    public void send(ReplayActionItem replayActionItem) {
-        List<ReplayActionCaseItem> sourceItemList = replayActionItem.getCaseItemList();
-        if (CollectionUtils.isEmpty(sourceItemList)) {
+    public void send(List<ReplayActionCaseItem> caseItems, PlanExecutionContext<?> executionContext) {
+        ExecutionStatus executionStatus = executionContext.getExecutionStatus();
+
+        if (executionStatus.isAbnormal()) {
             return;
         }
 
-        // warmUp should be done once for each endpoint
-        if (!replayActionItem.isItemProcessed()) {
-            activeRemoteHost(sourceItemList);
-        }
-
-        // checkpoint: after JIT warm up, before sending page of cases
-        if (replayActionItem.getPlanStatus().isAbnormal()) {
-            return;
-        }
+        prepareActionItems(caseItems);
 
         try {
-            doSendValuesToRemoteHost(sourceItemList, replayActionItem.getPlanStatus());
+            doSendValuesToRemoteHost(caseItems, executionStatus);
         } catch (Throwable throwable) {
             LOGGER.error("do send error:{}", throwable.getMessage(), throwable);
-            markAllSendStatus(sourceItemList, CaseSendStatusType.EXCEPTION_FAILED);
+            markAllSendStatus(caseItems, CaseSendStatusType.EXCEPTION_FAILED);
         }
     }
 
-    @SuppressWarnings("rawtypes")
-    public void releaseCasesOfContext(ReplayActionItem replayActionItem, PlanExecutionContext executionContext) {
+    private void prepareActionItems(List<ReplayActionCaseItem> caseItems) {
+        Map<ReplayActionItem, List<ReplayActionCaseItem>> actionsOfBatch = caseItems.stream()
+                .collect(Collectors.groupingBy(ReplayActionCaseItem::getParent));
+
+        actionsOfBatch.forEach((actionItem, casesOfAction) -> {
+                    // warmUp should be done once for each endpoint
+                    if (!actionItem.isItemProcessed()) {
+                        actionItem.setItemProcessed(true);
+                        progressEvent.onActionBeforeSend(actionItem);
+                        // todo possible Jit warmup point
+                    }
+                });
+    }
+
+    public void releaseCasesOfContext(ReplayPlan replayPlan, PlanExecutionContext<?> executionContext) {
         // checkpoint: before skipping batch of group
         if (executionContext.getExecutionStatus().isAbnormal()) {
             return;
         }
 
-        int contextCasesCount = (int) replayActionCaseItemRepository.countWaitingSendList(replayActionItem.getId(),
+        Map<String, Long> caseCountMap = replayActionCaseItemRepository.countWaitHandlingByAction(replayPlan.getId(),
                 executionContext.getContextCaseQuery());
+        Map<String, ReplayActionItem> actionItemMap = replayPlan.getActionItemMap();
 
-        replayActionItem.recordProcessCaseCount(contextCasesCount);
-        replayActionItem.getSendRateLimiter().batchRelease(false, contextCasesCount);
+        for (Map.Entry<String, Long> actionIdToCaseCount : caseCountMap.entrySet()) {
+            ReplayActionItem replayActionItem = actionItemMap.get(actionIdToCaseCount.getKey());
+            int contextCasesCount = actionIdToCaseCount.getValue().intValue();
+            replayActionItem.recordProcessCaseCount(contextCasesCount);
+            replayActionItem.getSendRateLimiter().batchRelease(false, contextCasesCount);
 
-        // if we skip the rest of cases remaining in the action item, set its status
-        if (replayActionItem.getReplayCaseCount() == replayActionItem.getCaseProcessCount().get()) {
-            progressEvent.onActionInterrupted(replayActionItem);
-            ReplayPlan replayPlan = replayActionItem.getParent();
-            for (int i = 0; i < contextCasesCount; i++) {
-                progressTracer.finishCaseByPlan(replayPlan);
+            // if we skip the rest of cases remaining in the action item, set its status
+            if (replayActionItem.getReplayCaseCount() == replayActionItem.getCaseProcessCount().intValue()) {
+                progressEvent.onActionInterrupted(replayActionItem);
+                for (int i = 0; i < contextCasesCount; i++) {
+                    progressTracer.finishCaseByPlan(replayPlan);
+                }
+            } else {
+                for (int i = 0; i < contextCasesCount; i++) {
+                    progressTracer.finishCaseByAction(replayActionItem);
+                }
             }
-        } else {
-            for (int i = 0; i < contextCasesCount; i++) {
-                progressTracer.finishCaseByAction(replayActionItem);
-            }
+            BizLogger.recordContextSkipped(executionContext, replayActionItem, contextCasesCount);
         }
-        BizLogger.recordContextSkipped(executionContext, replayActionItem, contextCasesCount);
     }
 
     private ReplayActionCaseItem cloneCaseItem(List<ReplayActionCaseItem> groupValues, int index) {
         ReplayActionCaseItem caseItem = new ReplayActionCaseItem();
         ReplayActionCaseItem source = groupValues.get(index);
+        caseItem.setId(source.getId());
         caseItem.setRecordId(source.getRecordId());
         caseItem.setTargetResultId(source.getTargetResultId());
         caseItem.setCaseType(source.getCaseType());
@@ -135,14 +149,13 @@ public class ReplayCaseTransmitService {
 
     private void doSendValuesToRemoteHost(List<ReplayActionCaseItem> values, ExecutionStatus executionStatus) {
         final int valueSize = values.size();
-        final ReplayActionCaseItem caseItem = values.get(0);
-        final ReplayActionItem actionItem = caseItem.getParent();
-        final SendSemaphoreLimiter semaphore = actionItem.getSendRateLimiter();
+        final SendSemaphoreLimiter semaphore = executionStatus.getLimiter();
         final CountDownLatch groupSentLatch = new CountDownLatch(valueSize);
 
         for (int i = 0; i < valueSize; i++) {
             ReplayActionCaseItem replayActionCaseItem = values.get(i);
-            MDCTracer.addDetailId(caseItem.getId());
+            ReplayActionItem actionItem = replayActionCaseItem.getParent();
+            MDCTracer.addDetailId(replayActionCaseItem.getId());
             // checkpoint: before init case runnable
             if (executionStatus.isAbnormal()) {
                 LOGGER.info("replay interrupted,case item id:{}", replayActionCaseItem.getId());
@@ -221,24 +234,6 @@ public class ReplayCaseTransmitService {
         return null;
     }
 
-    private void activeRemoteHost(List<ReplayActionCaseItem> sourceItemList) {
-        try {
-            for (int i = 0; i < ACTIVE_SERVICE_RETRY_COUNT && i < sourceItemList.size(); i++) {
-                ReplayActionCaseItem caseItem = cloneCaseItem(sourceItemList, i);
-                ReplaySender replaySender = findReplaySender(caseItem);
-                if (replaySender == null) {
-                    continue;
-                }
-                if (replaySender.activeRemoteService(caseItem)) {
-                    return;
-                }
-                Thread.sleep(CommonConstant.THREE_SECOND_MILLIS);
-            }
-        } catch (Exception ex) {
-            LOGGER.error("active remote host error", ex);
-            Thread.currentThread().interrupt();
-        }
-    }
 
     private void markAllSendStatus(List<ReplayActionCaseItem> sourceItemList, CaseSendStatusType sendStatusType) {
         for (ReplayActionCaseItem caseItem : sourceItemList) {
@@ -272,7 +267,7 @@ public class ReplayCaseTransmitService {
 
 
     private class AsyncCompareCaseTaskRunnable extends AbstractTracedRunnable {
-        private ReplayActionCaseItem caseItem;
+        private final ReplayActionCaseItem caseItem;
 
         AsyncCompareCaseTaskRunnable(ReplayActionCaseItem caseItem) {
             this.caseItem = caseItem;

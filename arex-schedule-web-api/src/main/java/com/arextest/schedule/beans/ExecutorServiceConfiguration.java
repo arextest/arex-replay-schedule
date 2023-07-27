@@ -70,19 +70,6 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
 
     }
 
-    @Bean
-    public ExecutorService actionItemParallelPool() {
-        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("replay-action-parallel-%d")
-                .setDaemon(true)
-                .setUncaughtExceptionHandler(this)
-                .build();
-        return new ThreadPoolExecutor(CORE_POOL_SIZE, MAXIMUM_POOL_SIZE,
-                KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(MAXIMUM_POOL_SIZE * 2),
-                threadFactory,
-                new ThreadPoolExecutor.CallerRunsPolicy());
-    }
-
     @Override
     public void uncaughtException(Thread t, Throwable e) {
         LOGGER.error("uncaughtException {} ,error :{}", t.getName(), e.getMessage(), e);

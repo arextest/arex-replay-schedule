@@ -7,6 +7,7 @@ import com.arextest.schedule.model.deploy.ServiceInstanceOperation;
 import com.arextest.model.mock.MockCategoryType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.Date;
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @since 2021/9/15
  */
 @Data
+@EqualsAndHashCode(of = {"id"})
 public class ReplayActionItem {
     public final static int SOA_TRIGGER = 0;
     public final static int QMQ_TRIGGER = 1;

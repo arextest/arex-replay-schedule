@@ -7,7 +7,9 @@ import com.arextest.model.mock.Mocker.Target;
 import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import lombok.experimental.FieldNameConstants;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
@@ -19,6 +21,8 @@ import java.util.Map;
  */
 @Data
 @ToString(of = {"id", "recordId", "targetResultId", "sourceResultId", "sendStatus"})
+@FieldNameConstants
+@EqualsAndHashCode(of = {"id"})
 public class ReplayActionCaseItem {
     private String id;
     private String planItemId;
