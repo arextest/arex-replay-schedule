@@ -15,6 +15,10 @@ public class BuildReplayPlanResponse {
         this.reasonCode = reason.getCode();
     }
 
+    public BuildReplayPlanResponse(int errorCode) {
+        this.reasonCode = errorCode;
+    }
+
     public BuildReplayPlanResponse(String replayPlanId) {
         this.reasonCode = BuildReplayFailReasonEnum.NORMAL.getCode();
         this.replayPlanId = replayPlanId;

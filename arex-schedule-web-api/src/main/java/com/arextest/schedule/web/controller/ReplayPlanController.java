@@ -1,6 +1,7 @@
 package com.arextest.schedule.web.controller;
 
 import com.arextest.schedule.common.CommonConstant;
+import com.arextest.schedule.exceptions.CreatePlanException;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.DebugRequestItem;
@@ -125,8 +126,16 @@ public class ReplayPlanController {
         } catch (Throwable e) {
             LOGGER.error("create plan error: {} , request: {}", e.getMessage(), request, e);
             progressEvent.onReplayPlanCreateException(request, e);
-            return CommonResponse.badResponse("create plan error！" + e.getMessage(),
-                    new BuildReplayPlanResponse(BuildReplayFailReasonEnum.UNKNOWN));
+
+            if (e instanceof CreatePlanException) {
+                CreatePlanException createPlanException = (CreatePlanException) e;
+                return CommonResponse.badResponse(createPlanException.getMessage(),
+                        new BuildReplayPlanResponse(createPlanException.getCode()));
+            } else {
+                return CommonResponse.badResponse("create plan error！" + e.getMessage(),
+                        new BuildReplayPlanResponse(BuildReplayFailReasonEnum.UNKNOWN));
+            }
+
         } finally {
             MDCTracer.clear();
             planProduceService.removeCreating(request.getAppId(), request.getTargetEnv());
