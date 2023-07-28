@@ -8,9 +8,18 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.bizlog.BizLog;
+import com.arextest.schedule.model.plan.PlanStageEnum;
+import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
+import com.arextest.schedule.model.plan.StageBaseInfo;
+import com.arextest.schedule.model.plan.StageStatusEnum;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.service.MetricService;
 import com.arextest.schedule.service.ReplayReportService;
+import com.arextest.schedule.utils.StageUtils;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -40,8 +49,17 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     @Override
     public void onReplayPlanCreated(ReplayPlan replayPlan) {
         try {
-            replayReportService.initReportInfo(replayPlan);
+            updateStage(replayPlan.getReplayPlanStageList(), PlanStageEnum.INIT_REPORT, StageStatusEnum.ONGOING,
+                System.currentTimeMillis(), null, null);
+            boolean success = replayReportService.initReportInfo(replayPlan);
+            StageStatusEnum stageStatusEnum = success ? StageStatusEnum.SUCCEEDED : StageStatusEnum.FAILED;
+            updateStage(replayPlan.getReplayPlanStageList(), PlanStageEnum.INIT_REPORT, stageStatusEnum,
+                null, System.currentTimeMillis(), null);
+            updateStage(replayPlan.getReplayPlanStageList(), PlanStageEnum.LOADING_CONFIG, StageStatusEnum.ONGOING,
+                System.currentTimeMillis(), null, null);
             compareConfigService.preload(replayPlan);
+            updateStage(replayPlan.getReplayPlanStageList(), PlanStageEnum.LOADING_CONFIG, StageStatusEnum.SUCCEEDED,
+                null, System.currentTimeMillis(), null);
         } catch (Throwable throwable) {
             LOGGER.error("prepare load compare config error: {}, plan id:{}", throwable.getMessage(),
                     replayPlan.getId(), throwable);
@@ -76,6 +94,63 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
         replayReportService.pushPlanStatus(replayId, ReplayStatusType.CANCELLED, null);
     }
 
+    @Override
+    public void onReplayPlanStageUpdate(ReplayPlan replayPlan, PlanStageEnum stageType, StageStatusEnum stageStatus,
+                                        Long startTime, Long endTime, String msg) {
+        updateStage(replayPlan.getReplayPlanStageList(), stageType, stageStatus, startTime, endTime, msg);
+    }
+
+    private void updateStage(List<ReplayPlanStageInfo> stageInfoList, PlanStageEnum stageType,
+                             StageStatusEnum stageStatus, Long startTime, Long endTime, String msg) {
+        StageBaseInfo stageBaseInfo = null;
+        boolean isSubStage = stageType.getSubStageList() == null;
+        if (isSubStage) {
+            PlanStageEnum parentStage = PlanStageEnum.of(stageType.getParentStage());
+            List<StageBaseInfo> subStageInfoList = stageInfoList.stream()
+                .map(ReplayPlanStageInfo::getSubStageInfoList)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+            for (StageBaseInfo subStage : subStageInfoList) {
+                if (stageType.getCode() == subStage.getStageType()) {
+                    stageBaseInfo = subStage;
+                }
+            }
+            // when first subStage starts, start its parent stage
+            boolean firstSubStageOnGoing =
+                stageStatus == StageStatusEnum.ONGOING && parentStage.getSubStageList().get(0) == stageType.getCode();
+            // when last subStage successes, end its parent stage
+            boolean lastSubStageSucceeded = stageStatus == StageStatusEnum.SUCCEEDED &&
+                parentStage.getSubStageList().get(parentStage.getSubStageList().size() - 1) == stageType.getCode();
+            // when any subStage fails, fail its parent stage
+            if (firstSubStageOnGoing || lastSubStageSucceeded || stageStatus == StageStatusEnum.FAILED) {
+                updateStage(stageInfoList, parentStage, stageStatus, startTime, endTime, null);
+            }
+        } else {
+            for (StageBaseInfo stage : stageInfoList) {
+                if (stageType.getCode() == stage.getStageType()) {
+                    stageBaseInfo = stage;
+                }
+            }
+        }
+        if (stageBaseInfo != null) {
+            if (msg == null) {
+                msg = String.format(StageUtils.MSG_FORMAT, stageType.name(), stageStatus);
+            }
+            stageBaseInfo.setStageType(stageType.getCode());
+            stageBaseInfo.setStageName(stageType.name());
+            if (stageStatus != null) {
+                stageBaseInfo.setStageStatus(stageStatus.getCode());
+            }
+            stageBaseInfo.setMsg(msg);
+            if (startTime != null) {
+                stageBaseInfo.setStartTime(startTime);
+            }
+            if (endTime != null) {
+                stageBaseInfo.setEndTime(endTime);
+            }
+        }
+    }
 
     private void recordPlanExecutionTime(ReplayPlan replayPlan) {
         Date planCreateTime = replayPlan.getPlanCreateTime();

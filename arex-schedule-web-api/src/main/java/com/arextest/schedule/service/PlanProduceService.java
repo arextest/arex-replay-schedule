@@ -104,8 +104,8 @@ public class PlanProduceService {
         }
         replayPlan.setCaseTotalCount(planCaseCount);
         // todo: add trans
-        StageUtils.updateStage(PlanStageEnum.SAVE_PLAN, System.currentTimeMillis(), null,
-            StageStatusEnum.ONGOING, null, replayPlan.getReplayPlanStageList());
+        progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.SAVE_PLAN, StageStatusEnum.ONGOING,
+            System.currentTimeMillis(), null, null);
         if (!replayPlanRepository.save(replayPlan)) {
             progressEvent.onReplayPlanCreateException(request);
             return CommonResponse.badResponse("save replan plan error, " + replayPlan,
@@ -118,8 +118,8 @@ public class PlanProduceService {
             return CommonResponse.badResponse("save replay action error, " + replayPlan,
                     new BuildReplayPlanResponse(BuildReplayFailReasonEnum.DB_ERROR));
         }
-        StageUtils.updateStage(PlanStageEnum.SAVE_PLAN, System.currentTimeMillis(), null,
-            StageStatusEnum.SUCCEEDED, null, replayPlan.getReplayPlanStageList());
+        progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.SAVE_PLAN, StageStatusEnum.SUCCEEDED,
+            System.currentTimeMillis(), null, null);
         BizLogger.recordPlanStart(replayPlan);
         progressEvent.onReplayPlanCreated(replayPlan);
         planConsumeService.runAsyncConsume(replayPlan);
@@ -133,8 +133,8 @@ public class PlanProduceService {
 
         // init
         replayPlan.setReplayPlanStageList(StageUtils.initPlanStageList(StageUtils.INITIAL_STAGES));
-        StageUtils.updateStage( PlanStageEnum.BUILD_PLAN, System.currentTimeMillis(), null,
-            StageStatusEnum.ONGOING, null, replayPlan.getReplayPlanStageList());
+        progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_PLAN, StageStatusEnum.ONGOING,
+            System.currentTimeMillis(), null, null);
 
         replayPlan.setAppId(appId);
         replayPlan.setPlanName(request.getPlanName());
@@ -178,8 +178,8 @@ public class PlanProduceService {
         }
 
         replayPlan.setMinInstanceCount(planContext.determineMinInstanceCount());
-        StageUtils.updateStage(PlanStageEnum.BUILD_PLAN, null, System.currentTimeMillis(),
-            StageStatusEnum.SUCCEEDED, null, replayPlan.getReplayPlanStageList());
+        progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_PLAN, StageStatusEnum.SUCCEEDED,
+            null, System.currentTimeMillis(), null);
         return replayPlan;
     }
 
@@ -255,4 +255,6 @@ public class PlanProduceService {
                 return BuildReplayFailReasonEnum.UNKNOWN;
         }
     }
+
+
 }

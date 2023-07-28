@@ -9,9 +9,6 @@ import com.arextest.schedule.model.config.ComparisonGlobalConfig;
 import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.model.converter.ReplayConfigConverter;
-import com.arextest.schedule.model.plan.PlanStageEnum;
-import com.arextest.schedule.model.plan.StageStatusEnum;
-import com.arextest.schedule.utils.StageUtils;
 import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -52,20 +49,14 @@ public final class CompareConfigService {
     CustomComparisonConfigurationHandler customComparisonConfigurationHandler;
 
     public void preload(ReplayPlan plan) {
-        StageUtils.updateStage(PlanStageEnum.LOADING_CONFIG, System.currentTimeMillis(), null,
-            StageStatusEnum.ONGOING, null, plan.getReplayPlanStageList());
         Pair<ComparisonGlobalConfig, Map<String, ComparisonInterfaceConfig>> appConfig = getReplayComparisonConfig(plan);
         Map<String, ComparisonInterfaceConfig> operationCompareConfig = appConfig.getRight();
         ComparisonGlobalConfig globalConfig = appConfig.getLeft();
 
         if (operationCompareConfig.isEmpty()) {
             LOGGER.warn("no compare config found, plan id:{}", plan.getId());
-            StageUtils.updateStage(PlanStageEnum.LOADING_CONFIG, null, System.currentTimeMillis(),
-                StageStatusEnum.FAILED, null, plan.getReplayPlanStageList());
             return;
         }
-        StageUtils.updateStage(PlanStageEnum.LOADING_CONFIG, null, System.currentTimeMillis(),
-            StageStatusEnum.SUCCEEDED, null, plan.getReplayPlanStageList());
 
         for (ReplayActionItem actionItem : plan.getReplayActionItemList()) {
             String operationId = actionItem.getOperationId();

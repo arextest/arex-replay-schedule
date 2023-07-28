@@ -83,18 +83,18 @@ public final class PlanConsumeService {
 
                 // prepare cases to send
                 start = System.currentTimeMillis();
-                StageUtils.updateStage(PlanStageEnum.LOADING_CASE, start, null,
-                    StageStatusEnum.ONGOING, null, replayPlan.getReplayPlanStageList());
+                progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.ONGOING,
+                    start, null, null);
                 int planSavedCaseSize = planConsumePrepareService.prepareRunData(replayPlan);
                 end = System.currentTimeMillis();
-                StageUtils.updateStage(PlanStageEnum.LOADING_CASE, null, end,
-                    StageStatusEnum.SUCCEEDED, null, replayPlan.getReplayPlanStageList());
+                progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.SUCCEEDED,
+                    null, end, null);
                 BizLogger.recordPlanCaseSaved(replayPlan, planSavedCaseSize, end - start);
 
                 // build context to send
                 start = System.currentTimeMillis();
-                StageUtils.updateStage(PlanStageEnum.BUILD_CONTEXT, start, null,
-                    StageStatusEnum.ONGOING, null, replayPlan.getReplayPlanStageList());
+                progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_CONTEXT, StageStatusEnum.ONGOING,
+                    start, null, null);
                 replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
                 end = System.currentTimeMillis();
                 BizLogger.recordContextBuilt(replayPlan, end - start);
@@ -106,16 +106,16 @@ public final class PlanConsumeService {
                     BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.FAIL_INTERRUPTED.name(),
                             "NO context to execute");
 
-                    StageUtils.updateStage(PlanStageEnum.BUILD_CONTEXT, null, end,
-                        StageStatusEnum.FAILED, null, replayPlan.getReplayPlanStageList());
+                    progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_CONTEXT,
+                        StageStatusEnum.FAILED, null, end, null);
                     return;
                 }
-                StageUtils.updateStage(PlanStageEnum.BUILD_CONTEXT, null, end,
-                    StageStatusEnum.SUCCEEDED, null, replayPlan.getReplayPlanStageList());
+                progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_CONTEXT,
+                    StageStatusEnum.SUCCEEDED, null, end, null);
 
                 // process plan
-                StageUtils.updateStage(PlanStageEnum.RUN, System.currentTimeMillis(), null,
-                    StageStatusEnum.ONGOING, null, replayPlan.getReplayPlanStageList());
+                progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.RUN, StageStatusEnum.ONGOING,
+                    System.currentTimeMillis(), null, null);
                 consumePlan(replayPlan);
 
                 // finalize exceptional status
@@ -170,8 +170,8 @@ public final class PlanConsumeService {
             if (index == 1) {
                 format = StageUtils.RUN_MSG_FORMAT_SINGLE;
             }
-            StageUtils.updateStage(PlanStageEnum.RUN, null, endTime, stageStatusEnum,
-                String.format(format, index, total), replayPlan.getReplayPlanStageList());
+            progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.RUN, stageStatusEnum,
+                null, endTime, String.format(format, index, total));
         }
     }
 
@@ -218,8 +218,8 @@ public final class PlanConsumeService {
     }
 
     private void finalizePlanStatus(ReplayPlan replayPlan) {
-        StageUtils.updateStage(PlanStageEnum.FINISH, System.currentTimeMillis(), null,
-            StageStatusEnum.ONGOING, null, replayPlan.getReplayPlanStageList());
+        progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.FINISH, StageStatusEnum.ONGOING,
+            System.currentTimeMillis(), null, null);
 
         ExecutionStatus executionStatus = replayPlan.getPlanStatus();
 
@@ -250,7 +250,7 @@ public final class PlanConsumeService {
             }
         }
 
-        StageUtils.updateStage(PlanStageEnum.FINISH, null, System.currentTimeMillis(),
-            StageStatusEnum.SUCCEEDED, null, replayPlan.getReplayPlanStageList());
+        progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.FINISH, StageStatusEnum.SUCCEEDED,
+            null, System.currentTimeMillis(), null);
     }
 }

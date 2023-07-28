@@ -1,5 +1,6 @@
 package com.arextest.schedule.planexecution;
 
+import com.alibaba.fastjson2.JSON;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.dao.mongodb.ReplayBizLogRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
@@ -84,11 +85,15 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
             this.bizLoggerMonitor.tryFlushingLogs(task);
 
             if (!task.getReplayPlanStageList().equals(replayPlanStageListMap.get(task.getId()))) {
-                replayPlanStageListMap.put(task.getId(), new ArrayList<>(task.getReplayPlanStageList()));
+                replayPlanStageListMap.put(task.getId(), deepCopy(task.getReplayPlanStageList()));
                 replayPlanRepository.updateStage(task);
             }
         }
 
+    }
+
+    private List<ReplayPlanStageInfo> deepCopy(List<ReplayPlanStageInfo> origin) {
+        return JSON.parseArray(JSON.toJSONString(origin)).toList(ReplayPlanStageInfo.class);
     }
 
     @Override

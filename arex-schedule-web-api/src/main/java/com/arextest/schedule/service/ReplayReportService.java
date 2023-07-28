@@ -1,6 +1,5 @@
 package com.arextest.schedule.service;
 
-
 import com.arextest.common.model.response.GenericResponseType;
 import com.arextest.common.model.response.Response;
 import com.arextest.diff.model.enumeration.DiffResultCode;
@@ -10,9 +9,6 @@ import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
 import com.arextest.schedule.model.*;
-import com.arextest.schedule.model.plan.PlanStageEnum;
-import com.arextest.schedule.model.plan.StageStatusEnum;
-import com.arextest.schedule.utils.StageUtils;
 import com.arextest.web.model.contract.contracts.ChangeReplayStatusRequestType;
 import com.arextest.web.model.contract.contracts.ReportInitialRequestType;
 import com.arextest.web.model.contract.contracts.replay.AnalyzeCompareResultsRequestType;
@@ -46,9 +42,7 @@ public final class ReplayReportService implements ComparisonWriter {
 
     private static final String CASE_COUNT_LIMIT_NAME = "caseCountLimit";
 
-    public void initReportInfo(ReplayPlan replayPlan) {
-        StageUtils.updateStage(PlanStageEnum.INIT_REPORT, System.currentTimeMillis(), null,
-            StageStatusEnum.ONGOING, null, replayPlan.getReplayPlanStageList());
+    public boolean initReportInfo(ReplayPlan replayPlan) {
         ReportInitialRequestType requestType = new ReportInitialRequestType();
         requestType.setPlanId(replayPlan.getId());
         requestType.setPlanName(replayPlan.getPlanName());
@@ -104,15 +98,8 @@ public final class ReplayReportService implements ComparisonWriter {
         LOGGER.info("initReport request:{}", requestType);
         Response response = httpWepServiceApiClient.jsonPost(reportInitUrl, requestType,
                 GenericResponseType.class);
-        StageStatusEnum stageStatusEnum;
-        if (response == null || response.getResponseStatusType().hasError()) {
-            stageStatusEnum = StageStatusEnum.FAILED;
-        } else {
-            stageStatusEnum = StageStatusEnum.SUCCEEDED;
-        }
-        StageUtils.updateStage(PlanStageEnum.INIT_REPORT, null, System.currentTimeMillis(),
-            stageStatusEnum, null, replayPlan.getReplayPlanStageList());
         LOGGER.info("initReport request:{}, response:{}", requestType, response);
+        return response != null && !response.getResponseStatusType().hasError();
     }
 
     public void updateReportCaseCount(ReplayPlan replayPlan) {
