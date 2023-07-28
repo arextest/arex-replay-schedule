@@ -184,7 +184,7 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
         cancelStage.setStageStatus(StageStatusEnum.SUCCEEDED.getCode());
         cancelStage.setStageType(PlanStageEnum.CANCEL.getCode());
         cancelStage.setStageName(PlanStageEnum.CANCEL.name());
-        replayPlan.getReplayPlanStageList().add(index - 1, cancelStage);
+        replayPlan.getReplayPlanStageList().add(Math.max(0, index - 1), cancelStage);
         replayPlanRepository.updateStage(replayPlan);
     }
 }
