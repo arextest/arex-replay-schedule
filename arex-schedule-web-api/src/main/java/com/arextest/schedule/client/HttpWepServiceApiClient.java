@@ -136,7 +136,7 @@ public final class HttpWepServiceApiClient {
 
             @Override
             public <T, E extends Throwable> void onError(RetryContext context, RetryCallback<T, E> callback, Throwable throwable) {
-                LOGGER.warn("Retry error occurred: {}", throwable.getMessage());
+                LOGGER.warn("Retry error occurred, ", throwable);
             }
         });
     }

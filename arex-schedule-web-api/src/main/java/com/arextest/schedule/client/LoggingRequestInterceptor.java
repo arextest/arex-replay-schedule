@@ -31,8 +31,7 @@ public class LoggingRequestInterceptor implements ClientHttpRequestInterceptor {
         try {
             response = execution.execute(request, body);
         } catch (IOException ex) {
-            LOGGER.warn("Failed to send {} request to {}, body: {}, {}", request.getMethod(), request.getURI(), requestBody,
-                    ex.getMessage());
+            LOGGER.warn(String.format("Failed to send %s request to %s, body: %s", request.getMethod(), request.getURI(), requestBody), ex);
             throw ex;
         }
 
