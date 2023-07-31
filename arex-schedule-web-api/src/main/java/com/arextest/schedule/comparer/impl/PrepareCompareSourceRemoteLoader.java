@@ -20,7 +20,6 @@ import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 
 @Slf4j
@@ -44,7 +43,7 @@ public final class PrepareCompareSourceRemoteLoader {
         QueryReplayResultRequestType resultRequest = new QueryReplayResultRequestType();
         resultRequest.setRecordId(replayId);
         resultRequest.setReplayResultId(resultId);
-        return httpWepServiceApiClient.jsonPost(replayResultUrl, resultRequest, QueryReplayResultResponseType.class);
+        return httpWepServiceApiClient.retryJsonPost(replayResultUrl, resultRequest, QueryReplayResultResponseType.class);
     }
 
     private List<CategoryComparisonHolder> decodeResult(QueryReplayResultResponseType replayResultResponseType) {
