@@ -22,16 +22,11 @@ public class LoggingRequestInterceptor implements ClientHttpRequestInterceptor {
     public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
             throws IOException {
 
-        String requestBody = null;
-        if (body != null && body.length > 0) {
-            requestBody = Base64.getEncoder().encodeToString(body);
-        }
-
         ClientHttpResponse response;
         try {
             response = execution.execute(request, body);
         } catch (IOException ex) {
-            LOGGER.warn(String.format("Failed to send %s request to %s, body: %s", request.getMethod(), request.getURI(), requestBody), ex);
+            LOGGER.warn("Failed to send {} request to {}, body: {}, {}", request.getMethod(), request.getURI(), getRequestBody(body), ex.toString());
             throw ex;
         }
 
@@ -39,10 +34,18 @@ public class LoggingRequestInterceptor implements ClientHttpRequestInterceptor {
 
         // Log the failed request if the response status code is 4xx or 5xx
         if (statusCode.is4xxClientError() || statusCode.is5xxServerError()) {
-            LOGGER.warn("Failed to send {} request to {}, requestBody: {}, statusCode: {}", request.getMethod(), request.getURI(), requestBody, statusCode);
+            LOGGER.warn("Failed to send {} request to {}, requestBody: {}, statusCode: {}", request.getMethod(), request.getURI(), getRequestBody(body), statusCode);
         }
 
         return response;
+    }
+
+    private String getRequestBody(byte[] body) {
+        String requestBody = null;
+        if (body != null && body.length > 0) {
+            requestBody = Base64.getEncoder().encodeToString(body);
+        }
+        return requestBody;
     }
 
 }
