@@ -1,5 +1,7 @@
 package com.arextest.schedule.model.dao.mongodb;
 
+import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
+import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -45,4 +47,6 @@ public class ReplayPlanCollection extends ModelBase {
     private int caseSourceType;
     private int replayPlanType;
     private int caseCountLimit;
+
+    private List<ReplayPlanStageInfo> replayPlanStageList;
 }

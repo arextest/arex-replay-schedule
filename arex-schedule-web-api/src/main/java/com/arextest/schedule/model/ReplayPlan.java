@@ -4,6 +4,7 @@ import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
 import com.arextest.schedule.model.plan.BuildReplayPlanType;
+import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -105,6 +106,10 @@ public class ReplayPlan {
 
     @JsonIgnore
     private Map<String, ReplayActionItem> actionItemMap = new HashMap<>();
+
+    private List<ReplayPlanStageInfo> replayPlanStageList;
+    @JsonIgnore
+    private long lastUpdateTime = System.currentTimeMillis();
 
     public void buildActionItemMap() {
         this.getReplayActionItemList().forEach(replayActionItem -> this.actionItemMap.put(replayActionItem.getId(), replayActionItem));

@@ -6,11 +6,14 @@ import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.model.*;
+import com.arextest.schedule.model.plan.PlanStageEnum;
+import com.arextest.schedule.model.plan.StageStatusEnum;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.planexecution.PlanExecutionMonitor;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.utils.ReplayParentBinder;
+import com.arextest.schedule.utils.StageUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
@@ -42,7 +45,7 @@ public final class PlanConsumeService {
     @Resource
     private PlanExecutionContextProvider planExecutionContextProvider;
     @Resource
-    private PlanExecutionMonitor planExecutionMonitor;
+    private PlanExecutionMonitor planExecutionMonitorImpl;
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
         BizLogger.recordPlanAsyncStart(replayPlan);
@@ -67,7 +70,6 @@ public final class PlanConsumeService {
             replayPlan.setLimiter(qpsLimiter);
             replayPlan.getReplayActionItemList().forEach(replayActionItem -> replayActionItem.setSendRateLimiter(qpsLimiter));
             replayPlan.buildActionItemMap();
-            planExecutionMonitor.register(replayPlan);
             BizLogger.recordQpsInit(replayPlan, qpsLimiter.getPermits(), replayPlan.getMinInstanceCount());
         }
         @Override
@@ -81,12 +83,18 @@ public final class PlanConsumeService {
 
                 // prepare cases to send
                 start = System.currentTimeMillis();
+                progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.ONGOING,
+                    start, null, null);
                 int planSavedCaseSize = planConsumePrepareService.prepareRunData(replayPlan);
                 end = System.currentTimeMillis();
+                progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.SUCCEEDED,
+                    null, end, null);
                 BizLogger.recordPlanCaseSaved(replayPlan, planSavedCaseSize, end - start);
 
                 // build context to send
                 start = System.currentTimeMillis();
+                progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_CONTEXT, StageStatusEnum.ONGOING,
+                    start, null, null);
                 replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
                 end = System.currentTimeMillis();
                 BizLogger.recordContextBuilt(replayPlan, end - start);
@@ -97,10 +105,17 @@ public final class PlanConsumeService {
                     progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
                     BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.FAIL_INTERRUPTED.name(),
                             "NO context to execute");
+
+                    progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_CONTEXT,
+                        StageStatusEnum.FAILED, null, end, null);
                     return;
                 }
+                progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_CONTEXT,
+                    StageStatusEnum.SUCCEEDED, null, end, null);
 
                 // process plan
+                progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.RUN, StageStatusEnum.ONGOING,
+                    System.currentTimeMillis(), null, null);
                 consumePlan(replayPlan);
 
                 // finalize exceptional status
@@ -110,7 +125,7 @@ public final class PlanConsumeService {
                 BizLogger.recordPlanException(replayPlan, t);
                 throw t;
             } finally {
-                planExecutionMonitor.deregister(replayPlan);
+                planExecutionMonitorImpl.deregister(replayPlan);
             }
         }
     }
@@ -121,8 +136,9 @@ public final class PlanConsumeService {
         long start;
         long end;
         progressTracer.initTotal(replayPlan);
-
+        int index = 0, total = replayPlan.getExecutionContexts().size();
         for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
+            index ++;
             // checkpoint: before each context
             if (executionStatus.isAbnormal()) {
                 break;
@@ -143,6 +159,19 @@ public final class PlanConsumeService {
             planExecutionContextProvider.onAfterContextExecution(executionContext, replayPlan);
             end = System.currentTimeMillis();
             BizLogger.recordContextAfterRun(executionContext, end - start);
+
+            StageStatusEnum stageStatusEnum = null;
+            Long endTime = null;
+            String format = StageUtils.RUN_MSG_FORMAT;
+            if (index == total) {
+                stageStatusEnum = StageStatusEnum.SUCCEEDED;
+                endTime = System.currentTimeMillis();
+            }
+            if (index == 1) {
+                format = StageUtils.RUN_MSG_FORMAT_SINGLE;
+            }
+            progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.RUN, stageStatusEnum,
+                null, endTime, String.format(format, index, total));
         }
     }
 
@@ -189,9 +218,12 @@ public final class PlanConsumeService {
     }
 
     private void finalizePlanStatus(ReplayPlan replayPlan) {
+        progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.FINISH, StageStatusEnum.ONGOING,
+            System.currentTimeMillis(), null, null);
+
         ExecutionStatus executionStatus = replayPlan.getPlanStatus();
 
-        planExecutionMonitor.monitorOne(replayPlan);
+        planExecutionMonitorImpl.monitorOne(replayPlan);
 
         // finalize plan status
         if (executionStatus.isCanceled()) {
@@ -217,5 +249,8 @@ public final class PlanConsumeService {
                 BizLogger.recordActionStatusChange(replayActionItem, ReplayStatusType.FAIL_INTERRUPTED.name(), "");
             }
         }
+
+        progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.FINISH, StageStatusEnum.SUCCEEDED,
+            null, System.currentTimeMillis(), null);
     }
 }

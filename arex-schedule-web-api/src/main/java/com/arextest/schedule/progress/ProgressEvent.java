@@ -5,6 +5,9 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
+import com.arextest.schedule.model.plan.PlanStageEnum;
+import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
+import com.arextest.schedule.model.plan.StageStatusEnum;
 
 /**
  * @author jmo
@@ -35,6 +38,9 @@ public interface ProgressEvent {
     void onReplayPlanInterrupt(ReplayPlan replayPlan, ReplayStatusType reason);
 
     void onReplayPlanTerminate(String replayId);
+
+    void onReplayPlanStageUpdate(ReplayPlan replayPlan, PlanStageEnum stageType, StageStatusEnum stageStatus,
+                                 Long startTime, Long endTime, String msg);
 
     void onActionComparisonFinish(ReplayActionItem actionItem);
 

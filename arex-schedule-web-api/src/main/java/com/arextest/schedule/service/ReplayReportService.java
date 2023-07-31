@@ -1,6 +1,5 @@
 package com.arextest.schedule.service;
 
-
 import com.arextest.common.model.response.GenericResponseType;
 import com.arextest.common.model.response.Response;
 import com.arextest.diff.model.enumeration.DiffResultCode;
@@ -43,7 +42,7 @@ public final class ReplayReportService implements ComparisonWriter {
 
     private static final String CASE_COUNT_LIMIT_NAME = "caseCountLimit";
 
-    public void initReportInfo(ReplayPlan replayPlan) {
+    public boolean initReportInfo(ReplayPlan replayPlan) {
         ReportInitialRequestType requestType = new ReportInitialRequestType();
         requestType.setPlanId(replayPlan.getId());
         requestType.setPlanName(replayPlan.getPlanName());
@@ -100,6 +99,7 @@ public final class ReplayReportService implements ComparisonWriter {
         Response response = httpWepServiceApiClient.jsonPost(reportInitUrl, requestType,
                 GenericResponseType.class);
         LOGGER.info("initReport request:{}, response:{}", requestType, response);
+        return response != null && !response.getResponseStatusType().hasError();
     }
 
     public void updateReportCaseCount(ReplayPlan replayPlan) {
@@ -160,8 +160,7 @@ public final class ReplayReportService implements ComparisonWriter {
         List<AnalyzeCompareResultsRequestType.AnalyzeCompareInfoItem> reqItems = new ArrayList<>(comparedSize);
         this.replayCompareResultRepository.save(comparedResult);
 
-        for (int i = 0; i < comparedSize; i++) {
-            ReplayCompareResult sourceResult = comparedResult.get(i);
+        for (ReplayCompareResult sourceResult : comparedResult) {
             reqItems.add(converter.to(sourceResult));
         }
         request.setAnalyzeCompareInfos(reqItems);
