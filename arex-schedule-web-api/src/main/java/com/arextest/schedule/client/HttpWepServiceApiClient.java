@@ -39,6 +39,8 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.*;
 
+import static com.arextest.schedule.common.CommonConstant.URL;
+
 /**
  * @author jmo
  * @since 2021/9/15
@@ -125,18 +127,17 @@ public final class HttpWepServiceApiClient {
         retryTemplate.registerListener(new RetryListener() {
             @Override
             public <T, E extends Throwable> boolean open(RetryContext context, RetryCallback<T, E> callback) {
-                LOGGER.info("Retry started");
                 return true;
             }
 
             @Override
             public <T, E extends Throwable> void close(RetryContext context, RetryCallback<T, E> callback, Throwable throwable) {
-                LOGGER.info("Retry finished");
             }
 
             @Override
             public <T, E extends Throwable> void onError(RetryContext context, RetryCallback<T, E> callback, Throwable throwable) {
-                LOGGER.warn("Retry error occurred, ", throwable);
+                LOGGER.warn("Retry url: {}, count: {}, error message: {}", context.getAttribute(URL), context.getRetryCount(),
+                        throwable.getMessage());
             }
         });
     }
@@ -177,7 +178,10 @@ public final class HttpWepServiceApiClient {
 
     public <TRequest, TResponse> TResponse retryJsonPost(String url, TRequest request, Class<TResponse> responseType) {
         try {
-            return retryTemplate.execute(context -> restTemplate.postForObject(url, wrapJsonContentType(request), responseType));
+            return retryTemplate.execute(retryCallback -> {
+                retryCallback.setAttribute(URL, url);
+                return restTemplate.postForObject(url, wrapJsonContentType(request), responseType);
+            });
         } catch (Exception e) {
             return null;
         }
@@ -212,6 +216,9 @@ public final class HttpWepServiceApiClient {
 
     public <TRequest, TResponse> ResponseEntity<TResponse> retryJsonPostWithThrow(String url, HttpEntity<TRequest> request,
                                                                                   Class<TResponse> responseType) throws RestClientException {
-        return retryTemplate.execute(context -> restTemplate.postForEntity(url, wrapJsonContentType(request), responseType));
+        return retryTemplate.execute(retryCallback -> {
+            retryCallback.setAttribute(URL, url);
+            return restTemplate.postForEntity(url, wrapJsonContentType(request), responseType);
+        });
     }
 }
