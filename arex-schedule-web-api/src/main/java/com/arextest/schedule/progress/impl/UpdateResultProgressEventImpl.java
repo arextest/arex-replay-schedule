@@ -114,6 +114,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
             for (StageBaseInfo subStage : subStageInfoList) {
                 if (stageType.getCode() == subStage.getStageType()) {
                     stageBaseInfo = subStage;
+                    break;
                 }
             }
             // when first subStage starts, start its parent stage
@@ -130,6 +131,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
             for (StageBaseInfo stage : stageInfoList) {
                 if (stageType.getCode() == stage.getStageType()) {
                     stageBaseInfo = stage;
+                    break;
                 }
             }
         }
