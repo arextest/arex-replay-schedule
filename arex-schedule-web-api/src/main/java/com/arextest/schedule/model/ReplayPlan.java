@@ -108,6 +108,8 @@ public class ReplayPlan {
     private Map<String, ReplayActionItem> actionItemMap = new HashMap<>();
 
     private List<ReplayPlanStageInfo> replayPlanStageList;
+    @JsonIgnore
+    private long lastUpdateTime = System.currentTimeMillis();
 
     public void buildActionItemMap() {
         this.getReplayActionItemList().forEach(replayActionItem -> this.actionItemMap.put(replayActionItem.getId(), replayActionItem));

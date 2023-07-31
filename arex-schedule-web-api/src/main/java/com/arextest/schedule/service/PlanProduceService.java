@@ -108,14 +108,14 @@ public class PlanProduceService {
             System.currentTimeMillis(), null, null);
         if (!replayPlanRepository.save(replayPlan)) {
             progressEvent.onReplayPlanCreateException(request);
-            return CommonResponse.badResponse("save replan plan error, " + replayPlan,
+            return CommonResponse.badResponse("save replan plan error, " + replayPlan.toString(),
                     new BuildReplayPlanResponse(BuildReplayFailReasonEnum.DB_ERROR));
         }
         planExecutionMonitorImpl.register(replayPlan);
         MDCTracer.addPlanId(replayPlan.getId());
         if (!replayPlanActionRepository.save(replayActionItemList)) {
             progressEvent.onReplayPlanCreateException(request);
-            return CommonResponse.badResponse("save replay action error, " + replayPlan,
+            return CommonResponse.badResponse("save replay action error, " + replayPlan.toString(),
                     new BuildReplayPlanResponse(BuildReplayFailReasonEnum.DB_ERROR));
         }
         progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.SAVE_PLAN, StageStatusEnum.SUCCEEDED,

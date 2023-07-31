@@ -6,7 +6,6 @@ import com.arextest.schedule.model.converter.ReplayPlanConverter;
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
 import com.mongodb.client.result.UpdateResult;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -68,11 +67,10 @@ public class ReplayPlanRepository implements RepositoryField {
         return replayPlanCollections.stream().map(ReplayPlanConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
     }
 
-    public boolean updateStage(ReplayPlan replayPlan) {
+    public void updateStage(ReplayPlan replayPlan) {
         Query query = Query.query(Criteria.where(DASH_ID).is(replayPlan.getId()));
         Update update = MongoHelper.getUpdate();
         update.set(REPLAY_PLAN_STAGE_LIST, replayPlan.getReplayPlanStageList());
         mongoTemplate.findAndModify(query, update, ReplayPlanCollection.class);
-        return true;
     }
 }
