@@ -1,5 +1,6 @@
 package com.arextest.schedule.progress;
 
+import com.arextest.schedule.exceptions.CreatePlanException;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
@@ -17,7 +18,7 @@ public interface ProgressEvent {
      * @param request createPlanReq
      * @return bad response describing the reason blocking plan creation
      */
-    default void onBeforePlanCreate(BuildReplayPlanRequest request) {}
+    default void onBeforePlanCreate(BuildReplayPlanRequest request) throws CreatePlanException {}
 
     /**
      * call when create plan encounter logical or unchecked runtime exception

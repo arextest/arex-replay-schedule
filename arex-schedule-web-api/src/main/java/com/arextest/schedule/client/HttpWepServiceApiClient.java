@@ -1,7 +1,8 @@
 package com.arextest.schedule.client;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Maps;
+import java.net.URI;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -18,17 +19,25 @@ import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.http.converter.support.AllEncompassingFormHttpMessageConverter;
 import org.springframework.http.converter.xml.SourceHttpMessageConverter;
+import org.springframework.retry.RetryCallback;
+import org.springframework.retry.RetryContext;
+import org.springframework.retry.RetryListener;
+import org.springframework.retry.RetryPolicy;
+import org.springframework.retry.backoff.FixedBackOffPolicy;
+import org.springframework.retry.policy.ExceptionClassifierRetryPolicy;
+import org.springframework.retry.policy.SimpleRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.util.*;
 
 /**
  * @author jmo
@@ -38,6 +47,7 @@ import java.util.Map;
 @Slf4j
 public final class HttpWepServiceApiClient {
     private RestTemplate restTemplate;
+    private RetryTemplate retryTemplate;
     @Resource
     private ZstdJacksonMessageConverter zstdJacksonMessageConverter;
     @Resource
@@ -46,9 +56,17 @@ public final class HttpWepServiceApiClient {
     private int connectTimeOut;
     @Value("${arex.read.time.out}")
     private int readTimeOut;
-
+    @Value("${arex.retry.max.attempts}")
+    private int maxAttempts;
+    @Value("${arex.retry.back.off.period}")
+    private int backOffPeriod;
 
     @PostConstruct
+    private void initTemplate() {
+        initRestTemplate();
+        initRetryTemplate();
+    }
+
     private void initRestTemplate() {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(connectTimeOut);
@@ -67,26 +85,76 @@ public final class HttpWepServiceApiClient {
         httpMessageConverterList.add(converter);
         this.restTemplate = new RestTemplate(httpMessageConverterList);
         this.restTemplate.setRequestFactory(requestFactory);
+        this.restTemplate.getInterceptors().add(new LoggingRequestInterceptor());
+    }
+
+    private void initRetryTemplate() {
+        retryTemplate = new RetryTemplate();
+
+        // Create an Retry Policy that will retry on specific exceptions, up to maxAttempts times
+        setRetryPolicy();
+        // Create an FixedBackOffPolicy that will set the retry interval
+        setBackOffPolicy();
+        // Add retry listener
+        registerRetryListener();
+    }
+
+    private void setBackOffPolicy() {
+        FixedBackOffPolicy backoffPolicy = new FixedBackOffPolicy();
+        backoffPolicy.setBackOffPeriod(backOffPeriod);
+        retryTemplate.setBackOffPolicy(backoffPolicy);
+    }
+
+    private void setRetryPolicy() {
+        // Create a SimpleRetryPolicy that will retry up to maxAttempts times
+        SimpleRetryPolicy simpleRetryPolicy = new SimpleRetryPolicy(maxAttempts);
+
+        // Create an ExceptionClassifierRetryPolicy that will retry on specific exceptions, up to maxAttempts times
+        ExceptionClassifierRetryPolicy exceptionClassifierRetryPolicy = new ExceptionClassifierRetryPolicy();
+
+        Map<Class<? extends Throwable>, RetryPolicy> policyMap = Maps.newHashMapWithExpectedSize(3);
+        policyMap.put(SocketException.class, simpleRetryPolicy);
+        policyMap.put(SocketTimeoutException.class, simpleRetryPolicy);
+        policyMap.put(ResourceAccessException.class, simpleRetryPolicy);
+        exceptionClassifierRetryPolicy.setPolicyMap(policyMap);
+
+        retryTemplate.setRetryPolicy(exceptionClassifierRetryPolicy);
+    }
+
+    private void registerRetryListener() {
+        retryTemplate.registerListener(new RetryListener() {
+            @Override
+            public <T, E extends Throwable> boolean open(RetryContext context, RetryCallback<T, E> callback) {
+                LOGGER.info("Retry started");
+                return true;
+            }
+
+            @Override
+            public <T, E extends Throwable> void close(RetryContext context, RetryCallback<T, E> callback, Throwable throwable) {
+                LOGGER.info("Retry finished");
+            }
+
+            @Override
+            public <T, E extends Throwable> void onError(RetryContext context, RetryCallback<T, E> callback, Throwable throwable) {
+                LOGGER.warn("Retry error occurred, ", throwable);
+            }
+        });
     }
 
     public <TResponse> TResponse get(String url, Map<String, ?> urlVariables, Class<TResponse> responseType) {
         try {
             return restTemplate.getForObject(url, responseType, urlVariables);
-        } catch (Throwable throwable) {
-            LOGGER.error("http get url: {} ,error: {} , urlVariables: {}", url, throwable.getMessage(), urlVariables,
-                    throwable);
+        } catch (Exception e) {
+            return null;
         }
-        return null;
     }
 
     public <TResponse> ResponseEntity<TResponse> get(String url, Map<String, ?> urlVariables, ParameterizedTypeReference<TResponse> responseType) {
         try {
             return restTemplate.exchange(url, HttpMethod.GET, null, responseType, urlVariables);
-        } catch (Throwable throwable) {
-            LOGGER.error("http get url: {} ,error: {} , urlVariables: {}", url, throwable.getMessage(), urlVariables,
-                    throwable);
+        } catch (Exception e) {
+            return null;
         }
-        return null;
     }
 
     public <TResponse> TResponse get(String url, Map<String, ?> urlVariables,
@@ -94,26 +162,25 @@ public final class HttpWepServiceApiClient {
         try {
             HttpEntity<?> request = new HttpEntity<>(headers);
             return restTemplate.exchange(url, HttpMethod.GET, request, responseType, urlVariables).getBody();
-        } catch (Throwable throwable) {
-            LOGGER.error("http get url: {} ,error: {} , urlVariables: {} ,headers: {}", url, throwable.getMessage(),
-                    urlVariables, headers,
-                    throwable);
+        } catch (Exception e) {
+            return null;
         }
-        return null;
     }
 
     public <TRequest, TResponse> TResponse jsonPost(String url, TRequest request, Class<TResponse> responseType) {
         try {
             return restTemplate.postForObject(url, wrapJsonContentType(request), responseType);
-        } catch (Throwable throwable) {
-            try {
-                LOGGER.error("http post url: {} ,error: {} ,request: {}", url, throwable.getMessage(),
-                        objectMapper.writeValueAsString(request), throwable);
-            } catch (JsonProcessingException e) {
-                LOGGER.error(e.getMessage(), e);
-            }
+        } catch (Exception e) {
+            return null;
         }
-        return null;
+    }
+
+    public <TRequest, TResponse> TResponse retryJsonPost(String url, TRequest request, Class<TResponse> responseType) {
+        try {
+            return retryTemplate.execute(context -> restTemplate.postForObject(url, wrapJsonContentType(request), responseType));
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -129,14 +196,22 @@ public final class HttpWepServiceApiClient {
         return httpJsonEntity;
     }
 
+    /**
+     * When restTemplate sends a replay request, it needs to pass the URI object to avoid the url encode parameter parsing exception.
+     */
     public <TResponse> ResponseEntity<TResponse> exchange(String url, HttpMethod method, HttpEntity<?> requestEntity,
                                                           Class<TResponse> responseType) throws RestClientException {
-        return restTemplate.exchange(url, method, requestEntity, responseType);
+        return restTemplate.exchange(URI.create(url), method, requestEntity, responseType);
     }
 
     public <TRequest, TResponse> ResponseEntity<TResponse> jsonPostWithThrow(String url, HttpEntity<TRequest> request,
                                                                              Class<TResponse> responseType) throws RestClientException {
         return restTemplate.postForEntity(url, wrapJsonContentType(request), responseType);
 
+    }
+
+    public <TRequest, TResponse> ResponseEntity<TResponse> retryJsonPostWithThrow(String url, HttpEntity<TRequest> request,
+                                                                                  Class<TResponse> responseType) throws RestClientException {
+        return retryTemplate.execute(context -> restTemplate.postForEntity(url, wrapJsonContentType(request), responseType));
     }
 }
