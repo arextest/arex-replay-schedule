@@ -20,4 +20,8 @@ public enum StageStatusEnum {
     StageStatusEnum(int code) {
         this.code = code;
     }
+
+    public static StageStatusEnum success(boolean success) {
+        return success ? SUCCEEDED : FAILED;
+    }
 }

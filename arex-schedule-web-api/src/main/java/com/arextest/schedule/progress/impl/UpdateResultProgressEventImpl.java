@@ -48,9 +48,10 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
             onReplayPlanStageUpdate(replayPlan, PlanStageEnum.INIT_REPORT, StageStatusEnum.ONGOING,
                 System.currentTimeMillis(), null, null);
             boolean success = replayReportService.initReportInfo(replayPlan);
-            StageStatusEnum stageStatusEnum = success ? StageStatusEnum.SUCCEEDED : StageStatusEnum.FAILED;
+            StageStatusEnum stageStatusEnum = StageStatusEnum.success(success);
             onReplayPlanStageUpdate(replayPlan, PlanStageEnum.INIT_REPORT, stageStatusEnum,
                 null, System.currentTimeMillis(), null);
+
             onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.ONGOING,
                 System.currentTimeMillis(), null, null);
             compareConfigService.preload(replayPlan);
