@@ -1,9 +1,10 @@
-package com.arextest.schedule.planexecution;
+package com.arextest.schedule.planexecution.impl;
 
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.planexecution.PlanExecutionMonitor;
+import com.arextest.schedule.planexecution.PlanMonitorHandler;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -71,7 +72,7 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
         LOGGER.info("deregister monitor task, planId: {}", plan.getId());
 
         for (PlanMonitorHandler handler : planMonitorHandlerList) {
-            handler.finalize(plan);
+            handler.end(plan);
         }
     }
 }

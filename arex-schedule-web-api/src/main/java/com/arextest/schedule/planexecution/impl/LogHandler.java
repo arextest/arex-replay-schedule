@@ -1,8 +1,9 @@
-package com.arextest.schedule.planexecution;
+package com.arextest.schedule.planexecution.impl;
 
 import com.arextest.schedule.dao.mongodb.ReplayBizLogRepository;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.bizlog.BizLog;
+import com.arextest.schedule.planexecution.PlanMonitorHandler;
 import com.arextest.schedule.progress.ProgressTracer;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,7 +79,7 @@ public class LogHandler implements PlanMonitorHandler {
     }
 
     @Override
-    public void finalize(ReplayPlan plan) {
+    public void end(ReplayPlan plan) {
         this.bizLoggerMonitor.flushLogs(plan);
     }
 

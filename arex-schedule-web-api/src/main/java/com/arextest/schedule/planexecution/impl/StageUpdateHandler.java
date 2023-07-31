@@ -1,10 +1,12 @@
-package com.arextest.schedule.planexecution;
+package com.arextest.schedule.planexecution.impl;
 
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.plan.PlanStageEnum;
 import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
 import com.arextest.schedule.model.plan.StageStatusEnum;
+import com.arextest.schedule.planexecution.PlanMonitorHandler;
+import com.arextest.schedule.planexecution.impl.PlanExecutionMonitorImpl;
 import javax.annotation.Resource;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -30,7 +32,7 @@ public class StageUpdateHandler implements PlanMonitorHandler {
     }
 
     @Override
-    public void finalize(ReplayPlan plan) {
+    public void end(ReplayPlan plan) {
         replayPlanRepository.updateStage(plan);
     }
 
