@@ -37,6 +37,13 @@ public class StageUpdateHandler implements PlanMonitorHandler {
         if (plan.getPlanStatus() != null && plan.getPlanStatus().isCanceled()) {
             addCancelStage(plan);
         }
+        ReplayPlanStageInfo runStage = plan.getReplayPlanStageList().stream()
+            .filter(stage -> stage.getStageStatus() == PlanStageEnum.RUN.getCode())
+            .findFirst()
+            .orElse(null);
+        if (runStage != null && runStage.getStageStatus() == StageStatusEnum.ONGOING.getCode()) {
+            runStage.setStageStatus(StageStatusEnum.FAILED.getCode());
+        }
         replayPlanRepository.updateStage(plan);
     }
 
