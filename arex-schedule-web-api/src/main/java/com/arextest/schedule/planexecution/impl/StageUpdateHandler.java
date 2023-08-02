@@ -33,6 +33,9 @@ public class StageUpdateHandler implements PlanMonitorHandler {
 
     @Override
     public void end(ReplayPlan plan) {
+        if (plan.getPlanStatus() != null && plan.getPlanStatus().isCanceled()) {
+            addCancelStage(plan);
+        }
         replayPlanRepository.updateStage(plan);
     }
 
