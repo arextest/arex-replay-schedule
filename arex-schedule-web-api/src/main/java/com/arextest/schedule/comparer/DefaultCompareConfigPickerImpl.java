@@ -11,7 +11,7 @@ import java.util.Optional;
  * Created by Qzmo on 2023/8/2
  */
 public class DefaultCompareConfigPickerImpl implements CompareConfigPicker {
-    public ReplayComparisonConfig pickConfig(ComparisonGlobalConfig comparisonGlobalConfig,
+    public ReplayComparisonConfig pickConfig(ComparisonGlobalConfig globalConfig,
                                                     ComparisonInterfaceConfig operationConfig,
                                                     CompareItem compareItem, String category) {
         if (compareItem.isEntryPointCategory()) {
@@ -21,7 +21,7 @@ public class DefaultCompareConfigPickerImpl implements CompareConfigPicker {
         String depKey = ComparisonDependencyConfig.dependencyKey(category, compareItem.getCompareOperation());
         Optional<ComparisonDependencyConfig> matchedDep = Optional.ofNullable(operationConfig.getDependencyConfigMap())
                 .map(dependencyConfig -> dependencyConfig.get(depKey));
-        return matchedDep.isPresent() ? matchedDep.get() : comparisonGlobalConfig;
+        return matchedDep.isPresent() ? matchedDep.get() : globalConfig;
     }
 
     public ReplayComparisonConfig pickConfig(ComparisonGlobalConfig globalConfig, ComparisonInterfaceConfig operationConfig,

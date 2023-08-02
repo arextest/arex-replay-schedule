@@ -65,7 +65,7 @@ public final class CompareConfigService {
 
             customComparisonConfigurationHandler.build(config, actionItem);
 
-            boolean res = redisCacheProvider.put(ComparisonInterfaceConfig.dependencyKey(actionItem.getId()).getBytes(StandardCharsets.UTF_8),
+            redisCacheProvider.put(ComparisonInterfaceConfig.dependencyKey(actionItem.getId()).getBytes(StandardCharsets.UTF_8),
                     4 * 24 * 60 * 60L,
                     objectToJsonString(config).getBytes(StandardCharsets.UTF_8));
 
