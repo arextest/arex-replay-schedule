@@ -6,10 +6,10 @@ import com.arextest.schedule.model.plan.PlanStageEnum;
 import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
 import com.arextest.schedule.model.plan.StageStatusEnum;
 import com.arextest.schedule.planexecution.PlanMonitorHandler;
-import com.arextest.schedule.planexecution.impl.PlanExecutionMonitorImpl;
-import javax.annotation.Resource;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
 
 /**
  * @author wildeslam.
@@ -37,6 +37,11 @@ public class StageUpdateHandler implements PlanMonitorHandler {
     }
 
     private void addCancelStage(ReplayPlan replayPlan) {
+        for (ReplayPlanStageInfo stage : replayPlan.getReplayPlanStageList()) {
+            if (stage.getStageType() == PlanStageEnum.CANCEL.getCode()) {
+                return;
+            }
+        }
         int index = 0;
         for (; index < replayPlan.getReplayPlanStageList().size(); index++) {
             if (replayPlan.getReplayPlanStageList().get(index).getStageStatus() == StageStatusEnum.PENDING.getCode()) {
