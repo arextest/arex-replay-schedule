@@ -1,9 +1,6 @@
 package com.arextest.schedule.beans;
 
-import com.arextest.schedule.comparer.CustomComparisonConfigurationHandler;
-import com.arextest.schedule.comparer.CompareConfigService;
-import com.arextest.schedule.comparer.ComparisonWriter;
-import com.arextest.schedule.comparer.ReplayResultComparer;
+import com.arextest.schedule.comparer.*;
 import com.arextest.schedule.comparer.impl.DefaultCustomComparisonConfigurationHandler;
 import com.arextest.schedule.comparer.impl.DefaultReplayResultComparer;
 import com.arextest.schedule.comparer.impl.PrepareCompareSourceRemoteLoader;
@@ -19,6 +16,13 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 @Configuration
 public class ReplayComparerConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean(CompareConfigPicker.class)
+    public CompareConfigPicker compareConfigPicker() {
+        return new DefaultCompareConfigPickerImpl();
+    }
+
     @Bean
     @ConditionalOnMissingBean(ReplayResultComparer.class)
     public ReplayResultComparer defaultResultComparer(
@@ -27,14 +31,17 @@ public class ReplayComparerConfiguration {
             ProgressTracer progressTracer,
             ComparisonWriter comparisonOutputWriter,
             ReplayActionCaseItemRepository caseItemRepository,
-            MetricService metricService
+            MetricService metricService,
+            CompareConfigPicker compareConfigPicker
     ) {
         return new DefaultReplayResultComparer(compareConfigService,
                 sourceRemoteLoader,
                 progressTracer,
                 comparisonOutputWriter,
                 caseItemRepository,
-                metricService);
+                metricService,
+                compareConfigPicker
+        );
     }
 
     @Bean

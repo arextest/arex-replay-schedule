@@ -6,6 +6,7 @@ import com.arextest.diff.model.log.LogEntity;
 import com.arextest.diff.model.log.NodeEntity;
 import com.arextest.diff.model.log.UnmatchedPairEntity;
 import com.arextest.diff.sdk.CompareSDK;
+import com.arextest.schedule.comparer.CompareConfigPicker;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.comparer.impl.DefaultReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
@@ -37,6 +38,8 @@ public class QueryReplayMsgService {
     private ReplayCompareResultRepositoryImpl replayCompareResultRepository;
     @Resource
     private CompareConfigService compareConfigService;
+    @Resource
+    private CompareConfigPicker compareConfigPicker;
     private static final CompareSDK COMPARE_INSTANCE = DefaultReplayResultComparer.getCompareSDKInstance();
 
 
@@ -49,7 +52,7 @@ public class QueryReplayMsgService {
         ComparisonGlobalConfig globalConfig = compareConfigService.loadGlobalConfig(compareResultBo.getPlanId());
 
 
-        ReplayComparisonConfig itemConfig = CompareConfigService.pickConfig(globalConfig, operationConfig,
+        ReplayComparisonConfig itemConfig = compareConfigPicker.pickConfig(globalConfig, operationConfig,
                 compareResultBo.getCategoryName(), compareResultBo.getOperationName());
 
         CompareOptions compareOptions = DefaultReplayResultComparer
