@@ -85,7 +85,7 @@ public class PlanConsumePrepareService {
         List<ReplayActionCaseItem> caseItemList = replayActionItem.getCaseItemList();
         int size;
         if (CollectionUtils.isNotEmpty(caseItemList)) {
-            size = doFixedCaseSave(caseItemList);
+            size = doFixedCaseSave(replayActionItem);
         } else {
             size = doPagingLoadCaseSave(replayActionItem);
         }
@@ -134,7 +134,8 @@ public class PlanConsumePrepareService {
         return totalSize;
     }
 
-    private int doFixedCaseSave(List<ReplayActionCaseItem> caseItemList) {
+    private int doFixedCaseSave(ReplayActionItem replayActionItem) {
+        List<ReplayActionCaseItem> caseItemList = replayActionItem.getCaseItemList();
         int size = 0;
         for (int i = 0; i < caseItemList.size(); i++) {
             ReplayActionCaseItem caseItem = caseItemList.get(i);
@@ -145,12 +146,11 @@ public class PlanConsumePrepareService {
                 caseItem.setSourceResultId(StringUtils.EMPTY);
                 caseItem.setTargetResultId(StringUtils.EMPTY);
             } else {
-                viewReplay.setParent(caseItem.getParent());
                 caseItemList.set(i, viewReplay);
                 size++;
             }
         }
-
+        ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
         caseItemPostProcess(caseItemList);
         replayActionCaseItemRepository.save(caseItemList);
         return size;
