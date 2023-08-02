@@ -65,7 +65,7 @@ public final class CompareConfigService {
 
             customComparisonConfigurationHandler.build(config, actionItem);
 
-            redisCacheProvider.put(ComparisonInterfaceConfig.dependencyKey(actionItem.getId()).getBytes(StandardCharsets.UTF_8),
+            boolean res = redisCacheProvider.put(ComparisonInterfaceConfig.dependencyKey(actionItem.getId()).getBytes(StandardCharsets.UTF_8),
                     4 * 24 * 60 * 60L,
                     objectToJsonString(config).getBytes(StandardCharsets.UTF_8));
 
@@ -138,38 +138,6 @@ public final class CompareConfigService {
         }
 
         return res;
-    }
-
-    public static ReplayComparisonConfig pickConfig(ComparisonGlobalConfig comparisonGlobalConfig,
-                                                    ComparisonInterfaceConfig operationConfig,
-                                                    CompareItem compareItem,  String category) {
-        if (compareItem.isEntryPointCategory()) {
-            return operationConfig;
-        }
-
-        String depKey = ComparisonDependencyConfig.dependencyKey(category, compareItem.getCompareOperation());
-        Optional<ComparisonDependencyConfig> matchedDep = Optional.ofNullable(operationConfig.getDependencyConfigMap())
-                .map(dependencyConfig -> dependencyConfig.get(depKey));
-        return matchedDep.isPresent() ? matchedDep.get() : comparisonGlobalConfig;
-    }
-
-    public static ReplayComparisonConfig pickConfig(ComparisonGlobalConfig globalConfig, ComparisonInterfaceConfig operationConfig,
-                                                    String category, String operationName) {
-        boolean mainEntryType = Optional.ofNullable(operationConfig.getOperationTypes())
-                .map(types -> types.contains(category)).orElse(false);
-        boolean mainEntryNameMatched = Optional.ofNullable(operationConfig.getOperationName())
-                .map(name -> name.equals(operationName)).orElse(false);
-
-        if (mainEntryType && mainEntryNameMatched) {
-            return operationConfig;
-        }
-
-        String depKey = ComparisonDependencyConfig.dependencyKey(category, operationName);
-        Optional<ComparisonDependencyConfig> matchedDep = Optional.ofNullable(operationConfig.getDependencyConfigMap())
-                .map(dependencyConfig -> dependencyConfig.get(depKey));
-
-        // if not matched, use global config
-        return matchedDep.isPresent() ? matchedDep.get() : globalConfig;
     }
 
     @Data
