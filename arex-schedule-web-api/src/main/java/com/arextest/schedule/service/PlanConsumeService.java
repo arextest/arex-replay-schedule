@@ -171,7 +171,7 @@ public final class PlanConsumeService {
                 format = StageUtils.RUN_MSG_FORMAT_SINGLE;
             }
             progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.RUN, stageStatusEnum,
-                null, endTime, String.format(format, index, total));
+                null, endTime, String.format(format, total, index));
         }
     }
 
