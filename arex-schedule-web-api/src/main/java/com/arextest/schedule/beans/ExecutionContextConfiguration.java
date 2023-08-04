@@ -1,5 +1,6 @@
 package com.arextest.schedule.beans;
 
+import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.planexecution.impl.DefaultExecutionContextProvider;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import lombok.extern.slf4j.Slf4j;
@@ -12,9 +13,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ExecutionContextConfiguration {
     @Bean
-    @ConditionalOnMissingBean
-    @SuppressWarnings("rawtypes")
-    public PlanExecutionContextProvider defaultExecutionContextBuilder() {
-        return new DefaultExecutionContextProvider();
+    public PlanExecutionContextProvider<?> defaultExecutionContextBuilder(
+            ReplayActionCaseItemRepository replayActionCaseItemRepository) {
+        return new DefaultExecutionContextProvider(replayActionCaseItemRepository);
     }
 }

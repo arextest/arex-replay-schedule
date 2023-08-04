@@ -1,15 +1,18 @@
 package com.arextest.schedule.planexecution.impl;
 
+import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.mongodb.core.query.Criteria;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by Qzmo on 2023/5/15
@@ -17,27 +20,40 @@ import java.util.*;
  * Default implementation illustrating functionalities of execution context
  */
 @Slf4j
-public class DefaultExecutionContextProvider implements PlanExecutionContextProvider<Map<String, String>> {
+@AllArgsConstructor
+public class DefaultExecutionContextProvider implements PlanExecutionContextProvider<DefaultExecutionContextProvider.ContextDependenciesHolder> {
+    private final ReplayActionCaseItemRepository replayActionCaseItemRepository;
 
-    private final static String REMOTE_CONFIG_DEP_KEY = "CONFIG_VER";
-    private final static String DEFAULT_CONTEXT_NAME = "DEFAULT_EXECUTION_CONTEXT";
+    private static final String CONTEXT_PREFIX = "batch-";
+    @Data
+    static class ContextDependenciesHolder {
+        private String contextIdentifier;
+    }
 
     @Override
-    public List<PlanExecutionContext<Map<String, String>>> buildContext(ReplayPlan plan) {
-        PlanExecutionContext<Map<String, String>> singletonContext = new PlanExecutionContext<>();
-        singletonContext.setContextName(DEFAULT_CONTEXT_NAME);
+    public List<PlanExecutionContext<ContextDependenciesHolder>> buildContext(ReplayPlan plan) {
+        Set<String> distinctIdentifiers = replayActionCaseItemRepository.getAllContextIdentifiers(plan.getId());
+        List<PlanExecutionContext<ContextDependenciesHolder>> contexts = new ArrayList<>();
 
-        // store dependency version for further usage
-        HashMap<String, String> dependencies = new HashMap<>();
-        dependencies.put(REMOTE_CONFIG_DEP_KEY, "EXAMPLE_VER");
-        singletonContext.setDependencies(dependencies);
+        if (replayActionCaseItemRepository.hasNullIdentifier(plan.getId())) {
+            // build context for null identifier, will skip before hook for this context
+            PlanExecutionContext<ContextDependenciesHolder> context = new PlanExecutionContext<>();
+            ContextDependenciesHolder dependenciesHolder = new ContextDependenciesHolder();
+            dependenciesHolder.setContextIdentifier(null);
+            context.setContextName(CONTEXT_PREFIX + "no-config");
+            context.setDependencies(dependenciesHolder);
+            contexts.add(context);
+        }
 
-        // set up base query for cases belonging to this context
-        Criteria dummyCriteria = Criteria.where("dataChangeCreateTime").gt(0);
-        singletonContext.setContextCaseQuery(Collections.singletonList(dummyCriteria));
-
-        List<PlanExecutionContext<Map<String, String>>> contexts = Collections.singletonList(singletonContext);
-        LOGGER.info("Constructed contexts of size: {}", contexts.size());
+        // build context for each distinct identifier, need to prepare remote resources for each context
+        distinctIdentifiers.forEach(identifier -> {
+            PlanExecutionContext<ContextDependenciesHolder> context = new PlanExecutionContext<>();
+            ContextDependenciesHolder dependenciesHolder = new ContextDependenciesHolder();
+            dependenciesHolder.setContextIdentifier(identifier);
+            context.setContextName(CONTEXT_PREFIX + identifier);
+            context.setDependencies(dependenciesHolder);
+            contexts.add(context);
+        });
 
         return contexts;
     }
@@ -45,19 +61,20 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
     @Override
     public void injectContextIntoCase(List<ReplayActionCaseItem> cases) {
         cases.forEach(caseItem -> {
-            caseItem.setContextIdentifier(StringUtils.EMPTY);
+            // extract config batch no from caseItem in advance, the entire request will be compressed using zstd which is not queryable
+            caseItem.setContextIdentifier(caseItem.replayDependency());
         });
     }
 
     @Override
-    public void onBeforeContextExecution(PlanExecutionContext<Map<String, String>> currentContext, ReplayPlan plan) {
+    public void onBeforeContextExecution(PlanExecutionContext<ContextDependenciesHolder> currentContext, ReplayPlan plan) {
         MDCTracer.addExecutionContextNme(currentContext.getContextName());
         LOGGER.info("Start executing context: {}", currentContext);
         // prepare dependencies before sending any cases of this context...
     }
 
     @Override
-    public void onAfterContextExecution(PlanExecutionContext<Map<String, String>> currentContext, ReplayPlan plan) {
+    public void onAfterContextExecution(PlanExecutionContext<ContextDependenciesHolder> currentContext, ReplayPlan plan) {
         LOGGER.info("Finished executing context: {}", currentContext);
         // clean up context related resources on target instances...
     }

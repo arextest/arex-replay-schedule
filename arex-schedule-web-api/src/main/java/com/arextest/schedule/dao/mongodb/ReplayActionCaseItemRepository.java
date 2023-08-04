@@ -159,4 +159,15 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         return ReplayRunDetailsConverter.INSTANCE.dtoFromDao(replayRunDetailsCollections);
     }
 
+    public Set<String> getAllContextIdentifiers(String planId) {
+        Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
+        return new HashSet<>(mongoTemplate.findDistinct(query, ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER,
+                ReplayRunDetailsCollection.class, String.class));
+    }
+
+    public boolean hasNullIdentifier(String planId) {
+        Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
+        query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).isNull());
+        return mongoTemplate.exists(query, ReplayRunDetailsCollection.class);
+    }
 }
