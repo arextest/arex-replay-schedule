@@ -54,7 +54,11 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
         }
         LOGGER.info("Monitoring task {}", task.getId());
         for (PlanMonitorHandler handler : planMonitorHandlerList) {
-            handler.handle(task);
+            try {
+                handler.handle(task);
+            } catch (Throwable t) {
+                LOGGER.error("Error handling plan:{}", task.getId(), t);
+            }
         }
     }
 
@@ -72,7 +76,11 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
         LOGGER.info("deregister monitor task, planId: {}", plan.getId());
 
         for (PlanMonitorHandler handler : planMonitorHandlerList) {
-            handler.end(plan);
+            try {
+                handler.end(plan);
+            } catch (Throwable t) {
+                LOGGER.error("Error ending plan:{}", plan.getId(), t);
+            }
         }
     }
 }
