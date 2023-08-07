@@ -1,5 +1,6 @@
 package com.arextest.schedule.client;
 
+import com.arextest.schedule.utils.SSLUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import java.net.URI;
@@ -38,6 +39,8 @@ import javax.annotation.Resource;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.*;
+import javax.net.ssl.*;
+import java.security.cert.X509Certificate;
 
 import static com.arextest.schedule.common.CommonConstant.URL;
 
@@ -62,11 +65,16 @@ public final class HttpWepServiceApiClient {
     private int maxAttempts;
     @Value("${arex.retry.back.off.period}")
     private int backOffPeriod;
+    @Value("${arex.client.https.cert.disable:#{false}}")
+    private boolean disableCertCheck;
 
     @PostConstruct
     private void initTemplate() {
         initRestTemplate();
         initRetryTemplate();
+        if (disableCertCheck) {
+            SSLUtils.disableSSLVerification();
+        }
     }
 
     private void initRestTemplate() {
