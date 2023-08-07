@@ -95,7 +95,6 @@ public class LogHandler implements PlanMonitorHandler {
         if (plan.getPlanStatus().isCanceled() || redisCancelMonitor.isPlanCanceled(plan)) {
             LOGGER.info("Plan {} cancel status set to true", plan.getId());
             plan.getPlanStatus().setCanceled(true);
-            plan.getMonitorFuture().cancel(false);
         }
     }
 }
