@@ -159,6 +159,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         return ReplayRunDetailsConverter.INSTANCE.dtoFromDao(replayRunDetailsCollections);
     }
 
+    // region <context>
     public Set<String> getAllContextIdentifiers(String planId) {
         Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
         return new HashSet<>(mongoTemplate.findDistinct(query, ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER,
@@ -170,4 +171,14 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).isNull());
         return mongoTemplate.exists(query, ReplayRunDetailsCollection.class);
     }
+
+    // get one mocker of the given context
+    public ReplayActionCaseItem getOneOfContext(String planId, String contextIdentifier) {
+        Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
+        query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).is(contextIdentifier));
+        ReplayRunDetailsCollection replayRunDetailsCollection = mongoTemplate.findOne(query, ReplayRunDetailsCollection.class);
+        return ReplayRunDetailsConverter.INSTANCE.dtoFromDao(replayRunDetailsCollection);
+    }
+
+    // endregion <context>
 }

@@ -2,17 +2,21 @@ package com.arextest.schedule.planexecution.impl;
 
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
+import com.arextest.schedule.model.ExecutionContextActionType;
 import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
+import com.arextest.schedule.sender.ReplaySender;
+import com.arextest.schedule.sender.ReplaySenderFactory;
+import com.arextest.schedule.utils.ReplayParentBinder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.retry.support.RetryTemplate;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by Qzmo on 2023/5/15
@@ -23,8 +27,12 @@ import java.util.Set;
 @AllArgsConstructor
 public class DefaultExecutionContextProvider implements PlanExecutionContextProvider<DefaultExecutionContextProvider.ContextDependenciesHolder> {
     private final ReplayActionCaseItemRepository replayActionCaseItemRepository;
+    private final ReplaySenderFactory replaySenderFactory;
 
+    private static final RetryTemplate RETRY_TEMPLATE = RetryTemplate.builder().maxAttempts(3).build();
     private static final String CONTEXT_PREFIX = "batch-";
+    private static final String CONFIG_CENTER_WARM_UP_HEAD = "arex_replay_prepare_dependency";
+
     @Data
     static class ContextDependenciesHolder {
         private String contextIdentifier;
@@ -70,7 +78,35 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
     public void onBeforeContextExecution(PlanExecutionContext<ContextDependenciesHolder> currentContext, ReplayPlan plan) {
         MDCTracer.addExecutionContextNme(currentContext.getContextName());
         LOGGER.info("Start executing context: {}", currentContext);
-        // prepare dependencies before sending any cases of this context...
+        ContextDependenciesHolder dependencyHolder = currentContext.getDependencies();
+
+        if (StringUtils.isEmpty(dependencyHolder.getContextIdentifier())) {
+            // skip before hook for null identifier
+            return;
+        }
+
+        final Map<String, String> warmupHeader = new HashMap<>();
+        warmupHeader.put(CONFIG_CENTER_WARM_UP_HEAD, dependencyHolder.getContextIdentifier());
+
+        try {
+            // find warmup case for this batch
+            ReplayActionCaseItem warmupCase = replayActionCaseItemRepository.getOneOfContext(plan.getId(), dependencyHolder.getContextIdentifier());
+            ReplayParentBinder.setupCaseItemParent(warmupCase, plan.getActionItemMap().get(warmupCase.getPlanItemId()));
+            ReplaySender sender = replaySenderFactory.findReplaySender(warmupCase.getCaseType());
+
+            // send warmup case to target instance
+            RETRY_TEMPLATE.execute(context -> {
+                boolean caseSuccess = sender.send(warmupCase, warmupHeader);
+                if (!caseSuccess) {
+                    throw new RuntimeException("Failed to warmup context: " + currentContext + " with case:" + warmupCase);
+                }
+                return true;
+            });
+        } catch (Throwable t) {
+            // any error goes here are considered as fatal, needs to look into details
+            LOGGER.error("Failed to execute before hook for context: {}", currentContext, t);
+            currentContext.setActionType(ExecutionContextActionType.SKIP_CASE_OF_CONTEXT);
+        }
     }
 
     @Override
