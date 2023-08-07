@@ -12,7 +12,10 @@ import java.security.cert.X509Certificate;
  * Created by Qzmo on 2023/8/7
  */
 @Slf4j
+@SuppressWarnings("squid:S4830")
 public class SSLUtils {
+
+    // this is dangerous, but this application should only be used in a trusted environment
     public static void disableSSLVerification() {
         try {
             TrustManager[] trustAllCerts = new TrustManager[] {
