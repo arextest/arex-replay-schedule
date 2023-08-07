@@ -96,6 +96,7 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
 
             // send warmup case to target instance
             RETRY_TEMPLATE.execute(context -> {
+                // todo: multi-instance should be supported here
                 boolean caseSuccess = sender.send(warmupCase, warmupHeader);
                 if (!caseSuccess) {
                     throw new RuntimeException("Failed to warmup context: " + currentContext + " with case:" + warmupCase);
