@@ -88,8 +88,11 @@ public class LogHandler implements PlanMonitorHandler {
     }
 
     private void refreshCancelStatus(ReplayPlan plan) {
-        if ((plan.getPlanStatus() != null && plan.getPlanStatus().isCanceled())
-            || redisCancelMonitor.isPlanCanceled(plan)) {
+        if (plan.getPlanStatus() == null) {
+            return;
+        }
+
+        if (plan.getPlanStatus().isCanceled() || redisCancelMonitor.isPlanCanceled(plan)) {
             LOGGER.info("Plan {} cancel status set to true", plan.getId());
             plan.getPlanStatus().setCanceled(true);
             plan.getMonitorFuture().cancel(false);
