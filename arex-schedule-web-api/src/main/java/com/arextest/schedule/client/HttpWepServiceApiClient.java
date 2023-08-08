@@ -1,16 +1,12 @@
 package com.arextest.schedule.client;
 
+import com.arextest.schedule.utils.SSLUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
-import java.net.URI;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -37,7 +33,11 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.*;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static com.arextest.schedule.common.CommonConstant.URL;
 
@@ -62,11 +62,16 @@ public final class HttpWepServiceApiClient {
     private int maxAttempts;
     @Value("${arex.retry.back.off.period}")
     private int backOffPeriod;
+    @Value("${arex.client.https.cert.disable:#{false}}")
+    private boolean disableCertCheck;
 
     @PostConstruct
     private void initTemplate() {
         initRestTemplate();
         initRetryTemplate();
+        if (disableCertCheck) {
+            SSLUtils.disableSSLVerification();
+        }
     }
 
     private void initRestTemplate() {
