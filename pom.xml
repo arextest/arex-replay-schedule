@@ -23,7 +23,7 @@
         <jmockit.version>1.37</jmockit.version>
         <lombok.version>1.18.2</lombok.version>
         <guava.version>20.0</guava.version>
-        <compare-sdk.version>0.1.22</compare-sdk.version>
+        <compare-sdk.version>0.1.23</compare-sdk.version>
         <web-contract.version>0.4.2</web-contract.version>
         <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
 
@@ -222,11 +222,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>com.github.luben</groupId>
-                <artifactId>zstd-jni</artifactId>
-                <version>1.4.4-3</version>
-            </dependency>
-            <dependency>
                 <groupId>org.mapstruct</groupId>
                 <artifactId>mapstruct-jdk8</artifactId>
                 <version>${mapstruct.version}</version>
@@ -264,7 +259,7 @@
             <dependency>
                 <groupId>com.arextest</groupId>
                 <artifactId>arex-common</artifactId>
-                <version>0.1.4</version>
+                <version>0.1.5</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.fastjson2</groupId>
