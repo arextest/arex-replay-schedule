@@ -54,6 +54,8 @@ public class PlanProduceService {
     @Resource
     private PlanConsumeService planConsumeService;
     @Resource
+    private PlanConsumePrepareService planConsumePrepareService;
+    @Resource
     private ProgressEvent progressEvent;
     @Resource
     private ConfigurationService configurationService;
@@ -255,6 +257,25 @@ public class PlanProduceService {
             default:
                 return BuildReplayFailReasonEnum.UNKNOWN;
         }
+    }
+
+    public CommonResponse reRunPlan(String planId) {
+        ReplayPlan replayPlan = replayPlanRepository.query(planId);
+        if (replayPlan == null) {
+            return CommonResponse.badResponse("target plan not found");
+        }
+        int rerunStatus = StageUtils.getStageStatus(replayPlan.getReplayPlanStageList(), PlanStageEnum.RE_RUN);
+        if (rerunStatus != StageStatusEnum.SUCCEEDED.getCode() && rerunStatus != StageStatusEnum.FAILED.getCode()) {
+            return CommonResponse.badResponse("This plan is ReRunning");
+        }
+
+        planExecutionMonitorImpl.register(replayPlan);
+        progressEvent.onReplayPlanReRun(replayPlan);
+        planConsumePrepareService.prepareAndUpdateFailedActionAndCase(replayPlan);
+
+        planConsumeService.runAsyncConsume(replayPlan);
+        return CommonResponse.successResponse("ReRun plan success！",
+            new BuildReplayPlanResponse(replayPlan.getId()));
     }
 
 

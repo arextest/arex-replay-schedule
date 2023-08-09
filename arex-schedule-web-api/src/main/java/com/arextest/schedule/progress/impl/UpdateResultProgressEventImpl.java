@@ -15,6 +15,8 @@ import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.service.MetricService;
 import com.arextest.schedule.service.ReplayReportService;
 import com.arextest.schedule.utils.StageUtils;
+
+import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -109,6 +111,12 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
         replayPlan.setLastUpdateTime(System.currentTimeMillis());
     }
 
+    @Override
+    public void onReplayPlanReRun(ReplayPlan replayPlan) {
+        replayReportService.pushPlanStatus(replayPlan.getId(), ReplayStatusType.INIT, null);
+        addReRunStage(replayPlan.getReplayPlanStageList());
+    }
+
     private StageBaseInfo findStage(List<ReplayPlanStageInfo> stageInfoList, PlanStageEnum stageType) {
         StageBaseInfo stageBaseInfo = null;
         for (StageBaseInfo stage : stageInfoList) {
@@ -166,6 +174,31 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
         if (firstSubStageOnGoing || lastSubStageSucceeded || stageStatus == StageStatusEnum.FAILED) {
             updateStage(parentStage, parentStageEnum, stageStatus, startTime, endTime, null);
         }
+    }
+
+    private void addReRunStage(List<ReplayPlanStageInfo> stageInfoList) {
+        // reset stage after RUN&RERUN and add RERUN stage.
+        int addIndex = 0;
+        for (int index = 0; index < stageInfoList.size(); index ++) {
+            if (stageInfoList.get(index).getStageType() == PlanStageEnum.RUN.getCode() ||
+                stageInfoList.get(index).getStageType() == PlanStageEnum.RE_RUN.getCode()) {
+                addIndex = index + 1;
+            }
+        }
+
+        ReplayPlanStageInfo reRunStage = StageUtils.initEmptyStage(PlanStageEnum.RE_RUN);
+        List<ReplayPlanStageInfo> subStageInfoList = new ArrayList<>();
+        PlanStageEnum.RE_RUN.getSubStageList().forEach(stage -> {
+            ReplayPlanStageInfo subStage = StageUtils.initEmptyStage(PlanStageEnum.of(stage));
+            subStageInfoList.add(subStage);
+        });
+        reRunStage.setSubStageInfoList(subStageInfoList);
+        stageInfoList.add(addIndex, reRunStage);
+
+        for (addIndex ++; addIndex < stageInfoList.size(); addIndex ++) {
+            StageUtils.resetStageStatus(stageInfoList.get(addIndex));
+        }
+
     }
 
     private void recordPlanExecutionTime(ReplayPlan replayPlan) {

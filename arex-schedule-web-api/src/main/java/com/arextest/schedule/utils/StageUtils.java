@@ -1,7 +1,9 @@
 package com.arextest.schedule.utils;
 
+import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.plan.PlanStageEnum;
 import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
+import com.arextest.schedule.model.plan.StageBaseInfo;
 import com.arextest.schedule.model.plan.StageStatusEnum;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,7 +23,7 @@ public class StageUtils {
     public static final String RUN_MSG_FORMAT = "Total batches:%d, %d batches have been executed.";
 
 
-    private static ReplayPlanStageInfo initEmptyStage(PlanStageEnum planStageEnum) {
+    public static ReplayPlanStageInfo initEmptyStage(PlanStageEnum planStageEnum) {
         ReplayPlanStageInfo stageInfo = new ReplayPlanStageInfo();
         stageInfo.setStageType(planStageEnum.getCode());
         stageInfo.setStageName(planStageEnum.name());
@@ -43,5 +45,33 @@ public class StageUtils {
         return replayPlanStageList;
     }
 
+    public static void resetStageStatus(ReplayPlanStageInfo replayPlanStageInfo) {
+        replayPlanStageInfo.setStageStatus(StageStatusEnum.PENDING.getCode());
+        replayPlanStageInfo.setStartTime(null);
+        replayPlanStageInfo.setEndTime(null);
+        replayPlanStageInfo.setMsg(null);
+        if (CollectionUtils.isNotEmpty(replayPlanStageInfo.getSubStageInfoList())) {
+            replayPlanStageInfo.getSubStageInfoList().forEach(StageUtils::resetStageStatus);
+        }
+    }
 
+    public static int getStageStatus(List<ReplayPlanStageInfo> replayPlanStageInfoList, PlanStageEnum planStageEnum) {
+        if (planStageEnum.isMainStage()) {
+            return replayPlanStageInfoList.stream()
+                .filter(replayPlanStageInfo -> replayPlanStageInfo.getStageType() == (planStageEnum.getCode()))
+                .map(StageBaseInfo::getStageStatus)
+                .findFirst()
+                .orElse(StageStatusEnum.UNKNOWN.getCode());
+        } else {
+            PlanStageEnum parentStage = PlanStageEnum.of(planStageEnum.getParentStage());
+            ReplayPlanStageInfo parentStageInfo = replayPlanStageInfoList.stream()
+                .filter(replayPlanStageInfo -> replayPlanStageInfo.getStageType() == (parentStage.getCode()))
+                .findFirst()
+                .orElse(null);
+            if (parentStageInfo == null) {
+                return StageStatusEnum.UNKNOWN.getCode();
+            }
+            return getStageStatus(parentStageInfo.getSubStageInfoList(), planStageEnum);
+        }
+    }
 }

@@ -3,6 +3,7 @@ package com.arextest.schedule.plan;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.model.AppServiceDescriptor;
 import com.arextest.schedule.model.AppServiceOperationDescriptor;
+import com.arextest.schedule.model.ReplayPlan;
 import lombok.Data;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,6 +53,13 @@ public final class PlanContextCreator {
             }
         }
         planContext.setAppServiceDescriptorList(distinctAppServiceDescriptor);
+        return planContext;
+    }
+
+    public PlanContext createByPlan(ReplayPlan plan) {
+        PlanContext planContext = new PlanContext();
+        planContext.setAppId(plan.getAppId());
+
         return planContext;
     }
 

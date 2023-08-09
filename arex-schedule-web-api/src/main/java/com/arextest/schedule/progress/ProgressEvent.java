@@ -42,6 +42,8 @@ public interface ProgressEvent {
     void onReplayPlanStageUpdate(ReplayPlan replayPlan, PlanStageEnum stageType, StageStatusEnum stageStatus,
                                  Long startTime, Long endTime, String msg);
 
+    void onReplayPlanReRun(ReplayPlan replayPlan);
+
     void onActionComparisonFinish(ReplayActionItem actionItem);
 
     void onActionBeforeSend(ReplayActionItem actionItem);
