@@ -23,7 +23,7 @@
         <jmockit.version>1.37</jmockit.version>
         <lombok.version>1.18.2</lombok.version>
         <guava.version>20.0</guava.version>
-        <compare-sdk.version>0.1.23</compare-sdk.version>
+        <compare-sdk.version>0.1.25</compare-sdk.version>
         <web-contract.version>0.4.2</web-contract.version>
         <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
 
