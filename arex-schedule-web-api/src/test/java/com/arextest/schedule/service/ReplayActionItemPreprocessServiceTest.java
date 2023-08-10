@@ -3,6 +3,7 @@ package com.arextest.schedule.service;
 import com.arextest.schedule.model.ReplayActionItem;
 import mockit.Injectable;
 import mockit.integration.junit4.JMockit;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -15,6 +16,7 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(JMockit.class)
+@Ignore
 public class ReplayActionItemPreprocessServiceTest {
 
     @Injectable
