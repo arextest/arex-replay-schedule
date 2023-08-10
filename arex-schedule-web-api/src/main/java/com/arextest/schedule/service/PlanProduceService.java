@@ -269,6 +269,11 @@ public class PlanProduceService {
             return CommonResponse.badResponse("This plan is ReRunning");
         }
 
+        ConfigurationService.ScheduleConfiguration schedule = configurationService.schedule(replayPlan.getAppId());
+        if (schedule != null) {
+            replayPlan.setReplaySendMaxQps(schedule.getSendMaxQps());
+        }
+
         planExecutionMonitorImpl.register(replayPlan);
         progressEvent.onReplayPlanReRun(replayPlan);
         planConsumePrepareService.prepareAndUpdateFailedActionAndCase(replayPlan);
