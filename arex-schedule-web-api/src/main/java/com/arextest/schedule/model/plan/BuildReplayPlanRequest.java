@@ -28,7 +28,7 @@ public class BuildReplayPlanRequest {
     /**
      * @see CaseSourceEnvType
      */
-    private int caseSourceType;
+    private Integer caseSourceType;
 
     private int caseCountLimit;
 

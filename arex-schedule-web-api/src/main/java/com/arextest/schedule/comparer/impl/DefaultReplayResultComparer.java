@@ -6,11 +6,7 @@ import com.arextest.diff.model.CompareResult;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.model.mock.MockCategoryType;
-import com.arextest.schedule.comparer.CategoryComparisonHolder;
-import com.arextest.schedule.comparer.CompareConfigService;
-import com.arextest.schedule.comparer.CompareItem;
-import com.arextest.schedule.comparer.ComparisonWriter;
-import com.arextest.schedule.comparer.ReplayResultComparer;
+import com.arextest.schedule.comparer.*;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSendStatusType;
@@ -47,11 +43,12 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     private final ProgressTracer progressTracer;
     private final ComparisonWriter comparisonOutputWriter;
     private final ReplayActionCaseItemRepository caseItemRepository;
+    private final MetricService metricService;
+    private final CompareConfigPicker compareConfigPicker;
+
     private static final int INDEX_NOT_FOUND = -1;
     private static final CompareSDK COMPARE_INSTANCE = new CompareSDK();
-    private final MetricService metricService;
     private static final List<String> ignoreInDataBaseMocker = Collections.singletonList("body");
-
     private static final long MAX_TIME = Long.MAX_VALUE;
 
     static {
@@ -170,7 +167,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 if (CollectionUtils.isEmpty(recordCompareItems)) {
                     continue;
                 }
-                ReplayComparisonConfig compareConfig = CompareConfigService
+                ReplayComparisonConfig compareConfig = compareConfigPicker
                         .pickConfig(comparisonGlobalConfig, operationConfig, recordCompareItems.get(0), category);
                 compareResults.add(compareRecordAndResult(compareConfig, caseItem, category, resultCompareItem, recordCompareItems.get(0)));
                 usedRecordKeys.add(compareKey);
@@ -297,7 +294,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
 
         String operation;
         for (CompareItem item : compareItems) {
-            ReplayComparisonConfig itemConfig = CompareConfigService.pickConfig(configPair.getLeft(), configPair.getRight(), item, category);
+            ReplayComparisonConfig itemConfig = compareConfigPicker.pickConfig(configPair.getLeft(), configPair.getRight(), item, category);
             operation = item.getCompareOperation();
             CompareResult comparedResult;
             if (missRecord) {

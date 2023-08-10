@@ -3,6 +3,7 @@ package com.arextest.schedule.web.controller;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.exceptions.CreatePlanException;
 import com.arextest.schedule.mdc.MDCTracer;
+import com.arextest.schedule.model.CaseSourceEnvType;
 import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.DebugRequestItem;
 import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
@@ -112,6 +113,9 @@ public class ReplayPlanController {
         }
         if (StringUtils.isBlank(request.getPlanName())) {
             request.setPlanName(request.getAppId() + "_" + new SimpleDateFormat("MMdd_HH:mm").format(toDate));
+        }
+        if (request.getCaseSourceType() == null) {
+            request.setCaseSourceType(CaseSourceEnvType.TEST.getValue());
         }
     }
 

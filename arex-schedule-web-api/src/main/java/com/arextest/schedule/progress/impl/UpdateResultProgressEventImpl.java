@@ -97,6 +97,10 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     public void onReplayPlanStageUpdate(ReplayPlan replayPlan, PlanStageEnum stageType, StageStatusEnum stageStatus,
                                         Long startTime, Long endTime, String msg) {
         StageBaseInfo stageBaseInfo;
+        // if the plan is canceled, ignore the stage update
+        if (replayPlan.getPlanStatus() != null && replayPlan.getPlanStatus().isCanceled()) {
+            return;
+        }
         if (stageType.isMainStage()) {
             stageBaseInfo = findStage(replayPlan.getReplayPlanStageList(), stageType);
         } else {

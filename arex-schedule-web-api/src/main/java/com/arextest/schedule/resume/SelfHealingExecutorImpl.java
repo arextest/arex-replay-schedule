@@ -13,6 +13,7 @@ import com.arextest.schedule.model.AppServiceDescriptor;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
+import com.arextest.schedule.planexecution.PlanExecutionMonitor;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.ConfigurationService;
@@ -52,6 +53,8 @@ public class SelfHealingExecutorImpl implements SelfHealingExecutor {
     private PlanContextCreator planContextCreator;
     @Resource
     private DeployedEnvironmentService deployedEnvironmentService;
+    @Resource
+    private PlanExecutionMonitor planExecutionMonitorImpl;
 
     // #TODO There is a problem here, Date and Duration types are compared
     public void defaultSelfHealing(Duration offsetDuration, Duration maxDuration) {
@@ -108,6 +111,7 @@ public class SelfHealingExecutorImpl implements SelfHealingExecutor {
         doResumeLastRecordTime(actionItems);
         ReplayParentBinder.setupReplayActionParent(actionItems, replayPlan);
         LOGGER.info("try resume the plan running, plan id: {}", planId);
+        planExecutionMonitorImpl.register(replayPlan);
         planConsumeService.runAsyncConsume(replayPlan);
     }
 
