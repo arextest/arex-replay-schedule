@@ -113,6 +113,8 @@ public class ReplayPlan {
 
     @JsonIgnore
     private boolean reRun;
+    @JsonIgnore
+    private int reRunCaseCount;
     public void buildActionItemMap() {
         this.getReplayActionItemList().forEach(replayActionItem -> this.actionItemMap.put(replayActionItem.getId(), replayActionItem));
     }

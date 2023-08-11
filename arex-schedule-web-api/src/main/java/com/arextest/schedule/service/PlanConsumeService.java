@@ -140,6 +140,9 @@ public final class PlanConsumeService {
         long start;
         long end;
         progressTracer.initTotal(replayPlan);
+        if (replayPlan.isReRun()) {
+            progressTracer.reRunPlan(replayPlan);
+        }
         int index = 0, total = replayPlan.getExecutionContexts().size();
         for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
             index ++;

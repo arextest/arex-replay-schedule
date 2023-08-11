@@ -5,19 +5,14 @@ import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.model.AppServiceOperationDescriptor;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
-import com.arextest.schedule.model.AppServiceDescriptor;
-import com.arextest.schedule.model.deploy.ServiceInstance;
-import com.arextest.schedule.plan.PlanContext;
-import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.planexecution.PlanExecutionMonitor;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.ConfigurationService;
-import com.arextest.schedule.service.DeployedEnvironmentService;
+import com.arextest.schedule.service.PlanConsumePrepareService;
 import com.arextest.schedule.service.PlanConsumeService;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import lombok.extern.slf4j.Slf4j;
@@ -50,9 +45,7 @@ public class SelfHealingExecutorImpl implements SelfHealingExecutor {
     @Resource
     private PlanConsumeService planConsumeService;
     @Resource
-    private PlanContextCreator planContextCreator;
-    @Resource
-    private DeployedEnvironmentService deployedEnvironmentService;
+    private PlanConsumePrepareService planConsumePrepareService;
     @Resource
     private PlanExecutionMonitor planExecutionMonitorImpl;
 
@@ -107,32 +100,12 @@ public class SelfHealingExecutorImpl implements SelfHealingExecutor {
         replayPlan.setReplayActionItemList(actionItems);
         replayPlan.setResumed(true);
         BizLogger.recordResumeRun(replayPlan);
-        doResumeOperationDescriptor(replayPlan);
+        planConsumePrepareService.doResumeOperationDescriptor(replayPlan);
         doResumeLastRecordTime(actionItems);
         ReplayParentBinder.setupReplayActionParent(actionItems, replayPlan);
         LOGGER.info("try resume the plan running, plan id: {}", planId);
         planExecutionMonitorImpl.register(replayPlan);
         planConsumeService.runAsyncConsume(replayPlan);
-    }
-
-    private void doResumeOperationDescriptor(ReplayPlan replayPlan) {
-        PlanContext planContext = planContextCreator.createByAppId(replayPlan.getAppId());
-        AppServiceOperationDescriptor operationDescriptor;
-        for (ReplayActionItem actionItem : replayPlan.getReplayActionItemList()) {
-            operationDescriptor = planContext.findAppServiceOperationDescriptor(actionItem.getOperationId());
-            if (operationDescriptor == null) {
-                LOGGER.warn("skip resume when the plan operationDescriptor not found, action id: {} ,",
-                        actionItem.getId()
-                );
-                continue;
-            }
-            AppServiceDescriptor appServiceDescriptor = operationDescriptor.getParent();
-            List<ServiceInstance> activeInstanceList = deployedEnvironmentService.getActiveInstanceList(appServiceDescriptor,
-                    replayPlan.getTargetEnv());
-            appServiceDescriptor.setTargetActiveInstanceList(activeInstanceList);
-            
-            planContext.fillReplayAction(actionItem, operationDescriptor);
-        }
     }
 
     private boolean isActionFinished(List<ReplayActionItem> actionItems) {

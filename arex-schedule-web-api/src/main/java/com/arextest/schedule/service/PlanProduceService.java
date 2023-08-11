@@ -6,6 +6,8 @@ import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.exceptions.CreatePlanException;
 import com.arextest.schedule.mdc.MDCTracer;
+import com.arextest.schedule.model.AppServiceDescriptor;
+import com.arextest.schedule.model.AppServiceOperationDescriptor;
 import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
 import com.arextest.schedule.model.plan.BuildReplayPlanResponse;
 import com.arextest.schedule.model.plan.PlanStageEnum;
@@ -22,6 +24,7 @@ import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.plan.builder.BuildPlanValidateResult;
 import com.arextest.schedule.plan.builder.ReplayPlanBuilder;
+import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import com.arextest.schedule.utils.StageUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -63,6 +66,8 @@ public class PlanProduceService {
     private CacheProvider redisCacheProvider;
     @Resource
     private PlanExecutionMonitor planExecutionMonitorImpl;
+    @Resource
+    private ProgressTracer progressTracer;
 
     public CommonResponse createPlan(BuildReplayPlanRequest request) throws CreatePlanException {
         progressEvent.onBeforePlanCreate(request);
@@ -282,6 +287,7 @@ public class PlanProduceService {
             progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.ONGOING,
                 System.currentTimeMillis(), null, null);
             boolean reLoad = planConsumePrepareService.prepareAndUpdateFailedActionAndCase(replayPlan);
+            planConsumePrepareService.doResumeOperationDescriptor(replayPlan);
             progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.success(reLoad),
                 null, System.currentTimeMillis(), null);
             if (!reLoad) {

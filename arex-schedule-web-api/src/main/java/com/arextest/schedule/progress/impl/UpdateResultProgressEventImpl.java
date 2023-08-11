@@ -117,7 +117,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
 
     @Override
     public void onReplayPlanReRun(ReplayPlan replayPlan) {
-        replayReportService.pushPlanStatus(replayPlan.getId(), ReplayStatusType.INIT, null);
+        replayReportService.pushPlanStatus(replayPlan.getId(), ReplayStatusType.RUNNING, null);
         addReRunStage(replayPlan.getReplayPlanStageList());
     }
 
