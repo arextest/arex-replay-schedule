@@ -25,6 +25,7 @@ public class ReplayCompareResult {
     private String serviceName;
     private String recordId;
     private String replayId;
+    private String caseId;
 
     /**
      * see {@link DiffResultCode} &amp; {@link CaseSendStatusType}
@@ -41,6 +42,7 @@ public class ReplayCompareResult {
     public static ReplayCompareResult createFrom(ReplayActionCaseItem caseItem) {
         ReplayCompareResult newResult = new ReplayCompareResult();
         newResult.setRecordId(caseItem.getRecordId());
+        newResult.setCaseId(caseItem.getId());
         newResult.setReplayId(caseItem.getTargetResultId());
         newResult.setPlanItemId(caseItem.getPlanItemId());
         newResult.setPlanId(caseItem.getParent().getParent().getId());

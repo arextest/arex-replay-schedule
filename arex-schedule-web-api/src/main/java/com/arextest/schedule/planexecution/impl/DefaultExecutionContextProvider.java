@@ -14,6 +14,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.retry.support.RetryTemplate;
 
 import java.util.*;
@@ -46,20 +47,32 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
         if (replayActionCaseItemRepository.hasNullIdentifier(plan.getId())) {
             // build context for null identifier, will skip before hook for this context
             PlanExecutionContext<ContextDependenciesHolder> context = new PlanExecutionContext<>();
+            context.setContextName(CONTEXT_PREFIX + "no-config");
+
+            // set up null dependency to indicate that this case does not need to be warmed up
             ContextDependenciesHolder dependenciesHolder = new ContextDependenciesHolder();
             dependenciesHolder.setContextIdentifier(null);
-            context.setContextName(CONTEXT_PREFIX + "no-config");
             context.setDependencies(dependenciesHolder);
+
+            context.setContextCaseQuery(Collections.singletonList(
+                    Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).isNull()));
             contexts.add(context);
         }
 
         // build context for each distinct identifier, need to prepare remote resources for each context
         distinctIdentifiers.forEach(identifier -> {
             PlanExecutionContext<ContextDependenciesHolder> context = new PlanExecutionContext<>();
+            context.setContextName(CONTEXT_PREFIX + identifier);
+
+            // set up dependency info holder for warmup
             ContextDependenciesHolder dependenciesHolder = new ContextDependenciesHolder();
             dependenciesHolder.setContextIdentifier(identifier);
-            context.setContextName(CONTEXT_PREFIX + identifier);
             context.setDependencies(dependenciesHolder);
+
+            // set up query for cases of this context
+            context.setContextCaseQuery(Collections.singletonList(
+                    Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).is(identifier)));
+
             contexts.add(context);
         });
 
