@@ -12,7 +12,6 @@ import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.CompareProcessStatusType;
 import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayCompareResult;
 import com.arextest.schedule.model.config.ComparisonGlobalConfig;
 import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
@@ -26,7 +25,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.util.StopWatch;
 
-import javax.annotation.Resource;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,11 +37,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     private final ComparisonWriter comparisonOutputWriter;
     private final ReplayActionCaseItemRepository caseItemRepository;
     private final MetricService metricService;
-    private final CompareConfigPicker compareConfigPicker;
-
+    private final CustomComparisonConfigurationHandler configHandler;
     private static final int INDEX_NOT_FOUND = -1;
     private static final CompareSDK COMPARE_INSTANCE = new CompareSDK();
-    private static final List<String> ignoreInDataBaseMocker = Collections.singletonList("body");
     private static final long MAX_TIME = Long.MAX_VALUE;
 
     static {
@@ -153,7 +149,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 if (CollectionUtils.isEmpty(recordCompareItems)) {
                     continue;
                 }
-                ReplayComparisonConfig compareConfig = compareConfigPicker
+                ReplayComparisonConfig compareConfig = configHandler
                         .pickConfig(comparisonGlobalConfig, operationConfig, recordCompareItems.get(0), category);
                 compareResults.add(compareRecordAndResult(compareConfig, caseItem, category, resultCompareItem, recordCompareItems.get(0)));
                 usedRecordKeys.add(compareKey);
@@ -188,7 +184,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
 
     private CompareResult compareProcess(String category, String record, String result,
                                          ReplayComparisonConfig compareConfig) {
-        CompareOptions options = buildCompareRequest(category, compareConfig);
+        CompareOptions options = configHandler.buildSkdOption(category, compareConfig);
         try {
             return COMPARE_INSTANCE.quickCompare(record, result, options);
         } catch (Throwable e) {
@@ -282,7 +278,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
 
         String operation;
         for (CompareItem item : compareItems) {
-            ReplayComparisonConfig itemConfig = compareConfigPicker.pickConfig(configPair.getLeft(), configPair.getRight(), item, category);
+            ReplayComparisonConfig itemConfig = configHandler
+                    .pickConfig(configPair.getLeft(), configPair.getRight(), item, category);
             operation = item.getCompareOperation();
             CompareResult comparedResult = null;
             if (missRecord) {
@@ -303,23 +300,4 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
         return resultList;
     }
-
-    public static CompareOptions buildCompareRequest(String category, ReplayComparisonConfig compareConfig) {
-        CompareOptions options = new CompareOptions();
-        options.putCategoryType(category);
-        // todo: the switch of "sqlBodyParse" and "onlyCompareCoincidentColumn"
-        //  need get from ReplayComparisonConfig
-        options.putSelectIgnoreCompare(true);
-        options.putOnlyCompareCoincidentColumn(true);
-        options.putExclusions(compareConfig.getExclusionList());
-        options.putInclusions(compareConfig.getInclusionList());
-        options.putListSortConfig(compareConfig.getListSortMap());
-        options.putReferenceConfig(compareConfig.getReferenceMap());
-
-        if (Objects.equals(category, MockCategoryType.DATABASE.getName())) {
-            options.putExclusions(ignoreInDataBaseMocker);
-        }
-        return options;
-    }
-
 }
