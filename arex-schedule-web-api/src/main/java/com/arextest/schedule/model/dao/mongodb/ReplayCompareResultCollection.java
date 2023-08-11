@@ -12,6 +12,8 @@ import java.util.Date;
 public class ReplayCompareResultCollection extends ModelBase {
 
     private String planId;
+    private String planItemId;
+    private String caseId;
 
     private String operationId;
 
@@ -25,7 +27,6 @@ public class ReplayCompareResultCollection extends ModelBase {
 
     private String recordId;
 
-    private String caseId;
 
     private long recordTime;
 
@@ -38,8 +39,6 @@ public class ReplayCompareResultCollection extends ModelBase {
     private String testMsg;
 
     private String logs;
-    // planItemId
-    private String planItemId;
 
     private int diffResultCode;
 

@@ -213,6 +213,7 @@ public final class ReplayReportService implements ComparisonWriter {
         compareResult.setReplayId(caseItem.getTargetResultId());
         compareResult.setRecordId(caseItem.getRecordId());
         compareResult.setPlanItemId(caseItem.getPlanItemId());
+        compareResult.setCaseId(caseItem.getId());
         return compareResult;
     }
 }

@@ -19,13 +19,14 @@ public class ReplayCompareResult {
     private String id;
     private String planId;
     private String planItemId;
+    private String caseId;
+
     private String operationId;
     private String categoryName;
     private String operationName;
     private String serviceName;
     private String recordId;
     private String replayId;
-    private String caseId;
 
     /**
      * see {@link DiffResultCode} &amp; {@link CaseSendStatusType}
