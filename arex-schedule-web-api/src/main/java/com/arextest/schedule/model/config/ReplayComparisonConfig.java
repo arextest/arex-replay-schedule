@@ -34,6 +34,12 @@ public class ReplayComparisonConfig {
     @JsonSerialize(keyUsing = MapKeySerializerUtils.class)
     private Map<List<String>, List<List<String>>> listSortMap;
 
+    /**
+     * Custom config
+     * @see com.arextest.schedule.comparer.CustomComparisonConfigurationHandler
+     */
+    private Map<String,Object> additionalConfig;
+
     public final boolean checkIgnoreMockMessageType(String type) {
         // [b_yu] 2022-10-11 Dynamic type does not compare
         if (Objects.equals(type, MockCategoryType.DYNAMIC_CLASS.getName())) {
