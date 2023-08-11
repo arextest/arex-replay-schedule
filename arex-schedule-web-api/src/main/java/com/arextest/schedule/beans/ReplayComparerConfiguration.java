@@ -18,9 +18,9 @@ import org.springframework.context.annotation.Configuration;
 public class ReplayComparerConfiguration {
 
     @Bean
-    @ConditionalOnMissingBean(CompareConfigPicker.class)
-    public CompareConfigPicker compareConfigPicker() {
-        return new DefaultCompareConfigPickerImpl();
+    @ConditionalOnMissingBean(CustomComparisonConfigurationHandler.class)
+    public CustomComparisonConfigurationHandler customComparisonConfigurationHandler() {
+        return new DefaultCustomComparisonConfigurationHandler();
     }
 
     @Bean
@@ -32,7 +32,7 @@ public class ReplayComparerConfiguration {
             ComparisonWriter comparisonOutputWriter,
             ReplayActionCaseItemRepository caseItemRepository,
             MetricService metricService,
-            CompareConfigPicker compareConfigPicker
+            CustomComparisonConfigurationHandler customComparisonConfigurationHandler
     ) {
         return new DefaultReplayResultComparer(compareConfigService,
                 sourceRemoteLoader,
@@ -40,13 +40,7 @@ public class ReplayComparerConfiguration {
                 comparisonOutputWriter,
                 caseItemRepository,
                 metricService,
-                compareConfigPicker
+                customComparisonConfigurationHandler
         );
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(CustomComparisonConfigurationHandler.class)
-    public CustomComparisonConfigurationHandler customComparisonConfigurationHandler() {
-        return new DefaultCustomComparisonConfigurationHandler();
     }
 }
