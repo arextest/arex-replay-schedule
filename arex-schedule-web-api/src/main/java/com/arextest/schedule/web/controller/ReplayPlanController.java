@@ -9,6 +9,7 @@ import com.arextest.schedule.model.DebugRequestItem;
 import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.model.plan.BuildReplayPlanResponse;
+import com.arextest.schedule.model.plan.ReRunReplayPlanRequest;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySendResult;
@@ -58,6 +59,12 @@ public class ReplayPlanController {
     @ResponseBody
     public CommonResponse createPlanGet(BuildReplayPlanRequest request) {
         return createPlan(request);
+    }
+
+    @PostMapping("/api/reRunPlan")
+    @ResponseBody
+    public CommonResponse reRunPlan(@RequestBody ReRunReplayPlanRequest request) {
+        return planProduceService.reRunPlan(request.getPlanId());
     }
 
     @GetMapping("/api/stopPlan")

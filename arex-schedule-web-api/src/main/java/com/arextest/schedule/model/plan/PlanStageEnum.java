@@ -36,10 +36,7 @@ public enum PlanStageEnum {
 
     //RUN and its sub-stages start with "4".
     RUN(40, Collections.EMPTY_LIST, null),
-    RE_RUN(41, Arrays.asList(411, 412, 413), null),
-    ADJUST_STATUS(411, null, 41),
-    RE_LOAD(412, null, 41),
-    RE_RUN_SUB(413, null, 41),
+    RE_RUN(41, Collections.EMPTY_LIST, null),
 
     //CANCEL and its sub-stages start with "5".
     CANCEL(50, Collections.EMPTY_LIST, null),

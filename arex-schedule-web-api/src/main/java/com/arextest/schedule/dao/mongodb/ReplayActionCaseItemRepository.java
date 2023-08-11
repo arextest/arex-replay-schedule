@@ -153,6 +153,9 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     }
 
     public void batchUpdateStatus(List<ReplayActionCaseItem> replayActionCaseItemList) {
+        if (CollectionUtils.isEmpty(replayActionCaseItemList)) {
+            return;
+        }
         BulkOperations bulkOperations =
             mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, ReplayRunDetailsCollection.class);
         List<Pair<Query, Update>> updates = new ArrayList<>();

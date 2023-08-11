@@ -82,14 +82,17 @@ public final class PlanConsumeService {
                 this.init();
 
                 // prepare cases to send
-                start = System.currentTimeMillis();
-                progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.ONGOING,
-                    start, null, null);
-                int planSavedCaseSize = planConsumePrepareService.prepareRunData(replayPlan);
-                end = System.currentTimeMillis();
-                progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.SUCCEEDED,
-                    null, end, null);
-                BizLogger.recordPlanCaseSaved(replayPlan, planSavedCaseSize, end - start);
+                if (!replayPlan.getReRun()) {
+                    start = System.currentTimeMillis();
+                    progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.ONGOING,
+                        start, null, null);
+                    int planSavedCaseSize = planConsumePrepareService.prepareRunData(replayPlan);
+                    end = System.currentTimeMillis();
+                    progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.SUCCEEDED,
+                        null, end, null);
+                    BizLogger.recordPlanCaseSaved(replayPlan, planSavedCaseSize, end - start);
+                }
+
 
                 // build context to send
                 start = System.currentTimeMillis();
@@ -114,7 +117,8 @@ public final class PlanConsumeService {
                     StageStatusEnum.SUCCEEDED, null, end, null);
 
                 // process plan
-                progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.RUN, StageStatusEnum.ONGOING,
+                PlanStageEnum planStageEnum = replayPlan.getReRun() ? PlanStageEnum.RE_RUN : PlanStageEnum.RUN;
+                progressEvent.onReplayPlanStageUpdate(replayPlan, planStageEnum, StageStatusEnum.ONGOING,
                     System.currentTimeMillis(), null, null);
                 consumePlan(replayPlan);
 
@@ -170,7 +174,8 @@ public final class PlanConsumeService {
             if (index == 1) {
                 format = StageUtils.RUN_MSG_FORMAT_SINGLE;
             }
-            progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.RUN, stageStatusEnum,
+            PlanStageEnum planStageEnum = replayPlan.getReRun() ? PlanStageEnum.RE_RUN : PlanStageEnum.RUN;
+            progressEvent.onReplayPlanStageUpdate(replayPlan, planStageEnum, stageStatusEnum,
                 null, endTime, String.format(format, total, index));
         }
     }

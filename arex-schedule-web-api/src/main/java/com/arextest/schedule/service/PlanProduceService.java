@@ -265,9 +265,10 @@ public class PlanProduceService {
             return CommonResponse.badResponse("target plan not found");
         }
         int rerunStatus = StageUtils.getStageStatus(replayPlan.getReplayPlanStageList(), PlanStageEnum.RE_RUN);
-        if (rerunStatus != StageStatusEnum.SUCCEEDED.getCode() && rerunStatus != StageStatusEnum.FAILED.getCode()) {
+        if (rerunStatus == StageStatusEnum.PENDING.getCode() || rerunStatus == StageStatusEnum.ONGOING.getCode()) {
             return CommonResponse.badResponse("This plan is ReRunning");
         }
+        replayPlan.setReRun(Boolean.TRUE);
 
         ConfigurationService.ScheduleConfiguration schedule = configurationService.schedule(replayPlan.getAppId());
         if (schedule != null) {
@@ -275,9 +276,20 @@ public class PlanProduceService {
         }
 
         planExecutionMonitorImpl.register(replayPlan);
-        progressEvent.onReplayPlanReRun(replayPlan);
-        planConsumePrepareService.prepareAndUpdateFailedActionAndCase(replayPlan);
+        try {
+            progressEvent.onReplayPlanReRun(replayPlan);
 
+            progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.ONGOING,
+                System.currentTimeMillis(), null, null);
+            planConsumePrepareService.prepareAndUpdateFailedActionAndCase(replayPlan);
+            progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.ONGOING,
+                System.currentTimeMillis(), null, null);
+        } catch (Exception e) {
+            progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.RE_RUN, StageStatusEnum.FAILED,
+                System.currentTimeMillis(), null, null);
+            planExecutionMonitorImpl.deregister(replayPlan);
+            return CommonResponse.badResponse("ReRun plan failed！");
+        }
         planConsumeService.runAsyncConsume(replayPlan);
         return CommonResponse.successResponse("ReRun plan success！",
             new BuildReplayPlanResponse(replayPlan.getId()));
