@@ -112,7 +112,7 @@ public class ReplayPlan {
     private long lastUpdateTime = System.currentTimeMillis();
 
     @JsonIgnore
-    private Boolean reRun;
+    private boolean reRun;
     public void buildActionItemMap() {
         this.getReplayActionItemList().forEach(replayActionItem -> this.actionItemMap.put(replayActionItem.getId(), replayActionItem));
     }

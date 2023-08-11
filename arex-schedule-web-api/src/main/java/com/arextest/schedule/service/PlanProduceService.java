@@ -281,9 +281,12 @@ public class PlanProduceService {
 
             progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.ONGOING,
                 System.currentTimeMillis(), null, null);
-            planConsumePrepareService.prepareAndUpdateFailedActionAndCase(replayPlan);
-            progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.ONGOING,
-                System.currentTimeMillis(), null, null);
+            boolean reLoad = planConsumePrepareService.prepareAndUpdateFailedActionAndCase(replayPlan);
+            progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.success(reLoad),
+                null, System.currentTimeMillis(), null);
+            if (!reLoad) {
+                throw new RuntimeException("No case to rerun");
+            }
         } catch (Exception e) {
             progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.RE_RUN, StageStatusEnum.FAILED,
                 System.currentTimeMillis(), null, null);

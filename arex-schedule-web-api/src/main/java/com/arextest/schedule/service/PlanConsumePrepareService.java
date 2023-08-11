@@ -170,7 +170,7 @@ public class PlanConsumePrepareService {
     }
 
 
-    public void prepareAndUpdateFailedActionAndCase(ReplayPlan replayPlan) {
+    public boolean prepareAndUpdateFailedActionAndCase(ReplayPlan replayPlan) {
         List<ReplayActionItem> replayActionItems = replayPlanActionRepository.queryPlanActionList(replayPlan.getId());
 
         List<ReplayActionCaseItem> failedCaseList = replayActionCaseItemRepository.failedCaseList(replayPlan.getId());
@@ -181,6 +181,11 @@ public class PlanConsumePrepareService {
                 caseItem.setCompareStatus(CompareProcessStatusType.WAIT_HANDLING.getValue());
             })
             .collect(Collectors.groupingBy(ReplayActionCaseItem::getPlanItemId));
+
+        if (CollectionUtils.isEmpty(failedCaseList)) {
+            progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
+            return false;
+        }
 
         replayActionCaseItemRepository.batchUpdateStatus(failedCaseList);
 
@@ -197,6 +202,6 @@ public class PlanConsumePrepareService {
             }).collect(Collectors.toList());
         replayActionItemPreprocessService.filterActionItem(failedActionList, replayPlan.getAppId());
         replayPlan.setReplayActionItemList(failedActionList);
-
+        return true;
     }
 }

@@ -191,12 +191,6 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
         }
 
         ReplayPlanStageInfo reRunStage = StageUtils.initEmptyStage(PlanStageEnum.RE_RUN);
-        List<ReplayPlanStageInfo> subStageInfoList = new ArrayList<>();
-        PlanStageEnum.RE_RUN.getSubStageList().forEach(stage -> {
-            ReplayPlanStageInfo subStage = StageUtils.initEmptyStage(PlanStageEnum.of(stage));
-            subStageInfoList.add(subStage);
-        });
-        reRunStage.setSubStageInfoList(subStageInfoList);
         stageInfoList.add(addIndex, reRunStage);
 
         for (addIndex ++; addIndex < stageInfoList.size(); addIndex ++) {

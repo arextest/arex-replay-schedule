@@ -82,7 +82,7 @@ public final class PlanConsumeService {
                 this.init();
 
                 // prepare cases to send
-                if (!replayPlan.getReRun()) {
+                if (!replayPlan.isReRun()) {
                     start = System.currentTimeMillis();
                     progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.ONGOING,
                         start, null, null);
@@ -117,7 +117,7 @@ public final class PlanConsumeService {
                     StageStatusEnum.SUCCEEDED, null, end, null);
 
                 // process plan
-                PlanStageEnum planStageEnum = replayPlan.getReRun() ? PlanStageEnum.RE_RUN : PlanStageEnum.RUN;
+                PlanStageEnum planStageEnum = replayPlan.isReRun() ? PlanStageEnum.RE_RUN : PlanStageEnum.RUN;
                 progressEvent.onReplayPlanStageUpdate(replayPlan, planStageEnum, StageStatusEnum.ONGOING,
                     System.currentTimeMillis(), null, null);
                 consumePlan(replayPlan);
@@ -174,7 +174,7 @@ public final class PlanConsumeService {
             if (index == 1) {
                 format = StageUtils.RUN_MSG_FORMAT_SINGLE;
             }
-            PlanStageEnum planStageEnum = replayPlan.getReRun() ? PlanStageEnum.RE_RUN : PlanStageEnum.RUN;
+            PlanStageEnum planStageEnum = replayPlan.isReRun() ? PlanStageEnum.RE_RUN : PlanStageEnum.RUN;
             progressEvent.onReplayPlanStageUpdate(replayPlan, planStageEnum, stageStatusEnum,
                 null, endTime, String.format(format, total, index));
         }
