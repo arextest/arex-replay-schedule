@@ -60,6 +60,10 @@ public class LogHandler implements PlanMonitorHandler {
                 List<BizLog> logsToSave = new ArrayList<>();
 
                 while (!logs.isEmpty()) {
+                    BizLog bizLog = logs.remove();
+                    if (bizLog.getReRun()) {
+                        continue;
+                    }
                     logsToSave.add(logs.remove());
                 }
 

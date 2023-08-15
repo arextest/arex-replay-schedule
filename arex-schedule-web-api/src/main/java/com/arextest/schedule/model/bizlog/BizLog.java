@@ -37,6 +37,7 @@ public class BizLog {
     private String response;
     private String traceId;
     private String extra;
+    private Boolean reRun;
 
     public static BizLogBuilder constructBase() {
         return BizLog.builder().date(new Date());
@@ -64,6 +65,7 @@ public class BizLog {
         }
         this.setPlanId(plan.getId());
         this.setResumedExecution(plan.isResumed());
+        this.setReRun(plan.isReRun());
         plan.enqueueBizLog(this);
     }
 

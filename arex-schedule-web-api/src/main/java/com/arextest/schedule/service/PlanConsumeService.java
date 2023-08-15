@@ -5,7 +5,12 @@ import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
-import com.arextest.schedule.model.*;
+import com.arextest.schedule.model.ExecutionStatus;
+import com.arextest.schedule.model.PlanExecutionContext;
+import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.plan.PlanStageEnum;
 import com.arextest.schedule.model.plan.StageStatusEnum;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
@@ -19,8 +24,12 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 /**
  * @author jmo
@@ -204,16 +213,26 @@ public final class PlanConsumeService {
 
         int contextCount = 0;
         List<ReplayActionCaseItem> caseItems = Collections.emptyList();
+        List<ReplayActionCaseItem> reRunCaseItems = null;
+        if (replayPlan.isReRun()) {
+            reRunCaseItems = replayPlan.getReplayActionItemList().stream()
+                .flatMap(replayActionCase -> replayActionCase.getCaseItemList().stream())
+                .collect(Collectors.toList());
+        }
         while (true) {
             // checkpoint: before sending page of cases
             if (executionStatus.isAbnormal()) {
                 break;
             }
-            ReplayActionCaseItem lastItem = CollectionUtils.isNotEmpty(caseItems) ? caseItems.get(caseItems.size() - 1) : null;
-            caseItems = replayActionCaseItemRepository.waitingSendList(replayPlan.getId(),
+            if (replayPlan.isReRun()) {
+                caseItems = getReplayActionCaseListPages(CommonConstant.MAX_PAGE_SIZE, contextCount, reRunCaseItems);
+            } else {
+                ReplayActionCaseItem lastItem = CollectionUtils.isNotEmpty(caseItems) ? caseItems.get(caseItems.size() - 1) : null;
+                caseItems = replayActionCaseItemRepository.waitingSendList(replayPlan.getId(),
                     CommonConstant.MAX_PAGE_SIZE,
                     executionContext.getContextCaseQuery(),
                     Optional.ofNullable(lastItem).map(ReplayActionCaseItem::getId).orElse(null));
+            }
 
             if (CollectionUtils.isEmpty(caseItems)) {
                 break;
@@ -223,6 +242,19 @@ public final class PlanConsumeService {
             replayCaseTransmitService.send(caseItems, executionContext);
         }
         BizLogger.recordContextProcessedNormal(executionContext, contextCount);
+    }
+
+    List<ReplayActionCaseItem> getReplayActionCaseListPages(int pageSize, int startIndex,
+                                                            List<ReplayActionCaseItem> caseItemList) {
+        List<ReplayActionCaseItem> replayActionCaseItemListPage = new ArrayList<>();
+        if (CollectionUtils.isEmpty(caseItemList)) {
+            return replayActionCaseItemListPage;
+        }
+        int endIndex = Math.min(startIndex + pageSize, caseItemList.size());
+        for (int i = startIndex; i < endIndex; i++) {
+            replayActionCaseItemListPage.add(caseItemList.get(i));
+        }
+        return replayActionCaseItemListPage;
     }
 
     private void finalizePlanStatus(ReplayPlan replayPlan) {

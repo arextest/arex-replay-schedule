@@ -5,8 +5,8 @@ import com.arextest.diff.model.CompareResult;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.model.log.LogEntity;
 import com.arextest.diff.model.MsgInfo;
-import com.arextest.schedule.model.ReplayActionCaseItem;
 import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
@@ -15,6 +15,7 @@ import java.util.List;
  * Created by wang_yc on 2021/6/3
  */
 @Data
+@FieldNameConstants
 public class ReplayCompareResult {
     private String id;
     private String planId;

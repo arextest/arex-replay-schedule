@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.MDC;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -64,7 +65,14 @@ public class ReplayPlanController {
     @PostMapping("/api/reRunPlan")
     @ResponseBody
     public CommonResponse reRunPlan(@RequestBody ReRunReplayPlanRequest request) {
-        return planProduceService.reRunPlan(request.getPlanId());
+        try {
+            return planProduceService.reRunPlan(request.getPlanId());
+        } catch (Throwable e) {
+            return CommonResponse.badResponse("reRun plan error！" + e.getMessage(), null);
+        } finally {
+            planProduceService.endRunning(request.getPlanId());
+        }
+
     }
 
     @GetMapping("/api/stopPlan")
@@ -148,6 +156,7 @@ public class ReplayPlanController {
             }
 
         } finally {
+            planProduceService.endRunning(MDC.get("planId"));
             MDCTracer.clear();
             planProduceService.removeCreating(request.getAppId(), request.getTargetEnv());
         }

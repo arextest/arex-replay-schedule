@@ -179,14 +179,8 @@ public class PlanConsumePrepareService {
     }
 
 
-    public boolean prepareAndUpdateFailedActionAndCase(ReplayPlan replayPlan) {
+    public void updateFailedActionAndCase(ReplayPlan replayPlan, List<ReplayActionCaseItem> failedCaseList) {
         List<ReplayActionItem> replayActionItems = replayPlanActionRepository.queryPlanActionList(replayPlan.getId());
-
-        List<ReplayActionCaseItem> failedCaseList = replayActionCaseItemRepository.failedCaseList(replayPlan.getId());
-        if (CollectionUtils.isEmpty(failedCaseList)) {
-            progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
-            return false;
-        }
 
         replayPlan.setReRunCaseCount(failedCaseList.size());
 
@@ -204,15 +198,14 @@ public class PlanConsumePrepareService {
             .peek(actionItem -> {
                 actionItem.setParent(replayPlan);
                 actionItem.setCaseItemList(failedCaseMap.get(actionItem.getId()));
-                actionItem.setReplayStatus(ReplayStatusType.RUNNING.getValue());
+                actionItem.setReplayStatus(ReplayStatusType.INIT.getValue());
                 ReplayParentBinder.setupCaseItemParent(actionItem.getCaseItemList(), actionItem);
                 replayPlanActionRepository.update(actionItem);
-                replayReportService.pushActionStatus(actionItem.getPlanId(), ReplayStatusType.RUNNING,
+                replayReportService.pushActionStatus(actionItem.getPlanId(), ReplayStatusType.INIT,
                     actionItem.getId(), null);
             }).collect(Collectors.toList());
         replayActionItemPreprocessService.filterActionItem(failedActionList, replayPlan.getAppId());
         replayPlan.setReplayActionItemList(failedActionList);
-        return true;
     }
 
     public void doResumeOperationDescriptor(ReplayPlan replayPlan) {

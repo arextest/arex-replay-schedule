@@ -9,4 +9,5 @@ import lombok.Data;
 @Data
 public class ReRunReplayPlanRequest {
     private String planId;
+    private String operator;
 }

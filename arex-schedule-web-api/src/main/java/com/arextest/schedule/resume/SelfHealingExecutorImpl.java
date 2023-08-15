@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.time.Duration;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author jmo
@@ -74,7 +75,8 @@ public class SelfHealingExecutorImpl implements SelfHealingExecutor {
     }
 
     public List<ReplayPlan> queryTimeoutPlan(Duration offsetDuration, Duration maxDuration) {
-        return replayPlanRepository.timeoutPlanList(offsetDuration, maxDuration);
+        return replayPlanRepository.timeoutPlanList(offsetDuration, maxDuration).stream()
+            .filter(plan -> !plan.isReRun()).collect(Collectors.toList());
     }
 
     public void doResume(ReplayPlan replayPlan) {

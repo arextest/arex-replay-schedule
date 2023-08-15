@@ -3,7 +3,10 @@ package com.arextest.schedule.progress.impl;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
+import com.arextest.schedule.exceptions.ReRunPlanException;
+import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.LogType;
+import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
@@ -19,6 +22,7 @@ import com.arextest.schedule.utils.StageUtils;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 
 
 import javax.annotation.Resource;
@@ -42,7 +46,6 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     private MetricService metricService;
 
     public static final long DEFAULT_COUNT = 1L;
-
 
     @Override
     public void onReplayPlanCreated(ReplayPlan replayPlan) {

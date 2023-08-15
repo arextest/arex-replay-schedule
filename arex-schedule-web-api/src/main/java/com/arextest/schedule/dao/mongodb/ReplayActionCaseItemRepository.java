@@ -95,13 +95,23 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         return replayRunDetailsCollections.stream().map(ReplayRunDetailsConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
     }
 
+    /**
+     * Get the case list that failed to send or compare.
+     */
     public List<ReplayActionCaseItem> failedCaseList(String planId) {
         Query query = new Query();
         query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
-        query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).ne(CaseSendStatusType.WAIT_HANDLING.getValue())
-            .andOperator(Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).ne(CaseSendStatusType.SUCCESS.getValue())));
-        query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_COMPARE_STATUS).ne(CompareProcessStatusType.PASS.getValue())
-            .andOperator(Criteria.where(ReplayActionCaseItem.FIELD_COMPARE_STATUS).ne(CompareProcessStatusType.WAIT_HANDLING.getValue())));
+        query.addCriteria(new Criteria().orOperator(
+            new Criteria().andOperator(
+                Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).ne(CaseSendStatusType.WAIT_HANDLING.getValue()),
+                Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).ne(CaseSendStatusType.SUCCESS.getValue())
+            ),
+            new Criteria().andOperator(
+                Criteria.where(ReplayActionCaseItem.FIELD_COMPARE_STATUS).ne(CompareProcessStatusType.WAIT_HANDLING.getValue()),
+                Criteria.where(ReplayActionCaseItem.FIELD_COMPARE_STATUS).ne(CompareProcessStatusType.PASS.getValue())
+            )
+        ));
+
         List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query, ReplayRunDetailsCollection.class);
         return replayRunDetailsCollections.stream().map(ReplayRunDetailsConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
     }
