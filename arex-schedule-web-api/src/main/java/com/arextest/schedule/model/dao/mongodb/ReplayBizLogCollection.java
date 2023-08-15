@@ -13,8 +13,9 @@ import java.util.Date;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
-@Document("ReplayBizLog")
+@Document(ReplayBizLogCollection.COLLECTION_NAME)
 public class ReplayBizLogCollection extends ModelBase {
+    public static final String COLLECTION_NAME = "ReplayBizLog";
     private Date date;
     private int level;
     private String message;

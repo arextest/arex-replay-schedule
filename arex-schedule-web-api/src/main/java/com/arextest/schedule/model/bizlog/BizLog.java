@@ -6,6 +6,7 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Date;
@@ -17,6 +18,7 @@ import java.util.Optional;
 @Data
 @Builder
 @Slf4j
+@FieldNameConstants
 public class BizLog {
     private Date date;
     private int level;
