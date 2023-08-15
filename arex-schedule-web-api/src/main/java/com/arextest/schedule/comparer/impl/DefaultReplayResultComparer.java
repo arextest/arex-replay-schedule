@@ -186,13 +186,26 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                                          ReplayComparisonConfig compareConfig) {
         CompareOptions options = configHandler.buildSkdOption(category, compareConfig);
         try {
-            return COMPARE_INSTANCE.quickCompare(record, result, options);
+            // to-do: 64base extract record and result
+            String decodedRecord = base64decode(record);
+            String decodedResult = base64decode(result);
+
+            return COMPARE_INSTANCE.quickCompare(decodedRecord, decodedResult, options);
+
         } catch (Throwable e) {
             LOGGER.error("run compare sdk process error:{} ,source: {} ,target:{}", e.getMessage(), record, result);
             return CompareSDK.fromException(record, result, e.getMessage());
         }
     }
 
+    public String base64decode(String encoded) {
+        try {
+            // to-do: 64base extract record and result
+            return new String(Base64.getDecoder().decode(encoded));
+        } catch (IllegalArgumentException e){
+            return encoded;
+        }
+    }
     private List<CategoryComparisonHolder> buildWaitCompareList(ReplayActionCaseItem caseItem, boolean useReplayId) {
         String targetResultId = null;
         String sourceResultId = null;
