@@ -201,7 +201,14 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     public String base64decode(String encoded) {
         try {
             // to-do: 64base extract record and result
-            return new String(Base64.getDecoder().decode(encoded));
+            if (encoded.startsWith("{") && encoded.endsWith("}")) {
+                return encoded;
+            }
+            String decoded = new String(Base64.getDecoder().decode(encoded));
+            if (decoded.startsWith("{") && decoded.endsWith("}")) {
+                return decoded;
+            }
+            return encoded;
         } catch (IllegalArgumentException e){
             return encoded;
         }
