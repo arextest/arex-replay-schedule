@@ -6,6 +6,8 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.converter.ReplayPlanItemConverter;
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanItemCollection;
 import com.mongodb.client.result.UpdateResult;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -13,7 +15,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
  * Created by rchen9 on 2022/8/19.
  */
 @Repository
+@Slf4j
 public class ReplayPlanActionRepository implements RepositoryWriter<ReplayActionItem>, RepositoryField {
 
     @Autowired
@@ -31,7 +34,6 @@ public class ReplayPlanActionRepository implements RepositoryWriter<ReplayAction
     private static final String REPLAY_FINISH_TIME = "replayFinishTime";
     private static final String REPLAY_CASE_COUNT = "replayCaseCount";
     private static final String PLAN_ID = "planId";
-    private static final String APP_ID ="appId";
 
     @Override
     public boolean save(ReplayActionItem actionItem) {
@@ -41,6 +43,25 @@ public class ReplayPlanActionRepository implements RepositoryWriter<ReplayAction
             actionItem.setId(insert.getId());
         }
         return insert.getId() != null;
+    }
+
+    @Override
+    public boolean save(List<ReplayActionItem> actionItems) {
+        List<ReplayPlanItemCollection> replayPlanItemCollections = actionItems.stream()
+                .map(ReplayPlanItemConverter.INSTANCE::daoFromDto).collect(Collectors.toList());
+
+        List<ReplayPlanItemCollection> inserted = new ArrayList<>(mongoTemplate
+                .insert(replayPlanItemCollections, ReplayPlanItemCollection.class));
+
+        if (CollectionUtils.isEmpty(inserted) || inserted.size() != actionItems.size()) {
+            LOGGER.error("Error saving action items, save size does not match source.");
+            return false;
+        }
+
+        for (int i = 0; i < inserted.size(); i++) {
+            actionItems.get(i).setId(inserted.get(i).getId());
+        }
+        return true;
     }
 
     public boolean update(ReplayActionItem actionItem) {
@@ -59,12 +80,4 @@ public class ReplayPlanActionRepository implements RepositoryWriter<ReplayAction
         List<ReplayPlanItemCollection> replayPlanItemCollections = mongoTemplate.find(query, ReplayPlanItemCollection.class);
         return replayPlanItemCollections.stream().map(ReplayPlanItemConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
     }
-
-    public long queryRunningItemCount(String appId) {
-        Query query = Query.query(Criteria.where(APP_ID).is(appId));
-        query.addCriteria(Criteria.where(REPLAY_STATUS).in(Arrays.asList(0, 1)));
-        return mongoTemplate.count(query, ReplayPlanItemCollection.class);
-    }
-
-
 }
