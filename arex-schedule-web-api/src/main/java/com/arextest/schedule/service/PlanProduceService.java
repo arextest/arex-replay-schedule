@@ -2,6 +2,7 @@ package com.arextest.schedule.service;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.bizlog.BizLogger;
+import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
@@ -71,6 +72,8 @@ public class PlanProduceService {
     private PlanExecutionMonitor planExecutionMonitorImpl;
     @Resource
     private ReplayActionCaseItemRepository replayActionCaseItemRepository;
+    @Resource
+    private CompareConfigService compareConfigService;
 
     private static final String PLAN_RUNNING_KEY_FORMAT = "plan_running_%s";
 
@@ -322,6 +325,13 @@ public class PlanProduceService {
             progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.ONGOING,
                 System.currentTimeMillis(), null, null);
             planConsumePrepareService.updateFailedActionAndCase(replayPlan, failedCaseList);
+
+            progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.ONGOING,
+                System.currentTimeMillis(), null, null);
+            compareConfigService.preload(replayPlan);
+            progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.SUCCEEDED,
+                null, System.currentTimeMillis(), null);
+
             planConsumePrepareService.doResumeOperationDescriptor(replayPlan);
             progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.SUCCEEDED,
                 null, System.currentTimeMillis(), null);

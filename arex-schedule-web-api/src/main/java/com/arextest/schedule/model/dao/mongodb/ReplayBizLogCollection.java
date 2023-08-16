@@ -35,4 +35,5 @@ public class ReplayBizLogCollection extends ModelBase {
     private String response;
     private String traceId;
     private String extra;
+    private Boolean reRun;
 }

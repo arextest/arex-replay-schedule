@@ -84,6 +84,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             }
             if (CollectionUtils.isEmpty(replayCompareResults) &&
                 MockCategoryType.Q_MESSAGE_CONSUMER.getName().equalsIgnoreCase(caseItem.getCaseType())) {
+                caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.PASS.getValue());
                 return comparisonOutputWriter.writeQmqCompareResult(caseItem);
             }
             CompareProcessStatusType compareStatus = CompareProcessStatusType.PASS;

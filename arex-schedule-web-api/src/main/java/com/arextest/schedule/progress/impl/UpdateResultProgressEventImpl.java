@@ -1,12 +1,10 @@
 package com.arextest.schedule.progress.impl;
 
+import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
-import com.arextest.schedule.exceptions.ReRunPlanException;
-import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.LogType;
-import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
@@ -16,17 +14,14 @@ import com.arextest.schedule.model.plan.StageBaseInfo;
 import com.arextest.schedule.model.plan.StageStatusEnum;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.service.MetricService;
+import com.arextest.schedule.service.PlanProduceService;
 import com.arextest.schedule.service.ReplayReportService;
 import com.arextest.schedule.utils.StageUtils;
-
-import java.util.ArrayList;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
-
 
 import javax.annotation.Resource;
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author jmo
@@ -44,6 +39,8 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     private CompareConfigService compareConfigService;
     @Resource
     private MetricService metricService;
+    @Resource
+    private CacheProvider redisCacheProvider;
 
     public static final long DEFAULT_COUNT = 1L;
 
@@ -121,6 +118,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     @Override
     public void onReplayPlanReRun(ReplayPlan replayPlan) {
         replayReportService.pushPlanStatus(replayPlan.getId(), ReplayStatusType.RUNNING, null);
+        redisCacheProvider.remove(PlanProduceService.buildStopPlanRedisKey(replayPlan.getId()));
         addReRunStage(replayPlan.getReplayPlanStageList());
     }
 

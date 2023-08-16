@@ -10,6 +10,7 @@ import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
 import com.arextest.schedule.model.*;
 import com.arextest.web.model.contract.contracts.ChangeReplayStatusRequestType;
+import com.arextest.web.model.contract.contracts.RemoveRecordsRequest;
 import com.arextest.web.model.contract.contracts.ReportInitialRequestType;
 import com.arextest.web.model.contract.contracts.replay.AnalyzeCompareResultsRequestType;
 import com.arextest.web.model.contract.contracts.replay.UpdateReportInfoRequestType;
@@ -39,6 +40,8 @@ public final class ReplayReportService implements ComparisonWriter {
     private String pushReplayStatusUrl;
     @Value("${arex.report.update.report.info.url}")
     private String updateReportInfoUrl;
+    @Value("${arex.report.remove.records.url}")
+    private String removeRecordsUrl;
 
     private static final String CASE_COUNT_LIMIT_NAME = "caseCountLimit";
 
@@ -219,5 +222,13 @@ public final class ReplayReportService implements ComparisonWriter {
         compareResult.setRecordId(caseItem.getRecordId());
         compareResult.setPlanItemId(caseItem.getPlanItemId());
         return compareResult;
+    }
+
+    public void removeRecords(Map<String, List<String>> actionIdAndRecordIdsMap) {
+        RemoveRecordsRequest requestType = new RemoveRecordsRequest();
+        requestType.setActionIdAndRecordIdsMap(actionIdAndRecordIdsMap);
+        Response response = httpWepServiceApiClient.jsonPost(removeRecordsUrl, requestType,
+            GenericResponseType.class);
+        LOGGER.info("removeRecords request:{}, response:{}", requestType, response);
     }
 }

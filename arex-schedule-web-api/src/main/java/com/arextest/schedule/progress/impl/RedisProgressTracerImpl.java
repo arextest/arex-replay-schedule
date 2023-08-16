@@ -127,7 +127,7 @@ final class RedisProgressTracerImpl implements ProgressTracer {
         try {
             return action.get();
         } catch (Throwable throwable) {
-            LOGGER.error("do  doWithRetry error: {}", throwable.getMessage(), throwable);
+            LOGGER.error("do doWithRetry error: {}", throwable.getMessage(), throwable);
             return action.get();
         }
     }
@@ -195,10 +195,9 @@ final class RedisProgressTracerImpl implements ProgressTracer {
         String planId = replayPlan.getId();
         try {
             doWithRetry(() -> redisCacheProvider.decrValueBy(toPlanFinishKeyBytes(planId), replayPlan.getReRunCaseCount()));
-            replayPlan.getReplayActionItemList().forEach(replayActionItem -> {
+            replayPlan.getReplayActionItemList().forEach(replayActionItem ->
                 doWithRetry(() -> redisCacheProvider.incrValueBy(toPlanActionTotalKeyBytes(replayActionItem.getId()),
-                    replayActionItem.getCaseItemList().size()));
-            });
+                replayActionItem.getCaseItemList().size())));
         } catch (Throwable throwable) {
             LOGGER.error("reRunPlan decrValue error!msg: {} ,plan id: {}, error:{}", throwable.getMessage(), planId,
                 throwable);
