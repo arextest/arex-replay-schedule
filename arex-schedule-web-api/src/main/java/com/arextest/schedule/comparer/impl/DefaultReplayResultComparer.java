@@ -198,20 +198,27 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
     }
 
-    public String base64decode(String encoded) {
+    private String base64decode(String encoded) {
         try {
             // to-do: 64base extract record and result
-            if (encoded.startsWith("{") && encoded.endsWith("}")) {
+            if (isJson(encoded)) {
                 return encoded;
             }
             String decoded = new String(Base64.getDecoder().decode(encoded));
-            if (decoded.startsWith("{") && decoded.endsWith("}")) {
+            if (isJson(decoded)) {
                 return decoded;
             }
             return encoded;
         } catch (IllegalArgumentException e){
             return encoded;
         }
+    }
+
+    private boolean isJson(String value){
+        if (value.startsWith("{") && value.endsWith("}")) {
+            return true;
+        }
+        else return value.startsWith("[") && value.endsWith("]");
     }
     private List<CategoryComparisonHolder> buildWaitCompareList(ReplayActionCaseItem caseItem, boolean useReplayId) {
         String targetResultId = null;
