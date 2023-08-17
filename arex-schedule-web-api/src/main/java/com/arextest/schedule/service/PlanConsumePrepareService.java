@@ -26,7 +26,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -195,7 +194,7 @@ public class PlanConsumePrepareService {
         Map<String, List<String>> actionIdAndRecordIdsMap = failedCaseMap.entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream()
                 .map(ReplayActionCaseItem::getRecordId).collect(Collectors.toList())));
-        replayReportService.removeRecords(actionIdAndRecordIdsMap);
+        replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap);
 
         replayActionCaseItemRepository.batchUpdateStatus(failedCaseList);
 
