@@ -109,7 +109,6 @@ public class PlanProduceService {
         }
 
         ReplayPlan replayPlan = build(request, planContext);
-        isRunning(replayPlan.getId());
         replayPlan.setPlanCreateMillis(planCreateMillis);
         replayPlan.setReplayActionItemList(replayActionItemList);
         ReplayParentBinder.setupReplayActionParent(replayActionItemList, replayPlan);
@@ -128,6 +127,7 @@ public class PlanProduceService {
             return CommonResponse.badResponse("save replan plan error, " + replayPlan.toString(),
                     new BuildReplayPlanResponse(BuildReplayFailReasonEnum.DB_ERROR));
         }
+        isRunning(replayPlan.getId());
         planExecutionMonitorImpl.register(replayPlan);
         MDCTracer.addPlanId(replayPlan.getId());
         if (!replayPlanActionRepository.save(replayActionItemList)) {
