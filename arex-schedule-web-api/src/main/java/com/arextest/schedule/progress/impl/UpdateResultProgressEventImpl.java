@@ -36,8 +36,6 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     @Resource
     private ReplayReportService replayReportService;
     @Resource
-    private CompareConfigService compareConfigService;
-    @Resource
     private MetricService metricService;
     @Resource
     private CacheProvider redisCacheProvider;
@@ -57,6 +55,18 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
             LOGGER.error("prepare load compare config error: {}, plan id:{}", throwable.getMessage(),
                     replayPlan.getId(), throwable);
         }
+    }
+
+    @Override
+    public void onCompareConfigBeforeLoading(ReplayPlan replayPlan) {
+        onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.ONGOING,
+                System.currentTimeMillis(), null, null);
+    }
+
+    @Override
+    public void onCompareConfigLoaded(ReplayPlan replayPlan) {
+        onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.SUCCEEDED,
+                null, System.currentTimeMillis(), null);
     }
 
 

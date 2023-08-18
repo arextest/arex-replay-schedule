@@ -54,8 +54,7 @@ public final class CompareConfigService {
     CustomComparisonConfigurationHandler customComparisonConfigurationHandler;
 
     public void preload(ReplayPlan plan) {
-        progressEvent.onReplayPlanStageUpdate(plan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.ONGOING,
-                System.currentTimeMillis(), null, null);
+        progressEvent.onCompareConfigBeforeLoading(plan);
 
         Pair<ComparisonGlobalConfig, Map<String, ComparisonInterfaceConfig>> appConfig = getReplayComparisonConfig(plan);
         Map<String, ComparisonInterfaceConfig> operationCompareConfig = appConfig.getRight();
@@ -88,8 +87,7 @@ public final class CompareConfigService {
                 4 * 24 * 60 * 60L,
                 objectToJsonString(globalConfig).getBytes(StandardCharsets.UTF_8));
 
-        progressEvent.onReplayPlanStageUpdate(plan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.SUCCEEDED,
-                null, System.currentTimeMillis(), null);
+        progressEvent.onCompareConfigLoaded(plan);
     }
 
     private Pair<ComparisonGlobalConfig, Map<String, ComparisonInterfaceConfig>> getReplayComparisonConfig(ReplayPlan plan) {
