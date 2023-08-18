@@ -22,4 +22,6 @@ public interface ProgressTracer {
     long lastUpdateTime(String planId);
 
     void refreshUpdateTime(String planId);
+
+    void reRunPlan(ReplayPlan replayPlan);
 }

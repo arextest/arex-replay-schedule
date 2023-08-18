@@ -10,6 +10,7 @@ import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
 import com.arextest.schedule.model.*;
 import com.arextest.web.model.contract.contracts.ChangeReplayStatusRequestType;
+import com.arextest.web.model.contract.contracts.RemoveRecordsAndScenesRequest;
 import com.arextest.web.model.contract.contracts.ReportInitialRequestType;
 import com.arextest.web.model.contract.contracts.replay.AnalyzeCompareResultsRequestType;
 import com.arextest.web.model.contract.contracts.replay.UpdateReportInfoRequestType;
@@ -39,6 +40,8 @@ public final class ReplayReportService implements ComparisonWriter {
     private String pushReplayStatusUrl;
     @Value("${arex.report.update.report.info.url}")
     private String updateReportInfoUrl;
+    @Value("${arex.report.remove.records.url}")
+    private String removeRecordsUrl;
 
     private static final String CASE_COUNT_LIMIT_NAME = "caseCountLimit";
 
@@ -158,6 +161,9 @@ public final class ReplayReportService implements ComparisonWriter {
         AnalyzeCompareResultsRequestType request = new AnalyzeCompareResultsRequestType();
         ReportResultConverter converter = ReportResultConverter.DEFAULT;
         List<AnalyzeCompareResultsRequestType.AnalyzeCompareInfoItem> reqItems = new ArrayList<>(comparedSize);
+
+        ReplayCompareResult firstResult = comparedResult.get(0);
+        this.replayCompareResultRepository.deleteByRecord(firstResult.getRecordId(), firstResult.getPlanItemId());
         this.replayCompareResultRepository.save(comparedResult);
 
         for (ReplayCompareResult sourceResult : comparedResult) {
@@ -188,7 +194,9 @@ public final class ReplayReportService implements ComparisonWriter {
         }
         AnalyzeCompareResultsRequestType request = new AnalyzeCompareResultsRequestType();
         ReplayCompareResult compareResult = toQMQCompareResult(caseItem);
-        this.replayCompareResultRepository.save(Collections.singletonList(compareResult));
+
+        this.replayCompareResultRepository.deleteByRecord(compareResult.getRecordId(), compareResult.getPlanItemId());
+        this.replayCompareResultRepository.save(compareResult);
 
         ReportResultConverter converter = ReportResultConverter.DEFAULT;
         request.setAnalyzeCompareInfos(Collections.singletonList(converter.to(compareResult)));
@@ -214,5 +222,13 @@ public final class ReplayReportService implements ComparisonWriter {
         compareResult.setRecordId(caseItem.getRecordId());
         compareResult.setPlanItemId(caseItem.getPlanItemId());
         return compareResult;
+    }
+
+    public void removeRecordsAndScenes(Map<String, List<String>> actionIdAndRecordIdsMap) {
+        RemoveRecordsAndScenesRequest requestType = new RemoveRecordsAndScenesRequest();
+        requestType.setActionIdAndRecordIdsMap(actionIdAndRecordIdsMap);
+        Response response = httpWepServiceApiClient.jsonPost(removeRecordsUrl, requestType,
+            GenericResponseType.class);
+        LOGGER.info("removeRecordsAndScenes request:{}, response:{}", requestType, response);
     }
 }

@@ -3,6 +3,7 @@ package com.arextest.schedule.comparer.impl;
 
 import com.arextest.diff.model.CompareOptions;
 import com.arextest.diff.model.CompareResult;
+import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.comparer.*;
@@ -25,7 +26,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.util.StopWatch;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -77,10 +84,20 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             }
             if (CollectionUtils.isEmpty(replayCompareResults) &&
                 MockCategoryType.Q_MESSAGE_CONSUMER.getName().equalsIgnoreCase(caseItem.getCaseType())) {
+                caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.PASS.getValue());
                 return comparisonOutputWriter.writeQmqCompareResult(caseItem);
             }
-
-            caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.PASS.getValue());
+            CompareProcessStatusType compareStatus = CompareProcessStatusType.PASS;
+            for (ReplayCompareResult replayCompareResult : replayCompareResults) {
+                if (replayCompareResult.getDiffResultCode() == DiffResultCode.COMPARED_WITH_DIFFERENCE) {
+                    compareStatus = CompareProcessStatusType.HAS_DIFF;
+                    break;
+                } else if (replayCompareResult.getDiffResultCode() == DiffResultCode.COMPARED_INTERNAL_EXCEPTION) {
+                    compareStatus = CompareProcessStatusType.ERROR;
+                    break;
+                }
+            }
+            caseItemRepository.updateCompareStatus(caseItem.getId(), compareStatus.getValue());
             return comparisonOutputWriter.write(replayCompareResults);
         } catch (Throwable throwable) {
             caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.ERROR.getValue());
@@ -161,9 +178,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         recordMap.keySet()
                 .stream()
                 .filter(key -> !usedRecordKeys.contains(key)) // unused keys
-                .forEach(key -> {
-                    compareResults.addAll(calculateMissResult(category, configPair, recordMap.get(key), caseItem, false));
-                });
+                .forEach(key -> compareResults.addAll(calculateMissResult(category, configPair, recordMap.get(key), caseItem, false)));
         return compareResults;
     }
 
@@ -281,7 +296,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
             ReplayComparisonConfig itemConfig = configHandler
                     .pickConfig(configPair.getLeft(), configPair.getRight(), item, category);
             operation = item.getCompareOperation();
-            CompareResult comparedResult = null;
+            CompareResult comparedResult;
             if (missRecord) {
                 comparedResult = compareProcess(category, null, item.getCompareContent(), itemConfig);
             } else {
