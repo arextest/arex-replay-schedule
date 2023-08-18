@@ -9,8 +9,6 @@ import com.arextest.schedule.model.config.ComparisonGlobalConfig;
 import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.model.converter.ReplayConfigConverter;
-import com.arextest.schedule.model.plan.PlanStageEnum;
-import com.arextest.schedule.model.plan.StageStatusEnum;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;

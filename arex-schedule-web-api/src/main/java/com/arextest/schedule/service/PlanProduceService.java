@@ -2,7 +2,6 @@ package com.arextest.schedule.service;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.bizlog.BizLogger;
-import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
@@ -72,8 +71,6 @@ public class PlanProduceService {
     private PlanExecutionMonitor planExecutionMonitorImpl;
     @Resource
     private ReplayActionCaseItemRepository replayActionCaseItemRepository;
-    @Resource
-    private CompareConfigService compareConfigService;
 
     private static final String PLAN_RUNNING_KEY_FORMAT = "plan_running_%s";
 
