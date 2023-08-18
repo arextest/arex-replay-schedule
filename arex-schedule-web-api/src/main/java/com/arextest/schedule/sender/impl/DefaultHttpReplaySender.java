@@ -60,7 +60,7 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
     @Override
     public ReplaySendResult send(SenderParameters senderParameters) {
         if (StringUtils.isBlank(senderParameters.getUrl())) {
-            return ReplaySendResult.failed("url is null or empty");
+            return ReplaySendResult.failed(new RuntimeException("url is null or empty"));
         }
         before(senderParameters.getRecordId(), senderParameters.getReplayPlanType().getValue());
         return doInvoke(senderParameters);
@@ -96,7 +96,7 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
         watch.stop();
         caseItem.setMessageId(messageId);
         metricService.recordSendLogEvent(LogType.DO_SEND.getValue(), targetSendResult, caseItem, watch.getTotalTimeMillis());
-        caseItem.setSendErrorMessage(targetSendResult.getRemark());
+        caseItem.setSendException(targetSendResult.getException());
         caseItem.setTargetResultId(targetSendResult.getTraceId());
         caseItem.setSendStatus(targetSendResult.getStatusType().getValue());
         instanceRunner = selectLoadBalanceInstance(caseItem.getId(), replayActionItem.getSourceInstance());
@@ -108,7 +108,7 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
         ReplaySendResult sourceSendResult = this.doInvoke(senderParameter);
         caseItem.setSourceResultId(sourceSendResult.getTraceId());
         caseItem.setSendStatus(sourceSendResult.getStatusType().getValue());
-        caseItem.setSendErrorMessage(targetSendResult.getRemark());
+        caseItem.setSendException(targetSendResult.getException());
         return sourceSendResult.success() && targetSendResult.success();
     }
 
@@ -135,7 +135,7 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
         HttpMethod httpMethod = HttpMethod.resolve(method);
 
         if (httpMethod == null) {
-            return ReplaySendResult.failed("not found request method:" + method);
+            return ReplaySendResult.failed(new RuntimeException("not found request method:" + method));
         }
 
         HttpHeaders httpHeaders = createRequestHeaders(senderParameters.getHeaders(), senderParameters.getFormat());
@@ -160,7 +160,7 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
             LOGGER.error("http {} , url: {} ,error: {} ,request: {}", method, fullUrl, throwable.getMessage(),
                     httpEntity,
                     throwable);
-            return ReplaySendResult.failed(throwable.getMessage(), fullUrl);
+            return ReplaySendResult.failed(throwable, fullUrl);
         }
         return fromHttpResult(httpHeaders, fullUrl, responseEntity);
     }
@@ -233,16 +233,16 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
         LOGGER.info("invoke result url:{} ,request header:{},response header:{}, body:{}", url, requestHeaders,
                 responseHeaders, body);
         if (responseHeaders == null) {
-            return ReplaySendResult.failed("replay post error,review log find more details", url);
+            return ReplaySendResult.failed(new RuntimeException("replay post error,review log find more details"), url);
         }
         if (!isReplayRequest(requestHeaders)) {
-            return ReplaySendResult.success(StringUtils.EMPTY, StringUtils.EMPTY, url);
+            return ReplaySendResult.success(StringUtils.EMPTY, url);
         }
         String resultId = replayResultId(responseHeaders);
         if (StringUtils.isEmpty(resultId)) {
-            return ReplaySendResult.failed("Could not fetch replay result id from the headers of response", url);
+            return ReplaySendResult.failed(new RuntimeException("Could not fetch replay result id from the headers of response"), url);
         }
-        return ReplaySendResult.success(resultId, StringUtils.EMPTY, url);
+        return ReplaySendResult.success(resultId, url);
     }
 
 

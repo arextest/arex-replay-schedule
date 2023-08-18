@@ -6,11 +6,9 @@ import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.Mocker.Target;
 import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.FieldNameConstants;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.Map;
 
@@ -72,7 +70,6 @@ public class ReplayActionCaseItem {
         return requestAttribute(MockAttributeNames.CONTENT_TYPE);
     }
 
-    @SuppressWarnings("unchecked")
     public Map<String, String> requestHeaders() {
         if (this.targetRequest != null) {
             Object v = targetRequest.getAttribute("Headers");
@@ -108,14 +105,17 @@ public class ReplayActionCaseItem {
     }
 
     @JsonIgnore
-    private String sendErrorMessage;
+    @Getter(AccessLevel.NONE)
+    private Throwable sendException;
 
-    public void buildParentErrorMessage(String otherErrorMessage) {
-        this.parent.setErrorMessage(
-                StringUtils.isNotEmpty(this.sendErrorMessage) ? this.sendErrorMessage : otherErrorMessage
-        );
-        this.parent.getParent().setErrorMessage(
-                StringUtils.isNotEmpty(this.sendErrorMessage) ? this.sendErrorMessage : otherErrorMessage
-        );
+    public String getSendException() {
+        return sendException == null ? null : ExceptionUtils.getStackTrace(sendException);
+    }
+
+    public void recordException(Throwable otherThrowable) {
+        Throwable chosen = sendException != null ? sendException : otherThrowable;
+        this.setSendException(chosen);
+        this.parent.setSendException(chosen);
+        this.parent.getParent().setSendException(chosen);
     }
 }

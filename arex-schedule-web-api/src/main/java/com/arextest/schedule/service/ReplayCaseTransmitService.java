@@ -2,7 +2,6 @@ package com.arextest.schedule.service;
 
 import com.arextest.model.mock.Mocker;
 import com.arextest.schedule.bizlog.BizLogger;
-import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.ReplayResultComparer;
@@ -17,14 +16,12 @@ import com.arextest.schedule.sender.ReplaySenderFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +38,6 @@ public class ReplayCaseTransmitService {
     private ExecutorService sendExecutorService;
     @Resource
     private ExecutorService compareExecutorService;
-    private static final int ACTIVE_SERVICE_RETRY_COUNT = 3;
     private static final int GROUP_SENT_WAIT_TIMEOUT = 500;
     @Resource
     private ReplayResultComparer replayResultComparer;
@@ -71,7 +67,7 @@ public class ReplayCaseTransmitService {
             doSendValuesToRemoteHost(caseItems, executionStatus);
         } catch (Throwable throwable) {
             LOGGER.error("do send error:{}", throwable.getMessage(), throwable);
-            markAllSendStatus(caseItems, CaseSendStatusType.EXCEPTION_FAILED);
+            failAll(caseItems, throwable);
         }
     }
 
@@ -120,33 +116,6 @@ public class ReplayCaseTransmitService {
         }
     }
 
-    private ReplayActionCaseItem cloneCaseItem(List<ReplayActionCaseItem> groupValues, int index) {
-        ReplayActionCaseItem caseItem = new ReplayActionCaseItem();
-        ReplayActionCaseItem source = groupValues.get(index);
-        caseItem.setId(source.getId());
-        caseItem.setRecordId(source.getRecordId());
-        caseItem.setTargetResultId(source.getTargetResultId());
-        caseItem.setCaseType(source.getCaseType());
-        caseItem.setParent(source.getParent());
-        caseItem.setTargetRequest(cloneTargetRequest(source.getTargetRequest()));
-        caseItem.setSourceResultId(source.getSourceResultId());
-        caseItem.setPlanItemId(source.getPlanItemId());
-        return caseItem;
-    }
-
-    private Mocker.Target cloneTargetRequest(Mocker.Target targetRequest) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        Mocker.Target newTarget = null;
-        try {
-            String oldTargetRequest = objectMapper.writeValueAsString(targetRequest);
-            newTarget = objectMapper.readValue(oldTargetRequest, Mocker.Target.class);
-        } catch (JsonProcessingException e) {
-            LOGGER.error("cloneTargetRequest item error:{}", e.getMessage());
-        }
-        return newTarget;
-    }
-
-
     private void doSendValuesToRemoteHost(List<ReplayActionCaseItem> values, ExecutionStatus executionStatus) {
         final int valueSize = values.size();
         final SendSemaphoreLimiter semaphore = executionStatus.getLimiter();
@@ -183,9 +152,8 @@ public class ReplayCaseTransmitService {
             } catch (Throwable throwable) {
                 groupSentLatch.countDown();
                 semaphore.release(false);
-                replayActionCaseItem.buildParentErrorMessage(throwable.getMessage());
-                LOGGER.error("send group to remote host error:{} ,case item id:{}", throwable.getMessage(),
-                        replayActionCaseItem.getId(), throwable);
+                LOGGER.error("send group to remote host error:{} ,case item id:{}", throwable.getMessage(), replayActionCaseItem.getId(), throwable);
+                replayActionCaseItem.recordException(throwable);
                 doSendFailedAsFinish(replayActionCaseItem, CaseSendStatusType.EXCEPTION_FAILED);
             } finally {
                 actionItem.recordProcessOne();
@@ -235,9 +203,10 @@ public class ReplayCaseTransmitService {
     }
 
 
-    private void markAllSendStatus(List<ReplayActionCaseItem> sourceItemList, CaseSendStatusType sendStatusType) {
+    private void failAll(List<ReplayActionCaseItem> sourceItemList, Throwable exception) {
         for (ReplayActionCaseItem caseItem : sourceItemList) {
-            doSendFailedAsFinish(caseItem, sendStatusType);
+            caseItem.recordException(exception);
+            doSendFailedAsFinish(caseItem, CaseSendStatusType.EXCEPTION_FAILED);
         }
     }
 
@@ -252,8 +221,10 @@ public class ReplayCaseTransmitService {
                 caseItem.setTargetResultId(StringUtils.EMPTY);
             }
             boolean updateResult = replayActionCaseItemRepository.updateSendResult(caseItem);
-            String errorMessage = caseItem.getSendErrorMessage();
+            String errorMessage = caseItem.getSendException();
             if (StringUtils.isEmpty(errorMessage)) {
+                // should not be here, all error needs to be recorded
+                LOGGER.warn("No error message found, use send status type name as error message, case id: {}, send status type: {}", caseItem.getId(), sendStatusType);
                 errorMessage = sendStatusType.name();
             }
             comparisonWriter.writeIncomparable(caseItem, errorMessage);

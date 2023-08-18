@@ -22,7 +22,7 @@ public class DebugRequestService {
     public ReplaySendResult debugRequest(DebugRequestItem requestItem) {
         ReplaySender replaySender = senderFactory.findReplaySender(requestItem.getRequestType());
         if (replaySender == null) {
-            return ReplaySendResult.failed("requestType is not supported", null);
+            return ReplaySendResult.failed(new RuntimeException("requestType is not supported"), null);
         }
         return replaySender.send(requestItem);
     }

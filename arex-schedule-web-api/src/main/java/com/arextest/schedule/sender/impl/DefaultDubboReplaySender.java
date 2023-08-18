@@ -94,7 +94,6 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
         }
         ReplaySendResult targetSendResult = fromDubboResult(headers, dubboInvocation.getUrl(),
                 replayInvokeResult.getResult(), replayInvokeResult.getResponseProperties());
-        caseItem.setSendErrorMessage(targetSendResult.getRemark());
         caseItem.setTargetResultId(targetSendResult.getTraceId());
         caseItem.setSendStatus(targetSendResult.getStatusType().getValue());
 
@@ -113,17 +112,17 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
         LOGGER.info("invoke result url:{}, request header:{}, response header:{}, body:{}", url, requestHeaders,
                 responseHeaders, body);
         if (!isReplayRequest(requestHeaders)) {
-            return ReplaySendResult.success(StringUtils.EMPTY, StringUtils.EMPTY, url);
+            return ReplaySendResult.success(StringUtils.EMPTY, url);
         }
         if (responseHeaders.isEmpty()) {
-            return ReplaySendResult.failed("dubbo replay error,review log find more details", url);
+            return ReplaySendResult.failed(new RuntimeException("dubbo replay error,review log find more details"), url);
         }
 
         if (StringUtils.isEmpty(traceId)) {
-            return ReplaySendResult.failed("Could not fetch replay result id from the headers of dubbo response", url);
+            return ReplaySendResult.failed(new RuntimeException("Could not fetch replay result id from the headers of dubbo response"), url);
         }
 
-        return ReplaySendResult.success(traceId, StringUtils.EMPTY, url);
+        return ReplaySendResult.success(traceId, url);
     }
 
     private ImmutablePair<String, String> getInterfaceNameAndMethod(String operationName) {

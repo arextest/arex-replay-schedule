@@ -38,7 +38,6 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
     protected void doWithTracedRunning() {
         // TODO: use send time decrease or increase the sendLimiter of replay case
         boolean success = false;
-        Throwable t = null;
         try {
 
             // todo: ignore this in the error counter
@@ -53,7 +52,6 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
                 return;
             }
 
-
             MDCTracer.addDetailId(caseItem.getId());
             long caseExecutionStartMillis = System.currentTimeMillis();
             caseItem.setExecutionStartMillis(caseExecutionStartMillis);
@@ -62,16 +60,12 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
             transmitService.updateSendResult(caseItem, success ? CaseSendStatusType.SUCCESS :
                     CaseSendStatusType.EXCEPTION_FAILED);
         } catch (Throwable throwable) {
-            t = throwable;
-            LOGGER.error("async run sender Id: {} , error: {}", caseItem.getId(),
-                    throwable.getMessage(), throwable);
+            LOGGER.error("async run sender Id: {} , error: {}", caseItem.getId(), throwable.getMessage(), throwable);
+            caseItem.recordException(throwable);
             transmitService.updateSendResult(caseItem, CaseSendStatusType.EXCEPTION_FAILED);
         } finally {
             groupSentLatch.countDown();
             limiter.release(success);
-            caseItem.buildParentErrorMessage(
-                    t != null ? t.getMessage() : CaseSendStatusType.EXCEPTION_FAILED.name()
-            );
             if (!success) {
                 metricService.recordCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), caseItem.getParent().getPlanId(),
                         caseItem.getParent().getAppId(), DEFAULT_COUNT);

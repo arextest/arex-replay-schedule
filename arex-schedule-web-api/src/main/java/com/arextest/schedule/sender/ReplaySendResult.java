@@ -18,7 +18,7 @@ import java.util.Map;
 @ToString
 public final class ReplaySendResult {
     private final String traceId;
-    private final String remark;
+    private final Throwable exception;
     private final String url;
     private final Map<String, String> headers;
     private final CaseSendStatusType statusType;
@@ -27,31 +27,31 @@ public final class ReplaySendResult {
         return statusType == CaseSendStatusType.SUCCESS;
     }
 
-    private ReplaySendResult(String traceId, String remark, String url, CaseSendStatusType statusType) {
+    private ReplaySendResult(String traceId, Throwable exception, String url, CaseSendStatusType statusType) {
         this.traceId = traceId;
-        this.remark = remark;
+        this.exception = exception;
         this.url = url;
         this.headers = Collections.emptyMap();
         this.statusType = statusType;
     }
 
-    public static ReplaySendResult success(String traceId, String remark, String url) {
-        return new ReplaySendResult(traceId, remark, url, CaseSendStatusType.SUCCESS);
+    public static ReplaySendResult success(String traceId, String url) {
+        return new ReplaySendResult(traceId, null, url, CaseSendStatusType.SUCCESS);
     }
 
-    public static ReplaySendResult success(String traceId, String remark, String url, Map<String, String> headers) {
-        return new ReplaySendResult(traceId, remark, url, headers, CaseSendStatusType.SUCCESS);
+    public static ReplaySendResult success(String traceId, String url, Map<String, String> headers) {
+        return new ReplaySendResult(traceId, null, url, headers, CaseSendStatusType.SUCCESS);
     }
 
-    public static ReplaySendResult failed(String remark) {
-        return new ReplaySendResult(null, remark, null, CaseSendStatusType.EXCEPTION_FAILED);
+    public static ReplaySendResult failed(Throwable exception) {
+        return new ReplaySendResult(null, exception, null, CaseSendStatusType.EXCEPTION_FAILED);
     }
 
-    public static ReplaySendResult failed(String remark, String url) {
-        return new ReplaySendResult(null, remark, url, CaseSendStatusType.EXCEPTION_FAILED);
+    public static ReplaySendResult failed(Throwable exception, String url) {
+        return new ReplaySendResult(null, exception, url, CaseSendStatusType.EXCEPTION_FAILED);
     }
 
-    public static ReplaySendResult failed(String remark, String url, Map<String, String> headers) {
-        return new ReplaySendResult(null, remark, url, headers, CaseSendStatusType.EXCEPTION_FAILED);
+    public static ReplaySendResult failed(Throwable exception, String url, Map<String, String> headers) {
+        return new ReplaySendResult(null, exception, url, headers, CaseSendStatusType.EXCEPTION_FAILED);
     }
 }

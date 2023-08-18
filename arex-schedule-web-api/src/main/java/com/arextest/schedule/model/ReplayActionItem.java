@@ -6,8 +6,11 @@ import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.deploy.ServiceInstanceOperation;
 import com.arextest.model.mock.MockCategoryType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.Date;
 import java.util.List;
@@ -100,7 +103,13 @@ public class ReplayActionItem {
     }
 
     @JsonIgnore
-    private String errorMessage;
+    @Getter(AccessLevel.NONE)
+    private Throwable sendException;
+
+    public String getSendException() {
+        return sendException == null ? null : ExceptionUtils.getStackTrace(sendException);
+    }
+
     @JsonIgnore
     private boolean itemProcessed;
     @JsonIgnore

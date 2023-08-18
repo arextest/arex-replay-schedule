@@ -97,13 +97,13 @@ public class ReplayPlanController {
     @ResponseBody
     public ReplaySendResult debugRequest(@RequestBody DebugRequestItem requestItem) {
         if (requestItem == null) {
-            return ReplaySendResult.failed("param is null");
+            return ReplaySendResult.failed(new RuntimeException("param is null"));
         }
         if (StringUtils.isBlank(requestItem.getOperation())) {
-            return ReplaySendResult.failed("operation is null or empty");
+            return ReplaySendResult.failed(new RuntimeException("operation is null or empty"));
         }
         if (StringUtils.isBlank(requestItem.getMessage())) {
-            return ReplaySendResult.failed("message is null or empty");
+            return ReplaySendResult.failed(new RuntimeException("message is null or empty"));
         }
         return debugRequestService.debugRequest(requestItem);
     }

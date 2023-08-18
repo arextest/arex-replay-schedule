@@ -18,6 +18,7 @@ import com.arextest.schedule.service.PlanProduceService;
 import com.arextest.schedule.service.ReplayReportService;
 import com.arextest.schedule.utils.StageUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.log.LogFormatUtils;
 
 import javax.annotation.Resource;
 import java.util.Date;
@@ -83,7 +84,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
         replayPlanRepository.finish(planId);
         LOGGER.info("The plan was interrupted, plan id:{} ,appId: {} ", replayPlan.getId(), replayPlan.getAppId());
         metricService.recordCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
-        replayReportService.pushPlanStatus(planId, reason, replayPlan.getErrorMessage());
+        replayReportService.pushPlanStatus(planId, reason, replayPlan.getSendException());
         recordPlanExecutionTime(replayPlan);
     }
 
@@ -255,7 +256,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
             actionItem.setReplayBeginTime(now);
         }
         actionItem.setReplayFinishTime(now);
-        updateReplayActionStatus(actionItem, ReplayStatusType.FAIL_INTERRUPTED, actionItem.getErrorMessage());
+        updateReplayActionStatus(actionItem, ReplayStatusType.FAIL_INTERRUPTED, actionItem.getSendException());
         metricService.recordCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), actionItem.getPlanId(), actionItem.getAppId(),
                 actionItem.getCaseItemList() == null ? 0 : actionItem.getCaseItemList().size());
     }

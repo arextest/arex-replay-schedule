@@ -6,9 +6,8 @@ import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
 import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import lombok.*;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -77,7 +76,13 @@ public class ReplayPlan {
     @JsonIgnore
     private int caseCountLimit;
     @JsonIgnore
-    private String errorMessage;
+    @Getter(AccessLevel.NONE)
+    private Throwable sendException;
+
+    public String getSendException() {
+        return sendException == null ? null : ExceptionUtils.getStackTrace(sendException);
+    }
+
     private transient long planCreateMillis;
 
     private boolean resumed;
