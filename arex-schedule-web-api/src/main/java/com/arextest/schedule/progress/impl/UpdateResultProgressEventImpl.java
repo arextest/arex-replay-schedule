@@ -56,7 +56,6 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
 
             onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.ONGOING,
                 System.currentTimeMillis(), null, null);
-            compareConfigService.preload(replayPlan);
             onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.SUCCEEDED,
                 null, System.currentTimeMillis(), null);
         } catch (Throwable throwable) {

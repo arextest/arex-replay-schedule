@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -58,7 +59,11 @@ public final class CompareConfigService {
             return;
         }
 
-        for (ReplayActionItem actionItem : plan.getReplayActionItemList()) {
+        List<ReplayActionItem> validActionItems = plan.getReplayActionItemList().stream()
+                .filter(actionItem -> actionItem.getReplayCaseCount() > 0)
+                .collect(Collectors.toList());
+
+        for (ReplayActionItem actionItem : validActionItems) {
             String operationId = actionItem.getOperationId();
 
             ReplayComparisonConfig config = operationCompareConfig.getOrDefault(operationId, new ComparisonInterfaceConfig());
