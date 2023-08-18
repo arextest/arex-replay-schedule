@@ -63,11 +63,10 @@ public final class CompareConfigService {
             return;
         }
 
-        List<ReplayActionItem> validActionItems = plan.getReplayActionItemList().stream()
-                .filter(actionItem -> actionItem.getReplayCaseCount() > 0)
-                .collect(Collectors.toList());
-
-        for (ReplayActionItem actionItem : validActionItems) {
+        for (ReplayActionItem actionItem : plan.getReplayActionItemList()) {
+            if (actionItem.getReplayCaseCount() == 0 ) {
+                continue;
+            }
             String operationId = actionItem.getOperationId();
 
             ReplayComparisonConfig config = operationCompareConfig.getOrDefault(operationId, new ComparisonInterfaceConfig());
