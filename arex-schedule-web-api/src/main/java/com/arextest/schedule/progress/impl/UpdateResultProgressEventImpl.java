@@ -53,11 +53,6 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
             StageStatusEnum stageStatusEnum = StageStatusEnum.success(success);
             onReplayPlanStageUpdate(replayPlan, PlanStageEnum.INIT_REPORT, stageStatusEnum,
                 null, System.currentTimeMillis(), null);
-
-            onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.ONGOING,
-                System.currentTimeMillis(), null, null);
-            onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.SUCCEEDED,
-                null, System.currentTimeMillis(), null);
         } catch (Throwable throwable) {
             LOGGER.error("prepare load compare config error: {}, plan id:{}", throwable.getMessage(),
                     replayPlan.getId(), throwable);

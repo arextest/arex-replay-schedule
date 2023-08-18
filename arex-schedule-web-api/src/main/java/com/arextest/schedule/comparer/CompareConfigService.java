@@ -9,6 +9,9 @@ import com.arextest.schedule.model.config.ComparisonGlobalConfig;
 import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.model.converter.ReplayConfigConverter;
+import com.arextest.schedule.model.plan.PlanStageEnum;
+import com.arextest.schedule.model.plan.StageStatusEnum;
+import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -43,13 +46,17 @@ public final class CompareConfigService {
 
     @Value("${arex.report.config.comparison.summary.url}")
     private String summaryConfigUrl;
-
+    @Resource
+    private ProgressEvent progressEvent;
     @Resource
     private ObjectMapper objectMapper;
     @Resource
     CustomComparisonConfigurationHandler customComparisonConfigurationHandler;
 
     public void preload(ReplayPlan plan) {
+        progressEvent.onReplayPlanStageUpdate(plan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.ONGOING,
+                System.currentTimeMillis(), null, null);
+
         Pair<ComparisonGlobalConfig, Map<String, ComparisonInterfaceConfig>> appConfig = getReplayComparisonConfig(plan);
         Map<String, ComparisonInterfaceConfig> operationCompareConfig = appConfig.getRight();
         ComparisonGlobalConfig globalConfig = appConfig.getLeft();
@@ -80,6 +87,9 @@ public final class CompareConfigService {
         redisCacheProvider.put(ComparisonGlobalConfig.dependencyKey(plan.getId()).getBytes(StandardCharsets.UTF_8),
                 4 * 24 * 60 * 60L,
                 objectToJsonString(globalConfig).getBytes(StandardCharsets.UTF_8));
+
+        progressEvent.onReplayPlanStageUpdate(plan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.SUCCEEDED,
+                null, System.currentTimeMillis(), null);
     }
 
     private Pair<ComparisonGlobalConfig, Map<String, ComparisonInterfaceConfig>> getReplayComparisonConfig(ReplayPlan plan) {

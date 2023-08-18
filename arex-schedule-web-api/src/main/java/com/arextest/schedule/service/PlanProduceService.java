@@ -326,12 +326,6 @@ public class PlanProduceService {
                 System.currentTimeMillis(), null, null);
             planConsumePrepareService.updateFailedActionAndCase(replayPlan, failedCaseList);
 
-            progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.ONGOING,
-                System.currentTimeMillis(), null, null);
-            compareConfigService.preload(replayPlan);
-            progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.SUCCEEDED,
-                null, System.currentTimeMillis(), null);
-
             planConsumePrepareService.doResumeOperationDescriptor(replayPlan);
             progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.SUCCEEDED,
                 null, System.currentTimeMillis(), null);
