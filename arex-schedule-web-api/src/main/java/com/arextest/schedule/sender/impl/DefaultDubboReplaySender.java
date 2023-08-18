@@ -94,6 +94,7 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
         }
         ReplaySendResult targetSendResult = fromDubboResult(headers, dubboInvocation.getUrl(),
                 replayInvokeResult.getResult(), replayInvokeResult.getResponseProperties());
+        caseItem.setSendException(targetSendResult.getException());
         caseItem.setTargetResultId(targetSendResult.getTraceId());
         caseItem.setSendStatus(targetSendResult.getStatusType().getValue());
 

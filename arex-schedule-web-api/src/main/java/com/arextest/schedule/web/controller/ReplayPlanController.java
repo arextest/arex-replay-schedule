@@ -46,8 +46,6 @@ public class ReplayPlanController {
     private ProgressTracer progressTracer;
     @Resource
     private ProgressEvent progressEvent;
-    @Resource
-    private DebugRequestService debugRequestService;
 
 
     @PostMapping(value = "/api/createPlan")
@@ -92,22 +90,6 @@ public class ReplayPlanController {
         progressStatus.setLastUpdateTime(new Date(updateTime));
         return CommonResponse.successResponse("ok", progressStatus);
     }
-
-    @PostMapping("/api/debugRequest")
-    @ResponseBody
-    public ReplaySendResult debugRequest(@RequestBody DebugRequestItem requestItem) {
-        if (requestItem == null) {
-            return ReplaySendResult.failed(new RuntimeException("param is null"));
-        }
-        if (StringUtils.isBlank(requestItem.getOperation())) {
-            return ReplaySendResult.failed(new RuntimeException("operation is null or empty"));
-        }
-        if (StringUtils.isBlank(requestItem.getMessage())) {
-            return ReplaySendResult.failed(new RuntimeException("message is null or empty"));
-        }
-        return debugRequestService.debugRequest(requestItem);
-    }
-
 
     @Data
     private static class ProgressStatus {
