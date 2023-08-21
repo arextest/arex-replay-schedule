@@ -9,6 +9,7 @@ import com.arextest.schedule.model.config.ComparisonGlobalConfig;
 import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.model.converter.ReplayConfigConverter;
+import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -42,13 +44,16 @@ public final class CompareConfigService {
 
     @Value("${arex.report.config.comparison.summary.url}")
     private String summaryConfigUrl;
-
+    @Resource
+    private ProgressEvent progressEvent;
     @Resource
     private ObjectMapper objectMapper;
     @Resource
     CustomComparisonConfigurationHandler customComparisonConfigurationHandler;
 
     public void preload(ReplayPlan plan) {
+        progressEvent.onCompareConfigBeforeLoading(plan);
+
         Pair<ComparisonGlobalConfig, Map<String, ComparisonInterfaceConfig>> appConfig = getReplayComparisonConfig(plan);
         Map<String, ComparisonInterfaceConfig> operationCompareConfig = appConfig.getRight();
         ComparisonGlobalConfig globalConfig = appConfig.getLeft();
@@ -59,6 +64,9 @@ public final class CompareConfigService {
         }
 
         for (ReplayActionItem actionItem : plan.getReplayActionItemList()) {
+            if (actionItem.getReplayCaseCount() == 0 ) {
+                continue;
+            }
             String operationId = actionItem.getOperationId();
 
             ReplayComparisonConfig config = operationCompareConfig.getOrDefault(operationId, new ComparisonInterfaceConfig());
@@ -75,6 +83,8 @@ public final class CompareConfigService {
         redisCacheProvider.put(ComparisonGlobalConfig.dependencyKey(plan.getId()).getBytes(StandardCharsets.UTF_8),
                 4 * 24 * 60 * 60L,
                 objectToJsonString(globalConfig).getBytes(StandardCharsets.UTF_8));
+
+        progressEvent.onCompareConfigLoaded(plan);
     }
 
     private Pair<ComparisonGlobalConfig, Map<String, ComparisonInterfaceConfig>> getReplayComparisonConfig(ReplayPlan plan) {

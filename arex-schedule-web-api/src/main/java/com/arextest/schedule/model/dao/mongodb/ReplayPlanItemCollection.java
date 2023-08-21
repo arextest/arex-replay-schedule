@@ -3,6 +3,7 @@ package com.arextest.schedule.model.dao.mongodb;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.experimental.FieldNameConstants;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
@@ -13,6 +14,7 @@ import java.util.Date;
 @Data
 @NoArgsConstructor
 @Document("ReplayPlanItem")
+@FieldNameConstants
 public class ReplayPlanItemCollection extends ModelBase {
     @NonNull
     private String operationId;

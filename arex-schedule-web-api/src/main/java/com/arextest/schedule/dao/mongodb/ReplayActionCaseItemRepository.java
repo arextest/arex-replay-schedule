@@ -14,16 +14,22 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -57,10 +63,10 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     @Override
     public boolean save(List<ReplayActionCaseItem> caseItems) {
         List<ReplayRunDetailsCollection> replayPlanItemCollections = caseItems.stream()
-                .map(ReplayRunDetailsConverter.INSTANCE::daoFromDto).collect(Collectors.toList());
+            .map(ReplayRunDetailsConverter.INSTANCE::daoFromDto).collect(Collectors.toList());
 
         List<ReplayRunDetailsCollection> inserted = new ArrayList<>(mongoTemplate
-                .insert(replayPlanItemCollections, ReplayRunDetailsCollection.class));
+            .insert(replayPlanItemCollections, ReplayRunDetailsCollection.class));
 
         if (CollectionUtils.isEmpty(inserted) || inserted.size() != caseItems.size()) {
             LOGGER.error("Error saving case items, save size does not match source.");
@@ -76,9 +82,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     public List<ReplayActionCaseItem> waitingSendList(String planId, int pageSize, List<Criteria> baseCriteria, String minId) {
         Query query = new Query();
 
-        Optional.ofNullable(baseCriteria).ifPresent(criteria -> {
-            criteria.forEach(query::addCriteria);
-        });
+        Optional.ofNullable(baseCriteria).ifPresent(criteria -> criteria.forEach(query::addCriteria));
 
         query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
         query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()));
@@ -91,18 +95,37 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         return replayRunDetailsCollections.stream().map(ReplayRunDetailsConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
     }
 
+    /**
+     * Get the case list that failed to send or compare.
+     */
+    public List<ReplayActionCaseItem> failedCaseList(String planId) {
+        Query query = new Query();
+        query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
+        query.addCriteria(new Criteria().orOperator(
+            new Criteria().andOperator(
+                Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).ne(CaseSendStatusType.WAIT_HANDLING.getValue()),
+                Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).ne(CaseSendStatusType.SUCCESS.getValue())
+            ),
+            new Criteria().andOperator(
+                Criteria.where(ReplayActionCaseItem.FIELD_COMPARE_STATUS).ne(CompareProcessStatusType.WAIT_HANDLING.getValue()),
+                Criteria.where(ReplayActionCaseItem.FIELD_COMPARE_STATUS).ne(CompareProcessStatusType.PASS.getValue())
+            )
+        ));
+
+        List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query, ReplayRunDetailsCollection.class);
+        return replayRunDetailsCollections.stream().map(ReplayRunDetailsConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
+    }
+
     public Map<String, Long> countWaitHandlingByAction(String planId, List<Criteria> baseCriteria) {
         // combine baseCriteria into one
         Criteria criteria = new Criteria();
-        Optional.ofNullable(baseCriteria).ifPresent(criterias -> {
-            criterias.forEach(criteria::andOperator);
-        });
+        Optional.ofNullable(baseCriteria).ifPresent(criterias -> criterias.forEach(criteria::andOperator));
 
         Aggregation aggregation = Aggregation.newAggregation(
-                Aggregation.match(criteria),
-                Aggregation.match(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId)),
-                Aggregation.match(Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue())),
-                Aggregation.group(ReplayActionCaseItem.FIELD_PLAN_ITEM_ID).count().as(COUNT_FIELD)
+            Aggregation.match(criteria),
+            Aggregation.match(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId)),
+            Aggregation.match(Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue())),
+            Aggregation.group(ReplayActionCaseItem.FIELD_PLAN_ITEM_ID).count().as(COUNT_FIELD)
         );
         List<GroupCountRes> aggRes = mongoTemplate.aggregate(aggregation, ReplayRunDetailsCollection.class, GroupCountRes.class).getMappedResults();
         Map<String, Long> res = new HashMap<>();
@@ -123,7 +146,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         Query query = Query.query(Criteria.where(DASH_ID).is(replayActionCaseItem.getId()));
         Update update = MongoHelper.getUpdate();
         MongoHelper.assertNull("update parameter is null", replayActionCaseItem.getSourceResultId(),
-                replayActionCaseItem.getTargetResultId());
+            replayActionCaseItem.getTargetResultId());
         update.set(SEND_STATUS, replayActionCaseItem.getSendStatus());
         update.set(SOURCE_RESULT_ID, replayActionCaseItem.getSourceResultId());
         update.set(TARGET_RESULT_ID, replayActionCaseItem.getTargetResultId());
@@ -139,21 +162,38 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         return updateResult.getModifiedCount() > 0;
     }
 
+    public void batchUpdateStatus(List<ReplayActionCaseItem> replayActionCaseItemList) {
+        if (CollectionUtils.isEmpty(replayActionCaseItemList)) {
+            return;
+        }
+        BulkOperations bulkOperations =
+            mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, ReplayRunDetailsCollection.class);
+        List<Pair<Query, Update>> updates = new ArrayList<>();
+        for (ReplayActionCaseItem replayActionCaseItem : replayActionCaseItemList) {
+            Update update = MongoHelper.getUpdate();
+            update.set(SEND_STATUS, replayActionCaseItem.getSendStatus());
+            update.set(COMPARE_STATUS, replayActionCaseItem.getCompareStatus());
+            Query query = Query.query(Criteria.where(DASH_ID).is(replayActionCaseItem.getId()));
+            updates.add(Pair.of(query, update));
+        }
+        bulkOperations.updateMulti(updates).execute();
+    }
+
     public ReplayActionCaseItem lastOne(String planItemId) {
         Query query = Query.query(Criteria.where(PLAN_ITEM_ID).is(planItemId));
 
         query.addCriteria(
-                new Criteria().orOperator(
-                                Criteria.where(SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()),
-                        new Criteria().andOperator(
-                                Criteria.where(SEND_STATUS).is(CaseSendStatusType.SUCCESS.getValue()),
-                                Criteria.where(COMPARE_STATUS).is(CompareProcessStatusType.WAIT_HANDLING.getValue())
-                        )
+            new Criteria().orOperator(
+                Criteria.where(SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()),
+                new Criteria().andOperator(
+                    Criteria.where(SEND_STATUS).is(CaseSendStatusType.SUCCESS.getValue()),
+                    Criteria.where(COMPARE_STATUS).is(CompareProcessStatusType.WAIT_HANDLING.getValue())
                 )
+            )
         );
         query.limit(1);
         query.with(Sort.by(
-                Sort.Order.desc(DASH_ID)
+            Sort.Order.desc(DASH_ID)
         ));
         ReplayRunDetailsCollection replayRunDetailsCollections = mongoTemplate.findOne(query, ReplayRunDetailsCollection.class);
         return ReplayRunDetailsConverter.INSTANCE.dtoFromDao(replayRunDetailsCollections);

@@ -7,6 +7,7 @@ import lombok.Getter;
  * @create 2023/7/24 17:25
  */
 public enum StageStatusEnum {
+    UNKNOWN(0),
     PENDING(1),
     ONGOING(2),
     SUCCEEDED(3),

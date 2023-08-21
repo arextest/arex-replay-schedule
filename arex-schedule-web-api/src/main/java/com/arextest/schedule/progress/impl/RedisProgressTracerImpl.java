@@ -47,7 +47,7 @@ final class RedisProgressTracerImpl implements ProgressTracer {
             BizLogger.recordActionItemCaseCount(replayActionItem);
             if (actionCaseCount > 0) {
                 setupRedisNxWithExpire(toPlanActionTotalKeyBytes(replayActionItem.getId()),
-                        String.valueOf(actionCaseCount).getBytes(StandardCharsets.UTF_8));
+                    String.valueOf(actionCaseCount).getBytes(StandardCharsets.UTF_8));
             }
         }
         this.refreshUpdateTime(planId);
@@ -127,7 +127,7 @@ final class RedisProgressTracerImpl implements ProgressTracer {
         try {
             return action.get();
         } catch (Throwable throwable) {
-            LOGGER.error("do  doWithRetry error: {}", throwable.getMessage(), throwable);
+            LOGGER.error("do doWithRetry error: {}", throwable.getMessage(), throwable);
             return action.get();
         }
     }
@@ -179,7 +179,7 @@ final class RedisProgressTracerImpl implements ProgressTracer {
             redisCacheProvider.put(toPlanUpdateTimeKeyBytes(planId), SEVEN_DAYS_EXPIRE, valueToBytes(now));
         } catch (Throwable throwable) {
             LOGGER.error("refresh plan last update time error:{}, plan id : {}", throwable.getMessage(), planId,
-                    throwable);
+                throwable);
         }
     }
 
@@ -190,4 +190,17 @@ final class RedisProgressTracerImpl implements ProgressTracer {
         return ByteBuffer.wrap(bytes).getInt();
     }
 
+    @Override
+    public void reRunPlan(ReplayPlan replayPlan) {
+        String planId = replayPlan.getId();
+        try {
+            doWithRetry(() -> redisCacheProvider.decrValueBy(toPlanFinishKeyBytes(planId), replayPlan.getReRunCaseCount()));
+            replayPlan.getReplayActionItemList().forEach(replayActionItem ->
+                doWithRetry(() -> redisCacheProvider.incrValueBy(toPlanActionTotalKeyBytes(replayActionItem.getId()),
+                replayActionItem.getCaseItemList().size())));
+        } catch (Throwable throwable) {
+            LOGGER.error("reRunPlan decrValue error!msg: {} ,plan id: {}, error:{}", throwable.getMessage(), planId,
+                throwable);
+        }
+    }
 }
