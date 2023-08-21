@@ -3,6 +3,7 @@ package com.arextest.schedule.service;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
+import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.model.ExecutionStatus;
@@ -55,6 +56,8 @@ public final class PlanConsumeService {
     private PlanExecutionContextProvider planExecutionContextProvider;
     @Resource
     private PlanExecutionMonitor planExecutionMonitorImpl;
+    @Resource
+    private CompareConfigService compareConfigService;
 
     public void runAsyncConsume(ReplayPlan replayPlan) {
         BizLogger.recordPlanAsyncStart(replayPlan);
@@ -70,6 +73,8 @@ public final class PlanConsumeService {
         }
 
         private void init() {
+            compareConfigService.preload(replayPlan);
+
             // limiter shared for entire plan, max qps = maxQps per instance * min instance count
             final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps(),
                     replayPlan.getMinInstanceCount());
