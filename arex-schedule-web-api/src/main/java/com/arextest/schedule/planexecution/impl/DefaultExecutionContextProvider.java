@@ -1,5 +1,6 @@
 package com.arextest.schedule.planexecution.impl;
 
+import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.ExecutionContextActionType;
@@ -14,6 +15,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.retry.support.RetryTemplate;
 
@@ -49,7 +51,7 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
             PlanExecutionContext<ContextDependenciesHolder> context = new PlanExecutionContext<>();
             context.setContextName(CONTEXT_PREFIX + "no-config");
 
-            // set up null dependency to indicate that this case does not need to be warmed up
+            // set up null dependency to indicate that this context does not need to be warmed up
             ContextDependenciesHolder dependenciesHolder = new ContextDependenciesHolder();
             dependenciesHolder.setContextIdentifier(null);
             context.setDependencies(dependenciesHolder);
@@ -118,8 +120,9 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
             });
         } catch (Throwable t) {
             // any error goes here are considered as fatal, needs to look into details
-            LOGGER.error("Failed to execute before hook for context: {}", currentContext, t);
             currentContext.setActionType(ExecutionContextActionType.SKIP_CASE_OF_CONTEXT);
+            currentContext.setErrorMessage(ExceptionUtils.getStackTrace(t));
+            LOGGER.error("Failed to execute before hook for context: {}", currentContext, t);
         }
     }
 
