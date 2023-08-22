@@ -95,25 +95,24 @@ final class RedisProgressTracerImpl implements ProgressTracer {
         finishCaseByAction(replayActionItem);
     }
 
-    // todo batch finish cases
     @Override
-    public void finishCaseByAction(ReplayActionItem actionItem) {
-        doReplayActionFinish(actionItem);
+    public void finishCaseByAction(ReplayActionItem actionItem, int count) {
+        doReplayActionFinish(actionItem, count);
         ReplayPlan replayPlan = actionItem.getParent();
-        doPlanFinish(replayPlan);
+        doPlanFinish(replayPlan, count);
         this.refreshUpdateTime(replayPlan.getId());
     }
 
     @Override
-    public void finishCaseByPlan(ReplayPlan replayPlan) {
-        doPlanFinish(replayPlan);
+    public void finishCaseByPlan(ReplayPlan replayPlan, int count) {
+        doPlanFinish(replayPlan, count);
         this.refreshUpdateTime(replayPlan.getId());
     }
 
-    private void doPlanFinish(ReplayPlan replayPlan) {
+    private void doPlanFinish(ReplayPlan replayPlan, int count) {
         String planId = replayPlan.getId();
         try {
-            Long finished = doWithRetry(() -> redisCacheProvider.incrValue(toPlanFinishKeyBytes(planId)));
+            Long finished = doWithRetry(() -> redisCacheProvider.incrValueBy(toPlanFinishKeyBytes(planId), count));
             if (finished != null && finished == replayPlan.getCaseTotalCount()) {
                 progressEvent.onReplayPlanFinish(replayPlan);
             }
@@ -132,10 +131,10 @@ final class RedisProgressTracerImpl implements ProgressTracer {
         }
     }
 
-    private void doReplayActionFinish(ReplayActionItem replayActionItem) {
+    private void doReplayActionFinish(ReplayActionItem replayActionItem, int count) {
         String actionId = replayActionItem.getId();
         try {
-            Long finished = doWithRetry(() -> redisCacheProvider.decrValue(toPlanActionTotalKeyBytes(actionId)));
+            Long finished = doWithRetry(() -> redisCacheProvider.decrValueBy(toPlanActionTotalKeyBytes(actionId), count));
             if (finished != null && finished == 0) {
                 progressEvent.onActionComparisonFinish(replayActionItem);
             }

@@ -100,15 +100,13 @@ public class ReplayCaseTransmitService {
 
             // if we skip the rest of cases remaining in the action item, set its status
             if (replayActionItem.getReplayCaseCount() == replayActionItem.getCaseProcessCount().intValue()) {
-                replayActionItem.setErrorMessage(executionContext.getErrorMessage());
+                if (StringUtils.isNotBlank(executionContext.getErrorMessage())) {
+                    replayActionItem.setErrorMessage(executionContext.getErrorMessage());
+                }
                 progressEvent.onActionInterrupted(replayActionItem);
-                for (int i = 0; i < contextCasesCount; i++) {
-                    progressTracer.finishCaseByPlan(replayPlan);
-                }
+                progressTracer.finishCaseByPlan(replayPlan, contextCasesCount);
             } else {
-                for (int i = 0; i < contextCasesCount; i++) {
-                    progressTracer.finishCaseByAction(replayActionItem);
-                }
+                progressTracer.finishCaseByAction(replayActionItem, contextCasesCount);
             }
             BizLogger.recordContextSkipped(executionContext, replayActionItem, contextCasesCount);
         }

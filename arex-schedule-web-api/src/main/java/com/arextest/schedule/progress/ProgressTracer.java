@@ -13,9 +13,18 @@ public interface ProgressTracer {
 
     void finishOne(ReplayActionCaseItem caseItem);
 
-    void finishCaseByAction(ReplayActionItem actionItem);
+    default void finishCaseByAction(ReplayActionItem actionItem) {
+        finishCaseByAction(actionItem, 1);
+    }
 
-    void finishCaseByPlan(ReplayPlan replayPlan);
+    void finishCaseByAction(ReplayActionItem actionItem, int count);
+
+
+    default void finishCaseByPlan(ReplayPlan replayPlan) {
+        finishCaseByPlan(replayPlan, 1);
+    }
+    void finishCaseByPlan(ReplayPlan replayPlan, int count);
+
 
     double finishPercent(String planId);
 
