@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ExecutionContextConfiguration {
     @Bean
+    @ConditionalOnMissingBean
     public PlanExecutionContextProvider<?> defaultExecutionContextBuilder(
             ReplayActionCaseItemRepository replayActionCaseItemRepository,
             ReplaySenderFactory replaySenderFactory
