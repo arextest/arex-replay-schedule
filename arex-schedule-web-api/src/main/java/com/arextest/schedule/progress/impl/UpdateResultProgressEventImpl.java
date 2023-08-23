@@ -1,7 +1,6 @@
 package com.arextest.schedule.progress.impl;
 
 import com.arextest.common.cache.CacheProvider;
-import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.model.LogType;
@@ -78,6 +77,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
         replayReportService.pushPlanStatus(planId, reason, null);
         recordPlanExecutionTime(replayPlan);
+        redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayPlan.getId()));
     }
 
     @Override
@@ -89,12 +89,14 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
         metricService.recordCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
         replayReportService.pushPlanStatus(planId, reason, replayPlan.getErrorMessage());
         recordPlanExecutionTime(replayPlan);
+        redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayPlan.getId()));
     }
 
     @Override
     public void onReplayPlanTerminate(String replayId) {
         replayPlanRepository.finish(replayId);
         replayReportService.pushPlanStatus(replayId, ReplayStatusType.CANCELLED, null);
+        redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayId));
     }
 
     @Override

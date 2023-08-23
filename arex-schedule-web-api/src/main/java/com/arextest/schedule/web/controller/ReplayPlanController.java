@@ -156,7 +156,6 @@ public class ReplayPlanController {
             }
 
         } finally {
-            planProduceService.endRunning(MDC.get("planId"));
             MDCTracer.clear();
             planProduceService.removeCreating(request.getAppId(), request.getTargetEnv());
         }

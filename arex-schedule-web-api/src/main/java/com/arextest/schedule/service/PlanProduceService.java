@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.arextest.schedule.common.CommonConstant.CREATE_PLAN_REDIS_EXPIRE;
+import static com.arextest.schedule.common.CommonConstant.ONE_DAY_MILLIS;
 import static com.arextest.schedule.common.CommonConstant.OPERATION_MAX_CASE_COUNT;
 import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_EXPIRE;
 import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_KEY;
@@ -233,12 +234,12 @@ public class PlanProduceService {
 
     public Boolean isRunning(String planId) {
         try {
-            byte[] key = String.format(PLAN_RUNNING_KEY_FORMAT, planId).getBytes(StandardCharsets.UTF_8);
+            byte[] key = buildPlanRunningRedisKey(planId);
             byte[] value = planId.getBytes(StandardCharsets.UTF_8);
             if (redisCacheProvider.get(key) != null) {
                 return true;
             }
-            redisCacheProvider.put(key, value);
+            redisCacheProvider.put(key, ONE_DAY_MILLIS, value);
             return false;
         } catch (Exception e) {
             LOGGER.error("isRunning error : {}", e.getMessage(), e);
@@ -248,8 +249,7 @@ public class PlanProduceService {
 
     public void endRunning(String planId) {
         try {
-            byte[] key = String.format(PLAN_RUNNING_KEY_FORMAT, planId).getBytes(StandardCharsets.UTF_8);
-            redisCacheProvider.remove(key);
+            redisCacheProvider.remove(buildPlanRunningRedisKey(planId));
         } catch (Exception e) {
             LOGGER.error("endRunning error : {}", e.getMessage(), e);
         }
@@ -258,6 +258,10 @@ public class PlanProduceService {
 
     public static byte[] buildStopPlanRedisKey(String planId) {
         return (STOP_PLAN_REDIS_KEY + planId).getBytes(StandardCharsets.UTF_8);
+    }
+
+    public static byte[] buildPlanRunningRedisKey(String planId) {
+        return (String.format(PLAN_RUNNING_KEY_FORMAT, planId)).getBytes(StandardCharsets.UTF_8);
     }
 
     public void stopPlan(String planId) {
@@ -300,6 +304,9 @@ public class PlanProduceService {
         progressEvent.onBeforePlanReRun(replayPlan);
         if (replayPlan == null) {
             return CommonResponse.badResponse("target plan not found");
+        }
+        if (replayPlan.getReplayPlanStageList() == null) {
+            return CommonResponse.badResponse("The plan's version is too old");
         }
         if (isRunning(planId)) {
             return CommonResponse.badResponse("This plan is Running");
