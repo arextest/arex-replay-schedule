@@ -69,10 +69,7 @@ public class ReplayPlanController {
             return planProduceService.reRunPlan(request.getPlanId());
         } catch (Throwable e) {
             return CommonResponse.badResponse("reRun plan error！" + e.getMessage(), null);
-        } finally {
-            planProduceService.endRunning(request.getPlanId());
         }
-
     }
 
     @GetMapping("/api/stopPlan")
@@ -156,7 +153,6 @@ public class ReplayPlanController {
             }
 
         } finally {
-            planProduceService.endRunning(MDC.get("planId"));
             MDCTracer.clear();
             planProduceService.removeCreating(request.getAppId(), request.getTargetEnv());
         }
