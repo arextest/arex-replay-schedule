@@ -121,6 +121,7 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
         } catch (Throwable t) {
             // any error goes here are considered as fatal, needs to look into details
             currentContext.setActionType(ExecutionContextActionType.SKIP_CASE_OF_CONTEXT);
+            BizLogger.recordContextPrepareFailure(currentContext, t);
             LOGGER.error("Failed to execute before hook for context: {}", currentContext, t);
         }
     }
