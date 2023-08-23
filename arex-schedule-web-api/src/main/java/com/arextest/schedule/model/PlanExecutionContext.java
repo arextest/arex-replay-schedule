@@ -26,6 +26,4 @@ public class PlanExecutionContext<T> {
 
     @JsonIgnore
     private T dependencies;
-
-    private String errorMessage;
 }
