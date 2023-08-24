@@ -209,7 +209,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 return decoded;
             }
             return encoded;
-        } catch (IllegalArgumentException e){
+        } catch (Exception e){
             return encoded;
         }
     }
