@@ -23,7 +23,7 @@ import java.util.*;
 public class ReplayComparisonConfig {
     private String operationName;
     private List<String> operationTypes;
-    private List<String> ignoreCategory;
+    private List<String> ignoreCategoryTypes;
     private Set<List<String>> exclusionList;
     private Set<List<String>> inclusionList;
 
@@ -41,7 +41,7 @@ public class ReplayComparisonConfig {
      */
     private Map<String,Object> additionalConfig;
 
-    public final boolean checkIgnoreMockMessageType(String type, List<String> ignoreCategory) {
+    public final boolean checkIgnoreMockMessageType(String type) {
         // [b_yu] 2022-10-11 Dynamic type does not compare
         if (Objects.equals(type, MockCategoryType.DYNAMIC_CLASS.getName())) {
             return true;
@@ -52,12 +52,11 @@ public class ReplayComparisonConfig {
         if (Objects.equals(type, MockCategoryType.Q_MESSAGE_CONSUMER.getName())) {
             return true;
         }
-
-        if (ignoreCategory.contains(type)) {
-            return true;
-        }
-
         return false;
+    }
+
+    public final boolean checkIgnoreCategoryTypes(String type, List<String> ignoreCategoryTypes) {
+        return ignoreCategoryTypes != null && ignoreCategoryTypes.contains(type);
     }
 
     private static class MapKeyDeserializerUtils extends KeyDeserializer {
@@ -89,6 +88,6 @@ public class ReplayComparisonConfig {
         this.setListSortMap(Collections.emptyMap());
         this.setReferenceMap(Collections.emptyMap());
         this.setAdditionalConfig(Collections.emptyMap());
-        this.setIgnoreCategory(Collections.emptyList());
+        this.setIgnoreCategoryTypes(Collections.emptyList());
     }
 }

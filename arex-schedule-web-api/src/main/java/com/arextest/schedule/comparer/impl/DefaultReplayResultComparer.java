@@ -31,7 +31,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -68,8 +67,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
 
             ComparisonInterfaceConfig operationConfig = compareConfigService.loadInterfaceConfig(caseItem.getParent());
             ComparisonGlobalConfig globalConfig = compareConfigService.loadGlobalConfig(planId);
-            List<String> ignoreCategoryList = operationConfig.getIgnoreCategory();
-            ignoreCategoryList.addAll(globalConfig.getIgnoreCategory());
+            List<String> ignoreCategoryList = operationConfig.getIgnoreCategoryTypes();
 
             List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
             List<CategoryComparisonHolder> waitCompareMap = buildWaitCompareList(caseItem, useReplayId);
@@ -79,9 +77,17 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 return true;
             }
             for (CategoryComparisonHolder bindHolder : waitCompareMap) {
-                if (operationConfig.checkIgnoreMockMessageType(bindHolder.getCategoryName(), ignoreCategoryList)) {
+                if (operationConfig.checkIgnoreMockMessageType(bindHolder.getCategoryName())) {
                     continue;
                 }
+
+                if (operationConfig.checkIgnoreCategoryTypes(bindHolder.getCategoryName(), ignoreCategoryList)) {
+                    ReplayCompareResult compareResult = ReplayCompareResult.createFrom(caseItem);
+                    compareResult.setDiffResultCode(DiffResultCode.COMPARED_WITHOUT_DIFFERENCE);
+                    replayCompareResults.add(compareResult);
+                    continue;
+                }
+
                 replayCompareResults.addAll(compareReplayResult(bindHolder, caseItem, operationConfig, globalConfig));
             }
             if (CollectionUtils.isEmpty(replayCompareResults) &&
