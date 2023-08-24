@@ -177,6 +177,16 @@ public class BizLogger {
 
         log.postProcessAndEnqueue(context);
     }
+
+    public static void recordContextPrepareFailure(PlanExecutionContext<?> context, Throwable t) {
+        BizLog log = BizLog.error()
+                .logType(BizLogContent.CONTEXT_PREPARE_ERR.getType())
+                .message(BizLogContent.CONTEXT_PREPARE_ERR.format(context.getContextName()))
+                .exception(BizLogContent.throwableToString(t))
+                .build();
+
+        log.postProcessAndEnqueue(context);
+    }
     // endregion
 
     // region <Resume run Log>
@@ -207,6 +217,7 @@ public class BizLogger {
         CONTEXT_AFTER_RUN(202, "Context: {0} done, after hook took {1} ms."),
         CONTEXT_SKIP(203, "Context: {0}, Action: {1}, skipped {2} cases "),
         CONTEXT_NORMAL(204, "Context: {0}, execute normal, {1} cases sent."),
+        CONTEXT_PREPARE_ERR(205, "Context: {0}, prepare remote dependency failed."),
 
         ACTION_ITEM_CASE_SAVED(306, "Operation {0} saved total {1} cases to send, took {2} ms."),
 

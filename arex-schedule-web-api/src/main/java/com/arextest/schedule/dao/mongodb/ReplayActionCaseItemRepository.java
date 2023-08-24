@@ -25,11 +25,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -199,4 +195,26 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         return ReplayRunDetailsConverter.INSTANCE.dtoFromDao(replayRunDetailsCollections);
     }
 
+    // region <context>
+    public Set<String> getAllContextIdentifiers(String planId) {
+        Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
+        return new HashSet<>(mongoTemplate.findDistinct(query, ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER,
+                ReplayRunDetailsCollection.class, String.class));
+    }
+
+    public boolean hasNullIdentifier(String planId) {
+        Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
+        query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).isNull());
+        return mongoTemplate.exists(query, ReplayRunDetailsCollection.class);
+    }
+
+    // get one mocker of the given context
+    public ReplayActionCaseItem getOneOfContext(String planId, String contextIdentifier) {
+        Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
+        query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).is(contextIdentifier));
+        ReplayRunDetailsCollection replayRunDetailsCollection = mongoTemplate.findOne(query, ReplayRunDetailsCollection.class);
+        return ReplayRunDetailsConverter.INSTANCE.dtoFromDao(replayRunDetailsCollection);
+    }
+
+    // endregion <context>
 }
