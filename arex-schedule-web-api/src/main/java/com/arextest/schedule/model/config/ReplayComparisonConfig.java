@@ -82,5 +82,6 @@ public class ReplayComparisonConfig {
         this.setInclusionList(Collections.emptySet());
         this.setListSortMap(Collections.emptyMap());
         this.setReferenceMap(Collections.emptyMap());
+        this.setAdditionalConfig(Collections.emptyMap());
     }
 }

@@ -10,7 +10,7 @@
     </modules>
     <groupId>com.arextest</groupId>
     <artifactId>arex-schedule-parent</artifactId>
-    <version>1.0.35</version>
+    <version>1.0.36.1</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>AREX schedule is used for replay.</description>
@@ -23,8 +23,8 @@
         <jmockit.version>1.37</jmockit.version>
         <lombok.version>1.18.2</lombok.version>
         <guava.version>20.0</guava.version>
-        <compare-sdk.version>0.1.25</compare-sdk.version>
-        <web-contract.version>0.4.2</web-contract.version>
+        <compare-sdk.version>0.1.26</compare-sdk.version>
+        <web-contract.version>0.4.3.3</web-contract.version>
         <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
 
         <!-- single jacoco.exec file relative to root directory of the project -->

@@ -1,6 +1,8 @@
 package com.arextest.schedule.progress;
 
 import com.arextest.schedule.exceptions.CreatePlanException;
+import com.arextest.schedule.exceptions.ReRunPlanException;
+import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
@@ -20,6 +22,8 @@ public interface ProgressEvent {
      */
     default void onBeforePlanCreate(BuildReplayPlanRequest request) throws CreatePlanException {}
 
+    default void onBeforePlanReRun(ReplayPlan replayPlan) throws ReRunPlanException {}
+
     /**
      * call when create plan encounter logical or unchecked runtime exception
      * @param request the request of create plan
@@ -28,6 +32,10 @@ public interface ProgressEvent {
     default void onReplayPlanCreateException(BuildReplayPlanRequest request) {}
 
     void onReplayPlanCreated(ReplayPlan replayPlan);
+
+    void onCompareConfigBeforeLoading(ReplayPlan replayPlan);
+    void onCompareConfigLoaded(ReplayPlan replayPlan);
+
 
     default void onReplayPlanFinish(ReplayPlan replayPlan) {
         this.onReplayPlanFinish(replayPlan, ReplayStatusType.FINISHED);
@@ -41,6 +49,8 @@ public interface ProgressEvent {
 
     void onReplayPlanStageUpdate(ReplayPlan replayPlan, PlanStageEnum stageType, StageStatusEnum stageStatus,
                                  Long startTime, Long endTime, String msg);
+
+    void onReplayPlanReRun(ReplayPlan replayPlan);
 
     void onActionComparisonFinish(ReplayActionItem actionItem);
 

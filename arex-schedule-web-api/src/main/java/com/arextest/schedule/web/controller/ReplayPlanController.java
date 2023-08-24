@@ -9,6 +9,7 @@ import com.arextest.schedule.model.DebugRequestItem;
 import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.model.plan.BuildReplayPlanResponse;
+import com.arextest.schedule.model.plan.ReRunReplayPlanRequest;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySendResult;
@@ -18,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.MDC;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -58,6 +60,16 @@ public class ReplayPlanController {
     @ResponseBody
     public CommonResponse createPlanGet(BuildReplayPlanRequest request) {
         return createPlan(request);
+    }
+
+    @PostMapping("/api/reRunPlan")
+    @ResponseBody
+    public CommonResponse reRunPlan(@RequestBody ReRunReplayPlanRequest request) {
+        try {
+            return planProduceService.reRunPlan(request.getPlanId());
+        } catch (Throwable e) {
+            return CommonResponse.badResponse("reRun plan error！" + e.getMessage(), null);
+        }
     }
 
     @GetMapping("/api/stopPlan")

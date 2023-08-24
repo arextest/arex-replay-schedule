@@ -3,8 +3,20 @@ package com.arextest.schedule.service;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
+import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
-import com.arextest.schedule.model.*;
+import com.arextest.schedule.model.AppServiceDescriptor;
+import com.arextest.schedule.model.AppServiceOperationDescriptor;
+import com.arextest.schedule.model.CaseSendStatusType;
+import com.arextest.schedule.model.CompareProcessStatusType;
+import com.arextest.schedule.model.LogType;
+import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.model.ReplayStatusType;
+import com.arextest.schedule.model.deploy.ServiceInstance;
+import com.arextest.schedule.plan.PlanContext;
+import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.utils.ReplayParentBinder;
@@ -15,7 +27,9 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Created by Qzmo on 2023/7/5
@@ -33,19 +47,27 @@ public class PlanConsumePrepareService {
     @Resource
     private ReplayCaseRemoteLoadService caseRemoteLoadService;
     @Resource
+    private ReplayActionItemPreprocessService replayActionItemPreprocessService;
+    @Resource
     private PlanExecutionContextProvider planExecutionContextProvider;
     @Resource
     private ProgressEvent progressEvent;
     @Resource
     private ReplayActionCaseItemRepository replayActionCaseItemRepository;
+    @Resource
+    private ReplayPlanActionRepository replayPlanActionRepository;
+    @Resource
+    private PlanContextCreator planContextCreator;
+    @Resource
+    private DeployedEnvironmentService deployedEnvironmentService;
 
     public int prepareRunData(ReplayPlan replayPlan) {
         metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
-                System.currentTimeMillis() - replayPlan.getPlanCreateMillis());
+            System.currentTimeMillis() - replayPlan.getPlanCreateMillis());
         int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());
         if (planSavedCaseSize != replayPlan.getCaseTotalCount()) {
             LOGGER.info("update the plan TotalCount, plan id:{} ,appId: {} , size: {} -> {}", replayPlan.getId(),
-                    replayPlan.getAppId(), replayPlan.getCaseTotalCount(), planSavedCaseSize);
+                replayPlan.getAppId(), replayPlan.getCaseTotalCount(), planSavedCaseSize);
             replayPlan.setCaseTotalCount(planSavedCaseSize);
             replayPlanRepository.updateCaseTotal(replayPlan.getId(), planSavedCaseSize);
             replayReportService.updateReportCaseCount(replayPlan);
@@ -74,7 +96,7 @@ public class PlanConsumePrepareService {
             if (preloaded != actionSavedCount) {
                 replayActionItem.setReplayCaseCount(actionSavedCount);
                 LOGGER.warn("The saved case size of actionItem not equals, preloaded size:{},saved size:{}", preloaded,
-                        actionSavedCount);
+                    actionSavedCount);
             }
             progressEvent.onActionCaseLoaded(replayActionItem);
         }
@@ -117,7 +139,7 @@ public class PlanConsumePrepareService {
         int pageSize = Math.min(caseCountLimit, CommonConstant.MAX_PAGE_SIZE);
         while (beginTimeMills < endTimeMills) {
             List<ReplayActionCaseItem> caseItemList = caseRemoteLoadService.pagingLoad(beginTimeMills, endTimeMills,
-                    replayActionItem, caseCountLimit - totalSize);
+                replayActionItem, caseCountLimit - totalSize);
             if (CollectionUtils.isEmpty(caseItemList)) {
                 break;
             }
@@ -154,5 +176,60 @@ public class PlanConsumePrepareService {
         caseItemPostProcess(caseItemList);
         replayActionCaseItemRepository.save(caseItemList);
         return size;
+    }
+
+
+    public void updateFailedActionAndCase(ReplayPlan replayPlan, List<ReplayActionCaseItem> failedCaseList) {
+        List<ReplayActionItem> replayActionItems = replayPlanActionRepository.queryPlanActionList(replayPlan.getId());
+
+        replayPlan.setReRunCaseCount(failedCaseList.size());
+
+        Map<String, List<ReplayActionCaseItem>> failedCaseMap = failedCaseList.stream()
+            .peek(caseItem -> {
+                caseItem.setSendStatus(CaseSendStatusType.WAIT_HANDLING.getValue());
+                caseItem.setCompareStatus(CompareProcessStatusType.WAIT_HANDLING.getValue());
+            })
+            .collect(Collectors.groupingBy(ReplayActionCaseItem::getPlanItemId));
+
+        Map<String, List<String>> actionIdAndRecordIdsMap = failedCaseMap.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream()
+                .map(ReplayActionCaseItem::getRecordId).collect(Collectors.toList())));
+        replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap);
+
+        replayActionCaseItemRepository.batchUpdateStatus(failedCaseList);
+
+        List<ReplayActionItem> failedActionList = replayActionItems.stream()
+            .filter(actionItem -> CollectionUtils.isNotEmpty(failedCaseMap.get(actionItem.getId())))
+            .peek(actionItem -> {
+                actionItem.setParent(replayPlan);
+                actionItem.setCaseItemList(failedCaseMap.get(actionItem.getId()));
+                actionItem.setReplayStatus(ReplayStatusType.INIT.getValue());
+                ReplayParentBinder.setupCaseItemParent(actionItem.getCaseItemList(), actionItem);
+                replayPlanActionRepository.update(actionItem);
+                replayReportService.pushActionStatus(actionItem.getPlanId(), ReplayStatusType.INIT,
+                    actionItem.getId(), null);
+            }).collect(Collectors.toList());
+        replayActionItemPreprocessService.filterActionItem(failedActionList, replayPlan.getAppId());
+        replayPlan.setReplayActionItemList(failedActionList);
+    }
+
+    public void doResumeOperationDescriptor(ReplayPlan replayPlan) {
+        PlanContext planContext = planContextCreator.createByAppId(replayPlan.getAppId());
+        AppServiceOperationDescriptor operationDescriptor;
+        for (ReplayActionItem actionItem : replayPlan.getReplayActionItemList()) {
+            operationDescriptor = planContext.findAppServiceOperationDescriptor(actionItem.getOperationId());
+            if (operationDescriptor == null) {
+                LOGGER.warn("skip resume when the plan operationDescriptor not found, action id: {} ,",
+                    actionItem.getId()
+                );
+                continue;
+            }
+            AppServiceDescriptor appServiceDescriptor = operationDescriptor.getParent();
+            List<ServiceInstance> activeInstanceList = deployedEnvironmentService.getActiveInstanceList(appServiceDescriptor,
+                replayPlan.getTargetEnv());
+            appServiceDescriptor.setTargetActiveInstanceList(activeInstanceList);
+
+            planContext.fillReplayAction(actionItem, operationDescriptor);
+        }
     }
 }
