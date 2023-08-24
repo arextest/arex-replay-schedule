@@ -36,9 +36,8 @@ import java.util.stream.Collectors;
  */
 @Repository
 @Slf4j
-public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayActionCaseItem>, RepositoryField {
-    @Resource
-    DataDesensitization dataDesensitizationService;
+public class ReplayActionCaseItemRepository
+        extends DesensitizationRepo implements RepositoryWriter<ReplayActionCaseItem>, RepositoryField {
 
     @Autowired
     MongoTemplate mongoTemplate;
@@ -85,22 +84,14 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     private void processItemBeforeSave(ReplayRunDetailsCollection caseItem) {
         Mocker.Target req = caseItem.getTargetRequest();
         if (req != null) {
-            try {
-                req.setBody(dataDesensitizationService.encrypt(req.getBody()));
-            } catch (Exception e) {
-                LOGGER.error("Data desensitization failed", e);
-            }
+            req.setBody(encrypt(req.getBody()));
         }
     }
 
     private void processItemBeforeSend(ReplayRunDetailsCollection caseItem) {
         Mocker.Target req = caseItem.getTargetRequest();
         if (req != null) {
-            try {
-                req.setBody(dataDesensitizationService.decrypt(req.getBody()));
-            } catch (Exception e) {
-                LOGGER.error("Data desensitization failed", e);
-            }
+            req.setBody(decrypt(req.getBody()));
         }
     }
 

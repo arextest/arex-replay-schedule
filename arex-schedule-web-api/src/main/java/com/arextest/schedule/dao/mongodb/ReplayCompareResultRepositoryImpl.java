@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
-public class ReplayCompareResultRepositoryImpl implements RepositoryWriter<ReplayCompareResult>, RepositoryField  {
-
+public class ReplayCompareResultRepositoryImpl
+        extends DesensitizationRepo implements RepositoryWriter<ReplayCompareResult>, RepositoryField {
     @Resource
     private MongoTemplate mongoTemplate;
 
