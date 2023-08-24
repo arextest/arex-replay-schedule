@@ -68,6 +68,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
 
             ComparisonInterfaceConfig operationConfig = compareConfigService.loadInterfaceConfig(caseItem.getParent());
             ComparisonGlobalConfig globalConfig = compareConfigService.loadGlobalConfig(planId);
+            List<String> ignoreCategoryList = operationConfig.getIgnoreCategory();
+            ignoreCategoryList.addAll(globalConfig.getIgnoreCategory());
 
             List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
             List<CategoryComparisonHolder> waitCompareMap = buildWaitCompareList(caseItem, useReplayId);
@@ -77,7 +79,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 return true;
             }
             for (CategoryComparisonHolder bindHolder : waitCompareMap) {
-                if (operationConfig.checkIgnoreMockMessageType(bindHolder.getCategoryName())) {
+                if (operationConfig.checkIgnoreMockMessageType(bindHolder.getCategoryName(), ignoreCategoryList)) {
                     continue;
                 }
                 replayCompareResults.addAll(compareReplayResult(bindHolder, caseItem, operationConfig, globalConfig));
