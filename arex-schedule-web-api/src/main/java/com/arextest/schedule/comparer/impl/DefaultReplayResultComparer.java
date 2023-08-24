@@ -77,7 +77,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 replayCompareResults.addAll(compareReplayResult(bindHolder, caseItem, operationConfig, globalConfig));
             }
             if (CollectionUtils.isEmpty(replayCompareResults) &&
-                MockCategoryType.Q_MESSAGE_CONSUMER.getName().equalsIgnoreCase(caseItem.getCaseType())) {
+                    MockCategoryType.Q_MESSAGE_CONSUMER.getName().equalsIgnoreCase(caseItem.getCaseType())) {
                 caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.PASS.getValue());
                 return comparisonOutputWriter.writeQmqCompareResult(caseItem);
             }
@@ -137,11 +137,11 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
 
         Map<String, List<CompareItem>> recordMap = recordResults.stream()
-                        .filter(data -> StringUtils.isNotEmpty(data.getCompareKey()))
-                        .collect(Collectors.groupingBy(CompareItem::getCompareKey));
+                .filter(data -> StringUtils.isNotEmpty(data.getCompareKey()))
+                .collect(Collectors.groupingBy(CompareItem::getCompareKey));
 
         Set<String> usedRecordKeys = new HashSet<>();
-        for (CompareItem resultCompareItem: replayResults) {
+        for (CompareItem resultCompareItem : replayResults) {
             // config for operation if its entrypoint, dependency config otherwise
             String compareKey = resultCompareItem.getCompareKey();
 
@@ -218,17 +218,19 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 return decoded;
             }
             return encoded;
-        } catch (Exception e){
+        } catch (Exception e) {
             return encoded;
         }
     }
 
-    private boolean isJson(String value){
+    private boolean isJson(String value) {
         if (value.startsWith("{") && value.endsWith("}")) {
             return true;
+        } else {
+            return value.startsWith("[") && value.endsWith("]");
         }
-        else return value.startsWith("[") && value.endsWith("]");
     }
+
     private List<CategoryComparisonHolder> buildWaitCompareList(ReplayActionCaseItem caseItem, boolean useReplayId) {
         String targetResultId = null;
         String sourceResultId = null;
