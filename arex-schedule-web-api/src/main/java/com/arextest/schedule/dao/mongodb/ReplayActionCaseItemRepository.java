@@ -1,5 +1,7 @@
 package com.arextest.schedule.dao.mongodb;
 
+import com.arextest.desensitization.extension.DataDesensitization;
+import com.arextest.model.mock.Mocker;
 import com.arextest.schedule.dao.RepositoryWriter;
 import com.arextest.schedule.dao.mongodb.util.MongoHelper;
 import com.arextest.schedule.model.CaseSendStatusType;
@@ -25,6 +27,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.Resource;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,6 +37,8 @@ import java.util.stream.Collectors;
 @Repository
 @Slf4j
 public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayActionCaseItem>, RepositoryField {
+    @Resource
+    DataDesensitization dataDesensitizationService;
 
     @Autowired
     MongoTemplate mongoTemplate;
@@ -43,12 +48,12 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     private static final String SOURCE_RESULT_ID = "sourceResultId";
     private static final String TARGET_RESULT_ID = "targetResultId";
     private static final String COMPARE_STATUS = "compareStatus";
-
     private static final String COUNT_FIELD = "count";
 
     @Override
     public boolean save(ReplayActionCaseItem replayActionCaseItem) {
         ReplayRunDetailsCollection replayRunDetailsCollection = ReplayRunDetailsConverter.INSTANCE.daoFromDto(replayActionCaseItem);
+        this.processItemBeforeSave(replayRunDetailsCollection);
         ReplayRunDetailsCollection insert = mongoTemplate.insert(replayRunDetailsCollection);
         if (insert.getId() != null) {
             replayActionCaseItem.setId(insert.getId());
@@ -60,6 +65,8 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     public boolean save(List<ReplayActionCaseItem> caseItems) {
         List<ReplayRunDetailsCollection> replayPlanItemCollections = caseItems.stream()
             .map(ReplayRunDetailsConverter.INSTANCE::daoFromDto).collect(Collectors.toList());
+
+        replayPlanItemCollections.forEach(this::processItemBeforeSave);
 
         List<ReplayRunDetailsCollection> inserted = new ArrayList<>(mongoTemplate
             .insert(replayPlanItemCollections, ReplayRunDetailsCollection.class));
@@ -75,6 +82,28 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         return true;
     }
 
+    private void processItemBeforeSave(ReplayRunDetailsCollection caseItem) {
+        Mocker.Target req = caseItem.getTargetRequest();
+        if (req != null) {
+            try {
+                req.setBody(dataDesensitizationService.encrypt(req.getBody()));
+            } catch (Exception e) {
+                LOGGER.error("Data desensitization failed", e);
+            }
+        }
+    }
+
+    private void processItemBeforeSend(ReplayRunDetailsCollection caseItem) {
+        Mocker.Target req = caseItem.getTargetRequest();
+        if (req != null) {
+            try {
+                req.setBody(dataDesensitizationService.decrypt(req.getBody()));
+            } catch (Exception e) {
+                LOGGER.error("Data desensitization failed", e);
+            }
+        }
+    }
+
     public List<ReplayActionCaseItem> waitingSendList(String planId, int pageSize, List<Criteria> baseCriteria, String minId) {
         Query query = new Query();
 
@@ -88,6 +117,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         query.limit(pageSize);
         query.with(Sort.by(Sort.Order.asc(DASH_ID)));
         List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query, ReplayRunDetailsCollection.class);
+        replayRunDetailsCollections.forEach(this::processItemBeforeSend);
         return replayRunDetailsCollections.stream().map(ReplayRunDetailsConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
     }
 

@@ -17,7 +17,6 @@ public interface ReplayRunDetailsConverter {
 
     ReplayActionCaseItem dtoFromDao(ReplayRunDetailsCollection dao);
 
-
     @Mappings({
             @Mapping(target = "id", expression = "java(null)"),
             @Mapping(target = "operationId", expression = "java(null)"),
