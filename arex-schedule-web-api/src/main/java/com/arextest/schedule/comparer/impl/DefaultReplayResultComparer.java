@@ -77,17 +77,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 return true;
             }
             for (CategoryComparisonHolder bindHolder : waitCompareMap) {
-                if (operationConfig.checkIgnoreMockMessageType(bindHolder.getCategoryName())) {
+                if (operationConfig.checkIgnoreMockMessageType(bindHolder.getCategoryName(), ignoreCategoryList)) {
                     continue;
                 }
-
-                if (operationConfig.checkIgnoreCategoryTypes(bindHolder.getCategoryName(), ignoreCategoryList)) {
-                    ReplayCompareResult compareResult = ReplayCompareResult.createFrom(caseItem);
-                    compareResult.setDiffResultCode(DiffResultCode.COMPARED_WITHOUT_DIFFERENCE);
-                    replayCompareResults.add(compareResult);
-                    continue;
-                }
-
                 replayCompareResults.addAll(compareReplayResult(bindHolder, caseItem, operationConfig, globalConfig));
             }
             if (CollectionUtils.isEmpty(replayCompareResults) &&

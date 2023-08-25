@@ -41,7 +41,7 @@ public class ReplayComparisonConfig {
      */
     private Map<String,Object> additionalConfig;
 
-    public final boolean checkIgnoreMockMessageType(String type) {
+    public final boolean checkIgnoreMockMessageType(String type, List<String> ignoreCategoryTypes) {
         // [b_yu] 2022-10-11 Dynamic type does not compare
         if (Objects.equals(type, MockCategoryType.DYNAMIC_CLASS.getName())) {
             return true;
@@ -52,11 +52,11 @@ public class ReplayComparisonConfig {
         if (Objects.equals(type, MockCategoryType.Q_MESSAGE_CONSUMER.getName())) {
             return true;
         }
-        return false;
-    }
+        if (ignoreCategoryTypes != null && ignoreCategoryTypes.contains(type)) {
+            return true;
+        }
 
-    public final boolean checkIgnoreCategoryTypes(String type, List<String> ignoreCategoryTypes) {
-        return ignoreCategoryTypes != null && ignoreCategoryTypes.contains(type);
+        return false;
     }
 
     private static class MapKeyDeserializerUtils extends KeyDeserializer {
