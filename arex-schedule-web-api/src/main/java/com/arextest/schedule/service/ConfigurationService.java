@@ -20,7 +20,7 @@ public final class ConfigurationService {
     private String applicationUrl;
     @Value("${arex.report.config.schedule.url}")
     private String scheduleUrl;
-    @Value("arex.report.config.desensitization.url")
+    @Value("${arex.report.config.desensitization.url}")
     private String desensitizationConfigUrl;
 
     public Application application(String appId) {
