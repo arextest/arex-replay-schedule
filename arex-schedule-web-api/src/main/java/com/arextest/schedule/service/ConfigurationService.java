@@ -1,12 +1,14 @@
 package com.arextest.schedule.service;
 
 import com.arextest.schedule.client.HttpWepServiceApiClient;
+import com.arextest.web.model.contract.contracts.datadesensitization.DesensitizationJar;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -18,6 +20,8 @@ public final class ConfigurationService {
     private String applicationUrl;
     @Value("${arex.report.config.schedule.url}")
     private String scheduleUrl;
+    @Value("arex.report.config.desensitization.url")
+    private String desensitizationConfigUrl;
 
     public Application application(String appId) {
         ApplicationResponse applicationResponse = wepApiClientService.get(applicationUrl, appIdUrlVariable(appId),
@@ -29,6 +33,11 @@ public final class ConfigurationService {
         ScheduleResponse scheduleResponse = wepApiClientService.get(scheduleUrl, appIdUrlVariable(appId),
                 ScheduleResponse.class);
         return scheduleResponse != null ? scheduleResponse.body : null;
+    }
+
+    public List<DesensitizationJar> desensitization() {
+        DesensitizationResponse res = wepApiClientService.jsonPost(desensitizationConfigUrl, null, DesensitizationResponse.class);
+        return res != null ? res.body : null;
     }
 
     private Map<String, ?> appIdUrlVariable(String appId) {
@@ -57,6 +66,11 @@ public final class ConfigurationService {
     @Data
     private static final class ApplicationResponse {
         private Application body;
+    }
+
+    @Data
+    private static final class DesensitizationResponse {
+        private List<DesensitizationJar> body;
     }
 
     @Data
