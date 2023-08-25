@@ -210,6 +210,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     private String base64decode(String encoded) {
         try {
             // to-do: 64base extract record and result
+            if (encoded == null) {
+                return null;
+            }
             if (isJson(encoded)) {
                 return encoded;
             }
