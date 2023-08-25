@@ -40,6 +40,8 @@ public class QueryReplayMsgService {
     private CompareConfigService compareConfigService;
     @Resource
     private CustomComparisonConfigurationHandler configHandler;
+    @Resource
+    private ReplayCompareResultConverter replayCompareResultConverter;
     private static final CompareSDK COMPARE_INSTANCE = DefaultReplayResultComparer.getCompareSDKInstance();
 
 
@@ -67,7 +69,7 @@ public class QueryReplayMsgService {
             replayCompareResultRepository.save(compareResultBo);
         }
 
-        CompareResultDetail compareResultDetail = ReplayCompareResultConverter.INSTANCE.voFromBo(compareResultBo);
+        CompareResultDetail compareResultDetail = replayCompareResultConverter.voFromBo(compareResultBo);
 
         fillCompareResultDetail(compareResultBo, compareResultDetail);
         response.setCompareResultDetail(compareResultDetail);

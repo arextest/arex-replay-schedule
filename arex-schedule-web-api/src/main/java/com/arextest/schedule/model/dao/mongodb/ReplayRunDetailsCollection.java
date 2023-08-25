@@ -32,6 +32,5 @@ public class ReplayRunDetailsCollection extends ModelBase {
     private int compareStatus;
     private String caseType;
     private long recordTime;
-    @Field
-    private Target targetRequest;
+    private String targetRequest;
 }

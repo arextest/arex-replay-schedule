@@ -17,21 +17,22 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
-public class ReplayCompareResultRepositoryImpl
-        extends DesensitizationRepo implements RepositoryWriter<ReplayCompareResult>, RepositoryField {
+public class ReplayCompareResultRepositoryImpl implements RepositoryWriter<ReplayCompareResult>, RepositoryField {
     @Resource
     private MongoTemplate mongoTemplate;
+    @Resource
+    private ReplayCompareResultConverter replayCompareResultConverter;
 
     @Override
     public boolean save(List<ReplayCompareResult> itemList) {
-        mongoTemplate.insertAll(itemList.stream().map(ReplayCompareResultConverter.INSTANCE::daoFromBo)
+        mongoTemplate.insertAll(itemList.stream().map(replayCompareResultConverter::daoFromBo)
                 .collect(Collectors.toList()));
         return true;
     }
 
     @Override
     public boolean save(ReplayCompareResult item) {
-        mongoTemplate.save(ReplayCompareResultConverter.INSTANCE.daoFromBo(item));
+        mongoTemplate.save(replayCompareResultConverter.daoFromBo(item));
         return true;
     }
 
@@ -46,6 +47,6 @@ public class ReplayCompareResultRepositoryImpl
         Query query = new Query();
         query.addCriteria(Criteria.where(DASH_ID).is(objectId));
         ReplayCompareResultCollection result = mongoTemplate.findOne(query, ReplayCompareResultCollection.class);
-        return ReplayCompareResultConverter.INSTANCE.boFromDao(result);
+        return replayCompareResultConverter.boFromDao(result);
     }
 }

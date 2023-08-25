@@ -1,7 +1,5 @@
 package com.arextest.schedule.dao.mongodb;
 
-import com.arextest.desensitization.extension.DataDesensitization;
-import com.arextest.model.mock.Mocker;
 import com.arextest.schedule.dao.RepositoryWriter;
 import com.arextest.schedule.dao.mongodb.util.MongoHelper;
 import com.arextest.schedule.model.CaseSendStatusType;
@@ -36,11 +34,13 @@ import java.util.stream.Collectors;
  */
 @Repository
 @Slf4j
-public class ReplayActionCaseItemRepository
-        extends DesensitizationRepo implements RepositoryWriter<ReplayActionCaseItem>, RepositoryField {
+public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayActionCaseItem>, RepositoryField {
 
     @Autowired
     MongoTemplate mongoTemplate;
+
+    @Resource
+    private ReplayRunDetailsConverter converter;
 
     private static final String PLAN_ITEM_ID = "planItemId";
     private static final String SEND_STATUS = "sendStatus";
@@ -51,8 +51,7 @@ public class ReplayActionCaseItemRepository
 
     @Override
     public boolean save(ReplayActionCaseItem replayActionCaseItem) {
-        ReplayRunDetailsCollection replayRunDetailsCollection = ReplayRunDetailsConverter.INSTANCE.daoFromDto(replayActionCaseItem);
-        this.processItemBeforeSave(replayRunDetailsCollection);
+        ReplayRunDetailsCollection replayRunDetailsCollection = converter.daoFromDto(replayActionCaseItem);
         ReplayRunDetailsCollection insert = mongoTemplate.insert(replayRunDetailsCollection);
         if (insert.getId() != null) {
             replayActionCaseItem.setId(insert.getId());
@@ -63,9 +62,7 @@ public class ReplayActionCaseItemRepository
     @Override
     public boolean save(List<ReplayActionCaseItem> caseItems) {
         List<ReplayRunDetailsCollection> replayPlanItemCollections = caseItems.stream()
-            .map(ReplayRunDetailsConverter.INSTANCE::daoFromDto).collect(Collectors.toList());
-
-        replayPlanItemCollections.forEach(this::processItemBeforeSave);
+            .map(converter::daoFromDto).collect(Collectors.toList());
 
         List<ReplayRunDetailsCollection> inserted = new ArrayList<>(mongoTemplate
             .insert(replayPlanItemCollections, ReplayRunDetailsCollection.class));
@@ -81,20 +78,6 @@ public class ReplayActionCaseItemRepository
         return true;
     }
 
-    private void processItemBeforeSave(ReplayRunDetailsCollection caseItem) {
-        Mocker.Target req = caseItem.getTargetRequest();
-        if (req != null) {
-            req.setBody(encrypt(req.getBody()));
-        }
-    }
-
-    private void processItemBeforeSend(ReplayRunDetailsCollection caseItem) {
-        Mocker.Target req = caseItem.getTargetRequest();
-        if (req != null) {
-            req.setBody(decrypt(req.getBody()));
-        }
-    }
-
     public List<ReplayActionCaseItem> waitingSendList(String planId, int pageSize, List<Criteria> baseCriteria, String minId) {
         Query query = new Query();
 
@@ -108,8 +91,7 @@ public class ReplayActionCaseItemRepository
         query.limit(pageSize);
         query.with(Sort.by(Sort.Order.asc(DASH_ID)));
         List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query, ReplayRunDetailsCollection.class);
-        replayRunDetailsCollections.forEach(this::processItemBeforeSend);
-        return replayRunDetailsCollections.stream().map(ReplayRunDetailsConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
+        return replayRunDetailsCollections.stream().map(converter::dtoFromDao).collect(Collectors.toList());
     }
 
     /**
@@ -130,7 +112,7 @@ public class ReplayActionCaseItemRepository
         ));
 
         List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query, ReplayRunDetailsCollection.class);
-        return replayRunDetailsCollections.stream().map(ReplayRunDetailsConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
+        return replayRunDetailsCollections.stream().map(converter::dtoFromDao).collect(Collectors.toList());
     }
 
     public Map<String, Long> countWaitHandlingByAction(String planId, List<Criteria> baseCriteria) {
@@ -213,7 +195,7 @@ public class ReplayActionCaseItemRepository
             Sort.Order.desc(DASH_ID)
         ));
         ReplayRunDetailsCollection replayRunDetailsCollections = mongoTemplate.findOne(query, ReplayRunDetailsCollection.class);
-        return ReplayRunDetailsConverter.INSTANCE.dtoFromDao(replayRunDetailsCollections);
+        return converter.dtoFromDao(replayRunDetailsCollections);
     }
 
     // region <context>
@@ -234,7 +216,7 @@ public class ReplayActionCaseItemRepository
         Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
         query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).is(contextIdentifier));
         ReplayRunDetailsCollection replayRunDetailsCollection = mongoTemplate.findOne(query, ReplayRunDetailsCollection.class);
-        return ReplayRunDetailsConverter.INSTANCE.dtoFromDao(replayRunDetailsCollection);
+        return converter.dtoFromDao(replayRunDetailsCollection);
     }
 
     // endregion <context>
