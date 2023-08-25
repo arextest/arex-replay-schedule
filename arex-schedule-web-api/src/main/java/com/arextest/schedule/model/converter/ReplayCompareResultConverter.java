@@ -7,18 +7,15 @@ import com.arextest.schedule.model.ReplayCompareResult;
 import com.arextest.schedule.model.dao.mongodb.ReplayCompareMsgInfoCollection;
 import com.arextest.schedule.model.dao.mongodb.ReplayCompareResultCollection;
 import com.arextest.schedule.model.report.CompareResultDetail;
-import com.arextest.schedule.utils.ZstdUtils;
+import com.arextest.web.model.contract.contracts.replay.AnalyzeCompareResultsRequestType;
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
 import org.mapstruct.Named;
-import org.mapstruct.factory.Mappers;
 
 import java.util.Arrays;
 import java.util.List;
-
-;
 
 /**
  * Created by qzmo on 2023/06/05.
@@ -41,8 +38,8 @@ public abstract class ReplayCompareResultConverter extends DesensitizationConver
             @Mapping(target = "logs", qualifiedByName = "decompressLogs")
     })
     public abstract ReplayCompareResult boFromDao(ReplayCompareResultCollection dao);
-
     public abstract CompareResultDetail voFromBo(ReplayCompareResult bo);
+    public abstract AnalyzeCompareResultsRequestType.AnalyzeCompareInfoItem reportContractFromBo(ReplayCompareResult source);
 
     @Named("compressLogs")
     String map(List<LogEntity> logs) {

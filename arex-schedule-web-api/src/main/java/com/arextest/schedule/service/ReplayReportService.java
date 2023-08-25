@@ -9,6 +9,7 @@ import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
 import com.arextest.schedule.model.*;
+import com.arextest.schedule.model.converter.ReplayCompareResultConverter;
 import com.arextest.web.model.contract.contracts.ChangeReplayStatusRequestType;
 import com.arextest.web.model.contract.contracts.RemoveRecordsAndScenesRequest;
 import com.arextest.web.model.contract.contracts.ReportInitialRequestType;
@@ -30,6 +31,8 @@ import java.util.*;
 public final class ReplayReportService implements ComparisonWriter {
     @Resource
     private ReplayCompareResultRepositoryImpl replayCompareResultRepository;
+    @Resource
+    private ReplayCompareResultConverter converter;
     @Resource
     private HttpWepServiceApiClient httpWepServiceApiClient;
     @Value("${arex.report.init.url}")
@@ -159,7 +162,6 @@ public final class ReplayReportService implements ComparisonWriter {
         int comparedSize = comparedResult.size();
 
         AnalyzeCompareResultsRequestType request = new AnalyzeCompareResultsRequestType();
-        ReportResultConverter converter = ReportResultConverter.DEFAULT;
         List<AnalyzeCompareResultsRequestType.AnalyzeCompareInfoItem> reqItems = new ArrayList<>(comparedSize);
 
         ReplayCompareResult firstResult = comparedResult.get(0);
@@ -167,7 +169,7 @@ public final class ReplayReportService implements ComparisonWriter {
         this.replayCompareResultRepository.save(comparedResult);
 
         for (ReplayCompareResult sourceResult : comparedResult) {
-            reqItems.add(converter.to(sourceResult));
+            reqItems.add(converter.reportContractFromBo(sourceResult));
         }
         request.setAnalyzeCompareInfos(reqItems);
 
@@ -198,8 +200,7 @@ public final class ReplayReportService implements ComparisonWriter {
         this.replayCompareResultRepository.deleteByRecord(compareResult.getRecordId(), compareResult.getPlanItemId());
         this.replayCompareResultRepository.save(compareResult);
 
-        ReportResultConverter converter = ReportResultConverter.DEFAULT;
-        request.setAnalyzeCompareInfos(Collections.singletonList(converter.to(compareResult)));
+        request.setAnalyzeCompareInfos(Collections.singletonList(converter.reportContractFromBo(compareResult)));
 
         Response response = httpWepServiceApiClient.jsonPost(pushReplayCompareResultUrl, request,
                 GenericResponseType.class);
