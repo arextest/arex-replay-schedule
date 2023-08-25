@@ -107,8 +107,8 @@
         </dependency>
         <dependency>
             <groupId>com.arextest</groupId>
-            <artifactId>arex-desensitization-extension</artifactId>
-            <version>0.0.1</version>
+            <artifactId>arex-extension</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>

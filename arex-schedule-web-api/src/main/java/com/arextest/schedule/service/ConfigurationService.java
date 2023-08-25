@@ -1,5 +1,6 @@
 package com.arextest.schedule.service;
 
+import com.arextest.model.response.ResponseStatusType;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.web.model.contract.contracts.datadesensitization.DesensitizationJar;
 import lombok.Data;
@@ -70,6 +71,7 @@ public final class ConfigurationService {
 
     @Data
     private static final class DesensitizationResponse {
+        private ResponseStatusType responseStatusType;
         private List<DesensitizationJar> body;
     }
 
