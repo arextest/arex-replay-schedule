@@ -1,6 +1,6 @@
 package com.arextest.schedule.model.converter;
 
-import com.arextest.desensitization.extension.DataDesensitization;
+import com.arextest.extension.desensitization.DataDesensitization;
 import com.arextest.schedule.utils.ZstdUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.Named;
