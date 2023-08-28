@@ -10,7 +10,7 @@
     </modules>
     <groupId>com.arextest</groupId>
     <artifactId>arex-schedule-parent</artifactId>
-    <version>1.0.36.1</version>
+    <version>1.0.36.2</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>AREX schedule is used for replay.</description>

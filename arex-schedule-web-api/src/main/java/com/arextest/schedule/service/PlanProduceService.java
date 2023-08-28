@@ -5,8 +5,7 @@ import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
-import com.arextest.schedule.exceptions.CreatePlanException;
-import com.arextest.schedule.exceptions.ReRunPlanException;
+import com.arextest.schedule.exceptions.PlanRunningException;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.ReplayActionCaseItem;
@@ -75,7 +74,7 @@ public class PlanProduceService {
 
     private static final String PLAN_RUNNING_KEY_FORMAT = "plan_running_%s";
 
-    public CommonResponse createPlan(BuildReplayPlanRequest request) throws CreatePlanException {
+    public CommonResponse createPlan(BuildReplayPlanRequest request) throws PlanRunningException {
         progressEvent.onBeforePlanCreate(request);
 
         long planCreateMillis = System.currentTimeMillis();
@@ -299,32 +298,37 @@ public class PlanProduceService {
         }
     }
 
-    public CommonResponse reRunPlan(String planId) throws ReRunPlanException {
+    public CommonResponse reRunPlan(String planId) throws PlanRunningException {
         ReplayPlan replayPlan = replayPlanRepository.query(planId);
         progressEvent.onBeforePlanReRun(replayPlan);
         if (replayPlan == null) {
+            progressEvent.onReplayPlanReRunException(replayPlan);
             return CommonResponse.badResponse("target plan not found");
         }
         if (replayPlan.getReplayPlanStageList() == null) {
+            progressEvent.onReplayPlanReRunException(replayPlan);
             return CommonResponse.badResponse("The plan's version is too old");
-        }
-        if (isRunning(planId)) {
-            return CommonResponse.badResponse("This plan is Running");
         }
         List<ReplayActionCaseItem> failedCaseList = replayActionCaseItemRepository.failedCaseList(replayPlan.getId());
         if (CollectionUtils.isEmpty(failedCaseList)) {
+            progressEvent.onReplayPlanReRunException(replayPlan);
             return CommonResponse.badResponse("No failed case found");
         }
 
+        if (isRunning(planId)) {
+            progressEvent.onReplayPlanReRunException(replayPlan);
+            return CommonResponse.badResponse("This plan is Running");
+        }
         replayPlan.setReRun(Boolean.TRUE);
 
-        ConfigurationService.ScheduleConfiguration schedule = configurationService.schedule(replayPlan.getAppId());
-        if (schedule != null) {
-            replayPlan.setReplaySendMaxQps(schedule.getSendMaxQps());
-        }
-
-        planExecutionMonitorImpl.register(replayPlan);
         try {
+            ConfigurationService.ScheduleConfiguration schedule = configurationService.schedule(replayPlan.getAppId());
+            if (schedule != null) {
+                replayPlan.setReplaySendMaxQps(schedule.getSendMaxQps());
+            }
+
+            planExecutionMonitorImpl.register(replayPlan);
+
             progressEvent.onReplayPlanReRun(replayPlan);
             progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.ONGOING,
                 System.currentTimeMillis(), null, null);
@@ -339,6 +343,7 @@ public class PlanProduceService {
             progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.RE_RUN, StageStatusEnum.FAILED,
                 System.currentTimeMillis(), null, null);
             planExecutionMonitorImpl.deregister(replayPlan);
+            progressEvent.onReplayPlanReRunException(replayPlan, e);
             return CommonResponse.badResponse("ReRun plan failed！");
         }
         planConsumeService.runAsyncConsume(replayPlan);
