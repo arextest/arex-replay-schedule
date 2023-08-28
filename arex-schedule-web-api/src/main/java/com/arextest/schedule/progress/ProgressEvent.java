@@ -1,14 +1,11 @@
 package com.arextest.schedule.progress;
 
-import com.arextest.schedule.exceptions.CreatePlanException;
-import com.arextest.schedule.exceptions.ReRunPlanException;
-import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.exceptions.PlanRunningException;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.model.plan.PlanStageEnum;
-import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
 import com.arextest.schedule.model.plan.StageStatusEnum;
 
 /**
@@ -20,9 +17,9 @@ public interface ProgressEvent {
      * @param request createPlanReq
      * @return bad response describing the reason blocking plan creation
      */
-    default void onBeforePlanCreate(BuildReplayPlanRequest request) throws CreatePlanException {}
+    default void onBeforePlanCreate(BuildReplayPlanRequest request) throws PlanRunningException {}
 
-    default void onBeforePlanReRun(ReplayPlan replayPlan) throws ReRunPlanException {}
+    default void onBeforePlanReRun(ReplayPlan replayPlan) throws PlanRunningException {}
 
     /**
      * call when create plan encounter logical or unchecked runtime exception
@@ -30,6 +27,9 @@ public interface ProgressEvent {
      */
     default void onReplayPlanCreateException(BuildReplayPlanRequest request, Throwable t) {}
     default void onReplayPlanCreateException(BuildReplayPlanRequest request) {}
+
+    default void onReplayPlanReRunException(ReplayPlan plan, Throwable t) {}
+    default void onReplayPlanReRunException(ReplayPlan plan) {}
 
     void onReplayPlanCreated(ReplayPlan replayPlan);
 

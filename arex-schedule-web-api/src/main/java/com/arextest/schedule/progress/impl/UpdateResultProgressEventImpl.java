@@ -130,7 +130,8 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
 
     private StageBaseInfo findStage(List<ReplayPlanStageInfo> stageInfoList, PlanStageEnum stageType) {
         StageBaseInfo stageBaseInfo = null;
-        for (StageBaseInfo stage : stageInfoList) {
+        for (int i = stageInfoList.size() - 1; i >= 0; i--) {
+            ReplayPlanStageInfo stage = stageInfoList.get(i);
             if (stageType.getCode() == stage.getStageType()) {
                 stageBaseInfo = stage;
                 break;
@@ -142,7 +143,8 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     private ReplayPlanStageInfo findParentStage(List<ReplayPlanStageInfo> stageInfoList, PlanStageEnum stageType) {
         ReplayPlanStageInfo parentStage = null;
         PlanStageEnum parentStageEnum = PlanStageEnum.of(stageType.getParentStage());
-        for (ReplayPlanStageInfo stage : stageInfoList) {
+        for (int i = stageInfoList.size() - 1; i >= 0; i--) {
+            ReplayPlanStageInfo stage = stageInfoList.get(i);
             if (parentStageEnum.getCode() == stage.getStageType()) {
                 parentStage = stage;
                 break;

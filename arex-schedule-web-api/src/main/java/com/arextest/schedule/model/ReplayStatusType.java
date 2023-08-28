@@ -1,12 +1,6 @@
 package com.arextest.schedule.model;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import lombok.Getter;
-
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author jmo
