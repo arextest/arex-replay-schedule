@@ -52,8 +52,6 @@ public class ReplayCompareResult {
         if (StringUtils.isNotBlank(caseItem.getParent().getServiceKey())) {
             newResult.setServiceName(caseItem.getParent().getServiceKey());
         }
-        newResult.setOperationName(caseItem.getParent().getOperationName());
-        newResult.setCategoryName(caseItem.getCaseType());
         return newResult;
     }
 

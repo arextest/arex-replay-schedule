@@ -27,6 +27,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.util.StopWatch;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
