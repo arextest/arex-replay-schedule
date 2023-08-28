@@ -66,16 +66,12 @@ public class ReplayPlanController {
     public CommonResponse reRunPlan(@RequestBody ReRunReplayPlanRequest request) {
         try {
             return planProduceService.reRunPlan(request.getPlanId());
+        } catch (PlanRunningException e) {
+            return CommonResponse.badResponse(e.getMessage(),
+                new BuildReplayPlanResponse(e.getCode()));
         } catch (Throwable e) {
-
-            if (e instanceof PlanRunningException) {
-                PlanRunningException PlanRunningException = (PlanRunningException) e;
-                return CommonResponse.badResponse(PlanRunningException.getMessage(),
-                    new BuildReplayPlanResponse(PlanRunningException.getCode()));
-            } else {
-                return CommonResponse.badResponse("create plan error！" + e.getMessage(),
-                    new BuildReplayPlanResponse(BuildReplayFailReasonEnum.UNKNOWN));
-            }
+            return CommonResponse.badResponse("create plan error！" + e.getMessage(),
+                new BuildReplayPlanResponse(BuildReplayFailReasonEnum.UNKNOWN));
         }
     }
 
@@ -153,10 +149,10 @@ public class ReplayPlanController {
             if (e instanceof PlanRunningException) {
                 PlanRunningException PlanRunningException = (PlanRunningException) e;
                 return CommonResponse.badResponse(PlanRunningException.getMessage(),
-                        new BuildReplayPlanResponse(PlanRunningException.getCode()));
+                    new BuildReplayPlanResponse(PlanRunningException.getCode()));
             } else {
                 return CommonResponse.badResponse("create plan error！" + e.getMessage(),
-                        new BuildReplayPlanResponse(BuildReplayFailReasonEnum.UNKNOWN));
+                    new BuildReplayPlanResponse(BuildReplayFailReasonEnum.UNKNOWN));
             }
 
         } finally {

@@ -269,8 +269,6 @@ public class PlanProduceService {
             redisCacheProvider.putIfAbsent(buildStopPlanRedisKey(planId),
                     STOP_PLAN_REDIS_EXPIRE, planId.getBytes(StandardCharsets.UTF_8));
 
-            redisCacheProvider.remove(buildPlanRunningRedisKey(planId));
-
             // set the canceled status immediately to give quick response to user
             progressEvent.onReplayPlanTerminate(planId);
         } catch (Exception e) {

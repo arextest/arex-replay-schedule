@@ -190,11 +190,12 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     }
 
     private void addReRunStage(List<ReplayPlanStageInfo> stageInfoList) {
-        // reset stage after RUN&RERUN and add RERUN stage.
+        // reset stage after RUN&RERUN&CANCEL and add RERUN stage.
         int addIndex = 0;
         for (int index = 0; index < stageInfoList.size(); index ++) {
             if (stageInfoList.get(index).getStageType() == PlanStageEnum.RUN.getCode() ||
-                stageInfoList.get(index).getStageType() == PlanStageEnum.RE_RUN.getCode()) {
+                stageInfoList.get(index).getStageType() == PlanStageEnum.RE_RUN.getCode() ||
+                stageInfoList.get(index).getStageType() == PlanStageEnum.CANCEL.getCode()) {
                 addIndex = index + 1;
             }
         }
