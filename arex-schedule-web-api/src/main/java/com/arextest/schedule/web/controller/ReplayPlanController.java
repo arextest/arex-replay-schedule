@@ -1,7 +1,7 @@
 package com.arextest.schedule.web.controller;
 
 import com.arextest.schedule.common.CommonConstant;
-import com.arextest.schedule.exceptions.CreatePlanException;
+import com.arextest.schedule.exceptions.PlanRunningException;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSourceEnvType;
 import com.arextest.schedule.model.CommonResponse;
@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.MDC;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -67,8 +66,12 @@ public class ReplayPlanController {
     public CommonResponse reRunPlan(@RequestBody ReRunReplayPlanRequest request) {
         try {
             return planProduceService.reRunPlan(request.getPlanId());
+        } catch (PlanRunningException e) {
+            return CommonResponse.badResponse(e.getMessage(),
+                new BuildReplayPlanResponse(e.getCode()));
         } catch (Throwable e) {
-            return CommonResponse.badResponse("reRun plan error！" + e.getMessage(), null);
+            return CommonResponse.badResponse("create plan error！" + e.getMessage(),
+                new BuildReplayPlanResponse(BuildReplayFailReasonEnum.UNKNOWN));
         }
     }
 
@@ -143,13 +146,13 @@ public class ReplayPlanController {
             LOGGER.error("create plan error: {} , request: {}", e.getMessage(), request, e);
             progressEvent.onReplayPlanCreateException(request, e);
 
-            if (e instanceof CreatePlanException) {
-                CreatePlanException createPlanException = (CreatePlanException) e;
-                return CommonResponse.badResponse(createPlanException.getMessage(),
-                        new BuildReplayPlanResponse(createPlanException.getCode()));
+            if (e instanceof PlanRunningException) {
+                PlanRunningException PlanRunningException = (PlanRunningException) e;
+                return CommonResponse.badResponse(PlanRunningException.getMessage(),
+                    new BuildReplayPlanResponse(PlanRunningException.getCode()));
             } else {
                 return CommonResponse.badResponse("create plan error！" + e.getMessage(),
-                        new BuildReplayPlanResponse(BuildReplayFailReasonEnum.UNKNOWN));
+                    new BuildReplayPlanResponse(BuildReplayFailReasonEnum.UNKNOWN));
             }
 
         } finally {

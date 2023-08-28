@@ -30,11 +30,15 @@ public final class ReplayParentBinder {
         if (CollectionUtils.isEmpty(sourceItemList)) {
             return;
         }
-        ReplayPlan replayPlan = actionItem.getParent();
         for (ReplayActionCaseItem caseItem : sourceItemList) {
-            caseItem.setParent(actionItem);
-            caseItem.setPlanId(replayPlan.getId());
+            setupCaseItemParent(caseItem, actionItem);
         }
+    }
+
+    public static void setupCaseItemParent(ReplayActionCaseItem caseItem, ReplayActionItem actionItem) {
+        ReplayPlan replayPlan = actionItem.getParent();
+        caseItem.setParent(actionItem);
+        caseItem.setPlanId(replayPlan.getId());
     }
 
     public static void setupCaseItemParent(List<ReplayActionCaseItem> sourceItemList, ReplayPlan replayPlan) {

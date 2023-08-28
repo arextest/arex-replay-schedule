@@ -1,8 +1,6 @@
 package com.arextest.schedule.service;
 
-import com.arextest.model.mock.Mocker;
 import com.arextest.schedule.bizlog.BizLogger;
-import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.ReplayResultComparer;
@@ -14,17 +12,13 @@ import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +35,6 @@ public class ReplayCaseTransmitService {
     private ExecutorService sendExecutorService;
     @Resource
     private ExecutorService compareExecutorService;
-    private static final int ACTIVE_SERVICE_RETRY_COUNT = 3;
     private static final int GROUP_SENT_WAIT_TIMEOUT = 500;
     @Resource
     private ReplayResultComparer replayResultComparer;
@@ -108,44 +101,13 @@ public class ReplayCaseTransmitService {
             // if we skip the rest of cases remaining in the action item, set its status
             if (replayActionItem.getReplayCaseCount() == replayActionItem.getCaseProcessCount().intValue()) {
                 progressEvent.onActionInterrupted(replayActionItem);
-                for (int i = 0; i < contextCasesCount; i++) {
-                    progressTracer.finishCaseByPlan(replayPlan);
-                }
+                progressTracer.finishCaseByPlan(replayPlan, contextCasesCount);
             } else {
-                for (int i = 0; i < contextCasesCount; i++) {
-                    progressTracer.finishCaseByAction(replayActionItem);
-                }
+                progressTracer.finishCaseByAction(replayActionItem, contextCasesCount);
             }
             BizLogger.recordContextSkipped(executionContext, replayActionItem, contextCasesCount);
         }
     }
-
-    private ReplayActionCaseItem cloneCaseItem(List<ReplayActionCaseItem> groupValues, int index) {
-        ReplayActionCaseItem caseItem = new ReplayActionCaseItem();
-        ReplayActionCaseItem source = groupValues.get(index);
-        caseItem.setId(source.getId());
-        caseItem.setRecordId(source.getRecordId());
-        caseItem.setTargetResultId(source.getTargetResultId());
-        caseItem.setCaseType(source.getCaseType());
-        caseItem.setParent(source.getParent());
-        caseItem.setTargetRequest(cloneTargetRequest(source.getTargetRequest()));
-        caseItem.setSourceResultId(source.getSourceResultId());
-        caseItem.setPlanItemId(source.getPlanItemId());
-        return caseItem;
-    }
-
-    private Mocker.Target cloneTargetRequest(Mocker.Target targetRequest) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        Mocker.Target newTarget = null;
-        try {
-            String oldTargetRequest = objectMapper.writeValueAsString(targetRequest);
-            newTarget = objectMapper.readValue(oldTargetRequest, Mocker.Target.class);
-        } catch (JsonProcessingException e) {
-            LOGGER.error("cloneTargetRequest item error:{}", e.getMessage());
-        }
-        return newTarget;
-    }
-
 
     private void doSendValuesToRemoteHost(List<ReplayActionCaseItem> values, ExecutionStatus executionStatus) {
         final int valueSize = values.size();

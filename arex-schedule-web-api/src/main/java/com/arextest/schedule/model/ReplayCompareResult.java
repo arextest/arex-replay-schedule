@@ -20,6 +20,8 @@ public class ReplayCompareResult {
     private String id;
     private String planId;
     private String planItemId;
+    private String caseId;
+
     private String operationId;
     private String categoryName;
     private String operationName;
@@ -42,6 +44,7 @@ public class ReplayCompareResult {
     public static ReplayCompareResult createFrom(ReplayActionCaseItem caseItem) {
         ReplayCompareResult newResult = new ReplayCompareResult();
         newResult.setRecordId(caseItem.getRecordId());
+        newResult.setCaseId(caseItem.getId());
         newResult.setReplayId(caseItem.getTargetResultId());
         newResult.setPlanItemId(caseItem.getPlanItemId());
         newResult.setPlanId(caseItem.getParent().getParent().getId());

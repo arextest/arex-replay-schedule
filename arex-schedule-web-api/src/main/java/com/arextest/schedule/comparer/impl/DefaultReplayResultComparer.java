@@ -83,7 +83,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 replayCompareResults.addAll(compareReplayResult(bindHolder, caseItem, operationConfig, globalConfig));
             }
             if (CollectionUtils.isEmpty(replayCompareResults) &&
-                MockCategoryType.Q_MESSAGE_CONSUMER.getName().equalsIgnoreCase(caseItem.getCaseType())) {
+                    MockCategoryType.Q_MESSAGE_CONSUMER.getName().equalsIgnoreCase(caseItem.getCaseType())) {
                 caseItemRepository.updateCompareStatus(caseItem.getId(), CompareProcessStatusType.PASS.getValue());
                 return comparisonOutputWriter.writeQmqCompareResult(caseItem);
             }
@@ -143,11 +143,11 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
 
         Map<String, List<CompareItem>> recordMap = recordResults.stream()
-                        .filter(data -> StringUtils.isNotEmpty(data.getCompareKey()))
-                        .collect(Collectors.groupingBy(CompareItem::getCompareKey));
+                .filter(data -> StringUtils.isNotEmpty(data.getCompareKey()))
+                .collect(Collectors.groupingBy(CompareItem::getCompareKey));
 
         Set<String> usedRecordKeys = new HashSet<>();
-        for (CompareItem resultCompareItem: replayResults) {
+        for (CompareItem resultCompareItem : replayResults) {
             // config for operation if its entrypoint, dependency config otherwise
             String compareKey = resultCompareItem.getCompareKey();
 
@@ -201,10 +201,42 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                                          ReplayComparisonConfig compareConfig) {
         CompareOptions options = configHandler.buildSkdOption(category, compareConfig);
         try {
-            return COMPARE_INSTANCE.quickCompare(record, result, options);
+            // to-do: 64base extract record and result
+            String decodedRecord = base64decode(record);
+            String decodedResult = base64decode(result);
+
+            return COMPARE_INSTANCE.quickCompare(decodedRecord, decodedResult, options);
+
         } catch (Throwable e) {
             LOGGER.error("run compare sdk process error:{} ,source: {} ,target:{}", e.getMessage(), record, result);
             return CompareSDK.fromException(record, result, e.getMessage());
+        }
+    }
+
+    private String base64decode(String encoded) {
+        try {
+            // to-do: 64base extract record and result
+            if (encoded == null) {
+                return null;
+            }
+            if (isJson(encoded)) {
+                return encoded;
+            }
+            String decoded = new String(Base64.getDecoder().decode(encoded));
+            if (isJson(decoded)) {
+                return decoded;
+            }
+            return encoded;
+        } catch (Exception e) {
+            return encoded;
+        }
+    }
+
+    private boolean isJson(String value) {
+        if (value.startsWith("{") && value.endsWith("}")) {
+            return true;
+        } else {
+            return value.startsWith("[") && value.endsWith("]");
         }
     }
 

@@ -72,7 +72,6 @@ public class ReplayActionCaseItem {
         return requestAttribute(MockAttributeNames.CONTENT_TYPE);
     }
 
-    @SuppressWarnings("unchecked")
     public Map<String, String> requestHeaders() {
         if (this.targetRequest != null) {
             Object v = targetRequest.getAttribute("Headers");

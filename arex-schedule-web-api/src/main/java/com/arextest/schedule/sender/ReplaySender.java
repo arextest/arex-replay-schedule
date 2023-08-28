@@ -2,6 +2,8 @@ package com.arextest.schedule.sender;
 
 import com.arextest.schedule.model.ReplayActionCaseItem;
 
+import java.util.Map;
+
 /**
  * @author jmo
  * @since 2021/9/16
@@ -17,6 +19,9 @@ public interface ReplaySender {
      * Try to send the replay case to remote target host
      */
     boolean send(ReplayActionCaseItem caseItem);
+    default boolean send(ReplayActionCaseItem caseItem, Map<String, String> extraHeaders) {
+        return send(caseItem);
+    }
 
     /**
      * Try to send the request message to remote target host

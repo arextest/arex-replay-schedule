@@ -120,6 +120,15 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
         return doSend(replayActionItem, caseItem, headers);
     }
 
+    @Override
+    public boolean send(ReplayActionCaseItem caseItem, Map<String, String> extraHeaders) {
+        Map<String, String> headers = createHeaders(caseItem);
+        headers.putAll(extraHeaders);
+        ReplayActionItem replayActionItem = caseItem.getParent();
+        before(caseItem.getRecordId(), replayActionItem.getParent().getReplayPlanType());
+        return doSend(replayActionItem, caseItem, headers);
+    }
+
     private String contactUrl(String baseUrl, String operation) {
         String result = null;
         if (StringUtils.endsWith(baseUrl, "/") || StringUtils.startsWith(operation, "/")) {
