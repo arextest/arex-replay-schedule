@@ -26,7 +26,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.util.StopWatch;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -62,6 +68,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
 
             ComparisonInterfaceConfig operationConfig = compareConfigService.loadInterfaceConfig(caseItem.getParent());
             ComparisonGlobalConfig globalConfig = compareConfigService.loadGlobalConfig(planId);
+            List<String> ignoreCategoryList = operationConfig.getIgnoreCategoryTypes();
 
             List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
             List<CategoryComparisonHolder> waitCompareMap = buildWaitCompareList(caseItem, useReplayId);
@@ -71,7 +78,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                 return true;
             }
             for (CategoryComparisonHolder bindHolder : waitCompareMap) {
-                if (operationConfig.checkIgnoreMockMessageType(bindHolder.getCategoryName())) {
+                if (operationConfig.checkIgnoreMockMessageType(bindHolder.getCategoryName(), ignoreCategoryList)) {
                     continue;
                 }
                 replayCompareResults.addAll(compareReplayResult(bindHolder, caseItem, operationConfig, globalConfig));

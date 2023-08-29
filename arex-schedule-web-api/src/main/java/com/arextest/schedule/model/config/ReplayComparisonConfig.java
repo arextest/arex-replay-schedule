@@ -23,6 +23,7 @@ import java.util.*;
 public class ReplayComparisonConfig {
     private String operationName;
     private List<String> operationTypes;
+    private List<String> ignoreCategoryTypes;
     private Set<List<String>> exclusionList;
     private Set<List<String>> inclusionList;
 
@@ -40,7 +41,7 @@ public class ReplayComparisonConfig {
      */
     private Map<String,Object> additionalConfig;
 
-    public final boolean checkIgnoreMockMessageType(String type) {
+    public final boolean checkIgnoreMockMessageType(String type, List<String> ignoreCategoryTypes) {
         // [b_yu] 2022-10-11 Dynamic type does not compare
         if (Objects.equals(type, MockCategoryType.DYNAMIC_CLASS.getName())) {
             return true;
@@ -51,6 +52,10 @@ public class ReplayComparisonConfig {
         if (Objects.equals(type, MockCategoryType.Q_MESSAGE_CONSUMER.getName())) {
             return true;
         }
+        if (ignoreCategoryTypes != null && ignoreCategoryTypes.contains(type)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -83,5 +88,6 @@ public class ReplayComparisonConfig {
         this.setListSortMap(Collections.emptyMap());
         this.setReferenceMap(Collections.emptyMap());
         this.setAdditionalConfig(Collections.emptyMap());
+        this.setIgnoreCategoryTypes(Collections.emptyList());
     }
 }
