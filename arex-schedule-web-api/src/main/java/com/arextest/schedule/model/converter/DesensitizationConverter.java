@@ -43,11 +43,11 @@ public abstract class DesensitizationConverter {
 
     @Named("encryptAndCompress")
     String encryptAndCompress(String in) {
-        return compress(encrypt(in));
+        return encrypt(compress(in));
     }
 
     @Named("decompressAndDecrypt")
     String decompressAndDecrypt(String in) {
-        return decrypt(decompress(in));
+        return decompress(decrypt(in));
     }
 }
