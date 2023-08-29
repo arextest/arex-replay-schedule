@@ -12,6 +12,7 @@
     <artifactId>arex-schedule-web-api</artifactId>
     <version>1.0.37</version>
 
+
     <name>${project.groupId}:${project.artifactId}</name>
 
     <dependencies>
