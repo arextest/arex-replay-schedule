@@ -205,8 +205,20 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
                 ReplayRunDetailsCollection.class, String.class));
     }
 
+    public Set<String> getAllContextIdentifiers(List<String> caseIds) {
+        Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_ID).in(caseIds));
+        return new HashSet<>(mongoTemplate.findDistinct(query, ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER,
+                ReplayRunDetailsCollection.class, String.class));
+    }
+
     public boolean hasNullIdentifier(String planId) {
         Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
+        query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).isNull());
+        return mongoTemplate.exists(query, ReplayRunDetailsCollection.class);
+    }
+
+    public boolean hasNullIdentifier(List<String> caseIds) {
+        Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_ID).in(caseIds));
         query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).isNull());
         return mongoTemplate.exists(query, ReplayRunDetailsCollection.class);
     }
