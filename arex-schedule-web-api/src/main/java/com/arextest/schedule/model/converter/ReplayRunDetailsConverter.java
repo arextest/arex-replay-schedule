@@ -7,8 +7,6 @@ import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
-import org.mapstruct.factory.Mappers;
-import org.springframework.core.convert.converter.Converter;
 
 /**
  * Created by rchen9 on 2022/8/19.
@@ -26,17 +24,11 @@ public abstract class ReplayRunDetailsConverter extends DesensitizationConverter
     })
     public abstract ReplayRunDetailsCollection daoFromDto(ReplayActionCaseItem dto);
 
-    String encryptAndCompressReq(Mocker.Target req) {
-        Mocker.Target cloned = new Mocker.Target();
-        cloned.setBody(encrypt(req.getBody()));
-        cloned.setAttributes(req.getAttributes());
-        cloned.setType(req.getType());
-        return SerializationUtils.useZstdSerializeToBase64(cloned);
+    String compressRequest(Mocker.Target req) {
+        return encrypt(SerializationUtils.useZstdSerializeToBase64(req));
     }
 
-    Mocker.Target decompressAndDecryptReq(String req) {
-        Mocker.Target decompress = SerializationUtils.useZstdDeserialize(req, Mocker.Target.class);
-        decompress.setBody(decrypt(decompress.getBody()));
-        return decompress;
+    Mocker.Target decompressRequest(String req) {
+        return SerializationUtils.useZstdDeserialize(decrypt(req), Mocker.Target.class);
     }
 }
