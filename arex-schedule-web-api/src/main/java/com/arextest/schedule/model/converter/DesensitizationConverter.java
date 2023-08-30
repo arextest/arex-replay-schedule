@@ -38,7 +38,7 @@ public abstract class DesensitizationConverter {
 
     @Named("decompress")
     String decompress(String compressString) {
-        return SerializationUtils.useZstdSerializeToBase64(compressString);
+        return SerializationUtils.useZstdDeserialize(compressString, String.class);
     }
 
     @Named("encryptAndCompress")
