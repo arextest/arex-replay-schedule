@@ -26,15 +26,15 @@ public abstract class ReplayCompareResultConverter extends DesensitizationConver
             @Mapping(target = "dataChangeCreateTime", expression = "java(System.currentTimeMillis())"),
             @Mapping(target = "dataChangeUpdateTime", expression = "java(System.currentTimeMillis())"),
             @Mapping(target = "dataChangeCreateDate", expression = "java(new java.util.Date())"),
-            @Mapping(target = "baseMsg", qualifiedByName = "encryptAndCompress"),
-            @Mapping(target = "testMsg", qualifiedByName = "encryptAndCompress"),
+            @Mapping(target = "baseMsg", qualifiedByName = "compressAndEncrypt"),
+            @Mapping(target = "testMsg", qualifiedByName = "compressAndEncrypt"),
             @Mapping(target = "logs", qualifiedByName = "compressLogs"),
     })
     public abstract ReplayCompareResultCollection daoFromBo(ReplayCompareResult bo);
 
     @Mappings({
-            @Mapping(target = "baseMsg", qualifiedByName = "decompressAndDecrypt"),
-            @Mapping(target = "testMsg", qualifiedByName = "decompressAndDecrypt"),
+            @Mapping(target = "baseMsg", qualifiedByName = "decryptAndDecompress"),
+            @Mapping(target = "testMsg", qualifiedByName = "decryptAndDecompress"),
             @Mapping(target = "logs", qualifiedByName = "decompressLogs")
     })
     public abstract ReplayCompareResult boFromDao(ReplayCompareResultCollection dao);

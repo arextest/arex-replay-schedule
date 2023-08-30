@@ -41,13 +41,13 @@ public abstract class DesensitizationConverter {
         return SerializationUtils.useZstdDeserialize(compressString, String.class);
     }
 
-    @Named("encryptAndCompress")
-    String encryptAndCompress(String in) {
+    @Named("compressAndEncrypt")
+    String compressAndEncrypt(String in) {
         return encrypt(compress(in));
     }
 
-    @Named("decompressAndDecrypt")
-    String decompressAndDecrypt(String in) {
+    @Named("decryptAndDecompress")
+    String decryptAndDecompress(String in) {
         return decompress(decrypt(in));
     }
 }
