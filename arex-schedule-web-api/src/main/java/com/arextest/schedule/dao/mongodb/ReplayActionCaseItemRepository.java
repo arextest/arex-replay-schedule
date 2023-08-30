@@ -25,6 +25,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.Resource;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -38,17 +39,19 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     @Autowired
     MongoTemplate mongoTemplate;
 
+    @Resource
+    private ReplayRunDetailsConverter converter;
+
     private static final String PLAN_ITEM_ID = "planItemId";
     private static final String SEND_STATUS = "sendStatus";
     private static final String SOURCE_RESULT_ID = "sourceResultId";
     private static final String TARGET_RESULT_ID = "targetResultId";
     private static final String COMPARE_STATUS = "compareStatus";
-
     private static final String COUNT_FIELD = "count";
 
     @Override
     public boolean save(ReplayActionCaseItem replayActionCaseItem) {
-        ReplayRunDetailsCollection replayRunDetailsCollection = ReplayRunDetailsConverter.INSTANCE.daoFromDto(replayActionCaseItem);
+        ReplayRunDetailsCollection replayRunDetailsCollection = converter.daoFromDto(replayActionCaseItem);
         ReplayRunDetailsCollection insert = mongoTemplate.insert(replayRunDetailsCollection);
         if (insert.getId() != null) {
             replayActionCaseItem.setId(insert.getId());
@@ -59,7 +62,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     @Override
     public boolean save(List<ReplayActionCaseItem> caseItems) {
         List<ReplayRunDetailsCollection> replayPlanItemCollections = caseItems.stream()
-            .map(ReplayRunDetailsConverter.INSTANCE::daoFromDto).collect(Collectors.toList());
+            .map(converter::daoFromDto).collect(Collectors.toList());
 
         List<ReplayRunDetailsCollection> inserted = new ArrayList<>(mongoTemplate
             .insert(replayPlanItemCollections, ReplayRunDetailsCollection.class));
@@ -88,7 +91,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         query.limit(pageSize);
         query.with(Sort.by(Sort.Order.asc(DASH_ID)));
         List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query, ReplayRunDetailsCollection.class);
-        return replayRunDetailsCollections.stream().map(ReplayRunDetailsConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
+        return replayRunDetailsCollections.stream().map(converter::dtoFromDao).collect(Collectors.toList());
     }
 
     /**
@@ -109,7 +112,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         ));
 
         List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query, ReplayRunDetailsCollection.class);
-        return replayRunDetailsCollections.stream().map(ReplayRunDetailsConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
+        return replayRunDetailsCollections.stream().map(converter::dtoFromDao).collect(Collectors.toList());
     }
 
     public Map<String, Long> countWaitHandlingByAction(String planId, List<Criteria> baseCriteria) {
@@ -192,7 +195,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
             Sort.Order.desc(DASH_ID)
         ));
         ReplayRunDetailsCollection replayRunDetailsCollections = mongoTemplate.findOne(query, ReplayRunDetailsCollection.class);
-        return ReplayRunDetailsConverter.INSTANCE.dtoFromDao(replayRunDetailsCollections);
+        return converter.dtoFromDao(replayRunDetailsCollections);
     }
 
     // region <context>
@@ -225,7 +228,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
         query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).is(contextIdentifier));
         ReplayRunDetailsCollection replayRunDetailsCollection = mongoTemplate.findOne(query, ReplayRunDetailsCollection.class);
-        return ReplayRunDetailsConverter.INSTANCE.dtoFromDao(replayRunDetailsCollection);
+        return converter.dtoFromDao(replayRunDetailsCollection);
     }
 
     // endregion <context>

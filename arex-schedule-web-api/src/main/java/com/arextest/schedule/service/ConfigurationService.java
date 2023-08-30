@@ -1,23 +1,30 @@
 package com.arextest.schedule.service;
 
+import com.arextest.model.response.ResponseStatusType;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
+import com.arextest.web.model.contract.contracts.datadesensitization.DesensitizationJar;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @Service
-public final class ConfigurationService {
+public class ConfigurationService {
     @Resource
     private HttpWepServiceApiClient wepApiClientService;
     @Value("${arex.report.config.application.url}")
     private String applicationUrl;
     @Value("${arex.report.config.schedule.url}")
     private String scheduleUrl;
+    @Value("${arex.report.config.desensitization.url}")
+    private String desensitizationConfigUrl;
 
     public Application application(String appId) {
         ApplicationResponse applicationResponse = wepApiClientService.get(applicationUrl, appIdUrlVariable(appId),
@@ -29,6 +36,16 @@ public final class ConfigurationService {
         ScheduleResponse scheduleResponse = wepApiClientService.get(scheduleUrl, appIdUrlVariable(appId),
                 ScheduleResponse.class);
         return scheduleResponse != null ? scheduleResponse.body : null;
+    }
+
+    @Retryable(value = {RuntimeException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000))
+    public List<DesensitizationJar> desensitization() {
+        DesensitizationResponse res = wepApiClientService.jsonPost(desensitizationConfigUrl, null, DesensitizationResponse.class);
+        if (res == null) {
+            throw new RuntimeException("get desensitization config error");
+        } else {
+            return res.getBody();
+        }
     }
 
     private Map<String, ?> appIdUrlVariable(String appId) {
@@ -57,6 +74,12 @@ public final class ConfigurationService {
     @Data
     private static final class ApplicationResponse {
         private Application body;
+    }
+
+    @Data
+    private static final class DesensitizationResponse {
+        private ResponseStatusType responseStatusType;
+        private List<DesensitizationJar> body;
     }
 
     @Data

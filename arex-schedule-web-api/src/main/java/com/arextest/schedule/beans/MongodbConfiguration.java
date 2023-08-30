@@ -81,33 +81,9 @@ public class MongodbConfiguration {
     public MongoTemplate mongoTemplate(MongoDatabaseFactory mongoDatabaseFactory) {
         DbRefResolver dbRefResolver = new DefaultDbRefResolver(mongoDatabaseFactory);
         MappingMongoConverter converter = new MappingMongoConverter(dbRefResolver, new MongoMappingContext());
-
-        converter.setCustomConversions(customConversions());
         converter.setTypeMapper(new DefaultMongoTypeMapper(null));
         converter.afterPropertiesSet();
         return new MongoTemplate(mongoDatabaseFactory, converter);
-    }
-
-    private MongoCustomConversions customConversions() {
-        List<Converter<?, ?>> converters = new ArrayList<>();
-        converters.add(new TypeReadMockerTargetConverter());
-        converters.add(new TypeWriteMockerTargetConverter());
-        return new MongoCustomConversions(converters);
-    }
-
-    private static class TypeWriteMockerTargetConverter implements Converter<String, Target> {
-        @Override
-        public Target convert(String source) {
-            return SerializationUtils.useZstdDeserialize(source, Target.class);
-        }
-    }
-
-
-    private static class TypeReadMockerTargetConverter implements Converter<Target, String> {
-        @Override
-        public String convert(Target source) {
-            return SerializationUtils.useZstdSerializeToBase64(source);
-        }
     }
 
     public static class CompressionMongoClientDatabaseFactory extends SimpleMongoClientDatabaseFactory {

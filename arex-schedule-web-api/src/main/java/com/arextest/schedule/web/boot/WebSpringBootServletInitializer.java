@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+import org.springframework.retry.annotation.EnableRetry;
 
 import java.awt.*;
 import java.net.URI;
@@ -15,6 +16,7 @@ import java.net.URI;
  * @since 2021/8/18
  */
 @Slf4j
+@EnableRetry
 @SpringBootApplication(scanBasePackages = "com.arextest.schedule", exclude = {DataSourceAutoConfiguration.class})
 public class WebSpringBootServletInitializer extends SpringBootServletInitializer {
 
