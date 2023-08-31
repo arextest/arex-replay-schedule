@@ -106,10 +106,6 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
 
     @Override
     public void onBeforeContextExecution(PlanExecutionContext<ContextDependenciesHolder> currentContext, ReplayPlan plan) {
-        if (plan.isReRun()) {
-            return;
-        }
-
         MDCTracer.addExecutionContextNme(currentContext.getContextName());
         LOGGER.info("Start executing context: {}", currentContext);
         ContextDependenciesHolder dependencyHolder = currentContext.getDependencies();

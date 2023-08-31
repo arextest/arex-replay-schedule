@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author jmo
@@ -123,9 +124,10 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
 
     @Override
     public void onReplayPlanReRun(ReplayPlan replayPlan) {
-        replayReportService.pushPlanStatus(replayPlan.getId(), ReplayStatusType.RUNNING, null);
+        replayReportService.pushPlanStatus(replayPlan.getId(), ReplayStatusType.RERUNNING, null);
         redisCacheProvider.remove(PlanProduceService.buildStopPlanRedisKey(replayPlan.getId()));
         addReRunStage(replayPlan.getReplayPlanStageList());
+        replayPlanRepository.updateStage(replayPlan);
     }
 
     private StageBaseInfo findStage(List<ReplayPlanStageInfo> stageInfoList, PlanStageEnum stageType) {
@@ -229,7 +231,9 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     @Override
     public void onActionBeforeSend(ReplayActionItem actionItem) {
         actionItem.setReplayBeginTime(new Date());
-        updateReplayActionStatus(actionItem, ReplayStatusType.RUNNING, null);
+        boolean isReRun = Optional.ofNullable(actionItem.getParent()).map(ReplayPlan::isReRun).orElse(false);
+        ReplayStatusType statusType = isReRun ? ReplayStatusType.RERUNNING : ReplayStatusType.RUNNING;
+        updateReplayActionStatus(actionItem, statusType, null);
     }
 
     private void updateReplayActionStatus(ReplayActionItem actionItem, ReplayStatusType replayStatusType, String errorMessage) {
