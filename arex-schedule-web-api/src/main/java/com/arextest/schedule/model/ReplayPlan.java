@@ -118,4 +118,11 @@ public class ReplayPlan {
     public void buildActionItemMap() {
         this.getReplayActionItemList().forEach(replayActionItem -> this.actionItemMap.put(replayActionItem.getId(), replayActionItem));
     }
+
+    public void setPlanFinishTime(Date planFinishTime) {
+        if (isReRun()) {
+            return;
+        }
+        this.planFinishTime = planFinishTime;
+    }
 }

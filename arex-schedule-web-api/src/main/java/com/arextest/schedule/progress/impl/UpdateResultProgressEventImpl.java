@@ -1,5 +1,6 @@
 package com.arextest.schedule.progress.impl;
 
+import com.alibaba.fastjson2.util.DateUtils;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
@@ -21,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author jmo
@@ -75,7 +77,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
         String planId = replayPlan.getId();
         boolean result = replayPlanRepository.finish(planId);
         LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
-        replayReportService.pushPlanStatus(planId, reason, null);
+        replayReportService.pushPlanStatus(planId, reason, null, replayPlan.isReRun());
         recordPlanExecutionTime(replayPlan);
         redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayPlan.getId()));
     }
@@ -87,7 +89,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
         replayPlanRepository.finish(planId);
         LOGGER.info("The plan was interrupted, plan id:{} ,appId: {} ", replayPlan.getId(), replayPlan.getAppId());
         metricService.recordCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(), replayPlan.getAppId(), DEFAULT_COUNT);
-        replayReportService.pushPlanStatus(planId, reason, replayPlan.getErrorMessage());
+        replayReportService.pushPlanStatus(planId, reason, replayPlan.getErrorMessage(), replayPlan.isReRun());
         recordPlanExecutionTime(replayPlan);
         redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayPlan.getId()));
     }
@@ -95,7 +97,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     @Override
     public void onReplayPlanTerminate(String replayId) {
         replayPlanRepository.finish(replayId);
-        replayReportService.pushPlanStatus(replayId, ReplayStatusType.CANCELLED, null);
+        replayReportService.pushPlanStatus(replayId, ReplayStatusType.CANCELLED, null, false);
         redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayId));
     }
 
@@ -123,9 +125,10 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
 
     @Override
     public void onReplayPlanReRun(ReplayPlan replayPlan) {
-        replayReportService.pushPlanStatus(replayPlan.getId(), ReplayStatusType.RUNNING, null);
+        replayReportService.pushPlanStatus(replayPlan.getId(), ReplayStatusType.RERUNNING, null, replayPlan.isReRun());
         redisCacheProvider.remove(PlanProduceService.buildStopPlanRedisKey(replayPlan.getId()));
         addReRunStage(replayPlan.getReplayPlanStageList());
+        replayPlanRepository.updateStage(replayPlan);
     }
 
     private StageBaseInfo findStage(List<ReplayPlanStageInfo> stageInfoList, PlanStageEnum stageType) {
@@ -170,6 +173,14 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
             }
             if (endTime != null) {
                 stageBaseInfo.setEndTime(endTime);
+            }
+
+            if (stageType == PlanStageEnum.RE_RUN) {
+                String startTimeStr =
+                    stageBaseInfo.getStartTime() == null ? "" : DateUtils.format(new Date(stageBaseInfo.getStartTime()));
+                String endTimeStr =
+                    stageBaseInfo.getEndTime() == null ? "" : DateUtils.format(new Date(stageBaseInfo.getEndTime()));
+                stageBaseInfo.setMsg(String.format(StageUtils.RUNNING_FORMAT, startTimeStr, endTimeStr));
             }
         }
     }
@@ -229,15 +240,18 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     @Override
     public void onActionBeforeSend(ReplayActionItem actionItem) {
         actionItem.setReplayBeginTime(new Date());
-        updateReplayActionStatus(actionItem, ReplayStatusType.RUNNING, null);
+        boolean isReRun = Optional.ofNullable(actionItem.getParent()).map(ReplayPlan::isReRun).orElse(false);
+        ReplayStatusType statusType = isReRun ? ReplayStatusType.RERUNNING : ReplayStatusType.RUNNING;
+        updateReplayActionStatus(actionItem, statusType, null);
     }
 
     private void updateReplayActionStatus(ReplayActionItem actionItem, ReplayStatusType replayStatusType, String errorMessage) {
         actionItem.setReplayStatus(replayStatusType.getValue());
+        boolean rerun = Optional.ofNullable(actionItem.getParent()).map(ReplayPlan::isReRun).orElse(false);
         replayPlanActionRepository.update(actionItem);
         LOGGER.info("update the replay action send status: {}, action id:{}", replayStatusType, actionItem.getId());
         replayReportService.pushActionStatus(actionItem.getPlanId(),
-                replayStatusType, actionItem.getId(), errorMessage);
+                replayStatusType, actionItem.getId(), errorMessage, rerun);
     }
 
     @Override

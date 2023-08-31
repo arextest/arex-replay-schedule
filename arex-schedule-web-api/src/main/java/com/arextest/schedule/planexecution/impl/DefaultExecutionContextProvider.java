@@ -40,7 +40,7 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
     private static final String CONFIG_CENTER_WARM_UP_HEAD = "arex_replay_prepare_dependency";
 
     @Data
-    static class ContextDependenciesHolder {
+    public static class ContextDependenciesHolder {
         private String contextIdentifier;
     }
 
@@ -106,10 +106,6 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
 
     @Override
     public void onBeforeContextExecution(PlanExecutionContext<ContextDependenciesHolder> currentContext, ReplayPlan plan) {
-        if (plan.isReRun()) {
-            return;
-        }
-
         MDCTracer.addExecutionContextNme(currentContext.getContextName());
         LOGGER.info("Start executing context: {}", currentContext);
         ContextDependenciesHolder dependencyHolder = currentContext.getDependencies();

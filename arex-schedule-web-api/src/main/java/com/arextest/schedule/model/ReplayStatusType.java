@@ -31,7 +31,13 @@ public enum ReplayStatusType {
     /**
      * Cancelled by user
      */
-    CANCELLED(4);
+    CANCELLED(4),
+
+    /**
+     * Re-run plan
+     */
+    RERUNNING(6),
+    ;
 
     @Getter
     final int value;
@@ -59,6 +65,8 @@ public enum ReplayStatusType {
                 return CANCELLED;
             case 5:
                 return CASE_LOADED;
+            case 6:
+                return RERUNNING;
             default:
                 return INIT;
         }

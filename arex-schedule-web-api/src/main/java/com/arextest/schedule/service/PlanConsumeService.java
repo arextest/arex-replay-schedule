@@ -16,6 +16,7 @@ import com.arextest.schedule.model.plan.PlanStageEnum;
 import com.arextest.schedule.model.plan.StageStatusEnum;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.planexecution.PlanExecutionMonitor;
+import com.arextest.schedule.planexecution.impl.DefaultExecutionContextProvider;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.utils.ReplayParentBinder;
@@ -27,7 +28,9 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
@@ -77,7 +80,7 @@ public final class PlanConsumeService {
 
             // limiter shared for entire plan, max qps = maxQps per instance * min instance count
             final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps(),
-                    replayPlan.getMinInstanceCount());
+                replayPlan.getMinInstanceCount());
             qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
             qpsLimiter.setReplayPlan(replayPlan);
             replayPlan.setPlanStatus(ExecutionStatus.buildNormal(qpsLimiter));
@@ -86,6 +89,7 @@ public final class PlanConsumeService {
             replayPlan.buildActionItemMap();
             BizLogger.recordQpsInit(replayPlan, qpsLimiter.getPermits(), replayPlan.getMinInstanceCount());
         }
+
         @Override
         protected void doWithTracedRunning() {
             try {
@@ -121,7 +125,7 @@ public final class PlanConsumeService {
                     replayPlan.setErrorMessage("Got empty execution context");
                     progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
                     BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.FAIL_INTERRUPTED.name(),
-                            "NO context to execute");
+                        "NO context to execute");
 
                     progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_CONTEXT,
                         StageStatusEnum.FAILED, null, end, null);
@@ -159,7 +163,7 @@ public final class PlanConsumeService {
         }
         int index = 0, total = replayPlan.getExecutionContexts().size();
         for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
-            index ++;
+            index++;
             // checkpoint: before each context
             if (executionStatus.isAbnormal()) {
                 break;
@@ -218,11 +222,11 @@ public final class PlanConsumeService {
 
         int contextCount = 0;
         List<ReplayActionCaseItem> caseItems = Collections.emptyList();
-        List<ReplayActionCaseItem> reRunCaseItems = null;
+        Map<String, List<ReplayActionCaseItem>> caseItemsMap = new HashMap<>();
         if (replayPlan.isReRun()) {
-            reRunCaseItems = replayPlan.getReplayActionItemList().stream()
+            caseItemsMap = replayPlan.getReplayActionItemList().stream()
                 .flatMap(replayActionCase -> replayActionCase.getCaseItemList().stream())
-                .collect(Collectors.toList());
+                .collect(Collectors.groupingBy(ReplayActionCaseItem::getContextIdentifier));
         }
         while (true) {
             // checkpoint: before sending page of cases
@@ -230,7 +234,10 @@ public final class PlanConsumeService {
                 break;
             }
             if (replayPlan.isReRun()) {
-                caseItems = getReplayActionCaseListPages(CommonConstant.MAX_PAGE_SIZE, contextCount, reRunCaseItems);
+                String contextIdentify = ((DefaultExecutionContextProvider.ContextDependenciesHolder)
+                    (executionContext.getDependencies())).getContextIdentifier();
+                caseItems = getReplayActionCaseListPages(CommonConstant.MAX_PAGE_SIZE, contextCount,
+                    caseItemsMap.get(contextIdentify));
             } else {
                 ReplayActionCaseItem lastItem = CollectionUtils.isNotEmpty(caseItems) ? caseItems.get(caseItems.size() - 1) : null;
                 caseItems = replayActionCaseItemRepository.waitingSendList(replayPlan.getId(),

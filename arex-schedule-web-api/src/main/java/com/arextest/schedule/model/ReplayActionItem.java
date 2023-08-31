@@ -120,4 +120,11 @@ public class ReplayActionItem {
 
     @JsonIgnore
     public ExecutionStatus planStatus;
+
+    public void setReplayFinishTime(Date replayFinishTime) {
+        if (this.parent != null && this.parent.isReRun()) {
+            return;
+        }
+        this.replayFinishTime = replayFinishTime;
+    }
 }
