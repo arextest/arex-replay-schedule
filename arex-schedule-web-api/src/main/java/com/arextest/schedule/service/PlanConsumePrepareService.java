@@ -199,7 +199,7 @@ public class PlanConsumePrepareService {
                 ReplayParentBinder.setupCaseItemParent(actionItem.getCaseItemList(), actionItem);
                 replayPlanActionRepository.update(actionItem);
                 replayReportService.pushActionStatus(actionItem.getPlanId(), ReplayStatusType.INIT,
-                    actionItem.getId(), null);
+                    actionItem.getId(), null, true);
             }).collect(Collectors.toList());
         replayActionItemPreprocessService.filterActionItem(failedActionList, replayPlan.getAppId());
         replayPlan.setReplayActionItemList(failedActionList);

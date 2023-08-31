@@ -40,7 +40,7 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
     private static final String CONFIG_CENTER_WARM_UP_HEAD = "arex_replay_prepare_dependency";
 
     @Data
-    static class ContextDependenciesHolder {
+    public static class ContextDependenciesHolder {
         private String contextIdentifier;
     }
 
