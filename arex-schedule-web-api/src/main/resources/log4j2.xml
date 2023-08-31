@@ -16,7 +16,7 @@
             </Policies>
         </RollingFile>
         <NoSql name="Mongo4">
-            <MongoDb4 capped="true" collectionSize="104857600"
+            <ArexMongoDb4 capped="true" collectionSize="104857600"
                       connection="${sys:mongo.uri}"
             />
         </NoSql>
