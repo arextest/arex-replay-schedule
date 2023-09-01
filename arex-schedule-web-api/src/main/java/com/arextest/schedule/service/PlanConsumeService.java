@@ -234,8 +234,7 @@ public final class PlanConsumeService {
                 break;
             }
             if (replayPlan.isReRun()) {
-                String contextIdentify = ((DefaultExecutionContextProvider.ContextDependenciesHolder)
-                    (executionContext.getDependencies())).getContextIdentifier();
+                String contextIdentify = executionContext.getContextIdentifier();
                 caseItems = getReplayActionCaseListPages(CommonConstant.MAX_PAGE_SIZE, contextCount,
                     caseItemsMap.get(contextIdentify));
             } else {
