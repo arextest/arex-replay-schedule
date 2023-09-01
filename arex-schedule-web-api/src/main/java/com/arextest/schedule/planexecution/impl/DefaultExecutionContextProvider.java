@@ -73,6 +73,8 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
 
             context.setContextCaseQuery(Collections.singletonList(
                     Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).isNull()));
+
+            context.setContextIdentifier(null);
             contexts.add(context);
         }
 
@@ -89,7 +91,7 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
             // set up query for cases of this context
             context.setContextCaseQuery(Collections.singletonList(
                     Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).is(identifier)));
-
+            context.setContextIdentifier(identifier);
             contexts.add(context);
         });
 
