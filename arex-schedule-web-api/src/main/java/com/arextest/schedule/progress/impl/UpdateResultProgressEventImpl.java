@@ -43,6 +43,12 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
 
     public static final long DEFAULT_COUNT = 1L;
 
+
+    @Override
+    public void onReplayPlanReRunException(ReplayPlan plan, Throwable t) {
+        replayReportService.pushPlanStatus(plan.getId(), ReplayStatusType.FAIL_INTERRUPTED, t.getMessage(), true);
+    }
+
     @Override
     public void onReplayPlanCreated(ReplayPlan replayPlan) {
         try {

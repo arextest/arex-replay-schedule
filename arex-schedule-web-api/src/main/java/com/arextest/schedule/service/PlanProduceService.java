@@ -344,7 +344,6 @@ public class PlanProduceService {
                 null, System.currentTimeMillis(), null);
             progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.RE_RUN, StageStatusEnum.FAILED,
                 System.currentTimeMillis(), null, null);
-            replayReportService.pushPlanStatus(planId, ReplayStatusType.FAIL_INTERRUPTED, e.getMessage(), true);
             planExecutionMonitorImpl.deregister(replayPlan);
             progressEvent.onReplayPlanReRunException(replayPlan, e);
             return CommonResponse.badResponse("ReRun plan failed！");
