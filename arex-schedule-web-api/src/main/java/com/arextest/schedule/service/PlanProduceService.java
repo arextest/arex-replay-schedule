@@ -71,6 +71,8 @@ public class PlanProduceService {
     private PlanExecutionMonitor planExecutionMonitorImpl;
     @Resource
     private ReplayActionCaseItemRepository replayActionCaseItemRepository;
+    @Resource
+    private ReplayReportService replayReportService;
 
     private static final String PLAN_RUNNING_KEY_FORMAT = "plan_running_%s";
 
@@ -342,6 +344,7 @@ public class PlanProduceService {
                 null, System.currentTimeMillis(), null);
             progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.RE_RUN, StageStatusEnum.FAILED,
                 System.currentTimeMillis(), null, null);
+            replayReportService.pushPlanStatus(planId, ReplayStatusType.FAIL_INTERRUPTED, e.getMessage(), true);
             planExecutionMonitorImpl.deregister(replayPlan);
             progressEvent.onReplayPlanReRunException(replayPlan, e);
             return CommonResponse.badResponse("ReRun plan failed！");
