@@ -71,8 +71,6 @@ public class PlanProduceService {
     private PlanExecutionMonitor planExecutionMonitorImpl;
     @Resource
     private ReplayActionCaseItemRepository replayActionCaseItemRepository;
-    @Resource
-    private ReplayReportService replayReportService;
 
     private static final String PLAN_RUNNING_KEY_FORMAT = "plan_running_%s";
 
