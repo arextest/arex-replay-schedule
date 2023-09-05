@@ -16,7 +16,6 @@ import com.arextest.schedule.model.plan.PlanStageEnum;
 import com.arextest.schedule.model.plan.StageStatusEnum;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.planexecution.PlanExecutionMonitor;
-import com.arextest.schedule.planexecution.impl.DefaultExecutionContextProvider;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.utils.ReplayParentBinder;
@@ -33,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
-import java.util.stream.Collectors;
 
 /**
  * @author jmo
@@ -81,7 +79,9 @@ public final class PlanConsumeService {
             // limiter shared for entire plan, max qps = maxQps per instance * min instance count
             final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps(),
                 replayPlan.getMinInstanceCount());
-            qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
+            qpsLimiter.setTotalTasks(replayPlan.isReRun()
+                ? replayPlan.getReRunCaseCount()
+                : replayPlan.getCaseTotalCount());
             qpsLimiter.setReplayPlan(replayPlan);
             replayPlan.setPlanStatus(ExecutionStatus.buildNormal(qpsLimiter));
             replayPlan.setLimiter(qpsLimiter);
@@ -224,9 +224,15 @@ public final class PlanConsumeService {
         List<ReplayActionCaseItem> caseItems = Collections.emptyList();
         Map<String, List<ReplayActionCaseItem>> caseItemsMap = new HashMap<>();
         if (replayPlan.isReRun()) {
-            caseItemsMap = replayPlan.getReplayActionItemList().stream()
+            replayPlan.getReplayActionItemList().stream()
                 .flatMap(replayActionCase -> replayActionCase.getCaseItemList().stream())
-                .collect(Collectors.groupingBy(ReplayActionCaseItem::getContextIdentifier));
+                .forEach(replayActionCaseItem -> {
+                    String identifier = replayActionCaseItem.getContextIdentifier();
+                    List<ReplayActionCaseItem> replayActionCaseItems = caseItemsMap.getOrDefault(identifier,
+                        new ArrayList<>());
+                    replayActionCaseItems.add(replayActionCaseItem);
+                    caseItemsMap.put(identifier, replayActionCaseItems);
+                });
         }
         while (true) {
             // checkpoint: before sending page of cases
