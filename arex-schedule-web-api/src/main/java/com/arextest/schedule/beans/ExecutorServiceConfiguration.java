@@ -70,6 +70,19 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
 
     }
 
+    @Bean
+    public ExecutorService rerunPrepareExecutorService() {
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("replay-rerun-prepare-%d")
+            .setDaemon(true)
+            .setUncaughtExceptionHandler(this)
+            .build();
+        return new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_POOL_SIZE, KEEP_ALIVE_TIME,
+            TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<>(COMPARE_QUEUE_MAX_CAPACITY_SIZE),
+            threadFactory,
+            new ThreadPoolExecutor.CallerRunsPolicy());
+    }
+
     @Override
     public void uncaughtException(Thread t, Throwable e) {
         LOGGER.error("uncaughtException {} ,error :{}", t.getName(), e.getMessage(), e);

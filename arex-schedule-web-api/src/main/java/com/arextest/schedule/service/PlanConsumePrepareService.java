@@ -5,7 +5,15 @@ import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
-import com.arextest.schedule.model.*;
+import com.arextest.schedule.model.AppServiceDescriptor;
+import com.arextest.schedule.model.AppServiceOperationDescriptor;
+import com.arextest.schedule.model.CaseSendStatusType;
+import com.arextest.schedule.model.CompareProcessStatusType;
+import com.arextest.schedule.model.LogType;
+import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
@@ -21,6 +29,8 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 /**
@@ -52,6 +62,8 @@ public class PlanConsumePrepareService {
     private PlanContextCreator planContextCreator;
     @Resource
     private DeployedEnvironmentService deployedEnvironmentService;
+    @Resource
+    private ExecutorService rerunPrepareExecutorService;
 
     public int prepareRunData(ReplayPlan replayPlan) {
         metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
@@ -186,22 +198,26 @@ public class PlanConsumePrepareService {
         Map<String, List<String>> actionIdAndRecordIdsMap = failedCaseMap.entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream()
                 .map(ReplayActionCaseItem::getRecordId).collect(Collectors.toList())));
-        replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap);
 
-        replayActionCaseItemRepository.batchUpdateStatus(failedCaseList);
+
+        CompletableFuture removeRecordsAndScenesTask = CompletableFuture.runAsync(
+            () -> replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap), rerunPrepareExecutorService);
+        CompletableFuture batchUpdateStatusTask = CompletableFuture.runAsync(
+            () -> replayActionCaseItemRepository.batchUpdateStatus(failedCaseList), rerunPrepareExecutorService);
 
         List<ReplayActionItem> failedActionList = replayActionItems.stream()
             .filter(actionItem -> CollectionUtils.isNotEmpty(failedCaseMap.get(actionItem.getId())))
             .peek(actionItem -> {
                 actionItem.setParent(replayPlan);
                 actionItem.setCaseItemList(failedCaseMap.get(actionItem.getId()));
-                actionItem.setReplayStatus(ReplayStatusType.INIT.getValue());
                 ReplayParentBinder.setupCaseItemParent(actionItem.getCaseItemList(), actionItem);
-                replayPlanActionRepository.update(actionItem);
-                replayReportService.pushActionStatus(actionItem.getPlanId(), ReplayStatusType.INIT,
-                    actionItem.getId(), null, true);
             }).collect(Collectors.toList());
-        replayActionItemPreprocessService.filterActionItem(failedActionList, replayPlan.getAppId());
+
+        CompletableFuture filterActionItemTask = CompletableFuture.runAsync(
+            () -> replayActionItemPreprocessService.filterActionItem(failedActionList, replayPlan.getAppId()),
+            rerunPrepareExecutorService);
+
+        CompletableFuture.allOf(removeRecordsAndScenesTask, batchUpdateStatusTask, filterActionItemTask).join();
         replayPlan.setReplayActionItemList(failedActionList);
     }
 
@@ -222,6 +238,7 @@ public class PlanConsumePrepareService {
             appServiceDescriptor.setTargetActiveInstanceList(activeInstanceList);
 
             planContext.fillReplayAction(actionItem, operationDescriptor);
+            replayPlan.setMinInstanceCount(planContext.determineMinInstanceCount());
         }
     }
 }
