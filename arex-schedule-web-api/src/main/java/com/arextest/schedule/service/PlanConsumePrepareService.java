@@ -20,7 +20,6 @@ import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.utils.ReplayParentBinder;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -32,8 +31,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.stream.Collectors;
 
 /**
@@ -65,6 +62,8 @@ public class PlanConsumePrepareService {
     private PlanContextCreator planContextCreator;
     @Resource
     private DeployedEnvironmentService deployedEnvironmentService;
+    @Resource
+    private ExecutorService rerunPrepareExecutorService;
 
     public int prepareRunData(ReplayPlan replayPlan) {
         metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
@@ -185,13 +184,6 @@ public class PlanConsumePrepareService {
 
 
     public void updateFailedActionAndCase(ReplayPlan replayPlan, List<ReplayActionCaseItem> failedCaseList) {
-        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("replay-rerun-prepare-%d")
-            .setDaemon(true)
-            .setUncaughtExceptionHandler((t, e) -> {
-                LOGGER.error("uncaughtException {} ,error :{}", t.getName(), e.getMessage(), e);
-            })
-            .build();
-        ExecutorService executorService = Executors.newFixedThreadPool(5, threadFactory);
         List<ReplayActionItem> replayActionItems = replayPlanActionRepository.queryPlanActionList(replayPlan.getId());
 
         replayPlan.setReRunCaseCount(failedCaseList.size());
@@ -209,9 +201,9 @@ public class PlanConsumePrepareService {
 
 
         CompletableFuture removeRecordsAndScenesTask = CompletableFuture.runAsync(
-            () -> replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap), executorService);
+            () -> replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap), rerunPrepareExecutorService);
         CompletableFuture batchUpdateStatusTask = CompletableFuture.runAsync(
-            () -> replayActionCaseItemRepository.batchUpdateStatus(failedCaseList), executorService);
+            () -> replayActionCaseItemRepository.batchUpdateStatus(failedCaseList), rerunPrepareExecutorService);
 
         List<ReplayActionItem> failedActionList = replayActionItems.stream()
             .filter(actionItem -> CollectionUtils.isNotEmpty(failedCaseMap.get(actionItem.getId())))
@@ -223,10 +215,9 @@ public class PlanConsumePrepareService {
 
         CompletableFuture filterActionItemTask = CompletableFuture.runAsync(
             () -> replayActionItemPreprocessService.filterActionItem(failedActionList, replayPlan.getAppId()),
-            executorService);
+            rerunPrepareExecutorService);
 
         CompletableFuture.allOf(removeRecordsAndScenesTask, batchUpdateStatusTask, filterActionItemTask).join();
-        executorService.shutdown();
         replayPlan.setReplayActionItemList(failedActionList);
     }
 
