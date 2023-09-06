@@ -11,7 +11,7 @@
     </parent>
 
     <artifactId>arex-schedule-extension</artifactId>
-    <version>1.0.33.1</version>
+    <version>1.0.34.4</version>
     <name>${project.groupId}:${project.artifactId}</name>
 
     <dependencies>

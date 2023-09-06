@@ -161,9 +161,9 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         return updateResult.getModifiedCount() > 0;
     }
 
-    public Void batchUpdateStatus(List<ReplayActionCaseItem> replayActionCaseItemList) {
+    public void batchUpdateStatus(List<ReplayActionCaseItem> replayActionCaseItemList) {
         if (CollectionUtils.isEmpty(replayActionCaseItemList)) {
-            return null;
+            return;
         }
         BulkOperations bulkOperations =
             mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, ReplayRunDetailsCollection.class);
@@ -176,7 +176,6 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
             updates.add(Pair.of(query, update));
         }
         bulkOperations.updateMulti(updates).execute();
-        return null;
     }
 
     public ReplayActionCaseItem lastOne(String planItemId) {

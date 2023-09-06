@@ -202,8 +202,6 @@ public class PlanConsumePrepareService {
         executorService.submit(() -> replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap));
         executorService.submit(() -> replayActionCaseItemRepository.batchUpdateStatus(failedCaseList));
 
-        replayActionCaseItemRepository.batchUpdateStatus(failedCaseList);
-
         List<ReplayActionItem> failedActionList = replayActionItems.stream()
             .filter(actionItem -> CollectionUtils.isNotEmpty(failedCaseMap.get(actionItem.getId())))
             .peek(actionItem -> {
