@@ -20,6 +20,7 @@ import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.utils.ReplayParentBinder;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -29,11 +30,10 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadFactory;
 import java.util.stream.Collectors;
 
 /**
@@ -184,9 +184,14 @@ public class PlanConsumePrepareService {
     }
 
 
-    public void updateFailedActionAndCase(ReplayPlan replayPlan, List<ReplayActionCaseItem> failedCaseList)
-        throws ExecutionException, InterruptedException {
-        ExecutorService executorService = Executors.newFixedThreadPool(5);
+    public void updateFailedActionAndCase(ReplayPlan replayPlan, List<ReplayActionCaseItem> failedCaseList) {
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("replay-rerun-prepare-%d")
+            .setDaemon(true)
+            .setUncaughtExceptionHandler((t, e) -> {
+                LOGGER.error("uncaughtException {} ,error :{}", t.getName(), e.getMessage(), e);
+            })
+            .build();
+        ExecutorService executorService = Executors.newFixedThreadPool(5, threadFactory);
         List<ReplayActionItem> replayActionItems = replayPlanActionRepository.queryPlanActionList(replayPlan.getId());
 
         replayPlan.setReRunCaseCount(failedCaseList.size());
@@ -201,8 +206,12 @@ public class PlanConsumePrepareService {
         Map<String, List<String>> actionIdAndRecordIdsMap = failedCaseMap.entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream()
                 .map(ReplayActionCaseItem::getRecordId).collect(Collectors.toList())));
-        executorService.submit(() -> replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap));
-        executorService.submit(() -> replayActionCaseItemRepository.batchUpdateStatus(failedCaseList));
+
+
+        CompletableFuture removeRecordsAndScenesTask = CompletableFuture.runAsync(
+            () -> replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap), executorService);
+        CompletableFuture batchUpdateStatusTask = CompletableFuture.runAsync(
+            () -> replayActionCaseItemRepository.batchUpdateStatus(failedCaseList), executorService);
 
         List<ReplayActionItem> failedActionList = replayActionItems.stream()
             .filter(actionItem -> CollectionUtils.isNotEmpty(failedCaseMap.get(actionItem.getId())))
@@ -212,13 +221,12 @@ public class PlanConsumePrepareService {
                 ReplayParentBinder.setupCaseItemParent(actionItem.getCaseItemList(), actionItem);
             }).collect(Collectors.toList());
 
-        Future future = executorService.submit(
-            () -> replayActionItemPreprocessService.filterActionItem(failedActionList, replayPlan.getAppId()));
+        CompletableFuture filterActionItemTask = CompletableFuture.runAsync(
+            () -> replayActionItemPreprocessService.filterActionItem(failedActionList, replayPlan.getAppId()),
+            executorService);
 
-        future.get();
-        if (!executorService.awaitTermination(2000, TimeUnit.MILLISECONDS)) {
-            LOGGER.warn("updateFailedActionAndCase executor timeout, planId:{}", replayPlan.getId());
-        }
+        CompletableFuture.allOf(removeRecordsAndScenesTask, batchUpdateStatusTask, filterActionItemTask).join();
+        executorService.shutdown();
         replayPlan.setReplayActionItemList(failedActionList);
     }
 
