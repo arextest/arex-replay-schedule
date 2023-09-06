@@ -5,7 +5,15 @@ import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
-import com.arextest.schedule.model.*;
+import com.arextest.schedule.model.AppServiceDescriptor;
+import com.arextest.schedule.model.AppServiceOperationDescriptor;
+import com.arextest.schedule.model.CaseSendStatusType;
+import com.arextest.schedule.model.CompareProcessStatusType;
+import com.arextest.schedule.model.LogType;
+import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
@@ -21,6 +29,10 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 /**
@@ -172,6 +184,7 @@ public class PlanConsumePrepareService {
 
 
     public void updateFailedActionAndCase(ReplayPlan replayPlan, List<ReplayActionCaseItem> failedCaseList) {
+        ExecutorService executorService = Executors.newFixedThreadPool(5);
         List<ReplayActionItem> replayActionItems = replayPlanActionRepository.queryPlanActionList(replayPlan.getId());
 
         replayPlan.setReRunCaseCount(failedCaseList.size());
@@ -186,7 +199,8 @@ public class PlanConsumePrepareService {
         Map<String, List<String>> actionIdAndRecordIdsMap = failedCaseMap.entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream()
                 .map(ReplayActionCaseItem::getRecordId).collect(Collectors.toList())));
-        replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap);
+        executorService.submit(() -> replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap));
+        executorService.submit(() -> replayActionCaseItemRepository.batchUpdateStatus(failedCaseList));
 
         replayActionCaseItemRepository.batchUpdateStatus(failedCaseList);
 
@@ -195,13 +209,18 @@ public class PlanConsumePrepareService {
             .peek(actionItem -> {
                 actionItem.setParent(replayPlan);
                 actionItem.setCaseItemList(failedCaseMap.get(actionItem.getId()));
-                actionItem.setReplayStatus(ReplayStatusType.INIT.getValue());
                 ReplayParentBinder.setupCaseItemParent(actionItem.getCaseItemList(), actionItem);
-                replayPlanActionRepository.update(actionItem);
-                replayReportService.pushActionStatus(actionItem.getPlanId(), ReplayStatusType.INIT,
-                    actionItem.getId(), null, true);
             }).collect(Collectors.toList());
-        replayActionItemPreprocessService.filterActionItem(failedActionList, replayPlan.getAppId());
+
+        Future future = executorService.submit(
+            () -> replayActionItemPreprocessService.filterActionItem(failedActionList, replayPlan.getAppId()));
+
+        try {
+            future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+        executorService.shutdown();
         replayPlan.setReplayActionItemList(failedActionList);
     }
 
@@ -222,6 +241,7 @@ public class PlanConsumePrepareService {
             appServiceDescriptor.setTargetActiveInstanceList(activeInstanceList);
 
             planContext.fillReplayAction(actionItem, operationDescriptor);
+            replayPlan.setMinInstanceCount(planContext.determineMinInstanceCount());
         }
     }
 }
