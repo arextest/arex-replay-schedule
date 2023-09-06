@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -215,7 +216,9 @@ public class PlanConsumePrepareService {
             () -> replayActionItemPreprocessService.filterActionItem(failedActionList, replayPlan.getAppId()));
 
         future.get();
-        executorService.shutdown();
+        if (!executorService.awaitTermination(2000, TimeUnit.MILLISECONDS)) {
+            LOGGER.warn("updateFailedActionAndCase executor timeout, planId:{}", replayPlan.getId());
+        }
         replayPlan.setReplayActionItemList(failedActionList);
     }
 
