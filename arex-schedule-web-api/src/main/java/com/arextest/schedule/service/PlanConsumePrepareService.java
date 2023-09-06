@@ -183,7 +183,8 @@ public class PlanConsumePrepareService {
     }
 
 
-    public void updateFailedActionAndCase(ReplayPlan replayPlan, List<ReplayActionCaseItem> failedCaseList) {
+    public void updateFailedActionAndCase(ReplayPlan replayPlan, List<ReplayActionCaseItem> failedCaseList)
+        throws ExecutionException, InterruptedException {
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         List<ReplayActionItem> replayActionItems = replayPlanActionRepository.queryPlanActionList(replayPlan.getId());
 
@@ -213,11 +214,7 @@ public class PlanConsumePrepareService {
         Future future = executorService.submit(
             () -> replayActionItemPreprocessService.filterActionItem(failedActionList, replayPlan.getAppId()));
 
-        try {
-            future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
+        future.get();
         executorService.shutdown();
         replayPlan.setReplayActionItemList(failedActionList);
     }
