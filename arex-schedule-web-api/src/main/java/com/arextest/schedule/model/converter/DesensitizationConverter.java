@@ -1,10 +1,10 @@
 package com.arextest.schedule.model.converter;
 
+import com.arextest.common.utils.CompressionUtils;
 import com.arextest.extension.desensitization.DataDesensitization;
 import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.Named;
 import org.springframework.beans.factory.annotation.Autowired;
-import com.arextest.common.utils.SerializationUtils;
 
 @Slf4j
 public abstract class DesensitizationConverter {
@@ -33,12 +33,12 @@ public abstract class DesensitizationConverter {
 
     @Named("compress")
     String compress(String decompressString) {
-        return SerializationUtils.useZstdSerializeToBase64(decompressString);
+        return CompressionUtils.useZstdCompress(decompressString);
     }
 
     @Named("decompress")
     String decompress(String compressString) {
-        return SerializationUtils.useZstdDeserialize(compressString, String.class);
+        return CompressionUtils.useZstdDecompress(compressString);
     }
 
     @Named("compressAndEncrypt")
