@@ -25,11 +25,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
@@ -79,9 +76,7 @@ public final class PlanConsumeService {
             // limiter shared for entire plan, max qps = maxQps per instance * min instance count
             final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(replayPlan.getReplaySendMaxQps(),
                 replayPlan.getMinInstanceCount());
-            qpsLimiter.setTotalTasks(replayPlan.isReRun()
-                ? replayPlan.getReRunCaseCount()
-                : replayPlan.getCaseTotalCount());
+            qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
             qpsLimiter.setReplayPlan(replayPlan);
             replayPlan.setPlanStatus(ExecutionStatus.buildNormal(qpsLimiter));
             replayPlan.setLimiter(qpsLimiter);
@@ -98,18 +93,14 @@ public final class PlanConsumeService {
 
                 // init limiter, monitor
                 this.init();
-
-                // prepare cases to send
-                if (!replayPlan.isReRun()) {
-                    start = System.currentTimeMillis();
-                    progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.ONGOING,
-                        start, null, null);
-                    int planSavedCaseSize = planConsumePrepareService.prepareRunData(replayPlan);
-                    end = System.currentTimeMillis();
-                    progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.SUCCEEDED,
-                        null, end, null);
-                    BizLogger.recordPlanCaseSaved(replayPlan, planSavedCaseSize, end - start);
-                }
+                start = System.currentTimeMillis();
+                progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.ONGOING,
+                    start, null, null);
+                int planSavedCaseSize = planConsumePrepareService.prepareRunData(replayPlan);
+                end = System.currentTimeMillis();
+                progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.SUCCEEDED,
+                    null, end, null);
+                BizLogger.recordPlanCaseSaved(replayPlan, planSavedCaseSize, end - start);
 
 
                 // build context to send
@@ -159,6 +150,7 @@ public final class PlanConsumeService {
         long end;
         progressTracer.initTotal(replayPlan);
         if (replayPlan.isReRun()) {
+            // correct counter
             progressTracer.reRunPlan(replayPlan);
         }
         int index = 0, total = replayPlan.getExecutionContexts().size();
@@ -222,34 +214,17 @@ public final class PlanConsumeService {
 
         int contextCount = 0;
         List<ReplayActionCaseItem> caseItems = Collections.emptyList();
-        Map<String, List<ReplayActionCaseItem>> caseItemsMap = new HashMap<>();
-        if (replayPlan.isReRun()) {
-            replayPlan.getReplayActionItemList().stream()
-                .flatMap(replayActionCase -> replayActionCase.getCaseItemList().stream())
-                .forEach(replayActionCaseItem -> {
-                    String identifier = replayActionCaseItem.getContextIdentifier();
-                    List<ReplayActionCaseItem> replayActionCaseItems = caseItemsMap.getOrDefault(identifier,
-                        new ArrayList<>());
-                    replayActionCaseItems.add(replayActionCaseItem);
-                    caseItemsMap.put(identifier, replayActionCaseItems);
-                });
-        }
         while (true) {
             // checkpoint: before sending page of cases
             if (executionStatus.isAbnormal()) {
                 break;
             }
-            if (replayPlan.isReRun()) {
-                String contextIdentify = executionContext.getContextIdentifier();
-                caseItems = getReplayActionCaseListPages(CommonConstant.MAX_PAGE_SIZE, contextCount,
-                    caseItemsMap.get(contextIdentify));
-            } else {
-                ReplayActionCaseItem lastItem = CollectionUtils.isNotEmpty(caseItems) ? caseItems.get(caseItems.size() - 1) : null;
-                caseItems = replayActionCaseItemRepository.waitingSendList(replayPlan.getId(),
-                    CommonConstant.MAX_PAGE_SIZE,
-                    executionContext.getContextCaseQuery(),
-                    Optional.ofNullable(lastItem).map(ReplayActionCaseItem::getId).orElse(null));
-            }
+            ReplayActionCaseItem lastItem = CollectionUtils.isNotEmpty(caseItems) ? caseItems.get(caseItems.size() - 1) : null;
+            caseItems = replayActionCaseItemRepository.waitingSendList(replayPlan.getId(),
+                CommonConstant.MAX_PAGE_SIZE,
+                executionContext.getContextCaseQuery(),
+                Optional.ofNullable(lastItem).map(ReplayActionCaseItem::getId).orElse(null));
+
 
             if (CollectionUtils.isEmpty(caseItems)) {
                 break;
@@ -259,19 +234,6 @@ public final class PlanConsumeService {
             replayCaseTransmitService.send(caseItems, executionContext);
         }
         BizLogger.recordContextProcessedNormal(executionContext, contextCount);
-    }
-
-    List<ReplayActionCaseItem> getReplayActionCaseListPages(int pageSize, int startIndex,
-                                                            List<ReplayActionCaseItem> caseItemList) {
-        List<ReplayActionCaseItem> replayActionCaseItemListPage = new ArrayList<>();
-        if (CollectionUtils.isEmpty(caseItemList)) {
-            return replayActionCaseItemListPage;
-        }
-        int endIndex = Math.min(startIndex + pageSize, caseItemList.size());
-        for (int i = startIndex; i < endIndex; i++) {
-            replayActionCaseItemListPage.add(caseItemList.get(i));
-        }
-        return replayActionCaseItemListPage;
     }
 
     private void finalizePlanStatus(ReplayPlan replayPlan) {

@@ -69,7 +69,10 @@ public class PlanConsumePrepareService {
         metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
             System.currentTimeMillis() - replayPlan.getPlanCreateMillis());
         int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());
-        if (planSavedCaseSize != replayPlan.getCaseTotalCount()) {
+        if (replayPlan.isReRun()) {
+            replayPlan.setReRunCaseCount(planSavedCaseSize);
+        }
+        else if (planSavedCaseSize != replayPlan.getCaseTotalCount()) {
             LOGGER.info("update the plan TotalCount, plan id:{} ,appId: {} , size: {} -> {}", replayPlan.getId(),
                 replayPlan.getAppId(), replayPlan.getCaseTotalCount(), planSavedCaseSize);
             replayPlan.setCaseTotalCount(planSavedCaseSize);
@@ -97,7 +100,9 @@ public class PlanConsumePrepareService {
             BizLogger.recordActionItemCaseSaved(replayActionItem, actionSavedCount, end - start);
 
             planSavedCaseSize += actionSavedCount;
-            if (preloaded != actionSavedCount) {
+            if (replayActionItem.getParent().isReRun()) {
+                replayActionItem.setRerunCaseCount(actionSavedCount);
+            } else if (preloaded != actionSavedCount) {
                 replayActionItem.setReplayCaseCount(actionSavedCount);
                 LOGGER.warn("The saved case size of actionItem not equals, preloaded size:{},saved size:{}", preloaded,
                     actionSavedCount);
@@ -178,15 +183,15 @@ public class PlanConsumePrepareService {
         }
         ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
         caseItemPostProcess(caseItemList);
-        replayActionCaseItemRepository.save(caseItemList);
+        if (!replayActionItem.getParent().isReRun()) {
+            replayActionCaseItemRepository.save(caseItemList);
+        }
         return size;
     }
 
 
     public void updateFailedActionAndCase(ReplayPlan replayPlan, List<ReplayActionCaseItem> failedCaseList) {
         List<ReplayActionItem> replayActionItems = replayPlanActionRepository.queryPlanActionList(replayPlan.getId());
-
-        replayPlan.setReRunCaseCount(failedCaseList.size());
 
         Map<String, List<ReplayActionCaseItem>> failedCaseMap = failedCaseList.stream()
             .peek(caseItem -> {
@@ -195,30 +200,34 @@ public class PlanConsumePrepareService {
             })
             .collect(Collectors.groupingBy(ReplayActionCaseItem::getPlanItemId));
 
-        Map<String, List<String>> actionIdAndRecordIdsMap = failedCaseMap.entrySet().stream()
-            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream()
-                .map(ReplayActionCaseItem::getRecordId).collect(Collectors.toList())));
-
-
-        CompletableFuture removeRecordsAndScenesTask = CompletableFuture.runAsync(
-            () -> replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap), rerunPrepareExecutorService);
-        CompletableFuture batchUpdateStatusTask = CompletableFuture.runAsync(
-            () -> replayActionCaseItemRepository.batchUpdateStatus(failedCaseList), rerunPrepareExecutorService);
-
         List<ReplayActionItem> failedActionList = replayActionItems.stream()
             .filter(actionItem -> CollectionUtils.isNotEmpty(failedCaseMap.get(actionItem.getId())))
             .peek(actionItem -> {
                 actionItem.setParent(replayPlan);
                 actionItem.setCaseItemList(failedCaseMap.get(actionItem.getId()));
+                actionItem.setReplayStatus(ReplayStatusType.INIT.getValue());
                 ReplayParentBinder.setupCaseItemParent(actionItem.getCaseItemList(), actionItem);
             }).collect(Collectors.toList());
-
-        CompletableFuture filterActionItemTask = CompletableFuture.runAsync(
-            () -> replayActionItemPreprocessService.filterActionItem(failedActionList, replayPlan.getAppId()),
-            rerunPrepareExecutorService);
-
-        CompletableFuture.allOf(removeRecordsAndScenesTask, batchUpdateStatusTask, filterActionItemTask).join();
         replayPlan.setReplayActionItemList(failedActionList);
+        doResumeOperationDescriptor(replayPlan);
+        replayActionItemPreprocessService.filterActionItem(replayPlan.getReplayActionItemList(), replayPlan.getAppId());
+        Set<String> availableActionIds = replayPlan.getReplayActionItemList().stream()
+            .map(ReplayActionItem::getId).collect(Collectors.toSet());
+
+        // After filter actionItem, update related ReplayActionCaseItems
+        Map<String, List<String>> actionIdAndRecordIdsMap = failedCaseMap.entrySet().stream()
+            .filter(entry -> availableActionIds.contains(entry.getKey()))
+            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream()
+                .map(ReplayActionCaseItem::getRecordId).collect(Collectors.toList())));
+        List<ReplayActionCaseItem> newFailedCaseList = failedCaseList.stream()
+            .filter(replayActionCaseItem -> availableActionIds.contains(replayActionCaseItem.getPlanItemId()))
+            .collect(Collectors.toList());
+        CompletableFuture removeRecordsAndScenesTask = CompletableFuture.runAsync(
+            () -> replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap), rerunPrepareExecutorService);
+        CompletableFuture batchUpdateStatusTask = CompletableFuture.runAsync(
+            () -> replayActionCaseItemRepository.batchUpdateStatus(newFailedCaseList), rerunPrepareExecutorService);
+        CompletableFuture.allOf(removeRecordsAndScenesTask, batchUpdateStatusTask).join();
+        replayPlan.setReRunCaseCount(newFailedCaseList.size());
     }
 
     public void doResumeOperationDescriptor(ReplayPlan replayPlan) {

@@ -69,6 +69,7 @@ public class ReplayActionItem {
     @JsonIgnore
     private ServiceInstanceOperation mappedInstanceOperation;
     private int replayCaseCount;
+    private int rerunCaseCount;
     private String appId;
     private Set<String> operationTypes;
     /**

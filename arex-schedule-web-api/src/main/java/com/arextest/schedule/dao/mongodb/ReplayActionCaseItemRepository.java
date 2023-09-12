@@ -10,6 +10,7 @@ import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
 import com.mongodb.client.result.UpdateResult;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.annotation.Id;
@@ -22,7 +23,6 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
@@ -205,20 +205,8 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
                 ReplayRunDetailsCollection.class, String.class));
     }
 
-    public Set<String> getAllContextIdentifiers(List<String> caseIds) {
-        Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_ID).in(caseIds));
-        return new HashSet<>(mongoTemplate.findDistinct(query, ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER,
-                ReplayRunDetailsCollection.class, String.class));
-    }
-
     public boolean hasNullIdentifier(String planId) {
         Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
-        query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).isNull());
-        return mongoTemplate.exists(query, ReplayRunDetailsCollection.class);
-    }
-
-    public boolean hasNullIdentifier(List<String> caseIds) {
-        Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_ID).in(caseIds));
         query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).isNull());
         return mongoTemplate.exists(query, ReplayRunDetailsCollection.class);
     }
