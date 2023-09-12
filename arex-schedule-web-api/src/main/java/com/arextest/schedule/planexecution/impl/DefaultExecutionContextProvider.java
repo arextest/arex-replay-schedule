@@ -16,17 +16,20 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.retry.support.RetryTemplate;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Created by Qzmo on 2023/5/15
- *
+ * <p>
  * Default implementation illustrating functionalities of execution context
  */
 @Slf4j
@@ -46,21 +49,9 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
 
     @Override
     public List<PlanExecutionContext<ContextDependenciesHolder>> buildContext(ReplayPlan plan) {
-        boolean caseLoaded = BooleanUtils.isTrue(plan.isReRun());
-
-        List<String> caseIds = plan.getReplayActionItemList().stream()
-            .filter(replayActionItem -> replayActionItem.getCaseItemList() != null)
-            .flatMap(replayActionCase -> replayActionCase.getCaseItemList().stream())
-            .map(ReplayActionCaseItem::getId)
-            .collect(Collectors.toList());
-
-        Set<String> distinctIdentifiers = caseLoaded
-            ? replayActionCaseItemRepository.getAllContextIdentifiers(caseIds)
-            : replayActionCaseItemRepository.getAllContextIdentifiers(plan.getId());
+        Set<String> distinctIdentifiers = replayActionCaseItemRepository.getAllContextIdentifiers(plan.getId());
         List<PlanExecutionContext<ContextDependenciesHolder>> contexts = new ArrayList<>();
-        boolean hasNullIdentifier = caseLoaded
-            ? replayActionCaseItemRepository.hasNullIdentifier(caseIds)
-            : replayActionCaseItemRepository.hasNullIdentifier(plan.getId());
+        boolean hasNullIdentifier = replayActionCaseItemRepository.hasNullIdentifier(plan.getId());
         if (hasNullIdentifier) {
             // build context for null identifier, will skip before hook for this context
             PlanExecutionContext<ContextDependenciesHolder> context = new PlanExecutionContext<>();
@@ -73,8 +64,6 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
 
             context.setContextCaseQuery(Collections.singletonList(
                     Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).isNull()));
-
-            context.setContextIdentifier(null);
             contexts.add(context);
         }
 
@@ -91,7 +80,6 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
             // set up query for cases of this context
             context.setContextCaseQuery(Collections.singletonList(
                     Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).is(identifier)));
-            context.setContextIdentifier(identifier);
             contexts.add(context);
         });
 

@@ -196,7 +196,7 @@ final class RedisProgressTracerImpl implements ProgressTracer {
             doWithRetry(() -> redisCacheProvider.decrValueBy(toPlanFinishKeyBytes(planId), replayPlan.getReRunCaseCount()));
             replayPlan.getReplayActionItemList().forEach(replayActionItem ->
                 doWithRetry(() -> redisCacheProvider.incrValueBy(toPlanActionTotalKeyBytes(replayActionItem.getId()),
-                replayActionItem.getCaseItemList().size())));
+                replayActionItem.getRerunCaseCount())));
         } catch (Throwable throwable) {
             LOGGER.error("reRunPlan decrValue error!msg: {} ,plan id: {}, error:{}", throwable.getMessage(), planId,
                 throwable);

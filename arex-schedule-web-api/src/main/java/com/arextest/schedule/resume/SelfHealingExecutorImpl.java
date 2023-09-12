@@ -75,8 +75,7 @@ public class SelfHealingExecutorImpl implements SelfHealingExecutor {
     }
 
     public List<ReplayPlan> queryTimeoutPlan(Duration offsetDuration, Duration maxDuration) {
-        return replayPlanRepository.timeoutPlanList(offsetDuration, maxDuration).stream()
-            .filter(plan -> !plan.isReRun()).collect(Collectors.toList());
+        return replayPlanRepository.timeoutPlanList(offsetDuration, maxDuration);
     }
 
     public void doResume(ReplayPlan replayPlan) {

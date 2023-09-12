@@ -26,7 +26,4 @@ public class PlanExecutionContext<T> {
 
     @JsonIgnore
     private T dependencies;
-
-    @JsonIgnore
-    private String contextIdentifier;
 }

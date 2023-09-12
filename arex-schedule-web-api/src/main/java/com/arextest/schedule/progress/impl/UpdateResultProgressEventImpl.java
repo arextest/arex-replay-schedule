@@ -47,6 +47,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     @Override
     public void onReplayPlanReRunException(ReplayPlan plan, Throwable t) {
         replayReportService.pushPlanStatus(plan.getId(), ReplayStatusType.FAIL_INTERRUPTED, t.getMessage(), true);
+        redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(plan.getId()));
     }
 
     @Override
