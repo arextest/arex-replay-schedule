@@ -20,6 +20,8 @@
                       connection="${sys:mongo.uri}"
             />
         </NoSql>
+        <PrometheusAppender name="Prometheus" project="arex-schedule">
+        </PrometheusAppender>
     </Appenders>
 
     <Loggers>
@@ -28,6 +30,7 @@
         </Root>
         <Logger name="com.arextest.schedule" level="INFO">
             <AppenderRef ref="Mongo4"/>
+            <AppenderRef ref="Prometheus"/>
         </Logger>
     </Loggers>
 </Configuration>
