@@ -147,7 +147,7 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
         return dubboParameters;
     }
 
-    private List<String> toParameterTypes(String type) {
+    public List<String> toParameterTypes(String type) {
         List<String> parameterTypes = new ArrayList<>();
         if (StringUtils.isNotEmpty(type)) {
             JSONArray array = null;
@@ -163,7 +163,7 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
         return parameterTypes;
     }
 
-    private List<Object> toParameters(String body, String type) {
+    public List<Object> toParameters(String body, String type) {
         List<Object> parameters = new ArrayList<>();
         if (StringUtils.isNotEmpty(body)) {
             JSONArray array = null;
