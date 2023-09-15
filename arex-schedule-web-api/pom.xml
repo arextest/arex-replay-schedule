@@ -6,11 +6,11 @@
     <parent>
         <groupId>com.arextest</groupId>
         <artifactId>arex-schedule-parent</artifactId>
-        <version>1.0.38.2</version>
+        <version>1.0.38.3</version>
     </parent>
     <packaging>${packagingType}</packaging>
     <artifactId>arex-schedule-web-api</artifactId>
-    <version>1.0.38.2</version>
+    <version>1.0.38.3</version>
 
 
     <name>${project.groupId}:${project.artifactId}</name>
