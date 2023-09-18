@@ -19,7 +19,6 @@ public class CheckHealthController {
     @GetMapping(value = "/health", produces = "application/json")
     @ResponseBody
     public Response checkHealth() {
-        LOGGER.error("test schedule error checkHealth");
         return ResponseUtils.successResponse(true);
     }
 }
