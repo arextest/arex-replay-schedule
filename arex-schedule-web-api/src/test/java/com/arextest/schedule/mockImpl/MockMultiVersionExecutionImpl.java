@@ -38,7 +38,7 @@ public class MockMultiVersionExecutionImpl implements PlanExecutionContextProvid
             singletonContext.setDependencies(dependencies);
 
             // set up base query for cases belonging to this context
-            Criteria dummyCriteria = Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).is(String.valueOf(i));
+            Criteria dummyCriteria = Criteria.where(ReplayActionCaseItem.Fields.contextIdentifier).is(String.valueOf(i));
             singletonContext.setContextCaseQuery(Collections.singletonList(dummyCriteria));
             contexts.add(singletonContext);
         }

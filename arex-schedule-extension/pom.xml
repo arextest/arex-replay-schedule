@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.arextest</groupId>
         <artifactId>arex-schedule-parent</artifactId>
-        <version>1.0.34.4</version>
+        <version>1.0.38.3</version>
     </parent>
 
     <artifactId>arex-schedule-extension</artifactId>

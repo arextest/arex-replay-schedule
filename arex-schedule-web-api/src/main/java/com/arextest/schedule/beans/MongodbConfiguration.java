@@ -66,13 +66,13 @@ public class MongodbConfiguration {
     private void ensureIndex(MongoDatabase db) {
         Document index = new Document();
         // run details
-        index.append(ReplayRunDetailsCollection.FIELD_PLAN_ID, 1);
-        index.append(ReplayRunDetailsCollection.FIELD_SEND_STATUS, 1);
+        index.append(ReplayRunDetailsCollection.Fields.planId, 1);
+        index.append(ReplayRunDetailsCollection.Fields.sendStatus, 1);
         db.getCollection(ReplayRunDetailsCollection.COLLECTION_NAME).createIndex(index);
 
         // biz log
         index = new Document();
-        index.append(BizLog.FIELD_PLAN_ID, 1);
+        index.append(BizLog.Fields.planId, 1);
         db.getCollection(ReplayBizLogCollection.COLLECTION_NAME).createIndex(index);
     }
 

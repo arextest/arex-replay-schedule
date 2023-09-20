@@ -38,8 +38,8 @@ public class ReplayCompareResultRepositoryImpl implements RepositoryWriter<Repla
 
     public boolean deleteByRecord(String recordId, String planItemId) {
         Query query = new Query();
-        query.addCriteria(Criteria.where(ReplayCompareResult.FIELD_RECORD_ID).is(recordId)
-                .and(ReplayCompareResult.FIELD_PLAN_ITEM_ID).is(planItemId));
+        query.addCriteria(Criteria.where(ReplayCompareResult.Fields.recordId).is(recordId)
+                .and(ReplayCompareResult.Fields.planItemId).is(planItemId));
         return mongoTemplate.remove(query, ReplayCompareResultCollection.class).getDeletedCount() > 0;
     }
 

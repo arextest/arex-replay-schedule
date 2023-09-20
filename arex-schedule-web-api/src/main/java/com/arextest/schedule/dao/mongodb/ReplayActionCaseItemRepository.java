@@ -83,8 +83,8 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
         Optional.ofNullable(baseCriteria).ifPresent(criteria -> criteria.forEach(query::addCriteria));
 
-        query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
-        query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue()));
+        query.addCriteria(Criteria.where(ReplayActionCaseItem.Fields.planId).is(planId));
+        query.addCriteria(Criteria.where(ReplayActionCaseItem.Fields.sendStatus).is(CaseSendStatusType.WAIT_HANDLING.getValue()));
         if (StringUtils.hasText(minId)) {
             query.addCriteria(Criteria.where(DASH_ID).gt(new ObjectId(minId)));
         }
@@ -99,15 +99,15 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
      */
     public List<ReplayActionCaseItem> failedCaseList(String planId) {
         Query query = new Query();
-        query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
+        query.addCriteria(Criteria.where(ReplayActionCaseItem.Fields.planId).is(planId));
         query.addCriteria(new Criteria().orOperator(
             new Criteria().andOperator(
-                Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).ne(CaseSendStatusType.WAIT_HANDLING.getValue()),
-                Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).ne(CaseSendStatusType.SUCCESS.getValue())
+                Criteria.where(ReplayActionCaseItem.Fields.sendStatus).ne(CaseSendStatusType.WAIT_HANDLING.getValue()),
+                Criteria.where(ReplayActionCaseItem.Fields.sendStatus).ne(CaseSendStatusType.SUCCESS.getValue())
             ),
             new Criteria().andOperator(
-                Criteria.where(ReplayActionCaseItem.FIELD_COMPARE_STATUS).ne(CompareProcessStatusType.WAIT_HANDLING.getValue()),
-                Criteria.where(ReplayActionCaseItem.FIELD_COMPARE_STATUS).ne(CompareProcessStatusType.PASS.getValue())
+                Criteria.where(ReplayActionCaseItem.Fields.compareStatus).ne(CompareProcessStatusType.WAIT_HANDLING.getValue()),
+                Criteria.where(ReplayActionCaseItem.Fields.compareStatus).ne(CompareProcessStatusType.PASS.getValue())
             )
         ));
 
@@ -122,9 +122,9 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
         Aggregation aggregation = Aggregation.newAggregation(
             Aggregation.match(criteria),
-            Aggregation.match(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId)),
-            Aggregation.match(Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).is(CaseSendStatusType.WAIT_HANDLING.getValue())),
-            Aggregation.group(ReplayActionCaseItem.FIELD_PLAN_ITEM_ID).count().as(COUNT_FIELD)
+            Aggregation.match(Criteria.where(ReplayActionCaseItem.Fields.planId).is(planId)),
+            Aggregation.match(Criteria.where(ReplayActionCaseItem.Fields.sendStatus).is(CaseSendStatusType.WAIT_HANDLING.getValue())),
+            Aggregation.group(ReplayActionCaseItem.Fields.planItemId).count().as(COUNT_FIELD)
         );
         List<GroupCountRes> aggRes = mongoTemplate.aggregate(aggregation, ReplayRunDetailsCollection.class, GroupCountRes.class).getMappedResults();
         Map<String, Long> res = new HashMap<>();
@@ -200,21 +200,21 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
     // region <context>
     public Set<String> getAllContextIdentifiers(String planId) {
-        Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
-        return new HashSet<>(mongoTemplate.findDistinct(query, ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER,
+        Query query = Query.query(Criteria.where(ReplayActionCaseItem.Fields.planId).is(planId));
+        return new HashSet<>(mongoTemplate.findDistinct(query, ReplayActionCaseItem.Fields.contextIdentifier,
                 ReplayRunDetailsCollection.class, String.class));
     }
 
     public boolean hasNullIdentifier(String planId) {
-        Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
-        query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).isNull());
+        Query query = Query.query(Criteria.where(ReplayActionCaseItem.Fields.planId).is(planId));
+        query.addCriteria(Criteria.where(ReplayActionCaseItem.Fields.contextIdentifier).isNull());
         return mongoTemplate.exists(query, ReplayRunDetailsCollection.class);
     }
 
     // get one mocker of the given context
     public ReplayActionCaseItem getOneOfContext(String planId, String contextIdentifier) {
-        Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
-        query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).is(contextIdentifier));
+        Query query = Query.query(Criteria.where(ReplayActionCaseItem.Fields.planId).is(planId));
+        query.addCriteria(Criteria.where(ReplayActionCaseItem.Fields.contextIdentifier).is(contextIdentifier));
         ReplayRunDetailsCollection replayRunDetailsCollection = mongoTemplate.findOne(query, ReplayRunDetailsCollection.class);
         return converter.dtoFromDao(replayRunDetailsCollection);
     }
