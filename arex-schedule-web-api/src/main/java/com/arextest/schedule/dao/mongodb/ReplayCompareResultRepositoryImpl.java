@@ -5,6 +5,7 @@ import com.arextest.schedule.model.ReplayCompareResult;
 import com.arextest.schedule.model.converter.ReplayCompareResultConverter;
 import com.arextest.schedule.model.dao.mongodb.ReplayCompareResultCollection;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -36,10 +37,13 @@ public class ReplayCompareResultRepositoryImpl implements RepositoryWriter<Repla
         return true;
     }
 
-    public boolean deleteByRecord(String recordId, String planItemId) {
+    public boolean batchDelete(List<String> recordIds, String planId) {
+        if (CollectionUtils.isEmpty(recordIds)) {
+            return false;
+        }
         Query query = new Query();
-        query.addCriteria(Criteria.where(ReplayCompareResult.FIELD_RECORD_ID).is(recordId)
-                .and(ReplayCompareResult.FIELD_PLAN_ITEM_ID).is(planItemId));
+        query.addCriteria(Criteria.where(ReplayCompareResult.FIELD_RECORD_ID).in(recordIds)
+            .and(ReplayCompareResult.FIELD_PLAN_ID).is(planId));
         return mongoTemplate.remove(query, ReplayCompareResultCollection.class).getDeletedCount() > 0;
     }
 

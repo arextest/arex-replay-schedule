@@ -3,6 +3,7 @@ package com.arextest.schedule.service;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
+import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.model.AppServiceDescriptor;
@@ -28,6 +29,8 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 /**
@@ -59,6 +62,10 @@ public class PlanConsumePrepareService {
     private PlanContextCreator planContextCreator;
     @Resource
     private DeployedEnvironmentService deployedEnvironmentService;
+    @Resource
+    private ExecutorService rerunPrepareExecutorService;
+    @Resource
+    private ReplayCompareResultRepositoryImpl replayCompareResultRepository;
 
     public int prepareRunData(ReplayPlan replayPlan) {
         metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
@@ -163,6 +170,7 @@ public class PlanConsumePrepareService {
     private int doFixedCaseSave(ReplayActionItem replayActionItem) {
         List<ReplayActionCaseItem> caseItemList = replayActionItem.getCaseItemList();
         int size = 0;
+        boolean rerun = replayActionItem.getParent().isReRun();
         for (int i = 0; i < caseItemList.size(); i++) {
             ReplayActionCaseItem caseItem = caseItemList.get(i);
             Set<String> operationTypes = caseItem.getParent().getOperationTypes();
@@ -172,10 +180,13 @@ public class PlanConsumePrepareService {
                 caseItem.setSourceResultId(StringUtils.EMPTY);
                 caseItem.setTargetResultId(StringUtils.EMPTY);
             } else {
-                viewReplay.setSendStatus(CaseSendStatusType.WAIT_HANDLING.getValue());
-                viewReplay.setCompareStatus(CaseSendStatusType.WAIT_HANDLING.getValue());
-                caseItemList.set(i, viewReplay);
                 size++;
+                if (rerun) {
+                    caseItem.setSendStatus(CaseSendStatusType.WAIT_HANDLING.getValue());
+                    caseItem.setCompareStatus(CaseSendStatusType.WAIT_HANDLING.getValue());
+                } else {
+                    caseItemList.set(i, viewReplay);
+                }
             }
         }
         ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
@@ -217,7 +228,13 @@ public class PlanConsumePrepareService {
         List<ReplayActionCaseItem> newFailedCaseList = failedCaseList.stream()
             .filter(replayActionCaseItem -> availableActionIds.contains(replayActionCaseItem.getPlanItemId()))
             .collect(Collectors.toList());
-        replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap);
+        CompletableFuture removeRecordsAndScenesTask = CompletableFuture.runAsync(
+            () -> replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap), rerunPrepareExecutorService);
+
+        List<String> recordIds = newFailedCaseList.stream().map(ReplayActionCaseItem::getRecordId).collect(Collectors.toList());
+        CompletableFuture deleteCompareResultTask = CompletableFuture.runAsync(
+            () -> replayCompareResultRepository.batchDelete(recordIds, replayPlan.getId()), rerunPrepareExecutorService);
+        CompletableFuture.allOf(removeRecordsAndScenesTask, deleteCompareResultTask).join();
 
         replayPlan.setReRunCaseCount(newFailedCaseList.size());
     }
