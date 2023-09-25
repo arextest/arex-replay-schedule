@@ -60,6 +60,9 @@ public class ReplayCaseTransmitService {
 
         prepareActionItems(caseItems);
 
+        // todo noise reduction, 异步多线程执行
+
+
         try {
             doSendValuesToRemoteHost(caseItems, executionStatus);
         } catch (Throwable throwable) {
@@ -73,13 +76,12 @@ public class ReplayCaseTransmitService {
                 .collect(Collectors.groupingBy(ReplayActionCaseItem::getParent));
 
         actionsOfBatch.forEach((actionItem, casesOfAction) -> {
-                    // warmUp should be done once for each endpoint
-                    if (!actionItem.isItemProcessed()) {
-                        actionItem.setItemProcessed(true);
-                        progressEvent.onActionBeforeSend(actionItem);
-                        // todo possible Jit warmup point
-                    }
-                });
+            // warmUp should be done once for each endpoint
+            if (!actionItem.isItemProcessed()) {
+                actionItem.setItemProcessed(true);
+                progressEvent.onActionBeforeSend(actionItem);
+            }
+        });
     }
 
     public void releaseCasesOfContext(ReplayPlan replayPlan, PlanExecutionContext<?> executionContext) {
