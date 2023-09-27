@@ -54,6 +54,13 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
         return null;
     }
 
+    @Override
+    public boolean send(ReplayActionCaseItem caseItem, Map<String, String> extraHeaders) {
+        Map<String, String> headers = createHeaders(caseItem);
+        headers.putAll(extraHeaders);
+        return doSend(caseItem, headers);
+    }
+
     DubboInvocation generateDubboInvocation(ReplayActionCaseItem caseItem, Map<String, String> headers) {
 
         ImmutablePair<String, String> interfaceNameAndMethod =
