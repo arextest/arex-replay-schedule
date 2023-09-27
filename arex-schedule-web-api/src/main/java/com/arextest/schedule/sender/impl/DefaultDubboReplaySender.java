@@ -92,6 +92,11 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
         if (replayInvokeResult == null) {
             return false;
         }
+
+        if (replayInvokeResult.getErrorMsg() != null) {
+            LOGGER.error("dubbo invoke error msg:{}", replayInvokeResult.getErrorMsg());
+        }
+
         ReplaySendResult targetSendResult = fromDubboResult(headers, dubboInvocation.getUrl(),
                 replayInvokeResult.getResult(), replayInvokeResult.getResponseProperties());
         caseItem.setSendErrorMessage(targetSendResult.getRemark());
