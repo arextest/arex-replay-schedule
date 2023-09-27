@@ -273,17 +273,17 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
                                                                 List<CategoryComparisonHolder> targetResultList) {
         for (CategoryComparisonHolder sourceResultHolder : sourceResult) {
             int targetIndex = findResultByCategory(targetResultList, sourceResultHolder.getCategoryName());
-            sourceResultHolder.setRecord(sourceResultHolder.getReplayResult());
+            sourceResultHolder.setReplayResult(sourceResultHolder.getReplayResult());
             if (targetIndex == INDEX_NOT_FOUND) {
                 continue;
             }
             CategoryComparisonHolder targetResult = targetResultList.get(targetIndex);
-            sourceResultHolder.setReplayResult(targetResult.getReplayResult());
+            sourceResultHolder.setRecord(targetResult.getReplayResult());
             targetResultList.remove(targetIndex);
         }
         if (CollectionUtils.isNotEmpty(targetResultList)) {
             for (CategoryComparisonHolder resultHolder : targetResultList) {
-                resultHolder.setRecord(Collections.emptyList());
+                resultHolder.setReplayResult(Collections.emptyList());
                 sourceResult.add(resultHolder);
             }
         }
