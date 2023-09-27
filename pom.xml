@@ -10,7 +10,7 @@
     </modules>
     <groupId>com.arextest</groupId>
     <artifactId>arex-schedule-parent</artifactId>
-    <version>1.0.38.3</version>
+    <version>1.0.38.4</version>
 
 
     <name>${project.groupId}:${project.artifactId}</name>
