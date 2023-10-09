@@ -144,7 +144,9 @@ public class PlanConsumePrepareService {
         }
         long endTimeMills = replayPlan.getCaseSourceTo().getTime();
         int totalSize = 0;
-        int caseCountLimit = replayActionItem.getOperationTypes() == null ? replayPlan.getCaseCountLimit() : replayPlan.getCaseCountLimit() * replayActionItem.getOperationTypes().size();
+        int caseCountLimit = replayActionItem.getOperationTypes() == null ?
+                replayPlan.getCaseCountLimit() :
+                replayPlan.getCaseCountLimit() * replayActionItem.getOperationTypes().size();
         int pageSize = Math.min(caseCountLimit, CommonConstant.MAX_PAGE_SIZE);
         while (beginTimeMills < endTimeMills) {
             List<ReplayActionCaseItem> caseItemList = caseRemoteLoadService.pagingLoad(beginTimeMills, endTimeMills,
