@@ -32,6 +32,13 @@ final class MockCachePreLoader {
     void fillMockSource(String replayId, int replayPlanType) {
         QueryMockCacheRequestType mockCacheRequestType = new QueryMockCacheRequestType();
         mockCacheRequestType.setRecordId(replayId);
+        // mixed replay plan need to preload auto pined case
+        if (replayPlanType == BuildReplayPlanType.MIXED.getValue()) {
+            // todo: remove this code after the new version of arex-agent is released
+            mockCacheRequestType.setSourceProvider(CommonConstant.AUTO_PINED);
+            httpWepServiceApiClient.jsonPost(cachePreloadUrl, mockCacheRequestType, QueryMockCacheResponseType.class);
+        }
+
         if (replayPlanType == BuildReplayPlanType.BY_PINNED_CASE.getValue()) {
             mockCacheRequestType.setSourceProvider(PINNED);
         }
