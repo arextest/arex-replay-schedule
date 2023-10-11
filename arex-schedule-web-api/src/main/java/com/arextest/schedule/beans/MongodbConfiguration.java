@@ -45,7 +45,7 @@ import java.util.List;
 @Slf4j
 @Configuration(proxyBeanMethods = false)
 public class MongodbConfiguration {
-    @Value("${mongo.uri}")
+    @Value("${arex.mongo.uri}")
     private String mongoUrl;
 
     @Bean
