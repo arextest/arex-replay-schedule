@@ -28,9 +28,9 @@ public class ReplayReportController {
     @Resource
     private QueryReplayMsgService queryReplayMsgService;
 
-    @AppAuth(rejectStrategy = AuthRejectStrategy.DOWNGRADE)
-    @GetMapping("/queryDiffMsgById/{id}")
     @ResponseBody
+    @GetMapping("/queryDiffMsgById/{id}")
+    @AppAuth(rejectStrategy = AuthRejectStrategy.DOWNGRADE)
     public Response queryDiffMsgById(@PathVariable String id) {
         return ResponseUtils.successResponse(queryReplayMsgService.queryDiffMsgById(id));
     }

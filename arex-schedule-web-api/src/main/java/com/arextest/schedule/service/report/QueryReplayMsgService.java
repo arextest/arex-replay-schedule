@@ -1,5 +1,7 @@
 package com.arextest.schedule.service.report;
 
+import com.arextest.common.context.ArexContext;
+import com.arextest.common.utils.JsonTraverseUtils;
 import com.arextest.diff.model.CompareOptions;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.model.log.LogEntity;
@@ -72,6 +74,16 @@ public class QueryReplayMsgService {
         CompareResultDetail compareResultDetail = replayCompareResultConverter.voFromBo(compareResultBo);
 
         fillCompareResultDetail(compareResultBo, compareResultDetail);
+
+        if (!Boolean.TRUE.equals(ArexContext.getContext().getPassAuth())) {
+            try {
+                compareResultDetail.setBaseMsg(JsonTraverseUtils.trimAllLeaves(compareResultBo.getBaseMsg()));
+                compareResultDetail.setTestMsg(JsonTraverseUtils.trimAllLeaves(compareResultBo.getTestMsg()));
+            } catch (Exception e) {
+                LOGGER.error("trimAllLeaves error", e);
+            }
+        }
+
         response.setCompareResultDetail(compareResultDetail);
         return response;
     }
