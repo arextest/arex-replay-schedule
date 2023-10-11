@@ -1,5 +1,6 @@
 package com.arextest.schedule.service;
 
+import com.arextest.common.context.ArexContext;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
@@ -65,12 +66,15 @@ public final class PlanConsumeService {
 
     private final class ReplayActionLoadingRunnableImpl extends AbstractTracedRunnable {
         private final ReplayPlan replayPlan;
+        private final ArexContext arexContext;
 
         private ReplayActionLoadingRunnableImpl(ReplayPlan replayPlan) {
             this.replayPlan = replayPlan;
+            this.arexContext = ArexContext.getContext();
         }
 
         private void init() {
+            copyArexContext();
             compareConfigService.preload(replayPlan);
 
             // limiter shared for entire plan, max qps = maxQps per instance * min instance count
@@ -139,9 +143,18 @@ public final class PlanConsumeService {
                 throw t;
             } finally {
                 planExecutionMonitorImpl.deregister(replayPlan);
+                ArexContext.removeContext();
             }
         }
+
+        private void copyArexContext() {
+            ArexContext newContext = ArexContext.getContext();
+            newContext.setOperator(this.arexContext.getOperator());
+            newContext.setPassAuth(this.arexContext.getPassAuth());
+            newContext.setAppId(this.arexContext.getAppId());
+        }
     }
+
 
     private void consumePlan(ReplayPlan replayPlan) {
         ExecutionStatus executionStatus = replayPlan.getPlanStatus();

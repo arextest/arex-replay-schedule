@@ -3,24 +3,23 @@ package com.arextest.schedule.aspect;
 import com.arextest.common.annotation.AppAuth;
 import com.arextest.common.context.ArexContext;
 import com.arextest.common.model.response.ResponseCode;
+import com.arextest.common.model.response.ResponseStatusType;
 import com.arextest.common.utils.JwtUtil;
-import com.arextest.common.utils.ResponseUtils;
-import com.arextest.config.model.dto.application.ApplicationConfiguration;
-import com.arextest.config.repository.impl.ApplicationConfigurationRepositoryImpl;
+import com.arextest.config.model.dao.config.AppCollection;
+import com.arextest.schedule.dao.mongodb.ApplicationRepository;
+import com.arextest.schedule.model.CommonResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
 
 /**
  * @author wildeslam.
@@ -35,8 +34,8 @@ public class AppAuthAspect {
     private static final String NO_APPID = "No appId";
     private static final String ERROR_APPID = "Error appId";
 
-    @Resource
-    private ApplicationConfigurationRepositoryImpl applicationConfigurationRepository;
+    @Autowired
+    private ApplicationRepository applicationRepository;
 
     @Pointcut("@annotation(com.arextest.common.annotation.AppAuth)")
     public void appAuth(){}
@@ -55,21 +54,21 @@ public class AppAuthAspect {
             LOGGER.error("header has no appId");
             return reject(point, auth, NO_APPID);
         }
-        List<ApplicationConfiguration> applications = applicationConfigurationRepository.listBy(context.getAppId());
-        if (CollectionUtils.isEmpty(applications)) {
+        AppCollection application = applicationRepository.query(context.getAppId());
+        if (application == null) {
             LOGGER.error("error appId");
             return reject(point, auth, ERROR_APPID);
         }
-        ApplicationConfiguration application = applications.get(0);
         if (application.getOwners() == null) {
             LOGGER.error("The app:{} has no owners", appId);
             return reject(point, auth, NO_PERMISSION);
         }
         Object result;
         if (application.getOwners().contains(userName)) {
+            context.setPassAuth(true);
             result = point.proceed();
         } else {
-            context.setPassAuth(true);
+            context.setPassAuth(false);
             return reject(point, auth, NO_PERMISSION);
         }
         ArexContext.removeContext();
@@ -80,7 +79,15 @@ public class AppAuthAspect {
         ArexContext.removeContext();
         switch (auth.rejectStrategy()) {
             case FAIL_RESPONSE:
-                return ResponseUtils.errorResponse(remark, ResponseCode.AUTHENTICATION_FAILED);
+                CommonResponse commonResponse = new CommonResponse();
+                commonResponse.setDesc(remark);
+                commonResponse.setResult(2);
+                ResponseStatusType responseStatusType = new ResponseStatusType();
+                responseStatusType.setTimestamp(System.currentTimeMillis());
+                responseStatusType.setResponseDesc(remark);
+                responseStatusType.setResponseCode(ResponseCode.AUTHENTICATION_FAILED.getCodeValue());
+                commonResponse.setResponseStatusType(responseStatusType);
+                return commonResponse;
             case DOWNGRADE:
                 ArexContext.getContext().setPassAuth(false);
             default:

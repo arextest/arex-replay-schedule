@@ -1,12 +1,13 @@
 package com.arextest.schedule.model;
 
+import com.arextest.common.model.response.GenericResponseType;
 import lombok.Data;
 
 /**
  * Created by wang_yc on 2021/9/15
  */
 @Data
-public class CommonResponse {
+public class CommonResponse extends GenericResponseType {
     private Integer result;
     private String desc;
     private Object data;

@@ -103,7 +103,6 @@ public class ReplayPlanController {
         return CommonResponse.successResponse("ok", progressStatus);
     }
 
-    @AppAuth
     @PostMapping("/api/debugRequest")
     @ResponseBody
     public ReplaySendResult debugRequest(@RequestBody DebugRequestItem requestItem) {

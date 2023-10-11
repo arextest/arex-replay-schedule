@@ -1,6 +1,8 @@
 package com.arextest.schedule.service;
 
 
+import com.arextest.common.context.ArexContext;
+import com.arextest.common.utils.JwtUtil;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker.Target;
@@ -26,7 +28,9 @@ import org.springframework.util.StopWatch;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 
@@ -76,9 +80,15 @@ public class ReplayCaseRemoteLoadService {
             viewReplayCaseRequest.setRecordId(caseItem.getRecordId());
             viewReplayCaseRequest.setCategoryType(operationType);
             viewReplayCaseRequest.setSourceProvider(sourceProvider);
+
+            ArexContext arexContext = new ArexContext();
+            Map<String, String> header = new HashMap<>();
+            header.put("appId", arexContext.getAppId());
+            header.put("access-token", JwtUtil.makeAccessToken(arexContext.getOperator()));
             ViewRecordResponseType responseType = wepApiClientService.jsonPost(viewRecordUrl,
                     viewReplayCaseRequest,
-                    ViewRecordResponseType.class);
+                    ViewRecordResponseType.class,
+                    header);
             if (responseType == null || responseType.getResponseStatusType().hasError()) {
                 LOGGER.warn("view record response invalid recordId:{},response:{}",
                         viewReplayCaseRequest.getRecordId(), responseType);
