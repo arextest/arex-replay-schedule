@@ -160,7 +160,7 @@ public class PlanConsumePrepareService {
         int pageSize = Math.min(caseCountLimit, CommonConstant.MAX_PAGE_SIZE);
         while (beginTimeMills < endTimeMills) {
             List<ReplayActionCaseItem> caseItemList = caseRemoteLoadService.pagingLoad(beginTimeMills, endTimeMills,
-                replayActionItem, caseCountLimit - totalSize);
+                replayActionItem, caseCountLimit - totalSize, providerName);
             if (CollectionUtils.isEmpty(caseItemList)) {
                 break;
             }
