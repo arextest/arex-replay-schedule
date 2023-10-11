@@ -77,9 +77,11 @@ public class QueryReplayMsgService {
 
         if (!Boolean.TRUE.equals(ArexContext.getContext().getPassAuth())) {
             try {
+                response.setDesensitized(true);
                 compareResultDetail.setBaseMsg(JsonTraverseUtils.trimAllLeaves(compareResultBo.getBaseMsg()));
                 compareResultDetail.setTestMsg(JsonTraverseUtils.trimAllLeaves(compareResultBo.getTestMsg()));
             } catch (Exception e) {
+                response.setDesensitized(false);
                 LOGGER.error("trimAllLeaves error", e);
             }
         }
