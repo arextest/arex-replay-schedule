@@ -1,6 +1,8 @@
 
 package com.arextest.schedule.web.controller;
 
+import com.arextest.common.annotation.AppAuth;
+import com.arextest.common.enums.AuthRejectStrategy;
 import com.arextest.common.model.response.Response;
 import com.arextest.common.utils.ResponseUtils;
 import com.arextest.schedule.model.report.QueryLogEntityRequestTye;
@@ -26,12 +28,14 @@ public class ReplayReportController {
     @Resource
     private QueryReplayMsgService queryReplayMsgService;
 
+    @AppAuth(rejectStrategy = AuthRejectStrategy.DOWNGRADE)
     @GetMapping("/queryDiffMsgById/{id}")
     @ResponseBody
     public Response queryDiffMsgById(@PathVariable String id) {
         return ResponseUtils.successResponse(queryReplayMsgService.queryDiffMsgById(id));
     }
 
+    @AppAuth
     @PostMapping("/queryLogEntity")
     @ResponseBody
     public Response queryLogEntity(@Valid @RequestBody QueryLogEntityRequestTye request) {

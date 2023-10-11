@@ -1,5 +1,6 @@
 package com.arextest.schedule.web.controller;
 
+import com.arextest.common.annotation.AppAuth;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.exceptions.PlanRunningException;
 import com.arextest.schedule.mdc.MDCTracer;
@@ -45,12 +46,14 @@ public class ReplayPlanController {
     private DebugRequestService debugRequestService;
 
 
+    @AppAuth
     @PostMapping(value = "/api/createPlan")
     @ResponseBody
     public CommonResponse createPlanPost(@RequestBody BuildReplayPlanRequest request) {
         return createPlan(request);
     }
 
+    @AppAuth
     @GetMapping(value = "/api/createPlan")
     @ResponseBody
     public CommonResponse createPlanGet(@RequestParam(name = "appId", required = true) String appId,
@@ -66,6 +69,7 @@ public class ReplayPlanController {
         return createPlan(req);
     }
 
+    @AppAuth
     @PostMapping("/api/reRunPlan")
     @ResponseBody
     public CommonResponse reRunPlan(@RequestBody ReRunReplayPlanRequest request) {
@@ -80,6 +84,7 @@ public class ReplayPlanController {
         }
     }
 
+    @AppAuth
     @GetMapping("/api/stopPlan")
     @ResponseBody
     public CommonResponse stopPlan(String planId) {
@@ -98,6 +103,7 @@ public class ReplayPlanController {
         return CommonResponse.successResponse("ok", progressStatus);
     }
 
+    @AppAuth
     @PostMapping("/api/debugRequest")
     @ResponseBody
     public ReplaySendResult debugRequest(@RequestBody DebugRequestItem requestItem) {

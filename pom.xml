@@ -260,7 +260,12 @@
             <dependency>
                 <groupId>com.arextest</groupId>
                 <artifactId>arex-common</artifactId>
-                <version>0.1.12</version>
+                <version>0.1.15</version>
+            </dependency>
+            <dependency>
+                <groupId>com.arextest</groupId>
+                <artifactId>arex-storage-config</artifactId>
+                <version>1.0.25</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.fastjson2</groupId>

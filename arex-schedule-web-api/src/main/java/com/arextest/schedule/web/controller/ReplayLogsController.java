@@ -1,5 +1,6 @@
 package com.arextest.schedule.web.controller;
 
+import com.arextest.common.annotation.AppAuth;
 import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.bizlog.QueryReplayBizLogsRequest;
 import com.arextest.schedule.model.bizlog.QueryReplayBizLogsResponse;
@@ -30,6 +31,7 @@ public class ReplayLogsController {
     @Resource
     private PlanBizLogService planBizLogService;
 
+    @AppAuth
     @GetMapping("/api/queryPlanLogs/{planId}")
     @ResponseBody
     public CommonResponse queryPlanLogs(@PathVariable("planId") String planId) {
@@ -37,6 +39,7 @@ public class ReplayLogsController {
         return CommonResponse.successResponse("success", logs);
     }
 
+    @AppAuth
     @PostMapping("/api/queryPlanLogs")
     @ResponseBody
     public CommonResponse queryPlanLogsPaginated(@RequestBody QueryReplayBizLogsRequest request) {
