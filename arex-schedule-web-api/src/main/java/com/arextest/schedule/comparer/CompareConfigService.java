@@ -42,7 +42,7 @@ public final class CompareConfigService {
     @Resource
     private CacheProvider redisCacheProvider;
 
-    @Value("${arex.report.config.comparison.summary.url}")
+    @Value("${arex.api.config.comparison.summary.url}")
     private String summaryConfigUrl;
     @Resource
     private ProgressEvent progressEvent;
