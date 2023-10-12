@@ -1,11 +1,13 @@
 package com.arextest.schedule.plan.builder.impl;
 
+import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.AppServiceDescriptor;
 import com.arextest.schedule.model.CaseSourceEnvType;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.deploy.DeploymentVersion;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
+import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.schedule.model.plan.OperationCaseInfo;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.builder.BuildPlanValidateResult;
@@ -120,7 +122,11 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
     abstract List<ReplayActionItem> getReplayActionList(BuildReplayPlanRequest request, PlanContext planContext);
 
     int queryCaseCount(ReplayActionItem actionItem) {
-        return replayCaseRemoteLoadService.queryCaseCount(actionItem);
+        int count = replayCaseRemoteLoadService.queryCaseCount(actionItem, CommonConstant.ROLLING);
+        if (actionItem.getParent().getReplayPlanType() == BuildReplayPlanType.MIXED.getValue()) {
+            count += replayCaseRemoteLoadService.queryCaseCount(actionItem, CommonConstant.AUTO_PINED);
+        }
+        return count;
     }
 
     boolean unsupportedCaseTimeRange(BuildReplayPlanRequest request) {

@@ -35,15 +35,15 @@ public final class ReplayReportService implements ComparisonWriter {
     private ReplayCompareResultConverter converter;
     @Resource
     private HttpWepServiceApiClient httpWepServiceApiClient;
-    @Value("${arex.report.init.url}")
+    @Value("${arex.api.init.url}")
     private String reportInitUrl;
-    @Value("${arex.report.push.compareResult.url}")
+    @Value("${arex.api.push.compareResult.url}")
     private String pushReplayCompareResultUrl;
-    @Value("${arex.report.push.replayStatus.url}")
+    @Value("${arex.api.push.replayStatus.url}")
     private String pushReplayStatusUrl;
-    @Value("${arex.report.update.report.info.url}")
+    @Value("${arex.api.update.report.info.url}")
     private String updateReportInfoUrl;
-    @Value("${arex.report.remove.records.url}")
+    @Value("${arex.api.remove.records.url}")
     private String removeRecordsUrl;
 
     private static final String CASE_COUNT_LIMIT_NAME = "caseCountLimit";

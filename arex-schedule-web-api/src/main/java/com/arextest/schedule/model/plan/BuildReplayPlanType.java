@@ -26,7 +26,12 @@ public enum BuildReplayPlanType {
     /**
      * case replay in the rolling table
      */
-    BY_ROLLING_CASE(3);
+    BY_ROLLING_CASE(3),
+
+    /**
+     * App Rolling + Auto pined
+     */
+    MIXED(4);
 
     @Getter
     final int value;
