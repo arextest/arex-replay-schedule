@@ -10,5 +10,7 @@ import java.util.List;
  */
 @Data
 public class PostProcessResultRequestType {
+    private String replayPlanId;
+    private int replayStatusCode;
     private List<ResultCodeGroup> results;
 }

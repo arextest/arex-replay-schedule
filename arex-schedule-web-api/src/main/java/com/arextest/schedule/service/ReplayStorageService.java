@@ -25,10 +25,12 @@ public class ReplayStorageService {
     @Value("${arex.storage.postProcess.url}")
     private String postProcessUrl;
 
-    public void postProcessCompareResult(String planId) {
+    public void postProcessCompareResult(String planId, int planResultCode) {
         try {
             List<CompareResultDbAggStruct> dbAgg = replayCompareResultRepository.calculateResultCodeGroup(planId);
             PostProcessResultRequestType storageReq = new PostProcessResultRequestType();
+            storageReq.setReplayStatusCode(planResultCode);
+            storageReq.setReplayPlanId(planId);
             List<ResultCodeGroup> resGroups = new ArrayList<>();
             storageReq.setResults(resGroups);
 
