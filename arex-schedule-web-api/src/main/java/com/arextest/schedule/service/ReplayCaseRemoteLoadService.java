@@ -145,13 +145,18 @@ public class ReplayCaseRemoteLoadService {
                                                  ReplayActionItem replayActionItem, int caseCountLimit) {
         List<AREXMocker> recordList = new ArrayList<>(caseCountLimit);
         List<PagedRequestType> requestTypeList = buildPagingSearchCaseRequests(replayActionItem, caseCountLimit);
+        ArexContext arexContext = new ArexContext();
+        Map<String, String> header = new HashMap<>();
+        header.put("appId", arexContext.getAppId());
+        header.put("access-token", JwtUtil.makeAccessToken(arexContext.getOperator()));
+
         for (PagedRequestType requestType : requestTypeList) {
             requestType.setBeginTime(beginTimeMills);
             requestType.setEndTime(endTimeMills);
             PagedResponseType responseType;
             StopWatch watch = new StopWatch();
             watch.start(LogType.LOAD_CASE_TIME.getValue());
-            responseType = wepApiClientService.jsonPost(replayCaseUrl, requestType, PagedResponseType.class);
+            responseType = wepApiClientService.jsonPost(replayCaseUrl, requestType, PagedResponseType.class, header);
             watch.stop();
             LOGGER.info("get replay case app id:{},time used:{} ms, operation:{}",
                     requestType.getAppId(),
