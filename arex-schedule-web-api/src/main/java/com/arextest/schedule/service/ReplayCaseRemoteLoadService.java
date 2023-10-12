@@ -81,7 +81,7 @@ public class ReplayCaseRemoteLoadService {
             viewReplayCaseRequest.setCategoryType(operationType);
             viewReplayCaseRequest.setSourceProvider(sourceProvider);
 
-            ArexContext arexContext = new ArexContext();
+            ArexContext arexContext = ArexContext.getContext();
             Map<String, String> header = new HashMap<>();
             header.put("appId", arexContext.getAppId());
             header.put("access-token", JwtUtil.makeAccessToken(arexContext.getOperator()));
@@ -145,7 +145,7 @@ public class ReplayCaseRemoteLoadService {
                                                  ReplayActionItem replayActionItem, int caseCountLimit) {
         List<AREXMocker> recordList = new ArrayList<>(caseCountLimit);
         List<PagedRequestType> requestTypeList = buildPagingSearchCaseRequests(replayActionItem, caseCountLimit);
-        ArexContext arexContext = new ArexContext();
+        ArexContext arexContext = ArexContext.getContext();
         Map<String, String> header = new HashMap<>();
         header.put("appId", arexContext.getAppId());
         header.put("access-token", JwtUtil.makeAccessToken(arexContext.getOperator()));
