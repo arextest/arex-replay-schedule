@@ -4,8 +4,15 @@ import com.arextest.schedule.dao.RepositoryWriter;
 import com.arextest.schedule.model.ReplayCompareResult;
 import com.arextest.schedule.model.converter.ReplayCompareResultConverter;
 import com.arextest.schedule.model.dao.mongodb.ReplayCompareResultCollection;
+import com.arextest.schedule.model.storage.CompareResultDbAggStruct;
+import com.arextest.schedule.model.storage.ResultCodeGroup;
+import com.mongodb.BasicDBObject;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Component;
@@ -48,5 +55,16 @@ public class ReplayCompareResultRepositoryImpl implements RepositoryWriter<Repla
         query.addCriteria(Criteria.where(DASH_ID).is(objectId));
         ReplayCompareResultCollection result = mongoTemplate.findOne(query, ReplayCompareResultCollection.class);
         return replayCompareResultConverter.boFromDao(result);
+    }
+
+    public List<CompareResultDbAggStruct> calculateResultCodeGroup(String planId) {
+        MatchOperation match = Aggregation.match(Criteria.where(ReplayCompareResult.FIELD_PLAN_ID).is(planId));
+
+        GroupOperation group = Aggregation.group(ReplayCompareResult.FIELD_DIFF_RESULT_CODE, ReplayCompareResult.FIELD_CATEGORY_NAME)
+                .first(ReplayCompareResult.FIELD_DIFF_RESULT_CODE).as(ReplayCompareResult.FIELD_DIFF_RESULT_CODE)
+                .first(ReplayCompareResult.FIELD_CATEGORY_NAME).as(ReplayCompareResult.FIELD_CATEGORY_NAME)
+                .addToSet(new BasicDBObject("recordId", "$recordId").append("targetId", "$replayId")).as(CompareResultDbAggStruct.FIELD_RELATED_IDS);
+        Aggregation aggregation = Aggregation.newAggregation(match, group);
+        return mongoTemplate.aggregate(aggregation, mongoTemplate.getCollectionName(ReplayCompareResultCollection.class), CompareResultDbAggStruct.class).getMappedResults();
     }
 }

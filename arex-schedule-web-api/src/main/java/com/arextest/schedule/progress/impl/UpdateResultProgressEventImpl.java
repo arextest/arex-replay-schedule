@@ -16,6 +16,7 @@ import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.service.MetricService;
 import com.arextest.schedule.service.PlanProduceService;
 import com.arextest.schedule.service.ReplayReportService;
+import com.arextest.schedule.service.ReplayStorageService;
 import com.arextest.schedule.utils.StageUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,6 +41,8 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     private MetricService metricService;
     @Resource
     private CacheProvider redisCacheProvider;
+    @Resource
+    private ReplayStorageService replayStorageService;
 
     public static final long DEFAULT_COUNT = 1L;
 
@@ -87,6 +90,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
         replayReportService.pushPlanStatus(planId, reason, null, replayPlan.isReRun());
         recordPlanExecutionTime(replayPlan);
         redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayPlan.getId()));
+        replayStorageService.postProcessCompareResult(replayPlan.getId(), reason.getValue());
     }
 
     @Override
