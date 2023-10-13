@@ -1,8 +1,5 @@
 package com.arextest.schedule.service;
 
-
-import com.arextest.common.context.ArexContext;
-import com.arextest.common.utils.JwtUtil;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker.Target;
@@ -11,15 +8,18 @@ import com.arextest.model.replay.PagedResponseType;
 import com.arextest.model.replay.QueryCaseCountResponseType;
 import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.ViewRecordResponseType;
-import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
-import com.arextest.schedule.model.*;
+import com.arextest.schedule.common.CommonConstant;
+import com.arextest.schedule.model.CaseSendStatusType;
+import com.arextest.schedule.model.CompareProcessStatusType;
+import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.model.ReplayPlan;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -28,9 +28,7 @@ import org.springframework.util.StopWatch;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 
@@ -83,14 +81,9 @@ public class ReplayCaseRemoteLoadService {
             viewReplayCaseRequest.setCategoryType(operationType);
             viewReplayCaseRequest.setSourceProvider(sourceProvider);
 
-            ArexContext arexContext = ArexContext.getContext();
-            Map<String, String> header = new HashMap<>();
-            header.put("appId", arexContext.getAppId());
-            header.put("access-token", JwtUtil.makeAccessToken(arexContext.getOperator()));
             ViewRecordResponseType responseType = wepApiClientService.jsonPost(viewRecordUrl,
                     viewReplayCaseRequest,
-                    ViewRecordResponseType.class,
-                    header);
+                    ViewRecordResponseType.class);
             if (responseType == null || responseType.getResponseStatusType().hasError()) {
                 LOGGER.warn("view record response invalid recordId:{},response:{}",
                         viewReplayCaseRequest.getRecordId(), responseType);
@@ -147,10 +140,6 @@ public class ReplayCaseRemoteLoadService {
                                                  ReplayActionItem replayActionItem, int caseCountLimit, String providerName) {
         List<AREXMocker> recordList = new ArrayList<>(caseCountLimit);
         List<PagedRequestType> requestTypeList = buildPagingSearchCaseRequests(replayActionItem, caseCountLimit, providerName);
-        ArexContext arexContext = ArexContext.getContext();
-        Map<String, String> header = new HashMap<>();
-        header.put("appId", arexContext.getAppId());
-        header.put("access-token", JwtUtil.makeAccessToken(arexContext.getOperator()));
 
         for (PagedRequestType requestType : requestTypeList) {
             requestType.setBeginTime(beginTimeMills);
@@ -158,7 +147,7 @@ public class ReplayCaseRemoteLoadService {
             PagedResponseType responseType;
             StopWatch watch = new StopWatch();
             watch.start(LogType.LOAD_CASE_TIME.getValue());
-            responseType = wepApiClientService.jsonPost(replayCaseUrl, requestType, PagedResponseType.class, header);
+            responseType = wepApiClientService.jsonPost(replayCaseUrl, requestType, PagedResponseType.class);
             watch.stop();
             LOGGER.info("get replay case app id:{},time used:{} ms, operation:{}",
                     requestType.getAppId(),
