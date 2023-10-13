@@ -1,5 +1,7 @@
 package com.arextest.schedule.web.controller;
 
+import com.arextest.common.annotation.AppAuth;
+import com.arextest.common.enums.AuthRejectStrategy;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.exceptions.PlanRunningException;
 import com.arextest.schedule.mdc.MDCTracer;
@@ -53,6 +55,7 @@ public class ReplayPlanController {
 
     @GetMapping(value = "/api/createPlan")
     @ResponseBody
+    @AppAuth(rejectStrategy = AuthRejectStrategy.DOWNGRADE)
     public CommonResponse createPlanGet(@RequestParam(name = "appId", required = true) String appId,
                                         @RequestParam(name = "targetEnv", required = true) String targetEnv) {
         BuildReplayPlanRequest req = new BuildReplayPlanRequest();
@@ -68,6 +71,7 @@ public class ReplayPlanController {
 
     @PostMapping("/api/reRunPlan")
     @ResponseBody
+    @AppAuth(rejectStrategy = AuthRejectStrategy.DOWNGRADE)
     public CommonResponse reRunPlan(@RequestBody ReRunReplayPlanRequest request) {
         try {
             return planProduceService.reRunPlan(request.getPlanId());
