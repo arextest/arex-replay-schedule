@@ -49,6 +49,7 @@ public class ReplayPlanController {
 
     @PostMapping(value = "/api/createPlan")
     @ResponseBody
+    @AppAuth(rejectStrategy = AuthRejectStrategy.DOWNGRADE)
     public CommonResponse createPlanPost(@RequestBody BuildReplayPlanRequest request) {
         return createPlan(request);
     }
