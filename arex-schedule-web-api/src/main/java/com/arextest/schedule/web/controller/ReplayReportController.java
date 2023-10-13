@@ -35,7 +35,6 @@ public class ReplayReportController {
         return ResponseUtils.successResponse(queryReplayMsgService.queryDiffMsgById(id));
     }
 
-    @AppAuth
     @PostMapping("/queryLogEntity")
     @ResponseBody
     public Response queryLogEntity(@Valid @RequestBody QueryLogEntityRequestTye request) {
