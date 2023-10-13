@@ -49,14 +49,12 @@ public class ReplayPlanController {
 
     @PostMapping(value = "/api/createPlan")
     @ResponseBody
-    @AppAuth(rejectStrategy = AuthRejectStrategy.DOWNGRADE)
     public CommonResponse createPlanPost(@RequestBody BuildReplayPlanRequest request) {
         return createPlan(request);
     }
 
     @GetMapping(value = "/api/createPlan")
     @ResponseBody
-    @AppAuth(rejectStrategy = AuthRejectStrategy.DOWNGRADE)
     public CommonResponse createPlanGet(@RequestParam(name = "appId", required = true) String appId,
                                         @RequestParam(name = "targetEnv", required = true) String targetEnv) {
         BuildReplayPlanRequest req = new BuildReplayPlanRequest();
@@ -72,7 +70,6 @@ public class ReplayPlanController {
 
     @PostMapping("/api/reRunPlan")
     @ResponseBody
-    @AppAuth(rejectStrategy = AuthRejectStrategy.DOWNGRADE)
     public CommonResponse reRunPlan(@RequestBody ReRunReplayPlanRequest request) {
         try {
             return planProduceService.reRunPlan(request.getPlanId());
