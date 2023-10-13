@@ -41,11 +41,6 @@ final class MockCachePreLoader {
             httpWepServiceApiClient.jsonPost(cachePreloadUrl, mockCacheRequestType, QueryMockCacheResponseType.class);
         }
 
-        if (replayPlanType == BuildReplayPlanType.BY_APP_ID.getValue()) {
-            mockCacheRequestType.setSourceProvider(CommonConstant.ROLLING);
-            httpWepServiceApiClient.jsonPost(cachePreloadUrl, mockCacheRequestType, QueryMockCacheResponseType.class);
-        }
-
         // mixed replay plan need to preload auto pined case
         if (replayPlanType == BuildReplayPlanType.MIXED.getValue()) {
             // todo: remove this code after the new version of arex-agent is released
@@ -60,5 +55,6 @@ final class MockCachePreLoader {
                 httpWepServiceApiClient.jsonPost(cachePreloadUrl, mockCacheRequestType, QueryMockCacheResponseType.class);
             }
         }
+        httpWepServiceApiClient.jsonPost(cachePreloadUrl, mockCacheRequestType, QueryMockCacheResponseType.class);
     }
 }
