@@ -8,6 +8,7 @@ import com.arextest.common.utils.ResponseUtils;
 import com.arextest.config.model.dao.config.AppCollection;
 import com.arextest.schedule.dao.mongodb.ApplicationRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -58,24 +59,19 @@ public class AppAuthAspect {
             LOGGER.error("error appId");
             return reject(point, auth, ERROR_APPID);
         }
-        if (application.getOwners() == null) {
-            LOGGER.error("The app:{} has no owners", appId);
-            return reject(point, auth, NO_PERMISSION);
-        }
         Object result;
-        if (application.getOwners().contains(userName)) {
+        if (CollectionUtils.isEmpty(application.getOwners()) || application.getOwners().contains(userName)) {
             context.setPassAuth(true);
             result = point.proceed();
         } else {
             context.setPassAuth(false);
-            return reject(point, auth, NO_PERMISSION);
+            result = reject(point, auth, NO_PERMISSION);
         }
         ArexContext.removeContext();
         return result;
     }
 
     private Object reject(ProceedingJoinPoint point, AppAuth auth, String remark) throws Throwable {
-        ArexContext.removeContext();
         switch (auth.rejectStrategy()) {
             case FAIL_RESPONSE:
                 return ResponseUtils.errorResponse(remark, ResponseCode.AUTHENTICATION_FAILED);
