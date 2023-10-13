@@ -41,7 +41,7 @@ final class MockCachePreLoader {
             httpWepServiceApiClient.jsonPost(cachePreloadUrl, mockCacheRequestType, QueryMockCacheResponseType.class);
         }
 
-        if (replayPlanType == BuildReplayPlanType.BY_ROLLING_CASE.getValue()) {
+        if (replayPlanType == BuildReplayPlanType.BY_APP_ID.getValue()) {
             mockCacheRequestType.setSourceProvider(CommonConstant.ROLLING);
             httpWepServiceApiClient.jsonPost(cachePreloadUrl, mockCacheRequestType, QueryMockCacheResponseType.class);
         }
