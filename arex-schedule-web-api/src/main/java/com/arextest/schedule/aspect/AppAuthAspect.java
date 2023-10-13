@@ -3,11 +3,10 @@ package com.arextest.schedule.aspect;
 import com.arextest.common.annotation.AppAuth;
 import com.arextest.common.context.ArexContext;
 import com.arextest.common.model.response.ResponseCode;
-import com.arextest.common.model.response.ResponseStatusType;
 import com.arextest.common.utils.JwtUtil;
+import com.arextest.common.utils.ResponseUtils;
 import com.arextest.config.model.dao.config.AppCollection;
 import com.arextest.schedule.dao.mongodb.ApplicationRepository;
-import com.arextest.schedule.model.CommonResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -79,15 +78,7 @@ public class AppAuthAspect {
         ArexContext.removeContext();
         switch (auth.rejectStrategy()) {
             case FAIL_RESPONSE:
-                CommonResponse commonResponse = new CommonResponse();
-                commonResponse.setDesc(remark);
-                commonResponse.setResult(2);
-                ResponseStatusType responseStatusType = new ResponseStatusType();
-                responseStatusType.setTimestamp(System.currentTimeMillis());
-                responseStatusType.setResponseDesc(remark);
-                responseStatusType.setResponseCode(ResponseCode.AUTHENTICATION_FAILED.getCodeValue());
-                commonResponse.setResponseStatusType(responseStatusType);
-                return commonResponse;
+                return ResponseUtils.errorResponse(remark, ResponseCode.AUTHENTICATION_FAILED);
             case DOWNGRADE:
                 ArexContext.getContext().setPassAuth(false);
             default:
