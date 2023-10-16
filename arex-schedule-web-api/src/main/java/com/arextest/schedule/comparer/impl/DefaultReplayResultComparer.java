@@ -26,13 +26,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.util.StopWatch;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -45,12 +41,23 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     private final ReplayActionCaseItemRepository caseItemRepository;
     private final MetricService metricService;
     private final CustomComparisonConfigurationHandler configHandler;
+    private static long ignoreTimePrecisionMillis = 2000;
     private static final int INDEX_NOT_FOUND = -1;
     private static final CompareSDK COMPARE_INSTANCE = new CompareSDK();
     private static final long MAX_TIME = Long.MAX_VALUE;
+    private static final String APPLICATION_PROPERTIES_NAME = "/application.properties";
+    private static final String IGNORE_TIME_PRECISION_MILLIS_KEY = "ignore.time.precision.millis";
 
     static {
-        COMPARE_INSTANCE.getGlobalOptions().putNameToLower(true).putNullEqualsEmpty(true).putIgnoredTimePrecision(1000);
+        Properties props = new Properties();
+        try (InputStream input = DefaultReplayResultComparer.class.getResourceAsStream(APPLICATION_PROPERTIES_NAME)) {
+            props.load(input);
+            ignoreTimePrecisionMillis = Long.parseLong(props.getProperty(IGNORE_TIME_PRECISION_MILLIS_KEY));
+        } catch (IOException e) {
+            LOGGER.error("failed to get ignore time precision millis {}", e.getMessage(), e);
+        }
+
+        COMPARE_INSTANCE.getGlobalOptions().putNameToLower(true).putNullEqualsEmpty(true).putIgnoredTimePrecision(ignoreTimePrecisionMillis);
     }
 
     public static CompareSDK getCompareSDKInstance() {
