@@ -17,7 +17,7 @@
         </RollingFile>
         <NoSql name="Mongo4">
             <ArexMongoDb4 capped="true" collectionSize="104857600"
-                      connection="${sys:arex.mongo.uri}"
+                          connection="${sys:arex.mongo.uri}"
             />
         </NoSql>
         <PrometheusAppender name="Prometheus" project="arex-schedule">
