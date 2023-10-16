@@ -1,36 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Configuration>
     <Appenders>
-        <RollingFile name="RollingFile"
-                     fileName="logs/app.log"
-                     filePattern="logs/app.%d{yyyy-MM-dd.HH}.log">
-            <PatternLayout>
-                <pattern>%d %p %C{1.} [%t] %m%n</pattern>
-            </PatternLayout>
-            <Policies>
-                <!-- rollover on startup, daily and when the file reaches
-                    10 MegaBytes -->
-                <OnStartupTriggeringPolicy/>
-                <SizeBasedTriggeringPolicy size="10 MB"/>
-                <TimeBasedTriggeringPolicy/>
-            </Policies>
-        </RollingFile>
-        <NoSql name="Mongo4">
-            <ArexMongoDb4 capped="true" collectionSize="104857600"
-                      connection="${sys:arex.mongo.uri}"
-            />
-        </NoSql>
-        <PrometheusAppender name="Prometheus" project="arex-schedule">
-        </PrometheusAppender>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </Console>
     </Appenders>
-
     <Loggers>
         <Root level="info">
-            <AppenderRef ref="RollingFile"/>
+            <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="com.arextest.schedule" level="INFO">
-            <AppenderRef ref="Mongo4"/>
-            <AppenderRef ref="Prometheus"/>
-        </Logger>
     </Loggers>
 </Configuration>
