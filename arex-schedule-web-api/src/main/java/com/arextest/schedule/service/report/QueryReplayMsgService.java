@@ -75,7 +75,7 @@ public class QueryReplayMsgService {
 
         fillCompareResultDetail(compareResultBo, compareResultDetail);
 
-        if (!Boolean.TRUE.equals(ArexContext.getContext().getPassAuth())) {
+        if (Boolean.FALSE.equals(ArexContext.getContext().getPassAuth())) {
             try {
                 response.setDesensitized(true);
                 compareResultDetail.setBaseMsg(JsonTraverseUtils.trimAllLeaves(compareResultBo.getBaseMsg()));
