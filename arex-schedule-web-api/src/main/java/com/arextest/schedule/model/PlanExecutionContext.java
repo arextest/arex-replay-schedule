@@ -11,6 +11,11 @@ import java.util.List;
  */
 @Data
 public class PlanExecutionContext<T> {
+
+    private static final String CONTEXT_PREFIX = "batch-";
+
+    private static final String NO_CONTEXT_SUFFIX = "no-config";
+
     @JsonIgnore
     private ReplayPlan plan;
 
@@ -26,4 +31,9 @@ public class PlanExecutionContext<T> {
 
     @JsonIgnore
     private T dependencies;
+
+    public static String buildContextName(String identifier) {
+        String suffix = identifier == null ? NO_CONTEXT_SUFFIX : identifier;
+        return CONTEXT_PREFIX + suffix;
+    }
 }

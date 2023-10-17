@@ -1,21 +1,22 @@
 package com.arextest.schedule.common;
 
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.model.ReplayPlan;
 import com.google.common.util.concurrent.RateLimiter;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
- * Max QPS = APP Config Max || DEFAULT MAX(20)
- * Initial QPS = Max QPS * STEP 0 RATIO (0.3)
+ * Max QPS = APP Config Max || DEFAULT MAX(20) Initial QPS = Max QPS * STEP 0 RATIO (0.3)
  *
  * Consecutive 20 success API call -> try increase QPS to next step || increase by one if lower than the lowest ratio
- * Any failed API call -> try reducing QPS to previous step || reduce by one if already lower or equal to the lowest step ratio
+ * Any failed API call -> try reducing QPS to previous step || reduce by one if already lower or equal to the lowest
+ * step ratio
  *
  * Consecutive 40 failed API call || 10% of total case failed -> break execution
  *
@@ -50,8 +51,8 @@ public final class SendSemaphoreLimiter {
     private int totalTasks;
 
     public SendSemaphoreLimiter(Integer maxQpsPerInstance, Integer instanceCount) {
-        this.sendMaxRate = Optional.ofNullable(maxQpsPerInstance).filter(qps -> qps > 0).orElse(DEFAULT_MAX_RATE)
-                * instanceCount;
+        this.sendMaxRate =
+            Optional.ofNullable(maxQpsPerInstance).filter(qps -> qps > 0).orElse(DEFAULT_MAX_RATE) * instanceCount;
 
         Integer actualInitialMinQps = this.getRatioOfStep(QPS_INITIAL_STEP);
 
@@ -116,7 +117,7 @@ public final class SendSemaphoreLimiter {
     }
 
     private Integer getRatioOfStep(int step) {
-        int rate = (int) Math.floor(sendMaxRate * QPS_STEP_RATIO[step]);
+        int rate = (int)Math.floor(sendMaxRate * QPS_STEP_RATIO[step]);
         if (rate == 0) {
             return 1;
         }
@@ -129,6 +130,15 @@ public final class SendSemaphoreLimiter {
 
     public int continuousError() {
         return this.checker.continuousSuccessCounter.get();
+    }
+
+    public synchronized void reset() {
+        this.checker.reset();
+        this.rateLimiter.setRate(this.sendInitialRate);
+        this.permits = this.sendInitialRate;
+        this.currentStep = QPS_INITIAL_STEP;
+        LOGGER.info("send rate reset to initial status, from {} to {}", this.permits, this.sendInitialRate);
+        BizLogger.recordQPSReset(this.replayPlan, this.sendInitialRate);
     }
 
     private final class ReplayHealthy {
@@ -170,12 +180,14 @@ public final class SendSemaphoreLimiter {
         }
 
         private boolean failBreak() {
-            return continuousFailCounter.get() > CONTINUOUS_FAIL_TOTAL ||
-                    (totalTasks > 0 && (failCounter.doubleValue() / totalTasks) > ERROR_BREAK_RATE);
+            return continuousFailCounter.get() > CONTINUOUS_FAIL_TOTAL
+                || (totalTasks > 0 && (failCounter.doubleValue() / totalTasks) > ERROR_BREAK_RATE);
         }
 
         private void reset() {
+            hasError = false;
             continuousSuccessCounter.set(0);
+            failCounter.set(0);
             continuousFailCounter.set(0);
             checkCount = SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
         }

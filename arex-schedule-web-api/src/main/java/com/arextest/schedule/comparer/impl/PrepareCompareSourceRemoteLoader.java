@@ -69,6 +69,7 @@ public final class PrepareCompareSourceRemoteLoader {
         return replayResult;
     }
 
+    // TODO: In the scenario where the operation is empty, there is a problem of redundant returns in the record.
     public List<CategoryComparisonHolder> getReplayResult(String replayId, String resultId) {
         QueryReplayResultResponseType responseType = remoteLoad(replayId, resultId);
         return decodeResult(responseType);

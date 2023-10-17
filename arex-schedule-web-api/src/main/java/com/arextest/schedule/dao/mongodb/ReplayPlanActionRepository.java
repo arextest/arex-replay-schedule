@@ -1,23 +1,26 @@
 package com.arextest.schedule.dao.mongodb;
 
-import com.arextest.schedule.dao.RepositoryWriter;
-import com.arextest.schedule.dao.mongodb.util.MongoHelper;
-import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.converter.ReplayPlanItemConverter;
-import com.arextest.schedule.model.dao.mongodb.ReplayPlanItemCollection;
-import com.mongodb.client.result.UpdateResult;
-import lombok.extern.slf4j.Slf4j;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.arextest.schedule.dao.RepositoryWriter;
+import com.arextest.schedule.dao.mongodb.util.MongoHelper;
+import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.model.converter.ReplayPlanItemConverter;
+import com.arextest.schedule.model.dao.mongodb.ReplayPlanItemCollection;
+import com.mongodb.client.result.UpdateResult;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Created by rchen9 on 2022/8/19.
@@ -47,11 +50,11 @@ public class ReplayPlanActionRepository implements RepositoryWriter<ReplayAction
 
     @Override
     public boolean save(List<ReplayActionItem> actionItems) {
-        List<ReplayPlanItemCollection> replayPlanItemCollections = actionItems.stream()
-                .map(ReplayPlanItemConverter.INSTANCE::daoFromDto).collect(Collectors.toList());
+        List<ReplayPlanItemCollection> replayPlanItemCollections =
+            actionItems.stream().map(ReplayPlanItemConverter.INSTANCE::daoFromDto).collect(Collectors.toList());
 
-        List<ReplayPlanItemCollection> inserted = new ArrayList<>(mongoTemplate
-                .insert(replayPlanItemCollections, ReplayPlanItemCollection.class));
+        List<ReplayPlanItemCollection> inserted =
+            new ArrayList<>(mongoTemplate.insert(replayPlanItemCollections, ReplayPlanItemCollection.class));
 
         if (CollectionUtils.isEmpty(inserted) || inserted.size() != actionItems.size()) {
             LOGGER.error("Error saving action items, save size does not match source.");
@@ -77,7 +80,41 @@ public class ReplayPlanActionRepository implements RepositoryWriter<ReplayAction
 
     public List<ReplayActionItem> queryPlanActionList(String planId) {
         Query query = Query.query(Criteria.where(PLAN_ID).is(planId));
-        List<ReplayPlanItemCollection> replayPlanItemCollections = mongoTemplate.find(query, ReplayPlanItemCollection.class);
-        return replayPlanItemCollections.stream().map(ReplayPlanItemConverter.INSTANCE::dtoFromDao).collect(Collectors.toList());
+        List<ReplayPlanItemCollection> replayPlanItemCollections =
+            mongoTemplate.find(query, ReplayPlanItemCollection.class);
+        return replayPlanItemCollections.stream().map(ReplayPlanItemConverter.INSTANCE::dtoFromDao)
+            .collect(Collectors.toList());
     }
+
+    public boolean updateNoiseOfContextFinished(String id, String contextName, int count) {
+        Query query = Query.query(Criteria.where(DASH_ID).is(id));
+        Update update = new Update()
+            .inc(MongoHelper.appendDot(ReplayPlanItemCollection.FIELD_NOISE_FINISHED_CONTEXTS, contextName), count);
+        UpdateResult updateResult = mongoTemplate.updateMulti(query, update, ReplayPlanItemCollection.class);
+        return updateResult.getModifiedCount() > 0;
+    }
+
+    public boolean bulkUpdateNoiseFinishedContexts(List<ReplayActionItem> actionItems) {
+        if (CollectionUtils.isEmpty(actionItems)) {
+            return true;
+        }
+
+        try {
+            BulkOperations bulkOperations =
+                mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, ReplayPlanItemCollection.class);
+            for (ReplayActionItem actionItem : actionItems) {
+                Query query = Query.query(Criteria.where(ReplayPlanItemCollection.FIELD_ID).is(actionItem.getId()));
+                Update update = MongoHelper.getUpdate();
+                update.set(ReplayPlanItemCollection.FIELD_NOISE_FINISHED_CONTEXTS,
+                    actionItem.getNoiseFinishedContexts());
+                bulkOperations.updateMulti(query, update);
+            }
+            bulkOperations.execute();
+        } catch (RuntimeException exception) {
+            LOGGER.error("ReplayPlanActionRepository.bulkUpdateNoiseFinishedContexts error", exception);
+            return false;
+        }
+        return true;
+    }
+
 }

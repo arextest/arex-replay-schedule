@@ -2,6 +2,9 @@ package com.arextest.schedule.model;
 
 import lombok.Getter;
 
+/**
+ * Created by coryhh on 2023/10/17.
+ */
 public enum CompareModeType {
 
     /**

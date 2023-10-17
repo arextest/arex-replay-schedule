@@ -1,18 +1,20 @@
 package com.arextest.schedule.model;
 
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanItemCollection;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.deploy.ServiceInstanceOperation;
-import com.arextest.model.mock.MockCategoryType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author jmo
@@ -77,6 +79,8 @@ public class ReplayActionItem {
      */
     @JsonIgnore
     private String exclusionOperationConfig;
+
+    private Map<String, Integer> noiseFinishedContexts;
 
     public String getPlanId() {
         if (this.parent != null) {

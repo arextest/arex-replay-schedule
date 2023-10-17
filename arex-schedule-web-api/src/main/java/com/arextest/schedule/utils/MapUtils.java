@@ -20,6 +20,10 @@ public class MapUtils {
         return map;
     }
 
+    public static boolean isEmpty(Map<?,?> map) {
+        return !isNotEmpty(map);
+    }
+
     public static boolean isNotEmpty(Map<?,?> map) {
         return map != null && !map.isEmpty();
     }
