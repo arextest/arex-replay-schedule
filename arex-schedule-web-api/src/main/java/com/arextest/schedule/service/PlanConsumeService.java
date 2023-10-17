@@ -143,6 +143,7 @@ public final class PlanConsumeService {
         }
     }
 
+
     private void consumePlan(ReplayPlan replayPlan) {
         ExecutionStatus executionStatus = replayPlan.getPlanStatus();
 

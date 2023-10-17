@@ -181,6 +181,16 @@ public final class HttpWepServiceApiClient {
         }
     }
 
+    public <TRequest, TResponse> TResponse jsonPost(String url, TRequest request, Class<TResponse> responseType,
+                                                    Map<String, String> headers) {
+        try {
+
+            return restTemplate.postForObject(url, wrapJsonContentType(request, headers), responseType);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public <TRequest, TResponse> TResponse retryJsonPost(String url, TRequest request, Class<TResponse> responseType) {
         try {
             return retryTemplate.execute(retryCallback -> {
@@ -200,6 +210,20 @@ public final class HttpWepServiceApiClient {
         } else {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            httpJsonEntity = new HttpEntity<>(request, headers);
+        }
+        return httpJsonEntity;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <TRequest> HttpEntity<TRequest> wrapJsonContentType(TRequest request, Map<String, String> extraHeaders) {
+        HttpEntity<TRequest> httpJsonEntity;
+        if (request instanceof HttpEntity) {
+            httpJsonEntity = (HttpEntity<TRequest>) request;
+        } else {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAll(extraHeaders);
             httpJsonEntity = new HttpEntity<>(request, headers);
         }
         return httpJsonEntity;

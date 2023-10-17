@@ -1,6 +1,5 @@
 package com.arextest.schedule.service;
 
-
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker.Target;
@@ -9,15 +8,18 @@ import com.arextest.model.replay.PagedResponseType;
 import com.arextest.model.replay.QueryCaseCountResponseType;
 import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.ViewRecordResponseType;
-import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
-import com.arextest.schedule.model.*;
+import com.arextest.schedule.common.CommonConstant;
+import com.arextest.schedule.model.CaseSendStatusType;
+import com.arextest.schedule.model.CompareProcessStatusType;
+import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.model.ReplayPlan;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,7 @@ public class ReplayCaseRemoteLoadService {
     @Resource
     private HttpWepServiceApiClient wepApiClientService;
     private static final int EMPTY_SIZE = 0;
+    private static final int AUTO_PINED_CASE_LIMIT = 20000;
     @Value("${arex.storage.viewRecord.url}")
     private String viewRecordUrl;
     @Value("${arex.storage.countByRange.url}")
@@ -50,12 +53,13 @@ public class ReplayCaseRemoteLoadService {
     @Resource
     private MetricService metricService;
 
-    public int queryCaseCount(ReplayActionItem replayActionItem) {
+    public int queryCaseCount(ReplayActionItem replayActionItem, String providerName) {
         int queryTotalCount = EMPTY_SIZE;
         try {
             int caseCountLimit = replayActionItem.getOperationTypes() == null ? replayActionItem.getParent().getCaseCountLimit()
                     : replayActionItem.getParent().getCaseCountLimit() * replayActionItem.getOperationTypes().size();
-            List<PagedRequestType> request = buildPagingSearchCaseRequests(replayActionItem, caseCountLimit);
+            caseCountLimit = CommonConstant.AUTO_PINED.equals(providerName) ? AUTO_PINED_CASE_LIMIT : caseCountLimit;
+            List<PagedRequestType> request = buildPagingSearchCaseRequests(replayActionItem, caseCountLimit, providerName);
             for (PagedRequestType pagedRequestType : request) {
                 QueryCaseCountResponseType responseType =
                         wepApiClientService.jsonPost(countByRangeUrl, pagedRequestType, QueryCaseCountResponseType.class);
@@ -76,6 +80,7 @@ public class ReplayCaseRemoteLoadService {
             viewReplayCaseRequest.setRecordId(caseItem.getRecordId());
             viewReplayCaseRequest.setCategoryType(operationType);
             viewReplayCaseRequest.setSourceProvider(sourceProvider);
+
             ViewRecordResponseType responseType = wepApiClientService.jsonPost(viewRecordUrl,
                     viewReplayCaseRequest,
                     ViewRecordResponseType.class);
@@ -132,9 +137,10 @@ public class ReplayCaseRemoteLoadService {
     }
 
     public List<ReplayActionCaseItem> pagingLoad(long beginTimeMills, long endTimeMills,
-                                                 ReplayActionItem replayActionItem, int caseCountLimit) {
+                                                 ReplayActionItem replayActionItem, int caseCountLimit, String providerName) {
         List<AREXMocker> recordList = new ArrayList<>(caseCountLimit);
-        List<PagedRequestType> requestTypeList = buildPagingSearchCaseRequests(replayActionItem, caseCountLimit);
+        List<PagedRequestType> requestTypeList = buildPagingSearchCaseRequests(replayActionItem, caseCountLimit, providerName);
+
         for (PagedRequestType requestType : requestTypeList) {
             requestType.setBeginTime(beginTimeMills);
             requestType.setEndTime(endTimeMills);
@@ -182,7 +188,7 @@ public class ReplayCaseRemoteLoadService {
         return caseItemList;
     }
 
-    private PagedRequestType buildPagingSearchCaseRequest(ReplayActionItem replayActionItem, int caseCountLimit) {
+    private PagedRequestType buildPagingSearchCaseRequest(ReplayActionItem replayActionItem, int caseCountLimit, String providerName) {
         ReplayPlan parent = replayActionItem.getParent();
         PagedRequestType requestType = new PagedRequestType();
         requestType.setAppId(parent.getAppId());
@@ -192,16 +198,18 @@ public class ReplayCaseRemoteLoadService {
         requestType.setEndTime(parent.getCaseSourceTo().getTime());
         requestType.setOperation(replayActionItem.getOperationName());
         requestType.setCategory(MockCategoryType.createEntryPoint(replayActionItem.getActionType()));
+        requestType.setSourceProvider(providerName);
         return requestType;
     }
 
-    private List<PagedRequestType> buildPagingSearchCaseRequests(ReplayActionItem replayActionItem, int caseCountLimit) {
+    private List<PagedRequestType> buildPagingSearchCaseRequests(ReplayActionItem replayActionItem, int caseCountLimit, String providerName) {
         if (CollectionUtils.isEmpty(replayActionItem.getOperationTypes())) {
-            return Arrays.asList(buildPagingSearchCaseRequest(replayActionItem, caseCountLimit));
+            return Arrays.asList(buildPagingSearchCaseRequest(replayActionItem, caseCountLimit, providerName));
         }
         List<PagedRequestType> pagedRequestTypeList = new ArrayList<>();
         for (String catagoryType : replayActionItem.getOperationTypes()) {
-            PagedRequestType pagedRequestType = buildPagingSearchCaseRequest(replayActionItem, (int) Math.ceil(caseCountLimit/replayActionItem.getOperationTypes().size()));
+            PagedRequestType pagedRequestType = buildPagingSearchCaseRequest(replayActionItem,
+                    (int) Math.ceil(caseCountLimit/replayActionItem.getOperationTypes().size()), providerName);
             pagedRequestType.setCategory(MockCategoryType.createEntryPoint(catagoryType));
             pagedRequestTypeList.add(pagedRequestType);
         }

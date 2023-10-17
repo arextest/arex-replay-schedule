@@ -1,5 +1,7 @@
 package com.arextest.schedule.web.controller;
 
+import com.arextest.common.annotation.AppAuth;
+import com.arextest.common.enums.AuthRejectStrategy;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.exceptions.PlanRunningException;
 import com.arextest.schedule.mdc.MDCTracer;
@@ -21,11 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
@@ -57,8 +55,17 @@ public class ReplayPlanController {
 
     @GetMapping(value = "/api/createPlan")
     @ResponseBody
-    public CommonResponse createPlanGet(BuildReplayPlanRequest request) {
-        return createPlan(request);
+    public CommonResponse createPlanGet(@RequestParam(name = "appId", required = true) String appId,
+                                        @RequestParam(name = "targetEnv", required = true) String targetEnv) {
+        BuildReplayPlanRequest req = new BuildReplayPlanRequest();
+        req.setAppId(appId);
+        req.setTargetEnv(targetEnv);
+
+        req.setReplayPlanType(0);
+        req.setOperator("Webhook");
+        req.setCaseSourceFrom(new Date(System.currentTimeMillis() - CommonConstant.ONE_DAY_MILLIS));
+        req.setCaseSourceTo(new Date());
+        return createPlan(req);
     }
 
     @PostMapping("/api/reRunPlan")

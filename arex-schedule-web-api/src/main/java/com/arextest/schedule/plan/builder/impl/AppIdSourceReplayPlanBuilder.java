@@ -49,7 +49,8 @@ final class AppIdSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
 
     @Override
     public boolean isSupported(BuildReplayPlanRequest request) {
-        return request.getReplayPlanType() == BuildReplayPlanType.BY_APP_ID.getValue();
+        return request.getReplayPlanType() == BuildReplayPlanType.BY_APP_ID.getValue() ||
+                request.getReplayPlanType() == BuildReplayPlanType.MIXED.getValue();
     }
 
     @Override

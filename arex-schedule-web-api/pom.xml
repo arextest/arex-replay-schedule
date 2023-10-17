@@ -6,11 +6,11 @@
     <parent>
         <groupId>com.arextest</groupId>
         <artifactId>arex-schedule-parent</artifactId>
-        <version>1.0.38.3</version>
+        <version>1.0.38.4</version>
     </parent>
     <packaging>${packagingType}</packaging>
     <artifactId>arex-schedule-web-api</artifactId>
-    <version>1.0.38.3</version>
+    <version>1.0.38.4</version>
 
 
     <name>${project.groupId}:${project.artifactId}</name>
@@ -91,6 +91,10 @@
         <dependency>
             <groupId>com.arextest</groupId>
             <artifactId>compare-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.arextest</groupId>
+            <artifactId>arex-storage-config</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>

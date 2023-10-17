@@ -36,6 +36,7 @@ public final class CommonConstant {
     public static final long DEFAULT_COUNT = 1L;
     public static final String PINNED = "Pinned";
     public static final String ROLLING = "Rolling";
+    public static final String AUTO_PINED = "AutoPinned";
     public static final String URL = "url";
 
     public static final String NOISE_HANDLER = "-noisehandler";

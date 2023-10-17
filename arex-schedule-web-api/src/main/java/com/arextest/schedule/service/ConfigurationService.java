@@ -19,11 +19,11 @@ import java.util.Set;
 public class ConfigurationService {
     @Resource
     private HttpWepServiceApiClient wepApiClientService;
-    @Value("${arex.report.config.application.url}")
+    @Value("${arex.api.config.application.url}")
     private String applicationUrl;
-    @Value("${arex.report.config.schedule.url}")
+    @Value("${arex.api.config.schedule.url}")
     private String scheduleUrl;
-    @Value("${arex.report.config.desensitization.url}")
+    @Value("${arex.api.config.desensitization.url}")
     private String desensitizationConfigUrl;
 
     public Application application(String appId) {
