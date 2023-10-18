@@ -24,10 +24,10 @@ public class ReplayNoiseItemDto {
     private ReplayCompareResult compareResult;
     private List<Integer> logIndexes;
 
-    // 从属于该path的错误, 以及错误数
+    // errors belonging to this path, and the number of errors
     private Map<String, Integer> subPaths;
 
-    // 错误的mocker数
+    // wrong number of mockers
     private int caseCount;
 
     public int getPathCount() {

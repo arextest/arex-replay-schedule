@@ -24,7 +24,7 @@ public class MongoHelper {
         }
     }
 
-    // keys通过.拼接
+    // keys are spliced with "."
     public static String appendDot(String... keys) {
         if (keys == null || keys.length == 0) {
             return null;
