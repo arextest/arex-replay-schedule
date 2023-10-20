@@ -35,7 +35,6 @@ public class DefaultExecutionContextProvider
     private final ReplaySenderFactory replaySenderFactory;
 
     private static final RetryTemplate RETRY_TEMPLATE = RetryTemplate.builder().maxAttempts(3).build();
-    // private static final String CONTEXT_PREFIX = "batch-";
     private static final String CONFIG_CENTER_WARM_UP_HEAD = "arex_replay_prepare_dependency";
 
     @Data

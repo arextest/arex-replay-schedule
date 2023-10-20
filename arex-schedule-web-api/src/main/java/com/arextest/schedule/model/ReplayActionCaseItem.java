@@ -61,7 +61,6 @@ public class ReplayActionCaseItem {
     /**
      * the compare mode of the case, {@link CompareModeType}
      */
-    @JsonIgnore
     private CompareModeType compareMode = CompareModeType.QUiCK;
 
     public String replayDependency() {
