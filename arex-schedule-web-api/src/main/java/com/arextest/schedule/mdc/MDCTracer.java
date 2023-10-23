@@ -15,6 +15,9 @@ public final class MDCTracer {
     private static final String PLAN_ITEM_ID = "planItemId";
     private static final String EXECUTION_CONTEXT_NAME = "executionContextName";
 
+    private static final String FOR_NOISE_ACTION_ID = "noiseActionId";
+    private static final String FOR_NOISE_DETAIL_ID = "noiseDetailId";
+
     private static final String APP_TYPE = "app-type";
     private static final String AREX_SCHEDULE = "arex-schedule";
 
@@ -80,6 +83,26 @@ public final class MDCTracer {
     public static void removeDetailId() {
         MDC.remove(DETAIL_ID);
     }
+
+    // region the tag for the log of noise identify
+    public static void addNoiseActionId(String detailId) {
+        addAppType();
+        MDC.put(FOR_NOISE_ACTION_ID, detailId);
+    }
+
+    public static void removeNoiseActionId() {
+        MDC.remove(FOR_NOISE_ACTION_ID);
+    }
+
+    public static void addNoiseDetailId(String detailId) {
+        addAppType();
+        MDC.put(FOR_NOISE_DETAIL_ID, detailId);
+    }
+
+    public static void removeNoiseDetailId() {
+        MDC.remove(FOR_NOISE_DETAIL_ID);
+    }
+    // endregion
 
     public static void clear() {
         MDC.clear();

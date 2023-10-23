@@ -1,5 +1,11 @@
 package com.arextest.schedule.planexecution.impl;
 
+import java.util.*;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.retry.support.RetryTemplate;
+
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
@@ -11,21 +17,10 @@ import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
 import com.arextest.schedule.utils.ReplayParentBinder;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.retry.support.RetryTemplate;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Created by Qzmo on 2023/5/15
@@ -34,12 +29,12 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @AllArgsConstructor
-public class DefaultExecutionContextProvider implements PlanExecutionContextProvider<DefaultExecutionContextProvider.ContextDependenciesHolder> {
+public class DefaultExecutionContextProvider
+    implements PlanExecutionContextProvider<DefaultExecutionContextProvider.ContextDependenciesHolder> {
     private final ReplayActionCaseItemRepository replayActionCaseItemRepository;
     private final ReplaySenderFactory replaySenderFactory;
 
     private static final RetryTemplate RETRY_TEMPLATE = RetryTemplate.builder().maxAttempts(3).build();
-    private static final String CONTEXT_PREFIX = "batch-";
     private static final String CONFIG_CENTER_WARM_UP_HEAD = "arex_replay_prepare_dependency";
 
     @Data
@@ -55,22 +50,22 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
         if (hasNullIdentifier) {
             // build context for null identifier, will skip before hook for this context
             PlanExecutionContext<ContextDependenciesHolder> context = new PlanExecutionContext<>();
-            context.setContextName(CONTEXT_PREFIX + "no-config");
+            context.setContextName(PlanExecutionContext.buildContextName(null));
 
             // set up null dependency to indicate that this context does not need to be warmed up
             ContextDependenciesHolder dependenciesHolder = new ContextDependenciesHolder();
             dependenciesHolder.setContextIdentifier(null);
             context.setDependencies(dependenciesHolder);
 
-            context.setContextCaseQuery(Collections.singletonList(
-                    Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).isNull()));
+            context.setContextCaseQuery(
+                Collections.singletonList(Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).isNull()));
             contexts.add(context);
         }
 
         // build context for each distinct identifier, need to prepare remote resources for each context
         distinctIdentifiers.forEach(identifier -> {
             PlanExecutionContext<ContextDependenciesHolder> context = new PlanExecutionContext<>();
-            context.setContextName(CONTEXT_PREFIX + identifier);
+            context.setContextName(PlanExecutionContext.buildContextName(identifier));
 
             // set up dependency info holder for warmup
             ContextDependenciesHolder dependenciesHolder = new ContextDependenciesHolder();
@@ -78,8 +73,8 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
             context.setDependencies(dependenciesHolder);
 
             // set up query for cases of this context
-            context.setContextCaseQuery(Collections.singletonList(
-                    Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).is(identifier)));
+            context.setContextCaseQuery(Collections
+                .singletonList(Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).is(identifier)));
             contexts.add(context);
         });
 
@@ -89,13 +84,15 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
     @Override
     public void injectContextIntoCase(List<ReplayActionCaseItem> cases) {
         cases.forEach(caseItem -> {
-            // extract config batch no from caseItem in advance, the entire request will be compressed using zstd which is not queryable
+            // extract config batch no from caseItem in advance, the entire request will be compressed using zstd which
+            // is not queryable
             caseItem.setContextIdentifier(caseItem.replayDependency());
         });
     }
 
     @Override
-    public void onBeforeContextExecution(PlanExecutionContext<ContextDependenciesHolder> currentContext, ReplayPlan plan) {
+    public void onBeforeContextExecution(PlanExecutionContext<ContextDependenciesHolder> currentContext,
+        ReplayPlan plan) {
         MDCTracer.addExecutionContextNme(currentContext.getContextName());
         LOGGER.info("Start executing context: {}", currentContext);
         ContextDependenciesHolder dependencyHolder = currentContext.getDependencies();
@@ -110,7 +107,8 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
 
         try {
             // find warmup case for this batch
-            ReplayActionCaseItem warmupCase = replayActionCaseItemRepository.getOneOfContext(plan.getId(), dependencyHolder.getContextIdentifier());
+            ReplayActionCaseItem warmupCase =
+                replayActionCaseItemRepository.getOneOfContext(plan.getId(), dependencyHolder.getContextIdentifier());
             ReplayParentBinder.setupCaseItemParent(warmupCase, plan.getActionItemMap().get(warmupCase.getPlanItemId()));
             ReplaySender sender = replaySenderFactory.findReplaySender(warmupCase.getCaseType());
 
@@ -119,7 +117,8 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
                 // todo: multi-instance should be supported here
                 boolean caseSuccess = sender.send(warmupCase, warmupHeader);
                 if (!caseSuccess) {
-                    throw new RuntimeException("Failed to warmup context: " + currentContext + " with case:" + warmupCase);
+                    throw new RuntimeException(
+                        "Failed to warmup context: " + currentContext + " with case:" + warmupCase);
                 }
                 return true;
             });
@@ -132,7 +131,8 @@ public class DefaultExecutionContextProvider implements PlanExecutionContextProv
     }
 
     @Override
-    public void onAfterContextExecution(PlanExecutionContext<ContextDependenciesHolder> currentContext, ReplayPlan plan) {
+    public void onAfterContextExecution(PlanExecutionContext<ContextDependenciesHolder> currentContext,
+        ReplayPlan plan) {
         LOGGER.info("Finished executing context: {}", currentContext);
         // clean up context related resources on target instances...
     }

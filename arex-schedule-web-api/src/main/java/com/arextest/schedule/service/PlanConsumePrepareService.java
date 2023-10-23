@@ -1,38 +1,34 @@
 package com.arextest.schedule.service;
 
-import com.arextest.schedule.bizlog.BizLogger;
-import com.arextest.schedule.common.CommonConstant;
-import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
-import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
-import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
-import com.arextest.schedule.model.AppServiceDescriptor;
-import com.arextest.schedule.model.AppServiceOperationDescriptor;
-import com.arextest.schedule.model.CaseSendStatusType;
-import com.arextest.schedule.model.CompareProcessStatusType;
-import com.arextest.schedule.model.LogType;
-import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.ReplayPlan;
-import com.arextest.schedule.model.ReplayStatusType;
-import com.arextest.schedule.model.deploy.ServiceInstance;
-import com.arextest.schedule.model.plan.BuildReplayPlanType;
-import com.arextest.schedule.plan.PlanContext;
-import com.arextest.schedule.plan.PlanContextCreator;
-import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
-import com.arextest.schedule.progress.ProgressEvent;
-import com.arextest.schedule.utils.ReplayParentBinder;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Service;
-
-import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
+
+import javax.annotation.Resource;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
+
+import com.arextest.schedule.bizlog.BizLogger;
+import com.arextest.schedule.common.CommonConstant;
+import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
+import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
+import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
+import com.arextest.schedule.model.*;
+import com.arextest.schedule.model.deploy.ServiceInstance;
+import com.arextest.schedule.model.plan.BuildReplayPlanType;
+import com.arextest.schedule.plan.PlanContext;
+import com.arextest.schedule.plan.PlanContextCreator;
+import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
+import com.arextest.schedule.progress.ProgressEvent;
+import com.arextest.schedule.service.noise.ReplayNoiseIdentify;
+import com.arextest.schedule.utils.ReplayParentBinder;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Created by Qzmo on 2023/7/5
@@ -65,15 +61,16 @@ public class PlanConsumePrepareService {
     private DeployedEnvironmentService deployedEnvironmentService;
     @Resource
     private ExecutorService rerunPrepareExecutorService;
+    @Resource
+    private ReplayNoiseIdentify replayNoiseIdentify;
 
     public int prepareRunData(ReplayPlan replayPlan) {
-        metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(), replayPlan.getAppId(), null,
-            System.currentTimeMillis() - replayPlan.getPlanCreateMillis());
+        metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(),
+            replayPlan.getAppId(), null, System.currentTimeMillis() - replayPlan.getPlanCreateMillis());
         int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());
         if (replayPlan.isReRun()) {
             replayPlan.setReRunCaseCount(planSavedCaseSize);
-        }
-        else if (planSavedCaseSize != replayPlan.getCaseTotalCount()) {
+        } else if (planSavedCaseSize != replayPlan.getCaseTotalCount()) {
             LOGGER.info("update the plan TotalCount, plan id:{} ,appId: {} , size: {} -> {}", replayPlan.getId(),
                 replayPlan.getAppId(), replayPlan.getCaseTotalCount(), planSavedCaseSize);
             replayPlan.setCaseTotalCount(planSavedCaseSize);
@@ -129,18 +126,17 @@ public class PlanConsumePrepareService {
         return size;
     }
 
-
     private void caseItemPostProcess(List<ReplayActionCaseItem> caseItemList) {
         // to provide necessary fields into case item for context to consume when sending
         planExecutionContextProvider.injectContextIntoCase(caseItemList);
     }
 
     /**
-     * Paging query storage's recording data.
-     * if caseCountLimit > CommonConstant.MAX_PAGE_SIZE, Calculate the latest pageSize and recycle pagination queries
+     * Paging query storage's recording data. if caseCountLimit > CommonConstant.MAX_PAGE_SIZE, Calculate the latest
+     * pageSize and recycle pagination queries
      * <p>
-     * else if caseCountLimit < CommonConstant.MAX_PAGE_SIZE or recording data size < request page size,
-     * Only need to query once by page
+     * else if caseCountLimit < CommonConstant.MAX_PAGE_SIZE or recording data size < request page size, Only need to
+     * query once by page
      */
     private int doPagingLoadCaseSave(ReplayActionItem replayActionItem, String providerName) {
         final ReplayPlan replayPlan = replayActionItem.getParent();
@@ -201,16 +197,14 @@ public class PlanConsumePrepareService {
         return size;
     }
 
-
+    // region rerun plan
     public void updateFailedActionAndCase(ReplayPlan replayPlan, List<ReplayActionCaseItem> failedCaseList) {
         List<ReplayActionItem> replayActionItems = replayPlanActionRepository.queryPlanActionList(replayPlan.getId());
 
-        Map<String, List<ReplayActionCaseItem>> failedCaseMap = failedCaseList.stream()
-            .peek(caseItem -> {
-                caseItem.setSendStatus(CaseSendStatusType.WAIT_HANDLING.getValue());
-                caseItem.setCompareStatus(CompareProcessStatusType.WAIT_HANDLING.getValue());
-            })
-            .collect(Collectors.groupingBy(ReplayActionCaseItem::getPlanItemId));
+        Map<String, List<ReplayActionCaseItem>> failedCaseMap = failedCaseList.stream().peek(caseItem -> {
+            caseItem.setSendStatus(CaseSendStatusType.WAIT_HANDLING.getValue());
+            caseItem.setCompareStatus(CompareProcessStatusType.WAIT_HANDLING.getValue());
+        }).collect(Collectors.groupingBy(ReplayActionCaseItem::getPlanItemId));
 
         List<ReplayActionItem> failedActionList = replayActionItems.stream()
             .filter(actionItem -> CollectionUtils.isNotEmpty(failedCaseMap.get(actionItem.getId())))
@@ -221,24 +215,33 @@ public class PlanConsumePrepareService {
                 ReplayParentBinder.setupCaseItemParent(actionItem.getCaseItemList(), actionItem);
             }).collect(Collectors.toList());
         replayPlan.setReplayActionItemList(failedActionList);
-        doResumeOperationDescriptor(replayPlan);
-        replayActionItemPreprocessService.filterActionItem(replayPlan.getReplayActionItemList(), replayPlan.getAppId());
-        Set<String> availableActionIds = replayPlan.getReplayActionItemList().stream()
-            .map(ReplayActionItem::getId).collect(Collectors.toSet());
 
+        doResumeOperationDescriptor(replayPlan);
+        // filter actionItem by appId and fill exclusionOperationConfig
+        replayActionItemPreprocessService.filterActionItem(replayPlan.getReplayActionItemList(), replayPlan.getAppId());
+
+        Set<String> availableActionIds =
+            replayPlan.getReplayActionItemList().stream().map(ReplayActionItem::getId).collect(Collectors.toSet());
         // After filter actionItem, update related ReplayActionCaseItems
-        Map<String, List<String>> actionIdAndRecordIdsMap = failedCaseMap.entrySet().stream()
-            .filter(entry -> availableActionIds.contains(entry.getKey()))
-            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream()
-                .map(ReplayActionCaseItem::getRecordId).collect(Collectors.toList())));
+        Map<String, List<String>> actionIdAndRecordIdsMap =
+            failedCaseMap.entrySet().stream().filter(entry -> availableActionIds.contains(entry.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream()
+                    .map(ReplayActionCaseItem::getRecordId).collect(Collectors.toList())));
         List<ReplayActionCaseItem> newFailedCaseList = failedCaseList.stream()
             .filter(replayActionCaseItem -> availableActionIds.contains(replayActionCaseItem.getPlanItemId()))
             .collect(Collectors.toList());
+
         CompletableFuture removeRecordsAndScenesTask = CompletableFuture.runAsync(
             () -> replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap), rerunPrepareExecutorService);
+        // XXX: Whether batch update actionCaseItem status is redundant, rerun in doFixedCaseSave has already
+        // implemented this processing
         CompletableFuture batchUpdateStatusTask = CompletableFuture.runAsync(
             () -> replayActionCaseItemRepository.batchUpdateStatus(newFailedCaseList), rerunPrepareExecutorService);
-        CompletableFuture.allOf(removeRecordsAndScenesTask, batchUpdateStatusTask).join();
+        CompletableFuture<Void> noiseAnalysisRecover = CompletableFuture.runAsync(
+            () -> replayNoiseIdentify.rerunNoiseAnalysisRecovery(replayPlan.getReplayActionItemList()),
+            rerunPrepareExecutorService);
+
+        CompletableFuture.allOf(removeRecordsAndScenesTask, batchUpdateStatusTask, noiseAnalysisRecover).join();
         replayPlan.setReRunCaseCount(newFailedCaseList.size());
     }
 
@@ -249,17 +252,17 @@ public class PlanConsumePrepareService {
             operationDescriptor = planContext.findAppServiceOperationDescriptor(actionItem.getOperationId());
             if (operationDescriptor == null) {
                 LOGGER.warn("skip resume when the plan operationDescriptor not found, action id: {} ,",
-                    actionItem.getId()
-                );
+                    actionItem.getId());
                 continue;
             }
             AppServiceDescriptor appServiceDescriptor = operationDescriptor.getParent();
-            List<ServiceInstance> activeInstanceList = deployedEnvironmentService.getActiveInstanceList(appServiceDescriptor,
-                replayPlan.getTargetEnv());
+            List<ServiceInstance> activeInstanceList =
+                deployedEnvironmentService.getActiveInstanceList(appServiceDescriptor, replayPlan.getTargetEnv());
             appServiceDescriptor.setTargetActiveInstanceList(activeInstanceList);
 
             planContext.fillReplayAction(actionItem, operationDescriptor);
             replayPlan.setMinInstanceCount(planContext.determineMinInstanceCount());
         }
     }
+    // endregion
 }

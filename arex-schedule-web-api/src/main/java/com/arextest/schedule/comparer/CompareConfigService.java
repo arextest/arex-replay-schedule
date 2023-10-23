@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -104,6 +103,7 @@ public final class CompareConfigService {
                 .map(GenericResponseType::getBody)
                 .map(ReplayCompareConfig::getReplayComparisonItems)
                 .orElse(Collections.emptyList());
+        // TODO: add the log of the ComparisonConfig
 
 
         // converts
