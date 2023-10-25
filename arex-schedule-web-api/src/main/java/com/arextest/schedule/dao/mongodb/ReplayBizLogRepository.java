@@ -30,7 +30,6 @@ public class ReplayBizLogRepository implements RepositoryField {
     private static final String LOG_TYPE_KEY = "logType";
     private static final String LOG_ACTION_ID_KEY = "actionItemId";
     private static final String LOG_RESUME_KEY = "resumedExecution";
-    private static final String RERUN_KEY = "reRun";
     private static final String[] EXCLUSIONS = {"dataChangeCreateTime",
             "dataChangeUpdateTime",
             "dataChangeCreateDate",
@@ -90,7 +89,6 @@ public class ReplayBizLogRepository implements RepositoryField {
         if (condition.getResumedExecution() != null) {
             query.addCriteria(Criteria.where(LOG_RESUME_KEY).is(condition.getResumedExecution()));
         }
-        query.addCriteria(Criteria.where(RERUN_KEY).is(false));
 
         return query;
     }

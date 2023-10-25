@@ -101,14 +101,8 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         Query query = new Query();
         query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
         query.addCriteria(new Criteria().orOperator(
-            new Criteria().andOperator(
-                Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).ne(CaseSendStatusType.WAIT_HANDLING.getValue()),
-                Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).ne(CaseSendStatusType.SUCCESS.getValue())
-            ),
-            new Criteria().andOperator(
-                Criteria.where(ReplayActionCaseItem.FIELD_COMPARE_STATUS).ne(CompareProcessStatusType.WAIT_HANDLING.getValue()),
-                Criteria.where(ReplayActionCaseItem.FIELD_COMPARE_STATUS).ne(CompareProcessStatusType.PASS.getValue())
-            )
+            Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).ne(CaseSendStatusType.SUCCESS.getValue()),
+            Criteria.where(ReplayActionCaseItem.FIELD_COMPARE_STATUS).ne(CompareProcessStatusType.PASS.getValue())
         ));
 
         List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query, ReplayRunDetailsCollection.class);
