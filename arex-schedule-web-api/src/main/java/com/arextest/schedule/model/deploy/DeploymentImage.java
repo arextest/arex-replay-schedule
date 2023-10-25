@@ -9,18 +9,19 @@ import lombok.Data;
  */
 @Data
 public class DeploymentImage {
-    private String id;
-    private String name;
 
-    /**
-     * The author of source code
-     */
-    private String creator;
+  private String id;
+  private String name;
 
-    /**
-     * from the latest of git push commit message
-     */
-    private String note;
-    @JsonAlias("created_at")
-    private String createdAt;
+  /**
+   * The author of source code
+   */
+  private String creator;
+
+  /**
+   * from the latest of git push commit message
+   */
+  private String note;
+  @JsonAlias("created_at")
+  private String createdAt;
 }

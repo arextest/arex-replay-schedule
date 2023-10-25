@@ -1,9 +1,8 @@
 package com.arextest.schedule.model;
 
 import com.arextest.schedule.sender.SenderParameters;
-import lombok.Data;
-
 import java.util.Map;
+import lombok.Data;
 
 /**
  * @author: miaolu
@@ -11,13 +10,14 @@ import java.util.Map;
  **/
 @Data
 public class DebugRequestItem implements SenderParameters {
-    private String requestType;
-    private String appId;
-    private String url;
-    private String operation;
-    private String format;
-    private String message;
-    private String subEnv;
-    private String consumeGroup;
-    private Map<String, String> headers;
+
+  private String requestType;
+  private String appId;
+  private String url;
+  private String operation;
+  private String format;
+  private String message;
+  private String subEnv;
+  private String consumeGroup;
+  private Map<String, String> headers;
 }

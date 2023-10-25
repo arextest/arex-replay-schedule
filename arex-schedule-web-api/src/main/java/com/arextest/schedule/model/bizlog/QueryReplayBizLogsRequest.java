@@ -7,6 +7,7 @@ import lombok.Data;
  */
 @Data
 public class QueryReplayBizLogsRequest {
-    private String planId;
-    private ReplayBizLogQueryCondition condition;
+
+  private String planId;
+  private ReplayBizLogQueryCondition condition;
 }

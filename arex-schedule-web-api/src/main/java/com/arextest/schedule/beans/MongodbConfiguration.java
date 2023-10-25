@@ -2,8 +2,6 @@ package com.arextest.schedule.beans;
 
 import com.arextest.common.utils.SerializationUtils;
 import com.arextest.model.mock.Mocker;
-import com.arextest.model.mock.Mocker.Target;
-import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.model.dao.mongodb.ReplayBizLogCollection;
 import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
@@ -23,10 +21,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.convert.CustomConversions;
-import org.springframework.data.convert.ReadingConverter;
-import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
@@ -34,96 +28,98 @@ import org.springframework.data.mongodb.core.convert.DbRefResolver;
 import org.springframework.data.mongodb.core.convert.DefaultDbRefResolver;
 import org.springframework.data.mongodb.core.convert.DefaultMongoTypeMapper;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
-import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 
 @Slf4j
 @Configuration(proxyBeanMethods = false)
 public class MongodbConfiguration {
-    @Value("${arex.mongo.uri}")
-    private String mongoUrl;
 
-    @Bean
-    @ConditionalOnMissingBean
-    public MongoDatabaseFactory mongoDbFactory() {
-        try {
-            CompressionMongoClientDatabaseFactory fac = new CompressionMongoClientDatabaseFactory(mongoUrl);
-            MongoDatabase db = fac.getMongoDatabase();
-            ensureIndex(db);
-            return fac;
-        } catch (Exception e) {
-            LOGGER.error("cannot connect mongodb {}", e.getMessage(), e);
-            throw e;
-        }
+  @Value("${arex.mongo.uri}")
+  private String mongoUrl;
+
+  @Bean
+  @ConditionalOnMissingBean
+  public MongoDatabaseFactory mongoDbFactory() {
+    try {
+      CompressionMongoClientDatabaseFactory fac = new CompressionMongoClientDatabaseFactory(
+          mongoUrl);
+      MongoDatabase db = fac.getMongoDatabase();
+      ensureIndex(db);
+      return fac;
+    } catch (Exception e) {
+      LOGGER.error("cannot connect mongodb {}", e.getMessage(), e);
+      throw e;
+    }
+  }
+
+
+  private void ensureIndex(MongoDatabase db) {
+    Document index = new Document();
+    // run details
+    index.append(ReplayRunDetailsCollection.FIELD_PLAN_ID, 1);
+    index.append(ReplayRunDetailsCollection.FIELD_SEND_STATUS, 1);
+    db.getCollection(ReplayRunDetailsCollection.COLLECTION_NAME).createIndex(index);
+
+    // biz log
+    index = new Document();
+    index.append(BizLog.FIELD_PLAN_ID, 1);
+    db.getCollection(ReplayBizLogCollection.COLLECTION_NAME).createIndex(index);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  public MongoTemplate mongoTemplate(MongoDatabaseFactory mongoDatabaseFactory) {
+    DbRefResolver dbRefResolver = new DefaultDbRefResolver(mongoDatabaseFactory);
+    MappingMongoConverter converter = new MappingMongoConverter(dbRefResolver,
+        new MongoMappingContext());
+    converter.setTypeMapper(new DefaultMongoTypeMapper(null));
+    converter.afterPropertiesSet();
+    return new MongoTemplate(mongoDatabaseFactory, converter);
+  }
+
+  public static class CompressionMongoClientDatabaseFactory extends
+      SimpleMongoClientDatabaseFactory {
+
+    public CompressionMongoClientDatabaseFactory(String connectionString) {
+      super(connectionString);
     }
 
+    @Override
+    public CodecRegistry getCodecRegistry() {
+      CodecRegistry compressionCodecRegistry =
+          CodecRegistries.fromCodecs(new CompressionCodecImpl<>(Mocker.Target.class));
+      final CodecRegistry customPojo = CodecRegistries.fromProviders(compressionCodecRegistry,
+          PojoCodecProvider
+              .builder().automatic(true).build());
+      return CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
+          customPojo);
 
-    private void ensureIndex(MongoDatabase db) {
-        Document index = new Document();
-        // run details
-        index.append(ReplayRunDetailsCollection.FIELD_PLAN_ID, 1);
-        index.append(ReplayRunDetailsCollection.FIELD_SEND_STATUS, 1);
-        db.getCollection(ReplayRunDetailsCollection.COLLECTION_NAME).createIndex(index);
-
-        // biz log
-        index = new Document();
-        index.append(BizLog.FIELD_PLAN_ID, 1);
-        db.getCollection(ReplayBizLogCollection.COLLECTION_NAME).createIndex(index);
     }
 
-    @Bean
-    @ConditionalOnMissingBean
-    public MongoTemplate mongoTemplate(MongoDatabaseFactory mongoDatabaseFactory) {
-        DbRefResolver dbRefResolver = new DefaultDbRefResolver(mongoDatabaseFactory);
-        MappingMongoConverter converter = new MappingMongoConverter(dbRefResolver, new MongoMappingContext());
-        converter.setTypeMapper(new DefaultMongoTypeMapper(null));
-        converter.afterPropertiesSet();
-        return new MongoTemplate(mongoDatabaseFactory, converter);
+    private static final class CompressionCodecImpl<T> implements Codec<T> {
+
+      private final Class<T> target;
+
+      CompressionCodecImpl(Class<T> target) {
+        this.target = target;
+      }
+
+      @Override
+      public T decode(BsonReader reader, DecoderContext decoderContext) {
+        return SerializationUtils.useZstdDeserialize(reader.readString(), this.target);
+      }
+
+      @Override
+      public void encode(BsonWriter writer, T value, EncoderContext encoderContext) {
+        String base64Result = SerializationUtils.useZstdSerializeToBase64(value);
+        writer.writeString(base64Result);
+      }
+
+      @Override
+      public Class<T> getEncoderClass() {
+        return target;
+      }
     }
-
-    public static class CompressionMongoClientDatabaseFactory extends SimpleMongoClientDatabaseFactory {
-        public CompressionMongoClientDatabaseFactory(String connectionString) {
-            super(connectionString);
-        }
-
-        @Override
-        public CodecRegistry getCodecRegistry() {
-            CodecRegistry compressionCodecRegistry =
-                    CodecRegistries.fromCodecs(new CompressionCodecImpl<>(Mocker.Target.class));
-            final CodecRegistry customPojo = CodecRegistries.fromProviders(compressionCodecRegistry, PojoCodecProvider
-                    .builder().automatic(true).build());
-            return CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
-                    customPojo);
-
-        }
-
-        private static final class CompressionCodecImpl<T> implements Codec<T> {
-            private final Class<T> target;
-
-            CompressionCodecImpl(Class<T> target) {
-                this.target = target;
-            }
-
-            @Override
-            public T decode(BsonReader reader, DecoderContext decoderContext) {
-                return SerializationUtils.useZstdDeserialize(reader.readString(), this.target);
-            }
-
-            @Override
-            public void encode(BsonWriter writer, T value, EncoderContext encoderContext) {
-                String base64Result = SerializationUtils.useZstdSerializeToBase64(value);
-                writer.writeString(base64Result);
-            }
-
-            @Override
-            public Class<T> getEncoderClass() {
-                return target;
-            }
-        }
-    }
+  }
 }

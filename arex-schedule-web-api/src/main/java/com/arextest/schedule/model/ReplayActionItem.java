@@ -1,18 +1,16 @@
 package com.arextest.schedule.model;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanItemCollection;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.deploy.ServiceInstanceOperation;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -24,105 +22,100 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(of = {"id"})
 public class ReplayActionItem {
-    public final static int SOA_TRIGGER = 0;
-    public final static int QMQ_TRIGGER = 1;
-    private ReplayPlan parent;
-    private String id;
-    private String operationId;
-    private String planId;
-    /**
-     * example: applyRefund
-     */
-    private String operationName;
-    /**
-     * example: RefundPaymentService
-     */
-    @JsonIgnore
-    private String serviceName;
-    /**
-     * example: flight.ticket.refund.refundpaymentservice.v1.refundpaymentservice
-     */
-    private String serviceKey;
-    @JsonIgnore
-    private List<ReplayActionCaseItem> caseItemList;
-    @JsonIgnore
-    private long lastRecordTime;
 
-    @JsonIgnore
-    private SendSemaphoreLimiter sendRateLimiter;
-    /**
-     * @see ReplayStatusType
-     */
-    @JsonIgnore
-    private int replayStatus;
+  public final static int SOA_TRIGGER = 0;
+  public final static int QMQ_TRIGGER = 1;
+  @JsonIgnore
+  public ExecutionStatus planStatus;
+  private ReplayPlan parent;
+  private String id;
+  private String operationId;
+  private String planId;
+  /**
+   * example: applyRefund
+   */
+  private String operationName;
+  /**
+   * example: RefundPaymentService
+   */
+  @JsonIgnore
+  private String serviceName;
+  /**
+   * example: flight.ticket.refund.refundpaymentservice.v1.refundpaymentservice
+   */
+  private String serviceKey;
+  @JsonIgnore
+  private List<ReplayActionCaseItem> caseItemList;
+  @JsonIgnore
+  private long lastRecordTime;
+  @JsonIgnore
+  private SendSemaphoreLimiter sendRateLimiter;
+  /**
+   * @see ReplayStatusType
+   */
+  @JsonIgnore
+  private int replayStatus;
+  private Date replayBeginTime;
+  @JsonIgnore
+  private Date replayFinishTime;
+  /**
+   * see defined {@link MockCategoryType} for all entry points
+   */
+  private String actionType;
+  @JsonIgnore
+  private List<ServiceInstance> sourceInstance;
+  @JsonIgnore
+  private List<ServiceInstance> targetInstance;
+  @JsonIgnore
+  private ServiceInstanceOperation mappedInstanceOperation;
+  private int replayCaseCount;
+  private int rerunCaseCount;
+  private String appId;
+  private Set<String> operationTypes;
+  /**
+   * the interfaces which don't use the mock when replaying
+   */
+  @JsonIgnore
+  private String exclusionOperationConfig;
+  private Map<String, Integer> noiseFinishedContexts;
+  @JsonIgnore
+  private String errorMessage;
+  @JsonIgnore
+  private boolean itemProcessed;
+  @JsonIgnore
+  private AtomicInteger caseProcessCount = new AtomicInteger();
 
-    private Date replayBeginTime;
-    @JsonIgnore
-    private Date replayFinishTime;
-
-    /**
-     * see defined {@link MockCategoryType} for all entry points
-     */
-    private String actionType;
-    @JsonIgnore
-    private List<ServiceInstance> sourceInstance;
-    @JsonIgnore
-    private List<ServiceInstance> targetInstance;
-    @JsonIgnore
-    private ServiceInstanceOperation mappedInstanceOperation;
-    private int replayCaseCount;
-    private int rerunCaseCount;
-    private String appId;
-    private Set<String> operationTypes;
-    /**
-     * the interfaces which don't use the mock when replaying
-     */
-    @JsonIgnore
-    private String exclusionOperationConfig;
-
-    private Map<String, Integer> noiseFinishedContexts;
-
-    public String getPlanId() {
-        if (this.parent != null) {
-            return this.parent.getId();
-        }
-        return planId;
+  public String getPlanId() {
+    if (this.parent != null) {
+      return this.parent.getId();
     }
+    return planId;
+  }
 
-    public String getAppId() {
-        if (appId == null && this.parent != null) {
-            return this.parent.getAppId();
-        }
-        return appId;
+  public String getAppId() {
+    if (appId == null && this.parent != null) {
+      return this.parent.getAppId();
     }
+    return appId;
+  }
 
-    public boolean isEmpty() {
-        return replayCaseCount == 0;
-    }
+  public boolean isEmpty() {
+    return replayCaseCount == 0;
+  }
 
-    public boolean finalized() {
-        return ReplayStatusType.ofCode(this.getReplayStatus()).finalized();
-    }
+  public boolean finalized() {
+    return ReplayStatusType.ofCode(this.getReplayStatus()).finalized();
+  }
 
-    @JsonIgnore
-    private String errorMessage;
-    @JsonIgnore
-    private boolean itemProcessed;
-    @JsonIgnore
-    private AtomicInteger caseProcessCount = new AtomicInteger();
+  public void recordProcessCaseCount(int incoming) {
+    this.caseProcessCount.addAndGet(incoming);
+  }
 
-    public void recordProcessCaseCount(int incoming) {
-        this.caseProcessCount.addAndGet(incoming);
-    }
+  public void recordProcessOne() {
+    this.caseProcessCount.incrementAndGet();
+  }
 
-    public void recordProcessOne() {
-        this.caseProcessCount.incrementAndGet();
-    }
-
-    public boolean sendDone() {
-        return this.caseProcessCount.get() >= this.getReplayCaseCount();
-    }
-
-    @JsonIgnore
-    public ExecutionStatus planStatus;
+  public boolean sendDone() {
+    return this.caseProcessCount.get() >= this.getReplayCaseCount();
+  }
 }

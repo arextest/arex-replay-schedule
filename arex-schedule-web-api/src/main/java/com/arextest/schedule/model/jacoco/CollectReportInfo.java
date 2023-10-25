@@ -7,8 +7,9 @@ import lombok.Data;
  */
 @Data
 public class CollectReportInfo {
-    private Long id;
-    private Long merge_request_iid;
-    private Boolean status;
+
+  private Long id;
+  private Long merge_request_iid;
+  private Boolean status;
 
 }

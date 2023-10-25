@@ -9,13 +9,14 @@ import lombok.Data;
  */
 @Data
 public class ComparisonGlobalConfig extends ReplayComparisonConfig {
-    public static String dependencyKey(String planId) {
-        return CommonConstant.COMPARE_GLOBAL_CONFIG_REDIS_KEY + planId;
-    }
 
-    public static ComparisonGlobalConfig empty() {
-        ComparisonGlobalConfig config = new ComparisonGlobalConfig();
-        config.fillCommonFields();
-        return config;
-    }
+  public static String dependencyKey(String planId) {
+    return CommonConstant.COMPARE_GLOBAL_CONFIG_REDIS_KEY + planId;
+  }
+
+  public static ComparisonGlobalConfig empty() {
+    ComparisonGlobalConfig config = new ComparisonGlobalConfig();
+    config.fillCommonFields();
+    return config;
+  }
 }

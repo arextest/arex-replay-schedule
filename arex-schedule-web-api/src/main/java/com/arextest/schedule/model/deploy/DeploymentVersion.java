@@ -9,20 +9,21 @@ import lombok.Data;
  */
 @Data
 public class DeploymentVersion {
-    private String id;
-    /**
-     * example: APPROVED
-     */
-    private String status;
-    private String name;
-    /**
-     * example 2021-08-26 14:35:59
-     */
-    @JsonAlias("created_at")
-    private String createdAt;
-    @JsonAlias("group_id")
-    private String groupId;
-    @JsonAlias("image_id")
-    private String imageId;
-    private DeploymentImage image;
+
+  private String id;
+  /**
+   * example: APPROVED
+   */
+  private String status;
+  private String name;
+  /**
+   * example 2021-08-26 14:35:59
+   */
+  @JsonAlias("created_at")
+  private String createdAt;
+  @JsonAlias("group_id")
+  private String groupId;
+  @JsonAlias("image_id")
+  private String imageId;
+  private DeploymentImage image;
 }

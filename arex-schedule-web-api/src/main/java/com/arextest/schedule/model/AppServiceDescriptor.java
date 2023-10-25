@@ -1,9 +1,8 @@
 package com.arextest.schedule.model;
 
 import com.arextest.schedule.model.deploy.ServiceInstance;
-import lombok.Data;
-
 import java.util.List;
+import lombok.Data;
 
 /**
  * @author jmo
@@ -11,11 +10,12 @@ import java.util.List;
  */
 @Data
 public class AppServiceDescriptor {
-    private String id;
-    private String serviceKey;
-    private String serviceName;
-    private String appId;
-    private List<AppServiceOperationDescriptor> operationList;
-    private List<ServiceInstance> targetActiveInstanceList;
-    private List<ServiceInstance> sourceActiveInstanceList;
+
+  private String id;
+  private String serviceKey;
+  private String serviceName;
+  private String appId;
+  private List<AppServiceOperationDescriptor> operationList;
+  private List<ServiceInstance> targetActiveInstanceList;
+  private List<ServiceInstance> sourceActiveInstanceList;
 }

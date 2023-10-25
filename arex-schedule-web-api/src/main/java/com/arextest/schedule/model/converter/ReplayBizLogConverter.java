@@ -13,13 +13,13 @@ import org.mapstruct.factory.Mappers;
 @Mapper
 public interface ReplayBizLogConverter {
 
-    ReplayBizLogConverter INSTANCE = Mappers.getMapper(ReplayBizLogConverter.class);
+  ReplayBizLogConverter INSTANCE = Mappers.getMapper(ReplayBizLogConverter.class);
 
-    @Mappings({
-            @Mapping(target = "id", expression = "java(null)"),
-            @Mapping(target = "dataChangeCreateTime", expression = "java(System.currentTimeMillis())"),
-            @Mapping(target = "dataChangeUpdateTime", expression = "java(System.currentTimeMillis())"),
-            @Mapping(target = "dataChangeCreateDate", expression = "java(new java.util.Date())")
-    })
-    ReplayBizLogCollection daoFromDto(BizLog dto);
+  @Mappings({
+      @Mapping(target = "id", expression = "java(null)"),
+      @Mapping(target = "dataChangeCreateTime", expression = "java(System.currentTimeMillis())"),
+      @Mapping(target = "dataChangeUpdateTime", expression = "java(System.currentTimeMillis())"),
+      @Mapping(target = "dataChangeCreateDate", expression = "java(new java.util.Date())")
+  })
+  ReplayBizLogCollection daoFromDto(BizLog dto);
 }

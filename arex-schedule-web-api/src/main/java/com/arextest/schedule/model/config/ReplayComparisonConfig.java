@@ -11,83 +11,88 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import lombok.Data;
-
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import lombok.Data;
 
 /**
  * Created by wang_yc on 2021/10/14
  */
 @Data
 public class ReplayComparisonConfig {
-    private String operationName;
-    private List<String> operationTypes;
-    private List<String> ignoreCategoryTypes;
-    private Set<List<String>> exclusionList;
-    private Set<List<String>> inclusionList;
 
-    @JsonDeserialize(keyUsing = MapKeyDeserializerUtils.class)
-    @JsonSerialize(keyUsing = MapKeySerializerUtils.class)
-    private Map<List<String>, List<String>> referenceMap;
+  private String operationName;
+  private List<String> operationTypes;
+  private List<String> ignoreCategoryTypes;
+  private Set<List<String>> exclusionList;
+  private Set<List<String>> inclusionList;
 
-    @JsonDeserialize(keyUsing = MapKeyDeserializerUtils.class)
-    @JsonSerialize(keyUsing = MapKeySerializerUtils.class)
-    private Map<List<String>, List<List<String>>> listSortMap;
+  @JsonDeserialize(keyUsing = MapKeyDeserializerUtils.class)
+  @JsonSerialize(keyUsing = MapKeySerializerUtils.class)
+  private Map<List<String>, List<String>> referenceMap;
 
-    /**
-     * Custom config
-     * @see com.arextest.schedule.comparer.CustomComparisonConfigurationHandler
-     */
-    private Map<String,Object> additionalConfig;
+  @JsonDeserialize(keyUsing = MapKeyDeserializerUtils.class)
+  @JsonSerialize(keyUsing = MapKeySerializerUtils.class)
+  private Map<List<String>, List<List<String>>> listSortMap;
 
-    public final boolean checkIgnoreMockMessageType(String type, List<String> ignoreCategoryTypes) {
-        // [b_yu] 2022-10-11 Dynamic type does not compare
-        if (Objects.equals(type, MockCategoryType.DYNAMIC_CLASS.getName())) {
-            return true;
-        }
-        if (Objects.equals(type, MockCategoryType.REDIS.getName())) {
-            return true;
-        }
-        if (Objects.equals(type, MockCategoryType.Q_MESSAGE_CONSUMER.getName())) {
-            return true;
-        }
-        if (ignoreCategoryTypes != null && ignoreCategoryTypes.contains(type)) {
-            return true;
-        }
+  /**
+   * Custom config
+   *
+   * @see com.arextest.schedule.comparer.CustomComparisonConfigurationHandler
+   */
+  private Map<String, Object> additionalConfig;
 
-        return false;
+  public final boolean checkIgnoreMockMessageType(String type, List<String> ignoreCategoryTypes) {
+    // [b_yu] 2022-10-11 Dynamic type does not compare
+    if (Objects.equals(type, MockCategoryType.DYNAMIC_CLASS.getName())) {
+      return true;
+    }
+    if (Objects.equals(type, MockCategoryType.REDIS.getName())) {
+      return true;
+    }
+    if (Objects.equals(type, MockCategoryType.Q_MESSAGE_CONSUMER.getName())) {
+      return true;
+    }
+    if (ignoreCategoryTypes != null && ignoreCategoryTypes.contains(type)) {
+      return true;
     }
 
-    private static class MapKeyDeserializerUtils extends KeyDeserializer {
+    return false;
+  }
 
-        @Override
-        public Object deserializeKey(String s, DeserializationContext deserializationContext) throws IOException {
-            ObjectMapper objectMapper = new ObjectMapper();
-            return objectMapper.readValue(s, new TypeReference<List<String>>() {
-            });
-        }
+  public void fillCommonFields() {
+    this.setExclusionList(Collections.emptySet());
+    this.setInclusionList(Collections.emptySet());
+    this.setListSortMap(Collections.emptyMap());
+    this.setReferenceMap(Collections.emptyMap());
+    this.setAdditionalConfig(Collections.emptyMap());
+    this.setIgnoreCategoryTypes(Collections.emptyList());
+  }
+
+  private static class MapKeyDeserializerUtils extends KeyDeserializer {
+
+    @Override
+    public Object deserializeKey(String s, DeserializationContext deserializationContext)
+        throws IOException {
+      ObjectMapper objectMapper = new ObjectMapper();
+      return objectMapper.readValue(s, new TypeReference<List<String>>() {
+      });
     }
+  }
 
+  private static class MapKeySerializerUtils extends JsonSerializer<List<String>> {
 
-    private static class MapKeySerializerUtils extends JsonSerializer<List<String>> {
-
-        @Override
-        public void serialize(List<String> stringList,
-                              JsonGenerator jsonGenerator,
-                              SerializerProvider serializerProvider) throws IOException {
-            ObjectMapper objectMapper = new ObjectMapper();
-            String string = objectMapper.writeValueAsString(stringList);
-            jsonGenerator.writeFieldName(string);
-        }
+    @Override
+    public void serialize(List<String> stringList,
+        JsonGenerator jsonGenerator,
+        SerializerProvider serializerProvider) throws IOException {
+      ObjectMapper objectMapper = new ObjectMapper();
+      String string = objectMapper.writeValueAsString(stringList);
+      jsonGenerator.writeFieldName(string);
     }
-
-    public void fillCommonFields() {
-        this.setExclusionList(Collections.emptySet());
-        this.setInclusionList(Collections.emptySet());
-        this.setListSortMap(Collections.emptyMap());
-        this.setReferenceMap(Collections.emptyMap());
-        this.setAdditionalConfig(Collections.emptyMap());
-        this.setIgnoreCategoryTypes(Collections.emptyList());
-    }
+  }
 }
