@@ -3,7 +3,6 @@ package com.arextest.schedule.plan.builder;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.plan.PlanContext;
-
 import java.util.List;
 
 /**
@@ -11,12 +10,15 @@ import java.util.List;
  * @since 2021/9/18
  */
 public interface ReplayPlanBuilder {
-    boolean isSupported(BuildReplayPlanRequest request);
 
-    BuildPlanValidateResult validate(BuildReplayPlanRequest request, PlanContext planContext);
+  boolean isSupported(BuildReplayPlanRequest request);
 
-    List<ReplayActionItem> buildReplayActionList(BuildReplayPlanRequest request, PlanContext planContext);
+  BuildPlanValidateResult validate(BuildReplayPlanRequest request, PlanContext planContext);
 
-    int buildReplayCaseCount(List<ReplayActionItem> actionItemList);
-    void filterAppServiceDescriptors(BuildReplayPlanRequest request, PlanContext planContext);
+  List<ReplayActionItem> buildReplayActionList(BuildReplayPlanRequest request,
+      PlanContext planContext);
+
+  int buildReplayCaseCount(List<ReplayActionItem> actionItemList);
+
+  void filterAppServiceDescriptors(BuildReplayPlanRequest request, PlanContext planContext);
 }

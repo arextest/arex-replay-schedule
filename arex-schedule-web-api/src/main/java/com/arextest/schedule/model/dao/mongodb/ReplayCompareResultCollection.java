@@ -1,48 +1,46 @@
 package com.arextest.schedule.model.dao.mongodb;
 
-import com.arextest.diff.model.MsgInfo;
+import java.util.Date;
 import lombok.Data;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.util.Date;
 
 
 @Data
 @Document(collection = "ReplayCompareResult")
 public class ReplayCompareResultCollection extends ModelBase {
 
-    private String planId;
-    private String planItemId;
-    private String caseId;
+  private String planId;
+  private String planItemId;
+  private String caseId;
 
-    private String operationId;
+  private String operationId;
 
-    private String serviceName;
+  private String serviceName;
 
-    private String categoryName;
+  private String categoryName;
 
-    private String operationName;
+  private String operationName;
 
-    private String replayId;
+  private String replayId;
 
-    private String recordId;
+  private String recordId;
 
 
-    private long recordTime;
+  private long recordTime;
 
-    private long replayTime;
+  private long replayTime;
 
-    private String instanceId;
+  private String instanceId;
 
-    private String baseMsg;
+  private String baseMsg;
 
-    private String testMsg;
+  private String testMsg;
 
-    private String logs;
+  private String logs;
 
-    private int diffResultCode;
+  private int diffResultCode;
 
-    private Date dataCreateTime;
+  private Date dataCreateTime;
 
-    private ReplayCompareMsgInfoCollection msgInfo;
+  private ReplayCompareMsgInfoCollection msgInfo;
 }

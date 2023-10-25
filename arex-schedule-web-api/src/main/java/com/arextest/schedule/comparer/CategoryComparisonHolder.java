@@ -1,10 +1,7 @@
 package com.arextest.schedule.comparer;
 
-import com.arextest.model.mock.AREXMocker;
-import com.arextest.model.mock.MockCategoryType;
-import lombok.Data;
-
 import java.util.List;
+import lombok.Data;
 
 /**
  * @author jmo
@@ -12,7 +9,8 @@ import java.util.List;
  */
 @Data
 public class CategoryComparisonHolder {
-    private String categoryName;
-    private List<CompareItem> record;
-    private List<CompareItem> replayResult;
+
+  private String categoryName;
+  private List<CompareItem> record;
+  private List<CompareItem> replayResult;
 }

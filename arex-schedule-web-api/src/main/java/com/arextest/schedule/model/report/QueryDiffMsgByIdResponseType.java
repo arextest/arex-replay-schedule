@@ -8,5 +8,6 @@ import lombok.Data;
  */
 @Data
 public class QueryDiffMsgByIdResponseType extends DesensitizationResponseType {
-    CompareResultDetail compareResultDetail;
+
+  CompareResultDetail compareResultDetail;
 }

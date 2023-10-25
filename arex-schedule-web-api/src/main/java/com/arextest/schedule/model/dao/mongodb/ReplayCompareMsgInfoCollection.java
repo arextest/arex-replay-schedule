@@ -9,5 +9,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document
 @Data
 public class ReplayCompareMsgInfoCollection {
-    private int msgMiss;
+
+  private int msgMiss;
 }

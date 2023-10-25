@@ -14,17 +14,19 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 public class RedisCancelMonitor {
-    @Resource
-    private CacheProvider redisCacheProvider;
 
-    boolean isPlanCanceled(ReplayPlan plan) {
-        return isPlanCanceled(plan.getId());
-    }
-    private boolean isPlanCanceled(String planId) {
-        return isCancelled(PlanProduceService.buildStopPlanRedisKey(planId));
-    }
+  @Resource
+  private CacheProvider redisCacheProvider;
 
-    private boolean isCancelled(byte[] redisKey) {
-        return redisCacheProvider.get(redisKey) != null;
-    }
+  boolean isPlanCanceled(ReplayPlan plan) {
+    return isPlanCanceled(plan.getId());
+  }
+
+  private boolean isPlanCanceled(String planId) {
+    return isCancelled(PlanProduceService.buildStopPlanRedisKey(planId));
+  }
+
+  private boolean isCancelled(byte[] redisKey) {
+    return redisCacheProvider.get(redisKey) != null;
+  }
 }

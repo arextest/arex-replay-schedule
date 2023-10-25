@@ -7,7 +7,8 @@ import lombok.Data;
  */
 @Data
 public class JacocoCodeResultRequestType {
-    private String recordId;
-    private String jacocoExeId;
-    private String jacocoExeStatus;
+
+  private String recordId;
+  private String jacocoExeId;
+  private String jacocoExeStatus;
 }

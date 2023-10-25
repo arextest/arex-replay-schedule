@@ -1,7 +1,6 @@
 package com.arextest.schedule.model.noiseidentify;
 
 import java.util.Map;
-
 import lombok.Data;
 
 /**
@@ -9,19 +8,20 @@ import lombok.Data;
  */
 @Data
 public class ReplayNoiseDto {
-    private String planId;
 
-    private String planItemId;
+  private String planId;
 
-    private String categoryName;
+  private String planItemId;
 
-    private String operationId;
+  private String categoryName;
 
-    private String operationName;
+  private String operationId;
 
-    // k: path v: data
-    private Map<String, ReplayNoiseItemDto> mayIgnoreItems;
+  private String operationName;
 
-    private Map<String, ReplayNoiseItemDto> mayDisorderItems;
+  // k: path v: data
+  private Map<String, ReplayNoiseItemDto> mayIgnoreItems;
+
+  private Map<String, ReplayNoiseItemDto> mayDisorderItems;
 
 }

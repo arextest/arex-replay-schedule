@@ -13,9 +13,11 @@ import org.mapstruct.factory.Mappers;
 @Mapper
 public interface ReplayConfigConverter {
 
-    ReplayConfigConverter INSTANCE = Mappers.getMapper(ReplayConfigConverter.class);
+  ReplayConfigConverter INSTANCE = Mappers.getMapper(ReplayConfigConverter.class);
 
-    ComparisonInterfaceConfig interfaceDaoFromDto(ComparisonSummaryConfiguration dto);
-    ComparisonGlobalConfig globalDaoFromDto(ComparisonSummaryConfiguration dto);
-    ComparisonDependencyConfig dependencyDaoFromDto(ComparisonSummaryConfiguration dto);
+  ComparisonInterfaceConfig interfaceDaoFromDto(ComparisonSummaryConfiguration dto);
+
+  ComparisonGlobalConfig globalDaoFromDto(ComparisonSummaryConfiguration dto);
+
+  ComparisonDependencyConfig dependencyDaoFromDto(ComparisonSummaryConfiguration dto);
 }

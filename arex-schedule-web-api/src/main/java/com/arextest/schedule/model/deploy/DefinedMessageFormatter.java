@@ -5,8 +5,9 @@ import lombok.Data;
 
 @Data
 public class DefinedMessageFormatter {
-    @JsonAlias("Xml")
-    private String xml;
-    @JsonAlias("Json")
-    private String json;
+
+  @JsonAlias("Xml")
+  private String xml;
+  @JsonAlias("Json")
+  private String json;
 }

@@ -8,16 +8,17 @@ import lombok.Data;
  */
 @Data
 public class StageBaseInfo {
-    /**
-     * @see PlanStageEnum
-     */
-    private int stageType;
-    private String stageName;
-    private String msg;
-    /**
-     * @see StageStatusEnum
-     */
-    private int stageStatus;
-    private Long startTime;
-    private Long endTime;
+
+  /**
+   * @see PlanStageEnum
+   */
+  private int stageType;
+  private String stageName;
+  private String msg;
+  /**
+   * @see StageStatusEnum
+   */
+  private int stageStatus;
+  private Long startTime;
+  private Long endTime;
 }

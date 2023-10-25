@@ -9,28 +9,30 @@ import com.arextest.schedule.model.ReplayPlan;
  * @since 2021/10/11
  */
 public interface ProgressTracer {
-    void initTotal(ReplayPlan replayPlan);
 
-    void finishOne(ReplayActionCaseItem caseItem);
+  void initTotal(ReplayPlan replayPlan);
 
-    default void finishCaseByAction(ReplayActionItem actionItem) {
-        finishCaseByAction(actionItem, 1);
-    }
+  void finishOne(ReplayActionCaseItem caseItem);
 
-    void finishCaseByAction(ReplayActionItem actionItem, int count);
+  default void finishCaseByAction(ReplayActionItem actionItem) {
+    finishCaseByAction(actionItem, 1);
+  }
 
-
-    default void finishCaseByPlan(ReplayPlan replayPlan) {
-        finishCaseByPlan(replayPlan, 1);
-    }
-    void finishCaseByPlan(ReplayPlan replayPlan, int count);
+  void finishCaseByAction(ReplayActionItem actionItem, int count);
 
 
-    double finishPercent(String planId);
+  default void finishCaseByPlan(ReplayPlan replayPlan) {
+    finishCaseByPlan(replayPlan, 1);
+  }
 
-    long lastUpdateTime(String planId);
+  void finishCaseByPlan(ReplayPlan replayPlan, int count);
 
-    void refreshUpdateTime(String planId);
 
-    void reRunPlan(ReplayPlan replayPlan);
+  double finishPercent(String planId);
+
+  long lastUpdateTime(String planId);
+
+  void refreshUpdateTime(String planId);
+
+  void reRunPlan(ReplayPlan replayPlan);
 }

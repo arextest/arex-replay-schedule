@@ -13,22 +13,23 @@ import org.mapstruct.Mappings;
  */
 @Mapper(componentModel = "spring")
 public abstract class ReplayRunDetailsConverter extends DesensitizationConverter {
-    public abstract ReplayActionCaseItem dtoFromDao(ReplayRunDetailsCollection dao);
 
-    @Mappings({
-            @Mapping(target = "id", expression = "java(null)"),
-            @Mapping(target = "operationId", expression = "java(null)"),
-            @Mapping(target = "dataChangeCreateTime", expression = "java(System.currentTimeMillis())"),
-            @Mapping(target = "dataChangeUpdateTime", expression = "java(System.currentTimeMillis())"),
-            @Mapping(target = "dataChangeCreateDate", expression = "java(new java.util.Date())"),
-    })
-    public abstract ReplayRunDetailsCollection daoFromDto(ReplayActionCaseItem dto);
+  public abstract ReplayActionCaseItem dtoFromDao(ReplayRunDetailsCollection dao);
 
-    String compressRequest(Mocker.Target req) {
-        return encrypt(SerializationUtils.useZstdSerializeToBase64(req));
-    }
+  @Mappings({
+      @Mapping(target = "id", expression = "java(null)"),
+      @Mapping(target = "operationId", expression = "java(null)"),
+      @Mapping(target = "dataChangeCreateTime", expression = "java(System.currentTimeMillis())"),
+      @Mapping(target = "dataChangeUpdateTime", expression = "java(System.currentTimeMillis())"),
+      @Mapping(target = "dataChangeCreateDate", expression = "java(new java.util.Date())"),
+  })
+  public abstract ReplayRunDetailsCollection daoFromDto(ReplayActionCaseItem dto);
 
-    Mocker.Target decompressRequest(String req) {
-        return SerializationUtils.useZstdDeserialize(decrypt(req), Mocker.Target.class);
-    }
+  String compressRequest(Mocker.Target req) {
+    return encrypt(SerializationUtils.useZstdSerializeToBase64(req));
+  }
+
+  Mocker.Target decompressRequest(String req) {
+    return SerializationUtils.useZstdDeserialize(decrypt(req), Mocker.Target.class);
+  }
 }
