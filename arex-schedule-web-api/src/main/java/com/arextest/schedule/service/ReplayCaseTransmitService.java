@@ -1,5 +1,18 @@
 package com.arextest.schedule.service;
 
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import javax.annotation.Resource;
+
+import com.arextest.schedule.common.CommonConstant;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
+
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.comparer.ComparisonWriter;
@@ -12,17 +25,9 @@ import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Service;
+import com.arextest.schedule.service.noise.ReplayNoiseIdentify;
 
-import javax.annotation.Resource;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author jmo
@@ -35,7 +40,6 @@ public class ReplayCaseTransmitService {
     private ExecutorService sendExecutorService;
     @Resource
     private ExecutorService compareExecutorService;
-    private static final int GROUP_SENT_WAIT_TIMEOUT = 500;
     @Resource
     private ReplayResultComparer replayResultComparer;
     @Resource
@@ -51,6 +55,9 @@ public class ReplayCaseTransmitService {
     @Resource
     private MetricService metricService;
 
+    @Resource
+    private ReplayNoiseIdentify replayNoiseIdentify;
+
     public void send(List<ReplayActionCaseItem> caseItems, PlanExecutionContext<?> executionContext) {
         ExecutionStatus executionStatus = executionContext.getExecutionStatus();
 
@@ -59,6 +66,8 @@ public class ReplayCaseTransmitService {
         }
 
         prepareActionItems(caseItems);
+
+        replayNoiseIdentify.noiseIdentify(caseItems, executionContext);
 
         try {
             doSendValuesToRemoteHost(caseItems, executionStatus);
@@ -69,17 +78,16 @@ public class ReplayCaseTransmitService {
     }
 
     private void prepareActionItems(List<ReplayActionCaseItem> caseItems) {
-        Map<ReplayActionItem, List<ReplayActionCaseItem>> actionsOfBatch = caseItems.stream()
-                .collect(Collectors.groupingBy(ReplayActionCaseItem::getParent));
+        Map<ReplayActionItem, List<ReplayActionCaseItem>> actionsOfBatch =
+            caseItems.stream().collect(Collectors.groupingBy(ReplayActionCaseItem::getParent));
 
         actionsOfBatch.forEach((actionItem, casesOfAction) -> {
-                    // warmUp should be done once for each endpoint
-                    if (!actionItem.isItemProcessed()) {
-                        actionItem.setItemProcessed(true);
-                        progressEvent.onActionBeforeSend(actionItem);
-                        // todo possible Jit warmup point
-                    }
-                });
+            // warmUp should be done once for each endpoint
+            if (!actionItem.isItemProcessed()) {
+                actionItem.setItemProcessed(true);
+                progressEvent.onActionBeforeSend(actionItem);
+            }
+        });
     }
 
     public void releaseCasesOfContext(ReplayPlan replayPlan, PlanExecutionContext<?> executionContext) {
@@ -89,7 +97,7 @@ public class ReplayCaseTransmitService {
         }
 
         Map<String, Long> caseCountMap = replayActionCaseItemRepository.countWaitHandlingByAction(replayPlan.getId(),
-                executionContext.getContextCaseQuery());
+            executionContext.getContextCaseQuery());
         Map<String, ReplayActionItem> actionItemMap = replayPlan.getActionItemMap();
 
         for (Map.Entry<String, Long> actionIdToCaseCount : caseCountMap.entrySet()) {
@@ -147,7 +155,7 @@ public class ReplayCaseTransmitService {
                 semaphore.release(false);
                 replayActionCaseItem.buildParentErrorMessage(throwable.getMessage());
                 LOGGER.error("send group to remote host error:{} ,case item id:{}", throwable.getMessage(),
-                        replayActionCaseItem.getId(), throwable);
+                    replayActionCaseItem.getId(), throwable);
                 doSendFailedAsFinish(replayActionCaseItem, CaseSendStatusType.EXCEPTION_FAILED);
             } finally {
                 actionItem.recordProcessOne();
@@ -155,7 +163,7 @@ public class ReplayCaseTransmitService {
         }
 
         try {
-            boolean clear = groupSentLatch.await(GROUP_SENT_WAIT_TIMEOUT, TimeUnit.SECONDS);
+            boolean clear = groupSentLatch.await(CommonConstant.GROUP_SENT_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!clear) {
                 LOGGER.error("Send group failed to await all request of batch");
             }
@@ -196,7 +204,6 @@ public class ReplayCaseTransmitService {
         return null;
     }
 
-
     private void markAllSendStatus(List<ReplayActionCaseItem> sourceItemList, CaseSendStatusType sendStatusType) {
         for (ReplayActionCaseItem caseItem : sourceItemList) {
             doSendFailedAsFinish(caseItem, sendStatusType);
@@ -226,7 +233,6 @@ public class ReplayCaseTransmitService {
         }
 
     }
-
 
     private class AsyncCompareCaseTaskRunnable extends AbstractTracedRunnable {
         private final ReplayActionCaseItem caseItem;

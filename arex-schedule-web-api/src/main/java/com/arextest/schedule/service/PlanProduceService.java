@@ -332,10 +332,12 @@ public class PlanProduceService {
             progressEvent.onReplayPlanReRun(replayPlan);
             progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.ONGOING,
                 System.currentTimeMillis(), null, null);
+
             planConsumePrepareService.updateFailedActionAndCase(replayPlan, failedCaseList);
             if (CollectionUtils.isEmpty(replayPlan.getReplayActionItemList())) {
                 throw new RuntimeException("no replayActionItem!");
             }
+
             progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE, StageStatusEnum.SUCCEEDED,
                 null, System.currentTimeMillis(), null);
         } catch (Exception e) {

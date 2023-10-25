@@ -58,8 +58,8 @@ public class ReplayCompareResult {
     public static ReplayCompareResult createFrom(ReplayActionCaseItem caseItem, CompareResult sdkResult) {
         ReplayCompareResult newResult = createFrom(caseItem);
         newResult.setOperationName(caseItem.getParent().getOperationName());
-        newResult.setMsgInfo(sdkResult.getMsgInfo());
         newResult.setCategoryName(caseItem.getCaseType());
+        newResult.setMsgInfo(sdkResult.getMsgInfo());
         newResult.setBaseMsg(sdkResult.getProcessedBaseMsg());
         newResult.setTestMsg(sdkResult.getProcessedTestMsg());
         newResult.setLogs(sdkResult.getLogs());
