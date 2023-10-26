@@ -82,6 +82,16 @@ public class BizLogger {
     log.postProcessAndEnqueue(action);
   }
 
+  public static void recordActionItemCaseReRunCount(ReplayActionItem action) {
+    BizLog log = BizLog.info().logType(BizLogContent.ACTION_ITEM_INIT_TOTAL_RERUN_COUNT.getType())
+        .message(BizLogContent.ACTION_ITEM_INIT_TOTAL_RERUN_COUNT.format(action.getOperationName(),
+            action.getId(),
+            action.getRerunCaseCount()))
+        .build();
+
+    log.postProcessAndEnqueue(action);
+  }
+
   public static void recordActionStatusChange(ReplayActionItem action, String targetStatus,
       String reason) {
     BizLog log = BizLog.info().logType(BizLogContent.ACTION_ITEM_STATUS_CHANGED.getType())
@@ -224,6 +234,7 @@ public class BizLogger {
     @Deprecated
     ACTION_ITEM_EXECUTE_CONTEXT(300,
         "Operation: {0} id: {1} under context: {2} starts executing action type: {3}."),
+    ACTION_ITEM_INIT_TOTAL_RERUN_COUNT(301, "Operation: {0} id: {1} rerun total case count: {2}."),
     ACTION_ITEM_INIT_TOTAL_COUNT(302, "Operation: {0} id: {1} init total case count: {2}."),
     ACTION_ITEM_STATUS_CHANGED(303,
         "Operation: {0} id: {1} status changed to {2}, because of [{3}]."),

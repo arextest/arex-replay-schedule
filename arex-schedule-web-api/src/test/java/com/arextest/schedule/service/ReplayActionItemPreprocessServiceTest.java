@@ -1,7 +1,6 @@
 package com.arextest.schedule.service;
 
 import static org.junit.Assert.assertEquals;
-
 import com.arextest.schedule.model.ReplayActionItem;
 import java.lang.reflect.Method;
 import java.util.ArrayList;

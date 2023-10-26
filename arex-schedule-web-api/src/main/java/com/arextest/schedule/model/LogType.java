@@ -39,8 +39,7 @@ public enum LogType {
    */
   COMPARE("compare"),
   /**
-   * case send request time. eg:
-   * com.arextest.schedule.sender.impl.DefaultHttpReplaySender#doInvoke(com.arextest.schedule.sender.SenderParameters)
+   * case send request time. eg: com.arextest.schedule.sender.impl.DefaultHttpReplaySender#doInvoke(com.arextest.schedule.sender.SenderParameters)
    */
   DO_SEND("doSend"),
   /**
