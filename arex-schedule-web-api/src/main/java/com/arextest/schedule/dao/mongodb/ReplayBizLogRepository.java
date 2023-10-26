@@ -21,18 +21,18 @@ import org.springframework.util.CollectionUtils;
 @Repository
 public class ReplayBizLogRepository implements RepositoryField {
 
-    @Autowired
-    MongoTemplate mongoTemplate;
+  @Autowired
+  MongoTemplate mongoTemplate;
 
-    private static final String PLAN_ID_KEY = "planId";
-    private static final String LOG_LEVEL_KEY = "level";
-    private static final String LOG_TYPE_KEY = "logType";
-    private static final String LOG_ACTION_ID_KEY = "actionItemId";
-    private static final String LOG_RESUME_KEY = "resumedExecution";
-    private static final String[] EXCLUSIONS = {"dataChangeCreateTime",
-            "dataChangeUpdateTime",
-            "dataChangeCreateDate",
-            "_id"};
+  private static final String PLAN_ID_KEY = "planId";
+  private static final String LOG_LEVEL_KEY = "level";
+  private static final String LOG_TYPE_KEY = "logType";
+  private static final String LOG_ACTION_ID_KEY = "actionItemId";
+  private static final String LOG_RESUME_KEY = "resumedExecution";
+  private static final String[] EXCLUSIONS = {"dataChangeCreateTime",
+      "dataChangeUpdateTime",
+      "dataChangeCreateDate",
+      "_id"};
 
   public void saveAll(Collection<BizLog> logs) {
     List<ReplayBizLogCollection> logDocs = logs
@@ -86,9 +86,9 @@ public class ReplayBizLogRepository implements RepositoryField {
       query.addCriteria(Criteria.where(LOG_ACTION_ID_KEY).in(condition.getActionItems()));
     }
 
-        if (condition.getResumedExecution() != null) {
-            query.addCriteria(Criteria.where(LOG_RESUME_KEY).is(condition.getResumedExecution()));
-        }
+    if (condition.getResumedExecution() != null) {
+      query.addCriteria(Criteria.where(LOG_RESUME_KEY).is(condition.getResumedExecution()));
+    }
 
     return query;
   }

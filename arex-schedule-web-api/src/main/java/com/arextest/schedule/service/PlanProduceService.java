@@ -5,7 +5,6 @@ import static com.arextest.schedule.common.CommonConstant.ONE_DAY_MILLIS;
 import static com.arextest.schedule.common.CommonConstant.OPERATION_MAX_CASE_COUNT;
 import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_EXPIRE;
 import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_KEY;
-
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;

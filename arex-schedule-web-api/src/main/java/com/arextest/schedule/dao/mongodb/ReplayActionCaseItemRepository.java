@@ -103,16 +103,18 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         .collect(Collectors.toList());
   }
 
-    /**
-     * Get the case list that failed to send or compare.
-     */
-    public List<ReplayActionCaseItem> failedCaseList(String planId) {
-        Query query = new Query();
-        query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
-        query.addCriteria(new Criteria().orOperator(
-            Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS).ne(CaseSendStatusType.SUCCESS.getValue()),
-            Criteria.where(ReplayActionCaseItem.FIELD_COMPARE_STATUS).ne(CompareProcessStatusType.PASS.getValue())
-        ));
+  /**
+   * Get the case list that failed to send or compare.
+   */
+  public List<ReplayActionCaseItem> failedCaseList(String planId) {
+    Query query = new Query();
+    query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
+    query.addCriteria(new Criteria().orOperator(
+        Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS)
+            .ne(CaseSendStatusType.SUCCESS.getValue()),
+        Criteria.where(ReplayActionCaseItem.FIELD_COMPARE_STATUS)
+            .ne(CompareProcessStatusType.PASS.getValue())
+    ));
 
     List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query,
         ReplayRunDetailsCollection.class);
