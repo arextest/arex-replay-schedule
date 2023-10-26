@@ -1,7 +1,6 @@
 package com.arextest.schedule.sender.impl;
 
 import static com.arextest.schedule.common.CommonConstant.PINNED;
-
 import com.arextest.model.replay.QueryMockCacheRequestType;
 import com.arextest.model.replay.QueryMockCacheResponseType;
 import com.arextest.model.response.ResponseStatusType;

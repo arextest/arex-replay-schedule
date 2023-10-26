@@ -6,8 +6,8 @@ After your success installed the **AREX's Agent**, and configure it used
 the [`Remote Storage Service`](https://github.com/arextest/arex-storage).
 
 You should be run a replay from what your operations and how many recorded sources retrieved you
-wants to
-validate the changes of a new version deployed on the target host is expected or unexpected.
+wants to validate the changes of a new version deployed on the target host is expected or
+unexpected.
 
 To implements the purpose, we accept a target host to create a plan by your requested and a schedule
 trigger will running for :

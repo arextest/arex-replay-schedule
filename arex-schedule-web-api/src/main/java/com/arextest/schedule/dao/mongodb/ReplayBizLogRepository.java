@@ -21,9 +21,6 @@ import org.springframework.util.CollectionUtils;
 @Repository
 public class ReplayBizLogRepository implements RepositoryField {
 
-  @Autowired
-  MongoTemplate mongoTemplate;
-
   private static final String PLAN_ID_KEY = "planId";
   private static final String LOG_LEVEL_KEY = "level";
   private static final String LOG_TYPE_KEY = "logType";
@@ -33,6 +30,8 @@ public class ReplayBizLogRepository implements RepositoryField {
       "dataChangeUpdateTime",
       "dataChangeCreateDate",
       "_id"};
+  @Autowired
+  MongoTemplate mongoTemplate;
 
   public void saveAll(Collection<BizLog> logs) {
     List<ReplayBizLogCollection> logDocs = logs

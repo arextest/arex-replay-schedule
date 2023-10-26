@@ -1,7 +1,6 @@
 package com.arextest.schedule.client;
 
 import static com.arextest.schedule.common.CommonConstant.URL;
-
 import com.arextest.schedule.utils.SSLUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;

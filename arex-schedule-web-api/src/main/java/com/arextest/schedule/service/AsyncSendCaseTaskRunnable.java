@@ -1,7 +1,6 @@
 package com.arextest.schedule.service;
 
 import static com.arextest.schedule.common.CommonConstant.DEFAULT_COUNT;
-
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
