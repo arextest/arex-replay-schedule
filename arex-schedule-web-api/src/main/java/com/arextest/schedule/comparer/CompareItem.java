@@ -5,15 +5,16 @@ package com.arextest.schedule.comparer;
  * @since 2021/11/23
  */
 public interface CompareItem {
-    String getCompareContent();
 
-    String getCompareOperation();
+  String getCompareContent();
 
-    String getCompareService();
+  String getCompareOperation();
 
-    String getCompareKey();
+  String getCompareService();
 
-    long getCreateTime();
+  String getCompareKey();
 
-    boolean isEntryPointCategory();
+  long getCreateTime();
+
+  boolean isEntryPointCategory();
 }

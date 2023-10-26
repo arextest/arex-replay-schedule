@@ -252,16 +252,19 @@ public class BizLogger {
 
     ;
 
+    @Getter
+    private final String template;
+    @Getter
+    private final int type;
+
     BizLogContent(int type, String template) {
       this.type = type;
       this.template = template;
     }
 
-    @Getter
-    private final String template;
-
-    @Getter
-    private final int type;
+    public static String throwableToString(Throwable throwable) {
+      return ExceptionUtils.getStackTrace(throwable);
+    }
 
     public String format(Object... args) {
       try {
@@ -269,10 +272,6 @@ public class BizLogger {
       } catch (Exception e) {
         return this.getTemplate();
       }
-    }
-
-    public static String throwableToString(Throwable throwable) {
-      return ExceptionUtils.getStackTrace(throwable);
     }
   }
 

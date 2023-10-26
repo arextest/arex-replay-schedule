@@ -4,5 +4,6 @@ import lombok.Data;
 
 @Data
 public class DesensitizationResponseType {
-    private boolean desensitized;
+
+  private boolean desensitized;
 }

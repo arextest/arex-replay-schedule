@@ -8,46 +8,47 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
 public abstract class DesensitizationConverter {
-    @Autowired
-    private DataDesensitization dataDesensitizationService;
 
-    @Named("encrypt")
-    String encrypt(String in) {
-        try {
-            return dataDesensitizationService.encrypt(in);
-        } catch (Exception e) {
-            LOGGER.error("Data encrypt failed", e);
-        }
-        return in;
-    }
+  @Autowired
+  private DataDesensitization dataDesensitizationService;
 
-    @Named("decrypt")
-    String decrypt(String in) {
-        try {
-            return dataDesensitizationService.decrypt(in);
-        } catch (Exception e) {
-            LOGGER.error("Data decrypt failed", e);
-        }
-        return in;
+  @Named("encrypt")
+  String encrypt(String in) {
+    try {
+      return dataDesensitizationService.encrypt(in);
+    } catch (Exception e) {
+      LOGGER.error("Data encrypt failed", e);
     }
+    return in;
+  }
 
-    @Named("compress")
-    String compress(String decompressString) {
-        return CompressionUtils.useZstdCompress(decompressString);
+  @Named("decrypt")
+  String decrypt(String in) {
+    try {
+      return dataDesensitizationService.decrypt(in);
+    } catch (Exception e) {
+      LOGGER.error("Data decrypt failed", e);
     }
+    return in;
+  }
 
-    @Named("decompress")
-    String decompress(String compressString) {
-        return CompressionUtils.useZstdDecompress(compressString);
-    }
+  @Named("compress")
+  String compress(String decompressString) {
+    return CompressionUtils.useZstdCompress(decompressString);
+  }
 
-    @Named("compressAndEncrypt")
-    String compressAndEncrypt(String in) {
-        return encrypt(compress(in));
-    }
+  @Named("decompress")
+  String decompress(String compressString) {
+    return CompressionUtils.useZstdDecompress(compressString);
+  }
 
-    @Named("decryptAndDecompress")
-    String decryptAndDecompress(String in) {
-        return decompress(decrypt(in));
-    }
+  @Named("compressAndEncrypt")
+  String compressAndEncrypt(String in) {
+    return encrypt(compress(in));
+  }
+
+  @Named("decryptAndDecompress")
+  String decryptAndDecompress(String in) {
+    return decompress(decrypt(in));
+  }
 }

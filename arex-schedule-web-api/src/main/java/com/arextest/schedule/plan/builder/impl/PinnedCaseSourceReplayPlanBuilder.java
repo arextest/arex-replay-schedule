@@ -10,12 +10,11 @@ import com.arextest.schedule.model.plan.OperationCaseInfo;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.builder.BuildPlanValidateResult;
 import com.arextest.schedule.service.ReplayActionItemPreprocessService;
-import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Resource;
+import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.stereotype.Component;
 
 /**
  * @author jmo
@@ -24,63 +23,67 @@ import java.util.List;
 @Component
 final class PinnedCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
 
-    @Resource
-    private ReplayActionItemPreprocessService replayActionItemPreprocessService;
+  @Resource
+  private ReplayActionItemPreprocessService replayActionItemPreprocessService;
 
-    @Override
-    public boolean isSupported(BuildReplayPlanRequest request) {
-        return request.getReplayPlanType() == BuildReplayPlanType.BY_PINNED_CASE.getValue();
-    }
+  @Override
+  public boolean isSupported(BuildReplayPlanRequest request) {
+    return request.getReplayPlanType() == BuildReplayPlanType.BY_PINNED_CASE.getValue();
+  }
 
-    @Override
-    public BuildPlanValidateResult validate(BuildReplayPlanRequest request, PlanContext planContext) {
-        if (CollectionUtils.isEmpty(request.getOperationCaseInfoList())) {
-            return BuildPlanValidateResult.create(BuildPlanValidateResult.REQUESTED_EMPTY_OPERATION, "REQUESTED_EMPTY_OPERATION");
-        }
-        for (OperationCaseInfo requestedOperation : request.getOperationCaseInfoList()) {
-            if (CollectionUtils.isEmpty(requestedOperation.getReplayIdList())) {
-                return BuildPlanValidateResult.create(BuildPlanValidateResult.REQUESTED_OPERATION_NOT_FOUND_ANY_CASE,
-                        "REQUESTED_OPERATION_NOT_FOUND_ANY_CASE");
-            }
-        }
-        super.filterAppServiceDescriptors(request, planContext);
-        return super.validate(request, planContext);
+  @Override
+  public BuildPlanValidateResult validate(BuildReplayPlanRequest request, PlanContext planContext) {
+    if (CollectionUtils.isEmpty(request.getOperationCaseInfoList())) {
+      return BuildPlanValidateResult.create(BuildPlanValidateResult.REQUESTED_EMPTY_OPERATION,
+          "REQUESTED_EMPTY_OPERATION");
     }
+    for (OperationCaseInfo requestedOperation : request.getOperationCaseInfoList()) {
+      if (CollectionUtils.isEmpty(requestedOperation.getReplayIdList())) {
+        return BuildPlanValidateResult.create(
+            BuildPlanValidateResult.REQUESTED_OPERATION_NOT_FOUND_ANY_CASE,
+            "REQUESTED_OPERATION_NOT_FOUND_ANY_CASE");
+      }
+    }
+    super.filterAppServiceDescriptors(request, planContext);
+    return super.validate(request, planContext);
+  }
 
-    @Override
-    boolean unsupportedCaseTimeRange(BuildReplayPlanRequest request) {
-        return false;
-    }
+  @Override
+  boolean unsupportedCaseTimeRange(BuildReplayPlanRequest request) {
+    return false;
+  }
 
-    @Override
-    List<ReplayActionItem> getReplayActionList(BuildReplayPlanRequest request, PlanContext planContext) {
-        final List<ReplayActionItem> replayActionItemList = new ArrayList<>();
-        AppServiceOperationDescriptor operationDescriptor;
-        for (OperationCaseInfo operationCaseInfo : request.getOperationCaseInfoList()) {
-            operationDescriptor = planContext.findAppServiceOperationDescriptor(operationCaseInfo.getOperationId());
-            if (operationDescriptor == null) {
-                continue;
-            }
-            ReplayActionItem replayActionItem = planContext.toReplayAction(operationDescriptor);
-            List<String> replayIdList = operationCaseInfo.getReplayIdList();
-            ReplayActionCaseItem caseItem;
-            final List<ReplayActionCaseItem> caseItemList = new ArrayList<>(replayIdList.size());
-            for (String replayId : replayIdList) {
-                caseItem = new ReplayActionCaseItem();
-                caseItem.setRecordId(replayId);
-                caseItem.setSourceProvider(CommonConstant.PINNED);
-                caseItem.setParent(replayActionItem);
-                caseItemList.add(caseItem);
-            }
-            replayActionItem.setCaseItemList(caseItemList);
-            replayActionItem.setReplayCaseCount(caseItemList.size());
-            replayActionItemList.add(replayActionItem);
-        }
-        return replayActionItemList;
+  @Override
+  List<ReplayActionItem> getReplayActionList(BuildReplayPlanRequest request,
+      PlanContext planContext) {
+    final List<ReplayActionItem> replayActionItemList = new ArrayList<>();
+    AppServiceOperationDescriptor operationDescriptor;
+    for (OperationCaseInfo operationCaseInfo : request.getOperationCaseInfoList()) {
+      operationDescriptor = planContext.findAppServiceOperationDescriptor(
+          operationCaseInfo.getOperationId());
+      if (operationDescriptor == null) {
+        continue;
+      }
+      ReplayActionItem replayActionItem = planContext.toReplayAction(operationDescriptor);
+      List<String> replayIdList = operationCaseInfo.getReplayIdList();
+      ReplayActionCaseItem caseItem;
+      final List<ReplayActionCaseItem> caseItemList = new ArrayList<>(replayIdList.size());
+      for (String replayId : replayIdList) {
+        caseItem = new ReplayActionCaseItem();
+        caseItem.setRecordId(replayId);
+        caseItem.setSourceProvider(CommonConstant.PINNED);
+        caseItem.setParent(replayActionItem);
+        caseItemList.add(caseItem);
+      }
+      replayActionItem.setCaseItemList(caseItemList);
+      replayActionItem.setReplayCaseCount(caseItemList.size());
+      replayActionItemList.add(replayActionItem);
     }
+    return replayActionItemList;
+  }
 
-    @Override
-    int queryCaseCount(ReplayActionItem actionItem) {
-        return actionItem.getCaseItemList().size();
-    }
+  @Override
+  int queryCaseCount(ReplayActionItem actionItem) {
+    return actionItem.getCaseItemList().size();
+  }
 }

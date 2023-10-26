@@ -1,8 +1,7 @@
 package com.arextest.schedule.comparer;
 
-import com.arextest.schedule.model.ReplayCompareResult;
 import com.arextest.schedule.model.ReplayActionCaseItem;
-
+import com.arextest.schedule.model.ReplayCompareResult;
 import java.util.List;
 
 /**
@@ -10,9 +9,10 @@ import java.util.List;
  * @since 2022/1/27
  */
 public interface ComparisonWriter {
-    boolean writeIncomparable(ReplayActionCaseItem caseItem, String remark);
 
-    boolean write(List<ReplayCompareResult> comparedResult);
+  boolean writeIncomparable(ReplayActionCaseItem caseItem, String remark);
 
-    boolean writeQmqCompareResult(ReplayActionCaseItem caseItem);
+  boolean write(List<ReplayCompareResult> comparedResult);
+
+  boolean writeQmqCompareResult(ReplayActionCaseItem caseItem);
 }

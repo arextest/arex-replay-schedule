@@ -8,6 +8,7 @@ import lombok.Data;
  */
 @Data
 public class QueryLogEntityResponseType {
-    private int diffResultCode;
-    private LogEntity logEntity;
+
+  private int diffResultCode;
+  private LogEntity logEntity;
 }

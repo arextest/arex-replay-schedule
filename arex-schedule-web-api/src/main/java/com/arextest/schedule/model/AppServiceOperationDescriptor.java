@@ -1,8 +1,7 @@
 package com.arextest.schedule.model;
 
-import lombok.Data;
-
 import java.util.Set;
+import lombok.Data;
 
 /**
  * @author jmo
@@ -10,10 +9,11 @@ import java.util.Set;
  */
 @Data
 public class AppServiceOperationDescriptor {
-    private String id;
-    private AppServiceDescriptor parent;
-    private String operationName;
-    private int status;
-    private String operationType;
-    private Set<String> operationTypes;
+
+  private String id;
+  private AppServiceDescriptor parent;
+  private String operationName;
+  private int status;
+  private String operationType;
+  private Set<String> operationTypes;
 }

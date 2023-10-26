@@ -7,11 +7,10 @@ import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.builder.BuildPlanValidateResult;
-import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.stereotype.Component;
 
 /**
  * @author jmo
@@ -20,41 +19,42 @@ import java.util.List;
 @Component
 final class AppIdSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
 
-    @Override
-    public BuildPlanValidateResult validate(BuildReplayPlanRequest request, PlanContext planContext) {
-        return super.validate(request, planContext);
-    }
+  @Override
+  public BuildPlanValidateResult validate(BuildReplayPlanRequest request, PlanContext planContext) {
+    return super.validate(request, planContext);
+  }
 
-    @Override
-    List<ReplayActionItem> getReplayActionList(BuildReplayPlanRequest request, PlanContext planContext) {
-        List<AppServiceOperationDescriptor> operationDescriptorList;
-        List<ReplayActionItem> replayActionItemList = new ArrayList<>();
-        for (AppServiceDescriptor appServiceDescriptor : planContext.getAppServiceDescriptorList()) {
-            operationDescriptorList = appServiceDescriptor.getOperationList();
-            if (CollectionUtils.isEmpty(operationDescriptorList)) {
-                continue;
-            }
-            for (AppServiceOperationDescriptor operationDescriptor : operationDescriptorList) {
-                // -1是挂起 不进行回放的接口
-                if (operationDescriptor.getStatus() == APP_SUSPENDED_STATUS
-                        || operationDescriptor.getOperationName().equalsIgnoreCase("checkHealth")) {
-                    continue;
-                }
-                ReplayActionItem replayActionItem = planContext.toReplayAction(operationDescriptor);
-                replayActionItemList.add(replayActionItem);
-            }
+  @Override
+  List<ReplayActionItem> getReplayActionList(BuildReplayPlanRequest request,
+      PlanContext planContext) {
+    List<AppServiceOperationDescriptor> operationDescriptorList;
+    List<ReplayActionItem> replayActionItemList = new ArrayList<>();
+    for (AppServiceDescriptor appServiceDescriptor : planContext.getAppServiceDescriptorList()) {
+      operationDescriptorList = appServiceDescriptor.getOperationList();
+      if (CollectionUtils.isEmpty(operationDescriptorList)) {
+        continue;
+      }
+      for (AppServiceOperationDescriptor operationDescriptor : operationDescriptorList) {
+        // -1是挂起 不进行回放的接口
+        if (operationDescriptor.getStatus() == APP_SUSPENDED_STATUS
+            || operationDescriptor.getOperationName().equalsIgnoreCase("checkHealth")) {
+          continue;
         }
-        return replayActionItemList;
+        ReplayActionItem replayActionItem = planContext.toReplayAction(operationDescriptor);
+        replayActionItemList.add(replayActionItem);
+      }
     }
+    return replayActionItemList;
+  }
 
-    @Override
-    public boolean isSupported(BuildReplayPlanRequest request) {
-        return request.getReplayPlanType() == BuildReplayPlanType.BY_APP_ID.getValue() ||
-                request.getReplayPlanType() == BuildReplayPlanType.MIXED.getValue();
-    }
+  @Override
+  public boolean isSupported(BuildReplayPlanRequest request) {
+    return request.getReplayPlanType() == BuildReplayPlanType.BY_APP_ID.getValue() ||
+        request.getReplayPlanType() == BuildReplayPlanType.MIXED.getValue();
+  }
 
-    @Override
-    public void filterAppServiceDescriptors(BuildReplayPlanRequest request, PlanContext planContext) {
-        // replay for whole app no need filtered
-    }
+  @Override
+  public void filterAppServiceDescriptors(BuildReplayPlanRequest request, PlanContext planContext) {
+    // replay for whole app no need filtered
+  }
 }

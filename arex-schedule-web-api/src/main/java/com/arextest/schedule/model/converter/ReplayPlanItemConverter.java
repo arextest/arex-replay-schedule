@@ -13,16 +13,16 @@ import org.mapstruct.factory.Mappers;
 @Mapper
 public interface ReplayPlanItemConverter {
 
-    ReplayPlanItemConverter INSTANCE = Mappers.getMapper(ReplayPlanItemConverter.class);
+  ReplayPlanItemConverter INSTANCE = Mappers.getMapper(ReplayPlanItemConverter.class);
 
-    ReplayActionItem dtoFromDao(ReplayPlanItemCollection dao);
+  ReplayActionItem dtoFromDao(ReplayPlanItemCollection dao);
 
-    @Mappings({
-            @Mapping(target = "id", expression = "java(null)"),
-            @Mapping(target = "dataChangeCreateTime", expression = "java(System.currentTimeMillis())"),
-            @Mapping(target = "dataChangeUpdateTime", expression = "java(System.currentTimeMillis())"),
-            @Mapping(target = "dataChangeCreateDate", expression = "java(new java.util.Date())")
-    })
-    ReplayPlanItemCollection daoFromDto(ReplayActionItem dto);
+  @Mappings({
+      @Mapping(target = "id", expression = "java(null)"),
+      @Mapping(target = "dataChangeCreateTime", expression = "java(System.currentTimeMillis())"),
+      @Mapping(target = "dataChangeUpdateTime", expression = "java(System.currentTimeMillis())"),
+      @Mapping(target = "dataChangeCreateDate", expression = "java(new java.util.Date())")
+  })
+  ReplayPlanItemCollection daoFromDto(ReplayActionItem dto);
 
 }

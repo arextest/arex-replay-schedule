@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public class CheckHealthController {
 
 
-    @GetMapping(value = "/health", produces = "application/json")
-    @ResponseBody
-    public Response checkHealth() {
-        return ResponseUtils.successResponse(true);
-    }
+  @GetMapping(value = "/health", produces = "application/json")
+  @ResponseBody
+  public Response checkHealth() {
+    return ResponseUtils.successResponse(true);
+  }
 }
