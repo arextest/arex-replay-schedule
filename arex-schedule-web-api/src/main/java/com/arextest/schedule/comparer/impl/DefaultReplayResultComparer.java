@@ -24,12 +24,15 @@ import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.MetricService;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -47,10 +50,23 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
 
   private static final CompareSDK COMPARE_INSTANCE = new CompareSDK();
   private static final long MAX_TIME = Long.MAX_VALUE;
+  private static final String APPLICATION_PROPERTIES_NAME = "/application.properties";
+  private static final String IGNORE_TIME_PRECISION_MILLIS_KEY = "ignore.time.precision.millis";
+  private static long ignoreTimePrecisionMillis = 2000;
 
   static {
+    Properties props = new Properties();
+    try (InputStream input = DefaultReplayResultComparer.class.getResourceAsStream(
+        APPLICATION_PROPERTIES_NAME)) {
+      props.load(input);
+      ignoreTimePrecisionMillis = Long.parseLong(
+          props.getProperty(IGNORE_TIME_PRECISION_MILLIS_KEY));
+    } catch (IOException e) {
+      LOGGER.error("failed to get ignore time precision millis {}", e.getMessage(), e);
+    }
+
     COMPARE_INSTANCE.getGlobalOptions().putNameToLower(true).putNullEqualsEmpty(true)
-        .putIgnoredTimePrecision(1000);
+        .putIgnoredTimePrecision(ignoreTimePrecisionMillis);
   }
 
   private final CompareConfigService compareConfigService;
