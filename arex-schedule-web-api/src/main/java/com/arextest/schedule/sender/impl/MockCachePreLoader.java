@@ -48,11 +48,12 @@ public final class MockCachePreLoader {
         mockCacheRequestType.setSourceProvider(CommonConstant.ROLLING);
         return httpWepServiceApiClient.retryJsonPost(cachePreloadUrl, mockCacheRequestType,
             QueryMockCacheResponseType.class);
+      } else {
+        return res;
       }
     } else {
       return httpWepServiceApiClient.retryJsonPost(cachePreloadUrl, mockCacheRequestType,
           QueryMockCacheResponseType.class);
     }
-    return null;
   }
 }

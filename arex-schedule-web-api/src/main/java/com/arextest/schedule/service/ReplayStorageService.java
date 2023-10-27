@@ -1,16 +1,20 @@
 package com.arextest.schedule.service;
 
 import com.arextest.schedule.client.HttpWepServiceApiClient;
-import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
-import com.arextest.schedule.model.storage.CompareResultDbAggStruct;
+import com.arextest.schedule.model.CompareProcessStatusType;
+import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.schedule.model.storage.PostProcessResultRequestType;
 import com.arextest.schedule.model.storage.ResultCodeGroup;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import com.arextest.schedule.model.storage.ResultCodeGroup.CategoryGroup;
+import com.arextest.schedule.model.storage.ResultCodeGroup.IdPair;
+import java.util.Collections;
+import java.util.Optional;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -19,41 +23,48 @@ import org.springframework.stereotype.Service;
 public class ReplayStorageService {
 
   @Resource
-  private ReplayCompareResultRepositoryImpl replayCompareResultRepository;
-  @Resource
   private HttpWepServiceApiClient client;
+
   @Value("${arex.storage.postProcess.url}")
   private String postProcessUrl;
+  private static final int NORMAL_FINISH_CODE = 2;
 
-  public void postProcessCompareResult(String planId, int planResultCode) {
+  public void postProcessCompareResult(ReplayActionCaseItem caseItem) {
     try {
-      List<CompareResultDbAggStruct> dbAgg = replayCompareResultRepository.calculateResultCodeGroup(
-          planId);
-      PostProcessResultRequestType storageReq = new PostProcessResultRequestType();
-      storageReq.setReplayStatusCode(planResultCode);
-      storageReq.setReplayPlanId(planId);
-      List<ResultCodeGroup> resGroups = new ArrayList<>();
-      storageReq.setResults(resGroups);
-
-      // convert db agg results to request type
-      Map<Integer, List<CompareResultDbAggStruct>> groupByCodes = dbAgg.stream()
-          .collect(Collectors.groupingBy(CompareResultDbAggStruct::getDiffResultCode));
-      for (Map.Entry<Integer, List<CompareResultDbAggStruct>> entry : groupByCodes.entrySet()) {
-        ResultCodeGroup resGroup = new ResultCodeGroup();
-        resGroup.setResultCode(entry.getKey());
-        List<ResultCodeGroup.CategoryGroup> categoryGroups = new ArrayList<>();
-        Map<String, CompareResultDbAggStruct> groupByCategory = entry.getValue().stream()
-            .collect(Collectors.toMap(CompareResultDbAggStruct::getCategoryName, i -> i));
-
-        for (Map.Entry<String, CompareResultDbAggStruct> categoryEntry : groupByCategory.entrySet()) {
-          ResultCodeGroup.CategoryGroup categoryGroup = new ResultCodeGroup.CategoryGroup();
-          categoryGroup.setCategoryName(categoryEntry.getKey());
-          categoryGroup.setResultIds(categoryEntry.getValue().getRelatedIds());
-          categoryGroups.add(categoryGroup);
-        }
-        resGroup.setCategoryGroups(categoryGroups);
-        resGroups.add(resGroup);
+      // only handle normally compared case
+      if (caseItem.getCompareStatus() != CompareProcessStatusType.HAS_DIFF.getValue() &&
+          caseItem.getCompareStatus() != CompareProcessStatusType.PASS.getValue()) {
+        return;
       }
+      boolean mixedReplay = Optional.ofNullable(caseItem.getParent())
+          .map(ReplayActionItem::getParent)
+          .map(ReplayPlan::getReplayPlanType)
+          .map(type -> type.equals(BuildReplayPlanType.MIXED.getValue()))
+          .orElse(false);
+
+      // only handle case with target result
+      if (StringUtils.isEmpty(caseItem.getTargetResultId()) || !mixedReplay) {
+        return;
+      }
+
+      PostProcessResultRequestType storageReq = new PostProcessResultRequestType();
+
+      // originally only handle normal plan, refactored to case level handling
+      storageReq.setReplayStatusCode(NORMAL_FINISH_CODE);
+      storageReq.setReplayPlanId(caseItem.getPlanId());
+
+      ResultCodeGroup resGroup = new ResultCodeGroup();
+      storageReq.setResults(Collections.singletonList(resGroup));
+
+      resGroup.setResultCode(caseItem.getCompareStatus());
+      CategoryGroup category = new CategoryGroup();
+      category.setCategoryName(caseItem.getCaseType());
+      IdPair pair = new IdPair();
+      pair.setRecordId(caseItem.getRecordId());
+      pair.setTargetId(caseItem.getTargetResultId());
+
+      category.setResultIds(Collections.singletonList(pair));
+      resGroup.setCategoryGroups(Collections.singletonList(category));
 
       String out = client.jsonPost(postProcessUrl, storageReq, String.class);
       LOGGER.info("postProcessCompareResult result: {}", out);
