@@ -49,11 +49,11 @@ final class MockCachePreLoader {
           .map(code -> code.equals(0))
           .orElse(false)) {
         mockCacheRequestType.setSourceProvider(CommonConstant.ROLLING);
-        httpWepServiceApiClient.jsonPost(cachePreloadUrl, mockCacheRequestType,
+        httpWepServiceApiClient.retryJsonPost(cachePreloadUrl, mockCacheRequestType,
             QueryMockCacheResponseType.class);
       }
     } else {
-      httpWepServiceApiClient.jsonPost(cachePreloadUrl, mockCacheRequestType,
+      httpWepServiceApiClient.retryJsonPost(cachePreloadUrl, mockCacheRequestType,
           QueryMockCacheResponseType.class);
     }
   }
