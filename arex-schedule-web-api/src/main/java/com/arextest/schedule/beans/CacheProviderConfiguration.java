@@ -15,11 +15,12 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnMissingBean(CacheProvider.class)
 class CacheProviderConfiguration {
-    @Value("${arex.redis.uri}")
-    private String scheduleCacheRedisHost;
 
-    @Bean
-    CacheProvider cacheProvider() {
-        return new DefaultRedisCacheProvider(scheduleCacheRedisHost);
-    }
+  @Value("${arex.redis.uri}")
+  private String scheduleCacheRedisHost;
+
+  @Bean
+  CacheProvider cacheProvider() {
+    return new DefaultRedisCacheProvider(scheduleCacheRedisHost);
+  }
 }

@@ -8,67 +8,70 @@ import com.arextest.schedule.model.dao.mongodb.ReplayCompareMsgInfoCollection;
 import com.arextest.schedule.model.dao.mongodb.ReplayCompareResultCollection;
 import com.arextest.schedule.model.report.CompareResultDetail;
 import com.arextest.web.model.contract.contracts.replay.AnalyzeCompareResultsRequestType;
+import java.util.Arrays;
+import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
 import org.mapstruct.Named;
 
-import java.util.Arrays;
-import java.util.List;
-
 /**
  * Created by qzmo on 2023/06/05.
  */
 @Mapper(componentModel = "spring")
 public abstract class ReplayCompareResultConverter extends DesensitizationConverter {
-    @Mappings({
-            @Mapping(target = "dataChangeCreateTime", expression = "java(System.currentTimeMillis())"),
-            @Mapping(target = "dataChangeUpdateTime", expression = "java(System.currentTimeMillis())"),
-            @Mapping(target = "dataChangeCreateDate", expression = "java(new java.util.Date())"),
-            @Mapping(target = "baseMsg", qualifiedByName = "compressAndEncrypt"),
-            @Mapping(target = "testMsg", qualifiedByName = "compressAndEncrypt"),
-            @Mapping(target = "logs", qualifiedByName = "compressLogs"),
-    })
-    public abstract ReplayCompareResultCollection daoFromBo(ReplayCompareResult bo);
 
-    @Mappings({
-            @Mapping(target = "baseMsg", qualifiedByName = "decryptAndDecompress"),
-            @Mapping(target = "testMsg", qualifiedByName = "decryptAndDecompress"),
-            @Mapping(target = "logs", qualifiedByName = "decompressLogs")
-    })
-    public abstract ReplayCompareResult boFromDao(ReplayCompareResultCollection dao);
-    public abstract CompareResultDetail voFromBo(ReplayCompareResult bo);
-    public abstract AnalyzeCompareResultsRequestType.AnalyzeCompareInfoItem reportContractFromBo(ReplayCompareResult source);
+  @Mappings({
+      @Mapping(target = "dataChangeCreateTime", expression = "java(System.currentTimeMillis())"),
+      @Mapping(target = "dataChangeUpdateTime", expression = "java(System.currentTimeMillis())"),
+      @Mapping(target = "dataChangeCreateDate", expression = "java(new java.util.Date())"),
+      @Mapping(target = "baseMsg", qualifiedByName = "compressAndEncrypt"),
+      @Mapping(target = "testMsg", qualifiedByName = "compressAndEncrypt"),
+      @Mapping(target = "logs", qualifiedByName = "compressLogs"),
+  })
+  public abstract ReplayCompareResultCollection daoFromBo(ReplayCompareResult bo);
 
-    @Named("compressLogs")
-    String map(List<LogEntity> logs) {
-        if (logs == null) {
-            return StringUtils.EMPTY;
-        }
-        return SerializationUtils.useZstdSerializeToBase64(logs.toArray());
+  @Mappings({
+      @Mapping(target = "baseMsg", qualifiedByName = "decryptAndDecompress"),
+      @Mapping(target = "testMsg", qualifiedByName = "decryptAndDecompress"),
+      @Mapping(target = "logs", qualifiedByName = "decompressLogs")
+  })
+  public abstract ReplayCompareResult boFromDao(ReplayCompareResultCollection dao);
+
+  public abstract CompareResultDetail voFromBo(ReplayCompareResult bo);
+
+  public abstract AnalyzeCompareResultsRequestType.AnalyzeCompareInfoItem reportContractFromBo(
+      ReplayCompareResult source);
+
+  @Named("compressLogs")
+  String map(List<LogEntity> logs) {
+    if (logs == null) {
+      return StringUtils.EMPTY;
     }
+    return SerializationUtils.useZstdSerializeToBase64(logs.toArray());
+  }
 
-    @Named("decompressLogs")
-    List<LogEntity> map(String logs) {
-        LogEntity[] logEntities = SerializationUtils.useZstdDeserialize(logs, LogEntity[].class);
-        if (logEntities == null) {
-            return null;
-        }
-        return Arrays.asList(logEntities);
+  @Named("decompressLogs")
+  List<LogEntity> map(String logs) {
+    LogEntity[] logEntities = SerializationUtils.useZstdDeserialize(logs, LogEntity[].class);
+    if (logEntities == null) {
+      return null;
     }
+    return Arrays.asList(logEntities);
+  }
 
-    @Named("msgInfo")
-    ReplayCompareMsgInfoCollection convertMsg(MsgInfo msgInfo) {
-        ReplayCompareMsgInfoCollection ret = new ReplayCompareMsgInfoCollection();
-        ret.setMsgMiss(msgInfo.getMsgMiss());
-        return ret;
-    }
+  @Named("msgInfo")
+  ReplayCompareMsgInfoCollection convertMsg(MsgInfo msgInfo) {
+    ReplayCompareMsgInfoCollection ret = new ReplayCompareMsgInfoCollection();
+    ret.setMsgMiss(msgInfo.getMsgMiss());
+    return ret;
+  }
 
-    @Named("msgInfo")
-    MsgInfo convertMsg(ReplayCompareMsgInfoCollection source) {
-        MsgInfo ret = new MsgInfo();
-        ret.setMsgMiss(source.getMsgMiss());
-        return ret;
-    }
+  @Named("msgInfo")
+  MsgInfo convertMsg(ReplayCompareMsgInfoCollection source) {
+    MsgInfo ret = new MsgInfo();
+    ret.setMsgMiss(source.getMsgMiss());
+    return ret;
+  }
 }

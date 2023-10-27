@@ -15,11 +15,12 @@ import org.springframework.stereotype.Repository;
 @Slf4j
 @Repository
 public class ApplicationRepository implements RepositoryField {
-    @Autowired
-    MongoTemplate mongoTemplate;
 
-    public AppCollection query(String appId) {
-        Query query = Query.query(Criteria.where(AppCollection.Fields.appId).is(appId));
-        return mongoTemplate.findOne(query, AppCollection.class, AppCollection.DOCUMENT_NAME);
-    }
+  @Autowired
+  MongoTemplate mongoTemplate;
+
+  public AppCollection query(String appId) {
+    Query query = Query.query(Criteria.where(AppCollection.Fields.appId).is(appId));
+    return mongoTemplate.findOne(query, AppCollection.class, AppCollection.DOCUMENT_NAME);
+  }
 }

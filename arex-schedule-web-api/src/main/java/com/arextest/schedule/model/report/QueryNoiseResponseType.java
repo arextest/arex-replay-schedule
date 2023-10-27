@@ -1,10 +1,8 @@
 package com.arextest.schedule.model.report;
 
-import java.util.List;
-
 import com.arextest.diff.model.log.NodeEntity;
 import com.arextest.model.mock.MockCategoryType;
-
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,36 +13,38 @@ import lombok.NoArgsConstructor;
 @Data
 public class QueryNoiseResponseType {
 
-    private List<InterfaceNoiseItem> interfaceNoiseItemList;
+  private List<InterfaceNoiseItem> interfaceNoiseItemList;
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class InterfaceNoiseItem {
-        private String operationId;
-        private List<MockerNoiseItem> randomNoise;
-        private List<MockerNoiseItem> disorderedArrayNoise;
-    }
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class InterfaceNoiseItem {
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class MockerNoiseItem {
-        private MockCategoryType mockCategoryType;
-        private String operationName;
-        private String operationType;
-        private List<NoiseItem> noiseItemList;
-    }
+    private String operationId;
+    private List<MockerNoiseItem> randomNoise;
+    private List<MockerNoiseItem> disorderedArrayNoise;
+  }
 
-    @Data
-    public static class NoiseItem {
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class MockerNoiseItem {
 
-        private List<NodeEntity> nodeEntity;
+    private MockCategoryType mockCategoryType;
+    private String operationName;
+    private String operationType;
+    private List<NoiseItem> noiseItemList;
+  }
 
-        private List<Integer> logIndexes;
+  @Data
+  public static class NoiseItem {
 
-        private String compareResultId;
+    private List<NodeEntity> nodeEntity;
 
-    }
+    private List<Integer> logIndexes;
+
+    private String compareResultId;
+
+  }
 
 }

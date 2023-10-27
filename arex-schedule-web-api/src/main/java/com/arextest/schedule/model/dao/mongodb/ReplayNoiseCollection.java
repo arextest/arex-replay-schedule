@@ -1,14 +1,11 @@
 package com.arextest.schedule.model.dao.mongodb;
 
+import com.arextest.diff.model.log.NodeEntity;
 import java.util.List;
 import java.util.Map;
-
-import org.springframework.data.mongodb.core.mapping.Document;
-
-import com.arextest.diff.model.log.NodeEntity;
-
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * Created by coryhh on 2023/10/17.
@@ -17,36 +14,37 @@ import lombok.experimental.FieldNameConstants;
 @Data
 @FieldNameConstants
 public class ReplayNoiseCollection extends ModelBase {
-    private String planId;
 
-    private String planItemId;
+  private String planId;
 
-    private String categoryName;
+  private String planItemId;
 
-    private String operationId;
+  private String categoryName;
 
-    private String operationName;
+  private String operationId;
 
-    // k: path v: data
-    private Map<String, ReplayNoiseItemDao> mayIgnoreItems;
+  private String operationName;
 
-    private Map<String, ReplayNoiseItemDao> mayDisorderItems;
+  // k: path v: data
+  private Map<String, ReplayNoiseItemDao> mayIgnoreItems;
 
-    @Data
-    @FieldNameConstants
-    public static class ReplayNoiseItemDao {
+  private Map<String, ReplayNoiseItemDao> mayDisorderItems;
 
-        private List<NodeEntity> nodePath;
+  @Data
+  @FieldNameConstants
+  public static class ReplayNoiseItemDao {
 
-        private String compareResultId;
+    private List<NodeEntity> nodePath;
 
-        private List<Integer> logIndexes;
+    private String compareResultId;
 
-        private Map<String, Integer> subPaths;
+    private List<Integer> logIndexes;
 
-        private Integer pathCount;
+    private Map<String, Integer> subPaths;
 
-        private Integer caseCount;
+    private Integer pathCount;
 
-    }
+    private Integer caseCount;
+
+  }
 }

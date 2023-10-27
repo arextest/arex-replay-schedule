@@ -1,7 +1,6 @@
 package com.arextest.schedule.sender;
 
 import com.arextest.schedule.model.plan.BuildReplayPlanType;
-
 import java.util.Map;
 
 /**
@@ -9,36 +8,39 @@ import java.util.Map;
  * @create: 2021-12-08
  **/
 public interface SenderParameters {
-    String getAppId();
 
-    String getUrl();
+  String getAppId();
 
-    String getOperation();
+  String getUrl();
 
-    String getMessage();
+  String getOperation();
 
-    String getFormat();
+  String getMessage();
 
-    String getSubEnv();
+  String getFormat();
 
-    String getConsumeGroup();
+  String getSubEnv();
 
-    /**
-     * default http post
-     *
-     * @return the method to sending
-     */
-    default String getMethod() {
-        return "POST";
-    }
+  String getConsumeGroup();
 
-    default String getRecordId() {
-        return null;
-    }
+  /**
+   * default http post
+   *
+   * @return the method to sending
+   */
+  default String getMethod() {
+    return "POST";
+  }
 
-    default BuildReplayPlanType getReplayPlanType() {
-        return BuildReplayPlanType.BY_APP_ID;
-    };
+  default String getRecordId() {
+    return null;
+  }
 
-    Map<String, String> getHeaders();
+  default BuildReplayPlanType getReplayPlanType() {
+    return BuildReplayPlanType.BY_APP_ID;
+  }
+
+  ;
+
+  Map<String, String> getHeaders();
 }

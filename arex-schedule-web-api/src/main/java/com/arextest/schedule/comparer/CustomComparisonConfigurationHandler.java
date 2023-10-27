@@ -12,31 +12,31 @@ import com.arextest.schedule.model.config.ReplayComparisonConfig;
  */
 public interface CustomComparisonConfigurationHandler {
 
-    void build(ReplayComparisonConfig config, ReplayActionItem actionItem);
+  void build(ReplayComparisonConfig config, ReplayActionItem actionItem);
 
-    /**
-     * Pick config for quickCompare.
-     * QuickCompare is invoked during the normal send->compare procedure.
-     *
-     * @see com.arextest.schedule.comparer.impl.DefaultReplayResultComparer
-     * @see com.arextest.diff.sdk.CompareSDK#quickCompare(String, String, CompareOptions)
-     */
-    ReplayComparisonConfig pickConfig(ComparisonGlobalConfig globalConfig,
-                                      ComparisonInterfaceConfig operationConfig,
-                                      CompareItem compareItem,
-                                      String category);
+  /**
+   * Pick config for quickCompare. QuickCompare is invoked during the normal send->compare
+   * procedure.
+   *
+   * @see com.arextest.schedule.comparer.impl.DefaultReplayResultComparer
+   * @see com.arextest.diff.sdk.CompareSDK#quickCompare(String, String, CompareOptions)
+   */
+  ReplayComparisonConfig pickConfig(ComparisonGlobalConfig globalConfig,
+      ComparisonInterfaceConfig operationConfig,
+      CompareItem compareItem,
+      String category);
 
-    /**
-     * Pick config for compare.
-     * Full compare is invoked when users want to view detail of the diff on UI.
-     *
-     * @see com.arextest.schedule.service.report.QueryReplayMsgService#queryDiffMsgById(String)
-     * @see com.arextest.diff.sdk.CompareSDK#compare(String, String, CompareOptions)
-     */
-    ReplayComparisonConfig pickConfig(ComparisonGlobalConfig globalConfig,
-                                      ComparisonInterfaceConfig operationConfig,
-                                      String category,
-                                      String operationName);
+  /**
+   * Pick config for compare. Full compare is invoked when users want to view detail of the diff on
+   * UI.
+   *
+   * @see com.arextest.schedule.service.report.QueryReplayMsgService#queryDiffMsgById(String)
+   * @see com.arextest.diff.sdk.CompareSDK#compare(String, String, CompareOptions)
+   */
+  ReplayComparisonConfig pickConfig(ComparisonGlobalConfig globalConfig,
+      ComparisonInterfaceConfig operationConfig,
+      String category,
+      String operationName);
 
-    CompareOptions buildSkdOption(String category, ReplayComparisonConfig compareConfig);
+  CompareOptions buildSkdOption(String category, ReplayComparisonConfig compareConfig);
 }

@@ -11,9 +11,10 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class ProgressEventConfiguration {
-    @Bean
-    @ConditionalOnMissingBean
-    public ProgressEvent progressEvent() {
-        return new UpdateResultProgressEventImpl();
-    }
+
+  @Bean
+  @ConditionalOnMissingBean
+  public ProgressEvent progressEvent() {
+    return new UpdateResultProgressEventImpl();
+  }
 }

@@ -11,5 +11,6 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class ReplayPlanStageInfo extends StageBaseInfo {
-    private List<ReplayPlanStageInfo> subStageInfoList;
+
+  private List<ReplayPlanStageInfo> subStageInfoList;
 }

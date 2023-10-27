@@ -18,18 +18,17 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
-
-import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
 
 
 /**
@@ -38,182 +37,201 @@ import java.util.Set;
 @Service
 @Slf4j
 public class ReplayCaseRemoteLoadService {
-    @Resource
-    private HttpWepServiceApiClient wepApiClientService;
-    private static final int EMPTY_SIZE = 0;
-    private static final int AUTO_PINED_CASE_LIMIT = 20000;
-    @Value("${arex.storage.viewRecord.url}")
-    private String viewRecordUrl;
-    @Value("${arex.storage.countByRange.url}")
-    private String countByRangeUrl;
-    @Value("${arex.storage.replayCase.url}")
-    private String replayCaseUrl;
-    @Resource
-    private ObjectMapper objectMapper;
-    @Resource
-    private MetricService metricService;
 
-    public int queryCaseCount(ReplayActionItem replayActionItem, String providerName) {
-        int queryTotalCount = EMPTY_SIZE;
-        try {
-            int caseCountLimit = replayActionItem.getOperationTypes() == null ? replayActionItem.getParent().getCaseCountLimit()
-                    : replayActionItem.getParent().getCaseCountLimit() * replayActionItem.getOperationTypes().size();
-            caseCountLimit = CommonConstant.AUTO_PINED.equals(providerName) ? AUTO_PINED_CASE_LIMIT : caseCountLimit;
-            List<PagedRequestType> request = buildPagingSearchCaseRequests(replayActionItem, caseCountLimit, providerName);
-            for (PagedRequestType pagedRequestType : request) {
-                QueryCaseCountResponseType responseType =
-                        wepApiClientService.jsonPost(countByRangeUrl, pagedRequestType, QueryCaseCountResponseType.class);
-                if (responseType == null || responseType.getResponseStatusType().hasError()) {
-                    continue;
-                }
-                queryTotalCount = queryTotalCount + Math.min(replayActionItem.getParent().getCaseCountLimit(), (int) responseType.getCount());
-            }
-        } catch (Exception e) {
-            LOGGER.error("query case count error,request: {} ", replayActionItem.getId(), e);
+  private static final int EMPTY_SIZE = 0;
+  private static final int AUTO_PINED_CASE_LIMIT = 20000;
+  @Resource
+  private HttpWepServiceApiClient wepApiClientService;
+  @Value("${arex.storage.viewRecord.url}")
+  private String viewRecordUrl;
+  @Value("${arex.storage.countByRange.url}")
+  private String countByRangeUrl;
+  @Value("${arex.storage.replayCase.url}")
+  private String replayCaseUrl;
+  @Resource
+  private ObjectMapper objectMapper;
+  @Resource
+  private MetricService metricService;
+
+  public int queryCaseCount(ReplayActionItem replayActionItem, String providerName) {
+    int queryTotalCount = EMPTY_SIZE;
+    try {
+      int caseCountLimit =
+          replayActionItem.getOperationTypes() == null ? replayActionItem.getParent()
+              .getCaseCountLimit()
+              : replayActionItem.getParent().getCaseCountLimit()
+                  * replayActionItem.getOperationTypes().size();
+      caseCountLimit =
+          CommonConstant.AUTO_PINED.equals(providerName) ? AUTO_PINED_CASE_LIMIT : caseCountLimit;
+      List<PagedRequestType> request = buildPagingSearchCaseRequests(replayActionItem,
+          caseCountLimit, providerName);
+      for (PagedRequestType pagedRequestType : request) {
+        QueryCaseCountResponseType responseType =
+            wepApiClientService.jsonPost(countByRangeUrl, pagedRequestType,
+                QueryCaseCountResponseType.class);
+        if (responseType == null || responseType.getResponseStatusType().hasError()) {
+          continue;
         }
-        return queryTotalCount;
+        queryTotalCount =
+            queryTotalCount + Math.min(replayActionItem.getParent().getCaseCountLimit(),
+                (int) responseType.getCount());
+      }
+    } catch (Exception e) {
+      LOGGER.error("query case count error,request: {} ", replayActionItem.getId(), e);
     }
+    return queryTotalCount;
+  }
 
-    public ReplayActionCaseItem viewReplayLoad(ReplayActionCaseItem caseItem, String sourceProvider, String operationType) {
-        try {
-            ViewRecordRequestType viewReplayCaseRequest = new ViewRecordRequestType();
-            viewReplayCaseRequest.setRecordId(caseItem.getRecordId());
-            viewReplayCaseRequest.setCategoryType(operationType);
-            viewReplayCaseRequest.setSourceProvider(sourceProvider);
+  public ReplayActionCaseItem viewReplayLoad(ReplayActionCaseItem caseItem, String sourceProvider,
+      String operationType) {
+    try {
+      ViewRecordRequestType viewReplayCaseRequest = new ViewRecordRequestType();
+      viewReplayCaseRequest.setRecordId(caseItem.getRecordId());
+      viewReplayCaseRequest.setCategoryType(operationType);
+      viewReplayCaseRequest.setSourceProvider(sourceProvider);
 
-            ViewRecordResponseType responseType = wepApiClientService.jsonPost(viewRecordUrl,
-                    viewReplayCaseRequest,
-                    ViewRecordResponseType.class);
-            if (responseType == null || responseType.getResponseStatusType().hasError()) {
-                LOGGER.warn("view record response invalid recordId:{},response:{}",
-                        viewReplayCaseRequest.getRecordId(), responseType);
-                return null;
-            }
-            List<AREXMocker> recordResultList = responseType.getRecordResult();
-            if (CollectionUtils.isEmpty(recordResultList)) {
-                LOGGER.warn("view record response empty result recordId:{}",
-                        viewReplayCaseRequest.getRecordId());
-                return null;
-            }
-            return toCaseItem(recordResultList.get(0));
-
-        } catch (Throwable e) {
-            LOGGER.error("view record error: {},recordId: {}", e.getMessage(), caseItem.getRecordId(), e);
-        }
+      ViewRecordResponseType responseType = wepApiClientService.jsonPost(viewRecordUrl,
+          viewReplayCaseRequest,
+          ViewRecordResponseType.class);
+      if (responseType == null || responseType.getResponseStatusType().hasError()) {
+        LOGGER.warn("view record response invalid recordId:{},response:{}",
+            viewReplayCaseRequest.getRecordId(), responseType);
         return null;
+      }
+      List<AREXMocker> recordResultList = responseType.getRecordResult();
+      if (CollectionUtils.isEmpty(recordResultList)) {
+        LOGGER.warn("view record response empty result recordId:{}",
+            viewReplayCaseRequest.getRecordId());
+        return null;
+      }
+      return toCaseItem(recordResultList.get(0));
+
+    } catch (Throwable e) {
+      LOGGER.error("view record error: {},recordId: {}", e.getMessage(), caseItem.getRecordId(), e);
     }
+    return null;
+  }
 
-    public ReplayActionCaseItem viewReplayLoad(ReplayActionCaseItem caseItem, Set<String> operationTypes) {
-        ReplayActionCaseItem viewReplay = null;
-        if (CollectionUtils.isEmpty(operationTypes)) {
-            viewReplay = viewReplayLoad(caseItem, caseItem.getSourceProvider(), caseItem.getParent().getActionType());
-        } else {
-            for (String operationType : operationTypes) {
-                viewReplay = viewReplayLoad(caseItem, caseItem.getSourceProvider(), operationType);
-                if (viewReplay != null) {
-                    break;
-                }
-            }
+  public ReplayActionCaseItem viewReplayLoad(ReplayActionCaseItem caseItem,
+      Set<String> operationTypes) {
+    ReplayActionCaseItem viewReplay = null;
+    if (CollectionUtils.isEmpty(operationTypes)) {
+      viewReplay = viewReplayLoad(caseItem, caseItem.getSourceProvider(),
+          caseItem.getParent().getActionType());
+    } else {
+      for (String operationType : operationTypes) {
+        viewReplay = viewReplayLoad(caseItem, caseItem.getSourceProvider(), operationType);
+        if (viewReplay != null) {
+          break;
         }
-        return viewReplay;
+      }
     }
+    return viewReplay;
+  }
 
-    private ReplayActionCaseItem toCaseItem(AREXMocker mainEntry) {
-        Target targetRequest = mainEntry.getTargetRequest();
-        if (targetRequest == null) {
-            return null;
-        }
-        ReplayActionCaseItem caseItem = new ReplayActionCaseItem();
-        caseItem.setTargetRequest(targetRequest);
-        caseItem.setRecordId(mainEntry.getRecordId());
-        caseItem.setRecordTime(mainEntry.getCreationTime());
-        caseItem.setCaseType(mainEntry.getCategoryType().getName());
-        caseItem.setSendStatus(CaseSendStatusType.WAIT_HANDLING.getValue());
-        caseItem.setCompareStatus(CompareProcessStatusType.WAIT_HANDLING.getValue());
-        caseItem.setSourceResultId(StringUtils.EMPTY);
-        caseItem.setTargetResultId(StringUtils.EMPTY);
-
-        return caseItem;
+  private ReplayActionCaseItem toCaseItem(AREXMocker mainEntry) {
+    Target targetRequest = mainEntry.getTargetRequest();
+    if (targetRequest == null) {
+      return null;
     }
+    ReplayActionCaseItem caseItem = new ReplayActionCaseItem();
+    caseItem.setTargetRequest(targetRequest);
+    caseItem.setRecordId(mainEntry.getRecordId());
+    caseItem.setRecordTime(mainEntry.getCreationTime());
+    caseItem.setCaseType(mainEntry.getCategoryType().getName());
+    caseItem.setSendStatus(CaseSendStatusType.WAIT_HANDLING.getValue());
+    caseItem.setCompareStatus(CompareProcessStatusType.WAIT_HANDLING.getValue());
+    caseItem.setSourceResultId(StringUtils.EMPTY);
+    caseItem.setTargetResultId(StringUtils.EMPTY);
 
-    public List<ReplayActionCaseItem> pagingLoad(long beginTimeMills, long endTimeMills,
-                                                 ReplayActionItem replayActionItem, int caseCountLimit, String providerName) {
-        List<AREXMocker> recordList = new ArrayList<>(caseCountLimit);
-        List<PagedRequestType> requestTypeList = buildPagingSearchCaseRequests(replayActionItem, caseCountLimit, providerName);
+    return caseItem;
+  }
 
-        for (PagedRequestType requestType : requestTypeList) {
-            requestType.setBeginTime(beginTimeMills);
-            requestType.setEndTime(endTimeMills);
-            PagedResponseType responseType;
-            StopWatch watch = new StopWatch();
-            watch.start(LogType.LOAD_CASE_TIME.getValue());
-            responseType = wepApiClientService.jsonPost(replayCaseUrl, requestType, PagedResponseType.class);
-            watch.stop();
-            LOGGER.info("get replay case app id:{},time used:{} ms, operation:{}",
-                    requestType.getAppId(),
-                    watch.getTotalTimeMillis(), requestType.getOperation()
-            );
-            metricService.recordTimeEvent(LogType.LOAD_CASE_TIME.getValue(), replayActionItem.getPlanId(),
-                    replayActionItem.getAppId(), null, watch.getTotalTimeMillis());
-            if (badResponse(responseType)) {
-                try {
-                    LOGGER.warn("get replay case is empty,request:{} , response:{}",
-                            objectMapper.writeValueAsString(requestType), objectMapper.writeValueAsString(responseType));
-                } catch (JsonProcessingException e) {
-                    LOGGER.error(e.getMessage(), e);
-                }
-                continue;
-            }
-            recordList.addAll(responseType.getRecords());
+  public List<ReplayActionCaseItem> pagingLoad(long beginTimeMills, long endTimeMills,
+      ReplayActionItem replayActionItem, int caseCountLimit, String providerName) {
+    List<AREXMocker> recordList = new ArrayList<>(caseCountLimit);
+    List<PagedRequestType> requestTypeList = buildPagingSearchCaseRequests(replayActionItem,
+        caseCountLimit, providerName);
+
+    for (PagedRequestType requestType : requestTypeList) {
+      requestType.setBeginTime(beginTimeMills);
+      requestType.setEndTime(endTimeMills);
+      PagedResponseType responseType;
+      StopWatch watch = new StopWatch();
+      watch.start(LogType.LOAD_CASE_TIME.getValue());
+      responseType = wepApiClientService.jsonPost(replayCaseUrl, requestType,
+          PagedResponseType.class);
+      watch.stop();
+      LOGGER.info("get replay case app id:{},time used:{} ms, operation:{}",
+          requestType.getAppId(),
+          watch.getTotalTimeMillis(), requestType.getOperation()
+      );
+      metricService.recordTimeEvent(LogType.LOAD_CASE_TIME.getValue(), replayActionItem.getPlanId(),
+          replayActionItem.getAppId(), null, watch.getTotalTimeMillis());
+      if (badResponse(responseType)) {
+        try {
+          LOGGER.warn("get replay case is empty,request:{} , response:{}",
+              objectMapper.writeValueAsString(requestType),
+              objectMapper.writeValueAsString(responseType));
+        } catch (JsonProcessingException e) {
+          LOGGER.error(e.getMessage(), e);
         }
-        return toCaseItemList(recordList);
+        continue;
+      }
+      recordList.addAll(responseType.getRecords());
     }
+    return toCaseItemList(recordList);
+  }
 
-    private boolean badResponse(PagedResponseType responseType) {
-        if (responseType == null) {
-            return true;
-        }
-        if (responseType.getResponseStatusType().hasError()) {
-            return true;
-        }
-        return CollectionUtils.isEmpty(responseType.getRecords());
+  private boolean badResponse(PagedResponseType responseType) {
+    if (responseType == null) {
+      return true;
     }
+    if (responseType.getResponseStatusType().hasError()) {
+      return true;
+    }
+    return CollectionUtils.isEmpty(responseType.getRecords());
+  }
 
-    private List<ReplayActionCaseItem> toCaseItemList(List<AREXMocker> source) {
-        List<ReplayActionCaseItem> caseItemList = new ArrayList<>(source.size());
-        for (AREXMocker soa : source) {
-            ReplayActionCaseItem caseItem = toCaseItem(soa);
-            caseItemList.add(caseItem);
-        }
-        return caseItemList;
+  private List<ReplayActionCaseItem> toCaseItemList(List<AREXMocker> source) {
+    List<ReplayActionCaseItem> caseItemList = new ArrayList<>(source.size());
+    for (AREXMocker soa : source) {
+      ReplayActionCaseItem caseItem = toCaseItem(soa);
+      caseItemList.add(caseItem);
     }
+    return caseItemList;
+  }
 
-    private PagedRequestType buildPagingSearchCaseRequest(ReplayActionItem replayActionItem, int caseCountLimit, String providerName) {
-        ReplayPlan parent = replayActionItem.getParent();
-        PagedRequestType requestType = new PagedRequestType();
-        requestType.setAppId(parent.getAppId());
-        requestType.setPageSize(Math.min(CommonConstant.MAX_PAGE_SIZE, caseCountLimit));
-        requestType.setEnv(parent.getCaseSourceType());
-        requestType.setBeginTime(parent.getCaseSourceFrom().getTime());
-        requestType.setEndTime(parent.getCaseSourceTo().getTime());
-        requestType.setOperation(replayActionItem.getOperationName());
-        requestType.setCategory(MockCategoryType.createEntryPoint(replayActionItem.getActionType()));
-        requestType.setSourceProvider(providerName);
-        return requestType;
-    }
+  private PagedRequestType buildPagingSearchCaseRequest(ReplayActionItem replayActionItem,
+      int caseCountLimit, String providerName) {
+    ReplayPlan parent = replayActionItem.getParent();
+    PagedRequestType requestType = new PagedRequestType();
+    requestType.setAppId(parent.getAppId());
+    requestType.setPageSize(Math.min(CommonConstant.MAX_PAGE_SIZE, caseCountLimit));
+    requestType.setEnv(parent.getCaseSourceType());
+    requestType.setBeginTime(parent.getCaseSourceFrom().getTime());
+    requestType.setEndTime(parent.getCaseSourceTo().getTime());
+    requestType.setOperation(replayActionItem.getOperationName());
+    requestType.setCategory(MockCategoryType.createEntryPoint(replayActionItem.getActionType()));
+    requestType.setSourceProvider(providerName);
+    return requestType;
+  }
 
-    private List<PagedRequestType> buildPagingSearchCaseRequests(ReplayActionItem replayActionItem, int caseCountLimit, String providerName) {
-        if (CollectionUtils.isEmpty(replayActionItem.getOperationTypes())) {
-            return Arrays.asList(buildPagingSearchCaseRequest(replayActionItem, caseCountLimit, providerName));
-        }
-        List<PagedRequestType> pagedRequestTypeList = new ArrayList<>();
-        for (String catagoryType : replayActionItem.getOperationTypes()) {
-            PagedRequestType pagedRequestType = buildPagingSearchCaseRequest(replayActionItem,
-                    (int) Math.ceil(caseCountLimit/replayActionItem.getOperationTypes().size()), providerName);
-            pagedRequestType.setCategory(MockCategoryType.createEntryPoint(catagoryType));
-            pagedRequestTypeList.add(pagedRequestType);
-        }
-        return pagedRequestTypeList;
+  private List<PagedRequestType> buildPagingSearchCaseRequests(ReplayActionItem replayActionItem,
+      int caseCountLimit, String providerName) {
+    if (CollectionUtils.isEmpty(replayActionItem.getOperationTypes())) {
+      return Arrays.asList(
+          buildPagingSearchCaseRequest(replayActionItem, caseCountLimit, providerName));
     }
+    List<PagedRequestType> pagedRequestTypeList = new ArrayList<>();
+    for (String catagoryType : replayActionItem.getOperationTypes()) {
+      PagedRequestType pagedRequestType = buildPagingSearchCaseRequest(replayActionItem,
+          (int) Math.ceil(caseCountLimit / replayActionItem.getOperationTypes().size()),
+          providerName);
+      pagedRequestType.setCategory(MockCategoryType.createEntryPoint(catagoryType));
+      pagedRequestTypeList.add(pagedRequestType);
+    }
+    return pagedRequestTypeList;
+  }
 
 }

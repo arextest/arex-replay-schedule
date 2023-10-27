@@ -1,8 +1,7 @@
 package com.arextest.schedule.model.storage;
 
-import lombok.Data;
-
 import java.util.List;
+import lombok.Data;
 
 /**
  * @author qzmo
@@ -10,7 +9,8 @@ import java.util.List;
  */
 @Data
 public class PostProcessResultRequestType {
-    private String replayPlanId;
-    private int replayStatusCode;
-    private List<ResultCodeGroup> results;
+
+  private String replayPlanId;
+  private int replayStatusCode;
+  private List<ResultCodeGroup> results;
 }
