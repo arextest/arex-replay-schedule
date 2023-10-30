@@ -11,6 +11,9 @@ import lombok.Data;
 @Data
 public class ComparisonInterfaceConfig extends ReplayComparisonConfig {
 
+  private Boolean skipAssemble;
+  private ComparisonDependencyConfig defaultDependencyConfig;
+
   private Map<String, ComparisonDependencyConfig> dependencyConfigMap;
 
   public static String dependencyKey(String actionId) {
@@ -20,6 +23,7 @@ public class ComparisonInterfaceConfig extends ReplayComparisonConfig {
   public static ComparisonInterfaceConfig empty() {
     ComparisonInterfaceConfig config = new ComparisonInterfaceConfig();
     config.fillCommonFields();
+    config.skipAssemble = Boolean.TRUE;
     return config;
   }
 }

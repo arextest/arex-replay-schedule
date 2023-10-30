@@ -37,6 +37,18 @@ public class DefaultCustomComparisonConfigurationHandler implements
       return operationConfig;
     }
 
+    if (Objects.equals(operationConfig.getSkipAssemble(), Boolean.TRUE)) {
+      ComparisonDependencyConfig defaultDependencyConfig = operationConfig.getDefaultDependencyConfig();
+      ReplayComparisonConfig configWhenMissing =
+          defaultDependencyConfig != null ? defaultDependencyConfig : new ReplayComparisonConfig();
+      String depKey = ComparisonDependencyConfig.dependencyKey(category,
+          compareItem.getCompareOperation());
+      Optional<ComparisonDependencyConfig> matchedDep = Optional.ofNullable(
+              operationConfig.getDependencyConfigMap())
+          .map(dependencyConfig -> dependencyConfig.get(depKey));
+      return matchedDep.isPresent() ? matchedDep.get() : configWhenMissing;
+    }
+
     String depKey = ComparisonDependencyConfig.dependencyKey(category,
         compareItem.getCompareOperation());
     Optional<ComparisonDependencyConfig> matchedDep = Optional.ofNullable(
@@ -58,6 +70,18 @@ public class DefaultCustomComparisonConfigurationHandler implements
       return operationConfig;
     }
 
+    if (Objects.equals(operationConfig.getSkipAssemble(), Boolean.TRUE)) {
+      ComparisonDependencyConfig defaultDependencyConfig = operationConfig.getDefaultDependencyConfig();
+      ReplayComparisonConfig configWhenMissing =
+          defaultDependencyConfig != null ? defaultDependencyConfig : new ReplayComparisonConfig();
+      String depKey = ComparisonDependencyConfig.dependencyKey(category, operationName);
+      Optional<ComparisonDependencyConfig> matchedDep = Optional.ofNullable(
+              operationConfig.getDependencyConfigMap())
+          .map(dependencyConfig -> dependencyConfig.get(depKey));
+      // if not matched, use global config
+      return matchedDep.isPresent() ? matchedDep.get() : configWhenMissing;
+    }
+
     String depKey = ComparisonDependencyConfig.dependencyKey(category, operationName);
     Optional<ComparisonDependencyConfig> matchedDep = Optional.ofNullable(
             operationConfig.getDependencyConfigMap())
@@ -76,13 +100,15 @@ public class DefaultCustomComparisonConfigurationHandler implements
     //  need get from ReplayComparisonConfig
     options.putSelectIgnoreCompare(true);
     options.putOnlyCompareCoincidentColumn(true);
-    options.putExclusions(compareConfig.getExclusionList());
-    options.putInclusions(compareConfig.getInclusionList());
-    options.putListSortConfig(compareConfig.getListSortMap());
-    options.putReferenceConfig(compareConfig.getReferenceMap());
-
     if (Objects.equals(category, MockCategoryType.DATABASE.getName())) {
       options.putExclusions(DEFAULT_DATABASE_IGNORE);
+    }
+
+    if (compareConfig != null) {
+      options.putExclusions(compareConfig.getExclusionList());
+      options.putInclusions(compareConfig.getInclusionList());
+      options.putListSortConfig(compareConfig.getListSortMap());
+      options.putReferenceConfig(compareConfig.getReferenceMap());
     }
     return options;
   }
