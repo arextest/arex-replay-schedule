@@ -36,15 +36,6 @@ abstract class AbstractReplaySender implements ReplaySender {
         StringUtils.isEmpty(JAR_FILE_PATH) ? TOMCAT_JAR_FILE_PATH : JAR_FILE_PATH;
     ClassLoaderUtils.loadJar(loadJarFilePath);
     ServiceLoader.load(ReplayExtensionInvoker.class).forEach(INVOKERS::add);
-    try {
-      Class<?> c1 = Class.forName("com.alibaba.dubbo.rpc.RpcContext");
-
-      Class<?> c2 = Class.forName("com.alibaba.dubbo.config.ReferenceConfig");
-
-      System.out.println(1);
-    } catch (Exception e) {
-      System.out.println(e);
-    }
   }
 
   @Resource

@@ -69,7 +69,7 @@ public class ReplayCaseTransmitService {
 
     prepareActionItems(caseItems);
 
-//    replayNoiseIdentify.noiseIdentify(caseItems, executionContext);
+    replayNoiseIdentify.noiseIdentify(caseItems, executionContext);
 
     try {
       doSendValuesToRemoteHost(caseItems, executionStatus);
