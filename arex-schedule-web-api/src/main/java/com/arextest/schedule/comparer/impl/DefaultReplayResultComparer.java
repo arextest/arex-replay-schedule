@@ -95,6 +95,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
       if (CollectionUtils.isEmpty(waitCompareMap)) {
         caseItemRepository.updateCompareStatus(caseItem.getId(),
             CompareProcessStatusType.ERROR.getValue());
+        caseItem.setCompareStatus(CompareProcessStatusType.ERROR.getValue());
         comparisonOutputWriter.writeIncomparable(caseItem,
             CaseSendStatusType.REPLAY_RESULT_NOT_FOUND.name());
         return true;
@@ -108,6 +109,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
           .equalsIgnoreCase(caseItem.getCaseType())) {
         caseItemRepository.updateCompareStatus(caseItem.getId(),
             CompareProcessStatusType.PASS.getValue());
+        caseItem.setCompareStatus(CompareProcessStatusType.PASS.getValue());
         return comparisonOutputWriter.writeQmqCompareResult(caseItem);
       }
 
@@ -123,10 +125,12 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
       }
       caseItemRepository.updateCompareStatus(caseItem.getId(), compareStatus.getValue());
+      caseItem.setCompareStatus(compareStatus.getValue());
       return comparisonOutputWriter.write(replayCompareResults);
     } catch (Throwable throwable) {
       caseItemRepository.updateCompareStatus(caseItem.getId(),
           CompareProcessStatusType.ERROR.getValue());
+      caseItem.setCompareStatus(CompareProcessStatusType.ERROR.getValue());
       comparisonOutputWriter.writeIncomparable(caseItem, throwable.getMessage());
       LOGGER.error("compare case result error:{} ,case item: {}", throwable.getMessage(), caseItem,
           throwable);
