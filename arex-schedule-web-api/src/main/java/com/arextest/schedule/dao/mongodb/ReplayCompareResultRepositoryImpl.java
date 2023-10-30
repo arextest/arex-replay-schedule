@@ -59,24 +59,4 @@ public class ReplayCompareResultRepositoryImpl implements RepositoryWriter<Repla
         ReplayCompareResultCollection.class);
     return replayCompareResultConverter.boFromDao(result);
   }
-
-  public List<CompareResultDbAggStruct> calculateResultCodeGroup(String planId) {
-    MatchOperation match = Aggregation.match(
-        Criteria.where(ReplayCompareResult.FIELD_PLAN_ID).is(planId));
-
-    GroupOperation group =
-        Aggregation.group(ReplayCompareResult.FIELD_DIFF_RESULT_CODE,
-                ReplayCompareResult.FIELD_CATEGORY_NAME)
-            .first(ReplayCompareResult.FIELD_DIFF_RESULT_CODE)
-            .as(ReplayCompareResult.FIELD_DIFF_RESULT_CODE)
-            .first(ReplayCompareResult.FIELD_CATEGORY_NAME)
-            .as(ReplayCompareResult.FIELD_CATEGORY_NAME)
-            .addToSet(new BasicDBObject("recordId", "$recordId").append("targetId", "$replayId"))
-            .as(CompareResultDbAggStruct.FIELD_RELATED_IDS);
-    Aggregation aggregation = Aggregation.newAggregation(match, group);
-    return mongoTemplate.aggregate(aggregation,
-            mongoTemplate.getCollectionName(ReplayCompareResultCollection.class),
-            CompareResultDbAggStruct.class)
-        .getMappedResults();
-  }
 }

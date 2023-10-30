@@ -42,8 +42,6 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   private MetricService metricService;
   @Resource
   private CacheProvider redisCacheProvider;
-  @Resource
-  private ReplayStorageService replayStorageService;
 
   @Override
   public void onReplayPlanReRunException(ReplayPlan plan, Throwable t) {
@@ -89,7 +87,6 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     replayReportService.pushPlanStatus(planId, reason, null, replayPlan.isReRun());
     recordPlanExecutionTime(replayPlan);
     redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayPlan.getId()));
-    replayStorageService.postProcessCompareResult(replayPlan.getId(), reason.getValue());
   }
 
   @Override
