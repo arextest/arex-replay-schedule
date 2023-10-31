@@ -294,7 +294,7 @@
     <sonar.jacoco.reportPath>${jacoco.report.path}</sonar.jacoco.reportPath>
     <!-- Users could specify this property as true to skip the deploy process -->
     <spring.boot.version>2.6.3</spring.boot.version>
-    <web-contract.version>0.4.3.6</web-contract.version>
+    <web-contract.version>0.6.0.4</web-contract.version>
   </properties>
 
   <scm>

@@ -132,7 +132,7 @@ public class ReplayNoiseIdentifyService implements ReplayNoiseIdentify {
         .flatMap(List::stream).collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
     CreateReplayNoiseSendTaskRequest request = new CreateReplayNoiseSendTaskRequest(
         replayActionCaseItems, limiter);
-    BizLogger.recordCaseForNoiseSendStart(executionContext, casesForNoise.size());
+    BizLogger.recordCaseForNoiseSendStart(executionContext, replayActionCaseItems.size());
     this.doReplayNoiseSendTasks(request);
     BizLogger.recordCaseForNoiseSendFinish(executionContext, replayActionCaseItems.size(),
         System.currentTimeMillis() - start);
