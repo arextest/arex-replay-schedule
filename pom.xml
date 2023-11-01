@@ -199,7 +199,6 @@
       <dependency>
         <artifactId>arex-model</artifactId>
         <groupId>com.arextest</groupId>
-        <version>1.0.35</version>
       </dependency>
       <dependency>
         <artifactId>arex-web-model-contract</artifactId>
@@ -304,5 +303,5 @@
     <url>https://github.com/arextest/arex-replay-schedule</url>
   </scm>
   <url>https://github.com/arextest/arex-replay-schedule</url>
-  <version>1.0.38.8</version>
+  <version>1.0.38.9</version>
 </project>

@@ -45,6 +45,7 @@
     <dependency>
       <artifactId>arex-model</artifactId>
       <groupId>com.arextest</groupId>
+      <version>1.0.35</version>
     </dependency>
     <dependency>
       <artifactId>spring-boot-starter-web</artifactId>
@@ -280,5 +281,5 @@
       </properties>
     </profile>
   </profiles>
-  <version>1.0.38.8</version>
+  <version>1.0.38.9</version>
 </project>
