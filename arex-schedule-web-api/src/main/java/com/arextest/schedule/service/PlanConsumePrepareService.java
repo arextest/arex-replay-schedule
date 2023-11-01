@@ -262,7 +262,6 @@ public class PlanConsumePrepareService {
 
     CompletableFuture.allOf(removeRecordsAndScenesTask, batchUpdateStatusTask, noiseAnalysisRecover)
         .join();
-    replayPlan.setReRunCaseCount(newFailedCaseList.size());
   }
 
   public void doResumeOperationDescriptor(ReplayPlan replayPlan) {

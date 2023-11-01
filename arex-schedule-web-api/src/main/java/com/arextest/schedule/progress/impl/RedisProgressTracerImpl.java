@@ -125,12 +125,10 @@ final class RedisProgressTracerImpl implements ProgressTracer {
 
   private void doPlanFinish(ReplayPlan replayPlan, int count) {
     String planId = replayPlan.getId();
-    int endTarget =
-        replayPlan.isReRun() ? replayPlan.getReRunCaseCount() : replayPlan.getCaseTotalCount();
     try {
       Long finished = doWithRetry(
           () -> redisCacheProvider.incrValueBy(toPlanFinishKeyBytes(planId), count));
-      if (finished != null && finished == endTarget) {
+      if (finished != null && finished == replayPlan.getCaseTotalCount()) {
         progressEvent.onReplayPlanFinish(replayPlan);
       }
     } catch (Throwable throwable) {
@@ -214,8 +212,9 @@ final class RedisProgressTracerImpl implements ProgressTracer {
   @Override
   public void reRunPlan(ReplayPlan replayPlan) {
     String planId = replayPlan.getId();
-    int value = replayPlan.getReRunCaseCount();
-    byte[] totalKey = toPlanTotalKeyBytes(planId);
+    int value = replayPlan.getCaseTotalCount() - replayPlan.getReRunCaseCount();
+
+    byte[] totalKey = toPlanFinishKeyBytes(planId);
     setRedisNxWithExpire(totalKey, valueToBytes(value));
     int actionReRunCaseCount;
     for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
