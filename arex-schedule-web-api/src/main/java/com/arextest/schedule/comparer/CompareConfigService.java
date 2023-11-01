@@ -10,7 +10,9 @@ import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.model.converter.ReplayConfigConverter;
 import com.arextest.schedule.progress.ProgressEvent;
+import com.arextest.schedule.utils.MapUtils;
 import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig;
+import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig.DependencyComparisonItem;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -24,7 +26,6 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
@@ -65,6 +66,9 @@ public final class CompareConfigService {
           source);
       List<ReplayCompareConfig.DependencyComparisonItem> sourceDependencyConfigs = source.getDependencyComparisonItems();
       converted.setDependencyConfigMap(convertDependencyConfig(sourceDependencyConfigs));
+      DependencyComparisonItem defaultDependencyComparisonItem = source.getDefaultDependencyComparisonItem();
+      converted.setDefaultDependencyConfig(
+          ReplayConfigConverter.INSTANCE.dependencyDaoFromDto(defaultDependencyComparisonItem));
       res.put(operationId, converted);
     }
 
@@ -93,11 +97,7 @@ public final class CompareConfigService {
 
   public void preload(ReplayPlan plan) {
     progressEvent.onCompareConfigBeforeLoading(plan);
-
-    Pair<ComparisonGlobalConfig, Map<String, ComparisonInterfaceConfig>> appConfig = getReplayComparisonConfig(
-        plan);
-    Map<String, ComparisonInterfaceConfig> operationCompareConfig = appConfig.getRight();
-    ComparisonGlobalConfig globalConfig = appConfig.getLeft();
+    Map<String, ComparisonInterfaceConfig> operationCompareConfig = getReplayComparisonConfig(plan);
 
     if (operationCompareConfig.isEmpty()) {
       LOGGER.warn("no compare config found, plan id:{}", plan.getId());
@@ -122,16 +122,10 @@ public final class CompareConfigService {
 
       LOGGER.info("prepare load compare config, action id:{}", actionItem.getId());
     }
-
-    redisCacheProvider.put(
-        ComparisonGlobalConfig.dependencyKey(plan.getId()).getBytes(StandardCharsets.UTF_8),
-        4 * 24 * 60 * 60L,
-        objectToJsonString(globalConfig).getBytes(StandardCharsets.UTF_8));
-
     progressEvent.onCompareConfigLoaded(plan);
   }
 
-  private Pair<ComparisonGlobalConfig, Map<String, ComparisonInterfaceConfig>> getReplayComparisonConfig(
+  private Map<String, ComparisonInterfaceConfig> getReplayComparisonConfig(
       ReplayPlan plan) {
     Map<String, String> urlVariables = Collections.singletonMap("appId", plan.getAppId());
 
@@ -141,8 +135,7 @@ public final class CompareConfigService {
             });
 
     if (replayComparisonConfigEntity == null) {
-      Map<String, ComparisonInterfaceConfig> emptyRes = new HashMap<>();
-      return Pair.of(ComparisonGlobalConfig.empty(), emptyRes);
+      return new HashMap<>();
     }
 
     List<ReplayCompareConfig.ReplayComparisonItem> operationConfigs = Optional.ofNullable(
@@ -154,11 +147,9 @@ public final class CompareConfigService {
 
     // converts
     Map<String, ComparisonInterfaceConfig> opConverted = convertOperationConfig(operationConfigs);
-    ComparisonGlobalConfig globalConverted = ReplayConfigConverter.INSTANCE
-        .globalDaoFromDto(
-            replayComparisonConfigEntity.getBody().getBody().getGlobalComparisonItem());
-
-    return Pair.of(globalConverted, opConverted);
+    this.setContractChangeFlag(opConverted,
+        replayComparisonConfigEntity.getBody().getBody().getSkipAssemble());
+    return opConverted;
   }
 
   public ComparisonInterfaceConfig loadInterfaceConfig(ReplayActionItem actionItem) {
@@ -183,6 +174,7 @@ public final class CompareConfigService {
     return ComparisonInterfaceConfig.empty();
   }
 
+  @Deprecated
   public ComparisonGlobalConfig loadGlobalConfig(String planId) {
     try {
       String redisKey = ComparisonGlobalConfig.dependencyKey(planId);
@@ -223,6 +215,13 @@ public final class CompareConfigService {
   private final static class GenericResponseType<T> {
 
     private T body;
+  }
+
+  private void setContractChangeFlag(Map<String, ComparisonInterfaceConfig> opConverted,
+      boolean skipAssemble) {
+    if (MapUtils.isNotEmpty(opConverted)) {
+      opConverted.forEach((k, v) -> v.setSkipAssemble(skipAssemble));
+    }
   }
 
 }
