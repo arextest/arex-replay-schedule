@@ -33,28 +33,8 @@ public class DefaultCustomComparisonConfigurationHandler implements
   public ReplayComparisonConfig pickConfig(ComparisonGlobalConfig globalConfig,
       ComparisonInterfaceConfig operationConfig,
       CompareItem compareItem, String category) {
-    if (compareItem.isEntryPointCategory()) {
-      return operationConfig;
-    }
-
-    if (Objects.equals(operationConfig.getSkipAssemble(), Boolean.TRUE)) {
-      ComparisonDependencyConfig defaultDependencyConfig = operationConfig.getDefaultDependencyConfig();
-      ReplayComparisonConfig configWhenMissing =
-          defaultDependencyConfig != null ? defaultDependencyConfig : new ReplayComparisonConfig();
-      String depKey = ComparisonDependencyConfig.dependencyKey(category,
-          compareItem.getCompareOperation());
-      Optional<ComparisonDependencyConfig> matchedDep = Optional.ofNullable(
-              operationConfig.getDependencyConfigMap())
-          .map(dependencyConfig -> dependencyConfig.get(depKey));
-      return matchedDep.isPresent() ? matchedDep.get() : configWhenMissing;
-    }
-
-    String depKey = ComparisonDependencyConfig.dependencyKey(category,
+    return this.pickConfig(globalConfig, operationConfig, category,
         compareItem.getCompareOperation());
-    Optional<ComparisonDependencyConfig> matchedDep = Optional.ofNullable(
-            operationConfig.getDependencyConfigMap())
-        .map(dependencyConfig -> dependencyConfig.get(depKey));
-    return matchedDep.isPresent() ? matchedDep.get() : globalConfig;
   }
 
   @Override
