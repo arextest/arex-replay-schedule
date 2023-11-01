@@ -45,7 +45,6 @@
     <dependency>
       <artifactId>arex-model</artifactId>
       <groupId>com.arextest</groupId>
-      <version>1.0.35</version>
     </dependency>
     <dependency>
       <artifactId>spring-boot-starter-web</artifactId>
@@ -144,7 +143,7 @@
   <parent>
     <artifactId>arex-schedule-parent</artifactId>
     <groupId>com.arextest</groupId>
-    <version>1.0.38.5</version>
+    <version>1.0.38.9</version>
   </parent>
 
   <profiles>
