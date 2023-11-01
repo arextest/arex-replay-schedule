@@ -10,6 +10,7 @@ import lombok.Data;
 @Data
 public class ComparisonGlobalConfig extends ReplayComparisonConfig {
 
+  private Boolean skipAssemble;
   public static String dependencyKey(String planId) {
     return CommonConstant.COMPARE_GLOBAL_CONFIG_REDIS_KEY + planId;
   }
@@ -17,6 +18,7 @@ public class ComparisonGlobalConfig extends ReplayComparisonConfig {
   public static ComparisonGlobalConfig empty() {
     ComparisonGlobalConfig config = new ComparisonGlobalConfig();
     config.fillCommonFields();
+    config.skipAssemble = Boolean.TRUE;
     return config;
   }
 }
