@@ -215,7 +215,7 @@ final class RedisProgressTracerImpl implements ProgressTracer {
     int value = replayPlan.getCaseTotalCount() - replayPlan.getReRunCaseCount();
 
     byte[] totalKey = toPlanFinishKeyBytes(planId);
-    setRedisNxWithExpire(totalKey, valueToBytes(value));
+    redisCacheProvider.put(totalKey, String.valueOf(value).getBytes(StandardCharsets.UTF_8));
     int actionReRunCaseCount;
     for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
       actionReRunCaseCount = replayActionItem.getRerunCaseCount();
