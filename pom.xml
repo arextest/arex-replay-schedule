@@ -199,7 +199,7 @@
       <dependency>
         <artifactId>arex-model</artifactId>
         <groupId>com.arextest</groupId>
-        <version>1.0.2</version>
+        <version>1.0.35</version>
       </dependency>
       <dependency>
         <artifactId>arex-web-model-contract</artifactId>

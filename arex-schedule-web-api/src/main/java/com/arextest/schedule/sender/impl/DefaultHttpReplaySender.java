@@ -39,7 +39,8 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
 
   @Override
   public boolean isSupported(String category) {
-    return MockCategoryType.SERVLET.getName().equals(category);
+    return MockCategoryType.SERVLET.getName().equals(category)
+        || MockCategoryType.NETTY_PROVIDER.getName().equals(category);
   }
 
   @Override
