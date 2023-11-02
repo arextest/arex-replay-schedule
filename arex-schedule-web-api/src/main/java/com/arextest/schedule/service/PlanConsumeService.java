@@ -171,7 +171,7 @@ public final class PlanConsumeService {
     } else if (executionStatus.isInterrupted()) {
       progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
       BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.FAIL_INTERRUPTED.name(),
-          "Plan Interrupted by QPS limiter.");
+          "Plan Interrupted because there are 40+ continuous failure or more than 10% of cases failed.");
     } else if (replayPlan.getCaseTotalCount() == 0) {
       progressEvent.onReplayPlanFinish(replayPlan);
       BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.FINISHED.name(),
