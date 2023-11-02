@@ -122,6 +122,9 @@ public class DefaultExecutionContextProvider
         // todo: multi-instance should be supported here
         boolean caseSuccess = sender.send(warmupCase, warmupHeader);
         if (!caseSuccess) {
+          if (StringUtils.isEmpty(plan.getErrorMessage())) {
+            plan.setErrorMessage(warmupCase.getSendErrorMessage());
+          }
           throw new RuntimeException(
               "Failed to warmup context: " + currentContext + " with case:" + warmupCase);
         }
