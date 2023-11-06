@@ -28,6 +28,7 @@ jobs:
         run: mvn -B -ntp clean package -DskipTests=true -Pjar
   
   docker:
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -49,4 +50,5 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: arexadmin01/arex-replay-schedule:$RELEASE_VERSION
+          tags: ${{ secrets.DOCKER_USERNAME }}/arex-replay-schedule:${{ $RELEASE_VERSION }}
+
