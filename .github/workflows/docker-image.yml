@@ -50,5 +50,5 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/arex-replay-schedule:$RELEASE_VERSION
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/arex-replay-schedule:$RELEASE_VERSION
 
