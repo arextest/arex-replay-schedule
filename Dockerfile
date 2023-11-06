@@ -1,4 +1,4 @@
-FROM tomcat:9.0-jdk8-openjdk as builder
+FROM eclipse-temurin:8-jdk-alpine as builder
 COPY . /usr/src/app/
 WORKDIR /usr/src/app/arex-schedule-web-api
 RUN mvn clean package -DskipTests
