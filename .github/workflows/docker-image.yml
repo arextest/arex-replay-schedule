@@ -43,12 +43,9 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push
-        env:
-          RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
         uses: docker/build-push-action@v5
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/arex-replay-schedule:$RELEASE_VERSION
-
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/arex-replay-schedule:${{ steps.vars.outputs.tag }}
