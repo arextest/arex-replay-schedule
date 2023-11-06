@@ -1,4 +1,4 @@
-FROM tomcat:9.0-jdk8-openjdk
+FROM tomcat:9.0-jdk8-openjdk as builder
 COPY . /usr/src/app/
 WORKDIR /usr/src/app/arex-schedule-web-api
 RUN mvn clean package -DskipTests
