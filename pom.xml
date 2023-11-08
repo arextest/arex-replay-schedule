@@ -263,7 +263,7 @@
   <packaging>pom</packaging>
   <properties>
     <commons-lang3.version>3.3.2</commons-lang3.version>
-    <compare-sdk.version>0.1.27</compare-sdk.version>
+    <compare-sdk.version>0.2.0-SNAPSHOT</compare-sdk.version>
     <fastjson2.version>2.0.23</fastjson2.version>
     <guava.version>20.0</guava.version>
     <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
@@ -294,7 +294,7 @@
     <sonar.jacoco.reportPath>${jacoco.report.path}</sonar.jacoco.reportPath>
     <!-- Users could specify this property as true to skip the deploy process -->
     <spring.boot.version>2.6.3</spring.boot.version>
-    <web-contract.version>0.6.0.4</web-contract.version>
+    <web-contract.version>0.6.0.7</web-contract.version>
   </properties>
 
   <scm>

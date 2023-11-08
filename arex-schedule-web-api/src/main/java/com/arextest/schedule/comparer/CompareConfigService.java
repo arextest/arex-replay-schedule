@@ -11,6 +11,7 @@ import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.model.converter.ReplayConfigConverter;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.utils.MapUtils;
+import com.arextest.web.model.contract.contracts.config.SystemConfig;
 import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig;
 import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig.DependencyComparisonItem;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 
 /**
@@ -46,10 +48,151 @@ public final class CompareConfigService {
   private CacheProvider redisCacheProvider;
   @Value("${arex.api.config.comparison.summary.url}")
   private String summaryConfigUrl;
+  @Value("${arex.api.config.system.url}")
+  private String systemConfigUrl;
   @Resource
   private ProgressEvent progressEvent;
   @Resource
   private ObjectMapper objectMapper;
+
+  private static final RetryTemplate RETRY_TEMPLATE = RetryTemplate.builder().maxAttempts(3)
+      .fixedBackoff(200L)
+      .build();
+  private static final long DEFAULT_COMPARE_IGNORE_TIME_PRECISION_MILLIS = 2000;
+  private static final boolean DEFAULT_COMPARE_NAME_TO_LOWER = true;
+  private static final boolean DEFAULT_COMPARE_NULL_EQUALS_EMPTY = true;
+  private static final boolean DEFAULT_COMPARE_ONLY_COMPARE_COINCIDENT_COLUMN = true;
+  private static final boolean DEFAULT_COMPARE_SELECT_IGNORE_COMPARE = true;
+  private static final boolean DEFAULT_COMPARE_UUID_IGNORE = true;
+
+  public SystemConfig getComparisonSystemConfig() {
+
+    ResponseEntity<GenericResponseType<SystemConfig>> response = RETRY_TEMPLATE.execute(context -> {
+      ResponseEntity<GenericResponseType<SystemConfig>> temp = httpWepServiceApiClient.get(
+          systemConfigUrl, Collections.emptyMap(),
+          new ParameterizedTypeReference<GenericResponseType<SystemConfig>>() {
+          });
+
+      if (temp == null || temp.getBody() == null || temp.getBody().getBody() == null) {
+        throw new RuntimeException("get compare system config failed");
+      } else {
+        return temp;
+      }
+    });
+
+    if (response == null || response.getBody() == null || response.getBody().getBody() == null) {
+      LOGGER.error("get compare system config failed");
+      SystemConfig systemConfig = new SystemConfig();
+      systemConfig.setCompareIgnoreTimePrecisionMillis(
+          DEFAULT_COMPARE_IGNORE_TIME_PRECISION_MILLIS);
+      systemConfig.setCompareNameToLower(DEFAULT_COMPARE_NAME_TO_LOWER);
+      systemConfig.setCompareNullEqualsEmpty(DEFAULT_COMPARE_NULL_EQUALS_EMPTY);
+      systemConfig.setOnlyCompareCoincidentColumn(DEFAULT_COMPARE_ONLY_COMPARE_COINCIDENT_COLUMN);
+      systemConfig.setSelectIgnoreCompare(DEFAULT_COMPARE_SELECT_IGNORE_COMPARE);
+      systemConfig.setUuidIgnore(DEFAULT_COMPARE_UUID_IGNORE);
+      return systemConfig;
+    }
+
+    return response.getBody().getBody();
+  }
+
+  public void preload(ReplayPlan plan) {
+    progressEvent.onCompareConfigBeforeLoading(plan);
+    Map<String, ComparisonInterfaceConfig> operationCompareConfig = getReplayComparisonConfig(plan);
+
+    if (operationCompareConfig.isEmpty()) {
+      LOGGER.warn("no compare config found, plan id:{}", plan.getId());
+      return;
+    }
+
+    for (ReplayActionItem actionItem : plan.getReplayActionItemList()) {
+      if (actionItem.getReplayCaseCount() == 0) {
+        continue;
+      }
+      String operationId = actionItem.getOperationId();
+
+      ReplayComparisonConfig config = operationCompareConfig.getOrDefault(operationId,
+          new ComparisonInterfaceConfig());
+
+      customComparisonConfigurationHandler.build(config, actionItem);
+
+      redisCacheProvider.put(ComparisonInterfaceConfig.dependencyKey(actionItem.getId())
+              .getBytes(StandardCharsets.UTF_8),
+          4 * 24 * 60 * 60L,
+          objectToJsonString(config).getBytes(StandardCharsets.UTF_8));
+
+      LOGGER.info("prepare load compare config, action id:{}", actionItem.getId());
+    }
+    progressEvent.onCompareConfigLoaded(plan);
+  }
+
+  public ComparisonInterfaceConfig loadInterfaceConfig(ReplayActionItem actionItem) {
+    return this.loadInterfaceConfig(actionItem.getId());
+  }
+
+  public ComparisonInterfaceConfig loadInterfaceConfig(String actionItemId) {
+    try {
+      String redisKey = ComparisonInterfaceConfig.dependencyKey(actionItemId);
+      byte[] json = redisCacheProvider.get(redisKey.getBytes(StandardCharsets.UTF_8));
+      if (json == null) {
+        return ComparisonInterfaceConfig.empty();
+      }
+      ComparisonInterfaceConfig config = byteToObject(json, ComparisonInterfaceConfig.class);
+      if (config == null) {
+        return ComparisonInterfaceConfig.empty();
+      }
+      return config;
+    } catch (Throwable throwable) {
+      LOGGER.error(throwable.getMessage(), throwable);
+    }
+    return ComparisonInterfaceConfig.empty();
+  }
+
+  @Deprecated
+  public ComparisonGlobalConfig loadGlobalConfig(String planId) {
+    try {
+      String redisKey = ComparisonGlobalConfig.dependencyKey(planId);
+      byte[] json = redisCacheProvider.get(redisKey.getBytes(StandardCharsets.UTF_8));
+      if (json == null) {
+        return ComparisonGlobalConfig.empty();
+      }
+      ComparisonGlobalConfig config = byteToObject(json, ComparisonGlobalConfig.class);
+      if (config == null) {
+        return ComparisonGlobalConfig.empty();
+      }
+      return config;
+    } catch (Throwable throwable) {
+      LOGGER.error(throwable.getMessage(), throwable);
+    }
+    return ComparisonGlobalConfig.empty();
+  }
+
+  private Map<String, ComparisonInterfaceConfig> getReplayComparisonConfig(
+      ReplayPlan plan) {
+    Map<String, String> urlVariables = Collections.singletonMap("appId", plan.getAppId());
+
+    ResponseEntity<GenericResponseType<ReplayCompareConfig>> replayComparisonConfigEntity =
+        httpWepServiceApiClient.get(summaryConfigUrl, urlVariables,
+            new ParameterizedTypeReference<GenericResponseType<ReplayCompareConfig>>() {
+            });
+
+    if (replayComparisonConfigEntity == null) {
+      return new HashMap<>();
+    }
+
+    List<ReplayCompareConfig.ReplayComparisonItem> operationConfigs = Optional.ofNullable(
+            replayComparisonConfigEntity.getBody())
+        .map(GenericResponseType::getBody)
+        .map(ReplayCompareConfig::getReplayComparisonItems)
+        .orElse(Collections.emptyList());
+    // TODO: add the log of the ComparisonConfig
+
+    // converts
+    Map<String, ComparisonInterfaceConfig> opConverted = convertOperationConfig(operationConfigs);
+    this.setContractChangeFlag(opConverted,
+        replayComparisonConfigEntity.getBody().getBody().getSkipAssemble());
+    return opConverted;
+  }
 
   private static Map<String, ComparisonInterfaceConfig> convertOperationConfig(
       List<ReplayCompareConfig.ReplayComparisonItem> operationConfigs) {
@@ -93,104 +236,6 @@ public final class CompareConfigService {
     }
 
     return res;
-  }
-
-  public void preload(ReplayPlan plan) {
-    progressEvent.onCompareConfigBeforeLoading(plan);
-    Map<String, ComparisonInterfaceConfig> operationCompareConfig = getReplayComparisonConfig(plan);
-
-    if (operationCompareConfig.isEmpty()) {
-      LOGGER.warn("no compare config found, plan id:{}", plan.getId());
-      return;
-    }
-
-    for (ReplayActionItem actionItem : plan.getReplayActionItemList()) {
-      if (actionItem.getReplayCaseCount() == 0) {
-        continue;
-      }
-      String operationId = actionItem.getOperationId();
-
-      ReplayComparisonConfig config = operationCompareConfig.getOrDefault(operationId,
-          new ComparisonInterfaceConfig());
-
-      customComparisonConfigurationHandler.build(config, actionItem);
-
-      redisCacheProvider.put(ComparisonInterfaceConfig.dependencyKey(actionItem.getId())
-              .getBytes(StandardCharsets.UTF_8),
-          4 * 24 * 60 * 60L,
-          objectToJsonString(config).getBytes(StandardCharsets.UTF_8));
-
-      LOGGER.info("prepare load compare config, action id:{}", actionItem.getId());
-    }
-    progressEvent.onCompareConfigLoaded(plan);
-  }
-
-  private Map<String, ComparisonInterfaceConfig> getReplayComparisonConfig(
-      ReplayPlan plan) {
-    Map<String, String> urlVariables = Collections.singletonMap("appId", plan.getAppId());
-
-    ResponseEntity<GenericResponseType<ReplayCompareConfig>> replayComparisonConfigEntity =
-        httpWepServiceApiClient.get(summaryConfigUrl, urlVariables,
-            new ParameterizedTypeReference<GenericResponseType<ReplayCompareConfig>>() {
-            });
-
-    if (replayComparisonConfigEntity == null) {
-      return new HashMap<>();
-    }
-
-    List<ReplayCompareConfig.ReplayComparisonItem> operationConfigs = Optional.ofNullable(
-            replayComparisonConfigEntity.getBody())
-        .map(GenericResponseType::getBody)
-        .map(ReplayCompareConfig::getReplayComparisonItems)
-        .orElse(Collections.emptyList());
-    // TODO: add the log of the ComparisonConfig
-
-    // converts
-    Map<String, ComparisonInterfaceConfig> opConverted = convertOperationConfig(operationConfigs);
-    this.setContractChangeFlag(opConverted,
-        replayComparisonConfigEntity.getBody().getBody().getSkipAssemble());
-    return opConverted;
-  }
-
-  public ComparisonInterfaceConfig loadInterfaceConfig(ReplayActionItem actionItem) {
-    return this.loadInterfaceConfig(actionItem.getId());
-  }
-
-  public ComparisonInterfaceConfig loadInterfaceConfig(String actionItemId) {
-    try {
-      String redisKey = ComparisonInterfaceConfig.dependencyKey(actionItemId);
-      byte[] json = redisCacheProvider.get(redisKey.getBytes(StandardCharsets.UTF_8));
-      if (json == null) {
-        return ComparisonInterfaceConfig.empty();
-      }
-      ComparisonInterfaceConfig config = byteToObject(json, ComparisonInterfaceConfig.class);
-      if (config == null) {
-        return ComparisonInterfaceConfig.empty();
-      }
-      return config;
-    } catch (Throwable throwable) {
-      LOGGER.error(throwable.getMessage(), throwable);
-    }
-    return ComparisonInterfaceConfig.empty();
-  }
-
-  @Deprecated
-  public ComparisonGlobalConfig loadGlobalConfig(String planId) {
-    try {
-      String redisKey = ComparisonGlobalConfig.dependencyKey(planId);
-      byte[] json = redisCacheProvider.get(redisKey.getBytes(StandardCharsets.UTF_8));
-      if (json == null) {
-        return ComparisonGlobalConfig.empty();
-      }
-      ComparisonGlobalConfig config = byteToObject(json, ComparisonGlobalConfig.class);
-      if (config == null) {
-        return ComparisonGlobalConfig.empty();
-      }
-      return config;
-    } catch (Throwable throwable) {
-      LOGGER.error(throwable.getMessage(), throwable);
-    }
-    return ComparisonGlobalConfig.empty();
   }
 
   private <T> T byteToObject(byte[] bytes, Class<T> tClass) {

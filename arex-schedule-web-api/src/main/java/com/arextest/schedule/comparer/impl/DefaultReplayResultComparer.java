@@ -24,17 +24,16 @@ import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.MetricService;
-import java.io.IOException;
-import java.io.InputStream;
+import com.arextest.web.model.contract.contracts.config.SystemConfig;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
@@ -54,19 +53,17 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
   private static final String IGNORE_TIME_PRECISION_MILLIS_KEY = "ignore.time.precision.millis";
   private static long ignoreTimePrecisionMillis = 2000;
 
-  static {
-    Properties props = new Properties();
-    try (InputStream input = DefaultReplayResultComparer.class.getResourceAsStream(
-        APPLICATION_PROPERTIES_NAME)) {
-      props.load(input);
-      ignoreTimePrecisionMillis = Long.parseLong(
-          props.getProperty(IGNORE_TIME_PRECISION_MILLIS_KEY));
-    } catch (IOException e) {
-      LOGGER.error("failed to get ignore time precision millis {}", e.getMessage(), e);
-    }
-
-    COMPARE_INSTANCE.getGlobalOptions().putNameToLower(true).putNullEqualsEmpty(true)
-        .putIgnoredTimePrecision(ignoreTimePrecisionMillis);
+  @PostConstruct
+  public void init() {
+    SystemConfig comparisonSystemConfig = compareConfigService.getComparisonSystemConfig();
+    COMPARE_INSTANCE.getGlobalOptions()
+        .putNameToLower(comparisonSystemConfig.getCompareNameToLower())
+        .putNullEqualsEmpty(comparisonSystemConfig.getCompareNullEqualsEmpty())
+        .putIgnoredTimePrecision(comparisonSystemConfig.getCompareIgnoreTimePrecisionMillis())
+        .putIgnoreNodeSet(comparisonSystemConfig.getIgnoreNodeSet())
+        .putSelectIgnoreCompare(comparisonSystemConfig.getSelectIgnoreCompare())
+        .putOnlyCompareCoincidentColumn(comparisonSystemConfig.getOnlyCompareCoincidentColumn())
+        .putUuidIgnore(comparisonSystemConfig.getUuidIgnore());
   }
 
   private final CompareConfigService compareConfigService;
