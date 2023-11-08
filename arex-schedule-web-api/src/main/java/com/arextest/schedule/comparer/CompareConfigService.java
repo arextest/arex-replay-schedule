@@ -78,7 +78,7 @@ public final class CompareConfigService {
       } else {
         return temp;
       }
-    });
+    }, retryContext -> null);
 
     if (response == null || response.getBody() == null || response.getBody().getBody() == null) {
       LOGGER.error("get compare system config failed");
