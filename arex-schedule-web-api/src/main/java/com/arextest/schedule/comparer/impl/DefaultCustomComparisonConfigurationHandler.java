@@ -76,10 +76,6 @@ public class DefaultCustomComparisonConfigurationHandler implements
   public CompareOptions buildSkdOption(String category, ReplayComparisonConfig compareConfig) {
     CompareOptions options = new CompareOptions();
     options.putCategoryType(category);
-    // todo: the switch of "sqlBodyParse" and "onlyCompareCoincidentColumn"
-    //  need get from ReplayComparisonConfig
-    options.putSelectIgnoreCompare(true);
-    options.putOnlyCompareCoincidentColumn(true);
     if (Objects.equals(category, MockCategoryType.DATABASE.getName())) {
       options.putExclusions(DEFAULT_DATABASE_IGNORE);
     }

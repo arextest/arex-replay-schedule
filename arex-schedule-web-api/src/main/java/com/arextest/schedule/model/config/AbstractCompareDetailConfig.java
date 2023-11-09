@@ -6,6 +6,7 @@ import lombok.Setter;
 /**
  * Created by rchen9 on 2022/9/19.
  */
+@Deprecated
 @Getter
 @Setter
 public abstract class AbstractCompareDetailConfig {
