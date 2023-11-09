@@ -1,6 +1,7 @@
 package com.arextest.schedule.utils;
 
 import com.arextest.diff.model.log.NodeEntity;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
@@ -44,6 +45,19 @@ public class ListUtils {
       }
     }
     return sb.toString();
+  }
+
+  public static List<String> getFuzzyPathStrList(List<NodeEntity> path) {
+    if (path == null || path.size() == 0) {
+      return null;
+    }
+    List<String> list = new ArrayList<>();
+    for (NodeEntity p : path) {
+      if (!StringUtils.isEmpty(p.getNodeName())) {
+        list.add(p.getNodeName());
+      }
+    }
+    return list;
   }
 
 
