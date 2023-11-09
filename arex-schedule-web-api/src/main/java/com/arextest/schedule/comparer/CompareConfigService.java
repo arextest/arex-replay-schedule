@@ -65,7 +65,13 @@ public final class CompareConfigService {
   private static final boolean DEFAULT_COMPARE_SELECT_IGNORE_COMPARE = true;
   private static final boolean DEFAULT_COMPARE_UUID_IGNORE = true;
 
+  private static SystemConfig systemConfig = null;
+
   public SystemConfig getComparisonSystemConfig() {
+
+    if (systemConfig != null) {
+      return systemConfig;
+    }
 
     ResponseEntity<GenericResponseType<SystemConfig>> response = RETRY_TEMPLATE.execute(context -> {
       ResponseEntity<GenericResponseType<SystemConfig>> temp = httpWepServiceApiClient.get(
@@ -82,18 +88,20 @@ public final class CompareConfigService {
 
     if (response == null || response.getBody() == null || response.getBody().getBody() == null) {
       LOGGER.error("get compare system config failed");
-      SystemConfig systemConfig = new SystemConfig();
-      systemConfig.setCompareIgnoreTimePrecisionMillis(
+      SystemConfig defaultConfig = new SystemConfig();
+      defaultConfig.setCompareIgnoreTimePrecisionMillis(
           DEFAULT_COMPARE_IGNORE_TIME_PRECISION_MILLIS);
-      systemConfig.setCompareNameToLower(DEFAULT_COMPARE_NAME_TO_LOWER);
-      systemConfig.setCompareNullEqualsEmpty(DEFAULT_COMPARE_NULL_EQUALS_EMPTY);
-      systemConfig.setOnlyCompareCoincidentColumn(DEFAULT_COMPARE_ONLY_COMPARE_COINCIDENT_COLUMN);
-      systemConfig.setSelectIgnoreCompare(DEFAULT_COMPARE_SELECT_IGNORE_COMPARE);
-      systemConfig.setUuidIgnore(DEFAULT_COMPARE_UUID_IGNORE);
-      return systemConfig;
+      defaultConfig.setCompareNameToLower(DEFAULT_COMPARE_NAME_TO_LOWER);
+      defaultConfig.setCompareNullEqualsEmpty(DEFAULT_COMPARE_NULL_EQUALS_EMPTY);
+      defaultConfig.setOnlyCompareCoincidentColumn(DEFAULT_COMPARE_ONLY_COMPARE_COINCIDENT_COLUMN);
+      defaultConfig.setSelectIgnoreCompare(DEFAULT_COMPARE_SELECT_IGNORE_COMPARE);
+      defaultConfig.setUuidIgnore(DEFAULT_COMPARE_UUID_IGNORE);
+      systemConfig = defaultConfig;
+    } else {
+      systemConfig = response.getBody().getBody();
     }
 
-    return response.getBody().getBody();
+    return systemConfig;
   }
 
   public void preload(ReplayPlan plan) {
