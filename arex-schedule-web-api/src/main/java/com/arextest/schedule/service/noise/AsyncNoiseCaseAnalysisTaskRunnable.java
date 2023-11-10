@@ -133,7 +133,7 @@ public class AsyncNoiseCaseAnalysisTaskRunnable extends AbstractTracedRunnable {
             List<NodeEntity> nodePath = nodeEntry.getKey();
             ReplayNoiseItemDto replayNoiseItemDto = nodeEntry.getValue();
             replayNoiseItemDto.setNodePath(nodePath);
-            mayIgnoreItems.put(ListUtils.getFuzzyPathStr(nodePath), replayNoiseItemDto);
+            mayIgnoreItems.put(ListUtils.getFuzzyPathStrWithBase64(nodePath), replayNoiseItemDto);
           }
           replayNoiseDto.setMayIgnoreItems(mayIgnoreItems);
         }
@@ -146,7 +146,7 @@ public class AsyncNoiseCaseAnalysisTaskRunnable extends AbstractTracedRunnable {
             List<NodeEntity> nodePath = nodeEntry.getKey();
             ReplayNoiseItemDto replayNoiseItemDto = nodeEntry.getValue();
             replayNoiseItemDto.setNodePath(nodePath);
-            mayDisorderItems.put(ListUtils.getFuzzyPathStr(nodePath), replayNoiseItemDto);
+            mayDisorderItems.put(ListUtils.getFuzzyPathStrWithBase64(nodePath), replayNoiseItemDto);
           }
           replayNoiseDto.setMayDisorderItems(mayDisorderItems);
         }
@@ -275,7 +275,7 @@ public class AsyncNoiseCaseAnalysisTaskRunnable extends AbstractTracedRunnable {
       LogEntity logEntity,
       int logIndex) {
     ReplayNoiseItemDto replayNoiseItemDto = singleAggContent.get(upperArrayNodePath);
-    String fuzzyPathStr = ListUtils.getFuzzyPathStr(logEntity.getPathPair().getLeftUnmatchedPath());
+    String fuzzyPathStr = ListUtils.getFuzzyPathStrWithBase64(logEntity.getPathPair().getLeftUnmatchedPath());
     if (replayNoiseItemDto == null) {
       replayNoiseItemDto = new ReplayNoiseItemDto();
       replayNoiseItemDto.setCompareResult(replayCompareResult);

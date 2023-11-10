@@ -4,6 +4,7 @@ import com.arextest.diff.model.log.NodeEntity;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
+import org.bson.internal.Base64;
 
 
 public class ListUtils {
@@ -27,6 +28,27 @@ public class ListUtils {
     }
     return path.toString();
   }
+
+  /**
+   * calculate path without index for array, and encode with base64 to avoid illegal char
+   */
+  public static String getFuzzyPathStrWithBase64(List<NodeEntity> path) {
+    if (path == null || path.size() == 0) {
+      return StringUtils.EMPTY;
+    }
+    StringBuilder sb = new StringBuilder(path.size() * 10);
+    for (NodeEntity p : path) {
+      if (!StringUtils.isEmpty(p.getNodeName())) {
+        if (sb.length() != 0) {
+          sb.append("\\");
+        }
+        sb.append(p.getNodeName());
+      }
+    }
+    return Base64.encode(sb.toString().getBytes());
+  }
+
+
 
   /**
    * calculate path without index for array
