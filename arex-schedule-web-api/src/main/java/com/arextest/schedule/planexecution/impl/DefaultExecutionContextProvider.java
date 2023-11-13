@@ -127,6 +127,7 @@ public class DefaultExecutionContextProvider
           }
           String errorMsg =
               "Failed to warmup context: " + currentContext + " with case:" + warmupCase;
+          LOGGER.error(errorMsg);
           throw new RuntimeException(errorMsg);
         }
         return true;
