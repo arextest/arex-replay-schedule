@@ -125,8 +125,9 @@ public class DefaultExecutionContextProvider
           if (StringUtils.isEmpty(plan.getErrorMessage())) {
             plan.setErrorMessage(warmupCase.getSendErrorMessage());
           }
-          throw new RuntimeException(
-              "Failed to warmup context: " + currentContext + " with case:" + warmupCase);
+          String errorMsg =
+              "Failed to warmup context: " + currentContext + " with case:" + warmupCase;
+          throw new RuntimeException(errorMsg);
         }
         return true;
       });

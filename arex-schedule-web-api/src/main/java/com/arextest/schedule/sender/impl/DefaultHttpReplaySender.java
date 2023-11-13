@@ -70,6 +70,7 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
     ServiceInstance instanceRunner = selectLoadBalanceInstance(caseItem.getId(),
         replayActionItem.getTargetInstance());
     if (instanceRunner == null) {
+      LOGGER.error("selectLoadBalanceInstance failed, caseItem:{}", caseItem);
       return false;
     }
     String operationName = caseItem.requestPath();

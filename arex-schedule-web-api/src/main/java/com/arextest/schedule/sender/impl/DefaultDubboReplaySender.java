@@ -69,11 +69,13 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
     ImmutablePair<String, String> interfaceNameAndMethod =
         getInterfaceNameAndMethod(caseItem.getParent().getOperationName());
     if (interfaceNameAndMethod == null) {
+      LOGGER.error("getInterfaceNameAndMethod failed, caseItem:{}", caseItem);
       return null;
     }
     ServiceInstance instanceRunner = selectLoadBalanceInstance(caseItem.getId(),
         caseItem.getParent().getTargetInstance());
     if (instanceRunner == null) {
+      LOGGER.error("selectLoadBalanceInstance failed, caseItem:{}", caseItem);
       return null;
     }
     String url = instanceRunner.getUrl();
@@ -102,6 +104,7 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
       }
     }
     if (replayInvokeResult == null) {
+      LOGGER.error("replayInvokeResult is null, caseItem:{}", caseItem);
       return false;
     }
 
