@@ -114,9 +114,17 @@ public final class PrepareCompareSourceRemoteLoader {
       resultHolder.setCategoryName(categoryType.getName());
       decodedListResult.add(resultHolder);
       List<CompareItem> recordList = zstdDeserialize(stringListResultHolder.getRecord());
-      resultHolder.setRecord(recordList);
       List<CompareItem> replayResultList = zstdDeserialize(
           stringListResultHolder.getReplayResult());
+      if (categoryType.isEntryPoint()) {
+        boolean recordEmpty = CollectionUtils.isEmpty(recordList);
+        boolean replayResultEmpty = CollectionUtils.isEmpty(replayResultList);
+        // call missing or new call
+        if (recordEmpty || replayResultEmpty) {
+          return Collections.emptyList();
+        }
+      }
+      resultHolder.setRecord(recordList);
       resultHolder.setReplayResult(replayResultList);
     }
     return decodedListResult;
