@@ -90,6 +90,7 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
     ReplayInvokeResult replayInvokeResult = null;
 
     DubboInvocation dubboInvocation = generateDubboInvocation(caseItem, headers);
+    LOGGER.info("dubboInvocation:{}", dubboInvocation);
     if (dubboInvocation == null) {
       return false;
     }
@@ -108,8 +109,8 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
       return false;
     }
 
-    if (replayInvokeResult.getErrorMsg() != null) {
-      LOGGER.error("dubbo invoke error msg:{}, thrown:{}", replayInvokeResult.getErrorMsg(),
+    if (replayInvokeResult.getException() != null) {
+      LOGGER.error("dubbo invoke error msg:{}", replayInvokeResult.getErrorMsg(),
           replayInvokeResult.getException());
     }
 

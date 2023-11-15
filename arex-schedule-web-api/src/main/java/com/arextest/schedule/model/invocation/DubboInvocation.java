@@ -2,6 +2,9 @@ package com.arextest.schedule.model.invocation;
 
 import com.arextest.schedule.extension.invoker.InvokerConstants;
 import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,12 +12,16 @@ import lombok.Setter;
 
 public class DubboInvocation extends GeneralInvocation {
 
+  private static final ObjectMapper MAPPER = new ObjectMapper();
+
   private Map<String, String> attachments;
   private String interfaceName;
   private String methodName;
   private List<String> parameterTypes;
   private List<Object> parameters;
+
   @Setter
+  @JsonIgnore
   private ReplayExtensionInvoker invoker;
 
 
@@ -41,5 +48,14 @@ public class DubboInvocation extends GeneralInvocation {
       String methodName,
       List<String> parameterTypes, List<Object> parameters) {
     this(url, attachments, interfaceName, methodName, parameterTypes, parameters, null);
+  }
+
+  @Override
+  public String toString() {
+    try {
+      return MAPPER.writeValueAsString(this);
+    } catch (JsonProcessingException e) {
+      return "transform json failed, errorMsg:" + e.getMessage();
+    }
   }
 }
