@@ -69,11 +69,13 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
     ImmutablePair<String, String> interfaceNameAndMethod =
         getInterfaceNameAndMethod(caseItem.getParent().getOperationName());
     if (interfaceNameAndMethod == null) {
+      LOGGER.error("getInterfaceNameAndMethod failed, caseItem:{}", caseItem);
       return null;
     }
     ServiceInstance instanceRunner = selectLoadBalanceInstance(caseItem.getId(),
         caseItem.getParent().getTargetInstance());
     if (instanceRunner == null) {
+      LOGGER.error("selectLoadBalanceInstance failed, caseItem:{}", caseItem);
       return null;
     }
     String url = instanceRunner.getUrl();
@@ -88,6 +90,7 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
     ReplayInvokeResult replayInvokeResult = null;
 
     DubboInvocation dubboInvocation = generateDubboInvocation(caseItem, headers);
+    LOGGER.info("dubboInvocation:{}", dubboInvocation);
     if (dubboInvocation == null) {
       return false;
     }
@@ -102,11 +105,13 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
       }
     }
     if (replayInvokeResult == null) {
+      LOGGER.error("replayInvokeResult is null, caseItem:{}", caseItem);
       return false;
     }
 
-    if (replayInvokeResult.getErrorMsg() != null) {
-      LOGGER.error("dubbo invoke error msg:{}", replayInvokeResult.getErrorMsg());
+    if (replayInvokeResult.getException() != null) {
+      LOGGER.error("dubbo invoke error msg:{}", replayInvokeResult.getErrorMsg(),
+          replayInvokeResult.getException());
     }
 
     ReplaySendResult targetSendResult = fromDubboResult(headers, dubboInvocation.getUrl(),
