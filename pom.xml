@@ -212,11 +212,6 @@
         <version>0.1.15</version>
       </dependency>
       <dependency>
-        <artifactId>arex-storage-config</artifactId>
-        <groupId>com.arextest</groupId>
-        <version>1.0.25</version>
-      </dependency>
-      <dependency>
         <artifactId>fastjson2</artifactId>
         <groupId>com.alibaba.fastjson2</groupId>
         <version>${fastjson2.version}</version>
@@ -304,5 +299,5 @@
     <url>https://github.com/arextest/arex-replay-schedule</url>
   </scm>
   <url>https://github.com/arextest/arex-replay-schedule</url>
-  <version>1.0.40</version>
+  <version>1.0.41</version>
 </project>
