@@ -31,4 +31,6 @@ public class ReplayNoiseItemDto {
   public int getPathCount() {
     return subPaths.size();
   }
+
+  private Integer status;
 }

@@ -1,10 +1,12 @@
 package com.arextest.schedule.model.converter;
 
 import com.arextest.schedule.model.dao.mongodb.ReplayNoiseCollection;
+import com.arextest.schedule.model.noiseidentify.QueryNoiseResponseType;
 import com.arextest.schedule.model.noiseidentify.ReplayNoiseDto;
 import com.arextest.schedule.model.noiseidentify.ReplayNoiseItemDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
 import org.mapstruct.factory.Mappers;
 
 /**
@@ -25,5 +27,8 @@ public interface ReplayNoiseConverter {
 
   ReplayNoiseItemDto dtoFromDao(ReplayNoiseCollection.ReplayNoiseItemDao dao);
 
-//    ReplayNoiseDto.ReplayNoiseItemDto toReplayNoiseItemDto(ReplayNoiseItemDto dao);
+  @Mappings(
+      @Mapping(target = "nodeEntity", source = "nodePath")
+  )
+  QueryNoiseResponseType.NoiseItem toNoiseItem(ReplayNoiseItemDto dto);
 }

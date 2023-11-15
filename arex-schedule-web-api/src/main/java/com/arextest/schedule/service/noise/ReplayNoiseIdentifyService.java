@@ -1,6 +1,5 @@
 package com.arextest.schedule.service.noise;
 
-import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
@@ -19,16 +18,11 @@ import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.noiseidentify.ActionItemForNoiseIdentify;
-import com.arextest.schedule.model.noiseidentify.ReplayNoiseDto;
-import com.arextest.schedule.model.noiseidentify.ReplayNoiseItemDto;
-import com.arextest.schedule.model.report.QueryNoiseResponseType;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
 import com.arextest.schedule.service.MetricService;
-import com.arextest.schedule.utils.MapUtils;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -171,81 +165,6 @@ public class ReplayNoiseIdentifyService implements ReplayNoiseIdentify {
     List<String> failedActions = actionItems.stream().map(ReplayActionItem::getId)
         .collect(Collectors.toList());
     replayNoiseRepository.removeReplayNoise(failedActions);
-  }
-
-  @Override
-  public QueryNoiseResponseType queryNoise(String planId, String planItemId) {
-
-    List<QueryNoiseResponseType.InterfaceNoiseItem> appNoiseList = new ArrayList<>();
-
-    List<ReplayNoiseDto> replayNoiseDtoList = replayNoiseRepository.queryReplayNoise(planId,
-        planItemId);
-    Map<String, List<ReplayNoiseDto>> interfaceReplayNoiseMap =
-        replayNoiseDtoList.stream().collect(Collectors.groupingBy(ReplayNoiseDto::getOperationId));
-    for (Map.Entry<String, List<ReplayNoiseDto>> interfaceReplayNoiseEntry : interfaceReplayNoiseMap.entrySet()) {
-      String operationId = interfaceReplayNoiseEntry.getKey();
-      List<ReplayNoiseDto> interfaceReplayNoise = interfaceReplayNoiseEntry.getValue();
-      if (CollectionUtils.isEmpty(interfaceReplayNoise)) {
-        continue;
-      }
-
-      List<QueryNoiseResponseType.MockerNoiseItem> randomNoiseList = new ArrayList<>();
-      List<QueryNoiseResponseType.MockerNoiseItem> disorderedArrayNoise = new ArrayList<>();
-
-      for (ReplayNoiseDto replayNoiseDto : interfaceReplayNoise) {
-        String categoryName = replayNoiseDto.getCategoryName();
-        MockCategoryType mockCategoryType = MockCategoryType.create(categoryName);
-
-        Map<String, ReplayNoiseItemDto> mayIgnoreItems = replayNoiseDto.getMayIgnoreItems();
-        if (MapUtils.isNotEmpty(mayIgnoreItems)) {
-          Collection<ReplayNoiseItemDto> values = mayIgnoreItems.values();
-          List<QueryNoiseResponseType.NoiseItem> randomNoiseItems = new ArrayList<>(values.size());
-          for (ReplayNoiseItemDto itemDtoEntry : values) {
-            QueryNoiseResponseType.NoiseItem noiseItem = new QueryNoiseResponseType.NoiseItem();
-            noiseItem.setNodeEntity(itemDtoEntry.getNodePath());
-            noiseItem.setLogIndexes(itemDtoEntry.getLogIndexes());
-            noiseItem.setCompareResultId(itemDtoEntry.getCompareResultId());
-            randomNoiseItems.add(noiseItem);
-          }
-          if (CollectionUtils.isNotEmpty(randomNoiseItems)) {
-            randomNoiseList.add(new QueryNoiseResponseType.MockerNoiseItem(mockCategoryType,
-                replayNoiseDto.getOperationName(), categoryName, randomNoiseItems));
-          }
-        }
-
-        Map<String, ReplayNoiseItemDto> mayDisorderItems = replayNoiseDto.getMayDisorderItems();
-        if (MapUtils.isNotEmpty(mayDisorderItems)) {
-          Collection<ReplayNoiseItemDto> values = mayDisorderItems.values();
-          List<QueryNoiseResponseType.NoiseItem> disorderedArrayNoiseItems = new ArrayList<>(
-              values.size());
-          for (ReplayNoiseItemDto itemDtoEntry : values) {
-            // XXX: simple array filter, improve: more accurate recommendations
-            if (itemDtoEntry.getPathCount() < 2) {
-              continue;
-            }
-            QueryNoiseResponseType.NoiseItem noiseItem = new QueryNoiseResponseType.NoiseItem();
-            noiseItem.setNodeEntity(itemDtoEntry.getNodePath());
-            noiseItem.setLogIndexes(itemDtoEntry.getLogIndexes());
-            noiseItem.setCompareResultId(itemDtoEntry.getCompareResultId());
-            disorderedArrayNoiseItems.add(noiseItem);
-          }
-          if (CollectionUtils.isNotEmpty(disorderedArrayNoiseItems)) {
-            disorderedArrayNoise.add(new QueryNoiseResponseType.MockerNoiseItem(mockCategoryType,
-                replayNoiseDto.getOperationName(), categoryName, disorderedArrayNoiseItems));
-          }
-        }
-      }
-
-      if (CollectionUtils.isNotEmpty(randomNoiseList) || CollectionUtils.isNotEmpty(
-          disorderedArrayNoise)) {
-        appNoiseList.add(
-            new QueryNoiseResponseType.InterfaceNoiseItem(operationId, randomNoiseList,
-                disorderedArrayNoise));
-      }
-    }
-    QueryNoiseResponseType result = new QueryNoiseResponseType();
-    result.setInterfaceNoiseItemList(appNoiseList);
-    return result;
   }
 
   private ActionItemForNoiseIdentify getActionItemForNoiseIdentify(
