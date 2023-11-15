@@ -273,7 +273,7 @@
           </resource>
         </resources>
       </build>
-      <id>jar-trip</id>
+      <id>jar-servlet-initializer-exclusion</id>
       <properties>
         <packagingType>jar</packagingType>
         <releases.repo>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/
