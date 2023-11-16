@@ -15,6 +15,7 @@ import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.converter.ReplayCompareResultConverter;
 import com.arextest.web.model.contract.contracts.ChangeReplayStatusRequestType;
+import com.arextest.web.model.contract.contracts.RemoveErrorMsgRequest;
 import com.arextest.web.model.contract.contracts.RemoveRecordsAndScenesRequest;
 import com.arextest.web.model.contract.contracts.ReportInitialRequestType;
 import com.arextest.web.model.contract.contracts.replay.AnalyzeCompareResultsRequestType;
@@ -54,6 +55,8 @@ public final class ReplayReportService implements ComparisonWriter {
   private String updateReportInfoUrl;
   @Value("${arex.api.remove.records.url}")
   private String removeRecordsUrl;
+  @Value("${arex.api.remove.errorMsg.url}")
+  private String removeErrorMsgUrl;
 
   public boolean initReportInfo(ReplayPlan replayPlan) {
     ReportInitialRequestType requestType = new ReportInitialRequestType();
@@ -251,5 +254,14 @@ public final class ReplayReportService implements ComparisonWriter {
     Response response = httpWepServiceApiClient.jsonPost(removeRecordsUrl, requestType,
         GenericResponseType.class);
     LOGGER.info("removeRecordsAndScenes request:{}, response:{}", requestType, response);
+  }
+
+  public void removeErrorMsg(String planId, List<String> planItemIdList) {
+    RemoveErrorMsgRequest request = new RemoveErrorMsgRequest();
+    request.setPlanId(planId);
+    request.setPlanItemIdList(planItemIdList);
+    Response response = httpWepServiceApiClient.jsonPost(removeErrorMsgUrl, request,
+        GenericResponseType.class);
+    LOGGER.info("removeErrorMsg request:{}, response:{}", request, response);
   }
 }
