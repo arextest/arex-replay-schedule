@@ -262,6 +262,6 @@ public final class ReplayReportService implements ComparisonWriter {
     request.setPlanItemIdList(planItemIdList);
     Response response = httpWepServiceApiClient.jsonPost(removeErrorMsgUrl, request,
         GenericResponseType.class);
-    LOGGER.info("removeRecordsAndScenes request:{}, response:{}", request, response);
+    LOGGER.info("removeErrorMsg request:{}, response:{}", request, response);
   }
 }
