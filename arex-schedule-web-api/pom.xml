@@ -129,6 +129,11 @@
       <artifactId>aspectjweaver</artifactId>
       <groupId>org.aspectj</groupId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-model</artifactId>
+      <version>3.6.3</version>
+    </dependency>
   </dependencies>
   <modelVersion>4.0.0</modelVersion>
   <name>${project.groupId}:${project.artifactId}</name>
