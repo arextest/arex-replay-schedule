@@ -2,7 +2,7 @@ name: Docker SNAPSHOT Image CI
 
 on: push
 jobs:
-  docker:
+  tag:
     runs-on: ubuntu-latest
     steps:
       - name: Get current time
@@ -12,11 +12,18 @@ jobs:
           format: YYYYMMDD-HHmmss
           utcOffset: "+08:00"
       - name: Get Branch Name
-        id: branch
+        id: tag
         run: |
           FULL_BRANCH_NAME=$GITHUB_REF_NAME
           BRANCH_NAME="${FULL_BRANCH_NAME//\//_}"
-          echo "branch=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+          TAG_NAME=${{ secrets.DOCKERHUB_SNAPSHOT_USERNAME }}/arex-replay-schedule:${{ steps.branch.outputs.branch }}-${{ steps.time.outputs.formattedTime }}
+          echo ${TAG_NAME}
+          echo "tag=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up QEMU
@@ -34,4 +41,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKERHUB_SNAPSHOT_USERNAME }}/arex-replay-schedule:${{ steps.branch.outputs.branch }}-${{ steps.time.outputs.formattedTime }}
+          tags: ${{ steps.tag.outputs.tag }}
