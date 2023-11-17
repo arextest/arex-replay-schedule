@@ -11,6 +11,12 @@ jobs:
         with:
           timeZone: UTC+8
           format: 'YYYY-MM-DD-HH-mm-ss'
+      - name: Get Branch Name
+        id: branch
+        run: |
+          FULL_BRANCH_NAME=$GITHUB_REF_NAME
+          BRANCH_NAME="${FULL_BRANCH_NAME//-/_}"
+          echo "branch=${BRANCH_NAME}" >> $GITHUB_OUTPUT
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up QEMU
@@ -28,4 +34,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKERHUB_SNAPSHOT_USERNAME }}/arex-replay-schedule:${{ github.ref_name }}-${{ steps.time.outputs.time }}
+          tags: ${{ secrets.DOCKERHUB_SNAPSHOT_USERNAME }}/arex-replay-schedule:${{ steps.branch.outputs.branch }}-${{ steps.time.outputs.time }}
