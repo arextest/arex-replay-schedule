@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Docker SNAPSHOT Image CI
 
 on: push
 jobs:
