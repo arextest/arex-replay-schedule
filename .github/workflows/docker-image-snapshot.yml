@@ -22,4 +22,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKERHUB_SNAPSHOT_USERNAME }}/arex-replay-schedule:${{ github.ref }}-${{ github.sha }}
+          tags: ${{ secrets.DOCKERHUB_SNAPSHOT_USERNAME }}/arex-replay-schedule:${{ github.ref_name }}-${{ github.sha }}
