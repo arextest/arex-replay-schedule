@@ -21,9 +21,9 @@ jobs:
           echo "tag=${BRANCH_NAME}" >> $GITHUB_OUTPUT
 
   docker:
+    needs: tag
     runs-on: ubuntu-latest
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up QEMU
