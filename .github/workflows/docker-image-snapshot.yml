@@ -16,7 +16,7 @@ jobs:
         run: |
           FULL_BRANCH_NAME=$GITHUB_REF_NAME
           BRANCH_NAME="${FULL_BRANCH_NAME//\//_}"
-          TAG_NAME=${{ secrets.DOCKERHUB_SNAPSHOT_USERNAME }}/arex-replay-schedule:${{ steps.branch.outputs.branch }}-${{ steps.time.outputs.formattedTime }}
+          TAG_NAME=${{ secrets.DOCKERHUB_SNAPSHOT_USERNAME }}/arex-replay-schedule:${BRANCH_NAME}-${{ steps.time.outputs.formattedTime }}
           echo ${TAG_NAME}
           echo "tag=${BRANCH_NAME}" >> $GITHUB_OUTPUT
 
