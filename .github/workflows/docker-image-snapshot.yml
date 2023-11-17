@@ -5,12 +5,12 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      - name: Get Time
+      - name: Get current time
+        uses: josStorer/get-current-time@v2
         id: time
-        uses: nanzm/get-time-action@master
         with:
-          timeZone: UTC+8
-          format: 'YYYY-MM-DD-HH-mm-ss'
+          format: YYYYMMDD-HHmmss
+          utcOffset: "+08:00"
       - name: Get Branch Name
         id: branch
         run: |
