@@ -34,4 +34,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKERHUB_SNAPSHOT_USERNAME }}/arex-replay-schedule:${{ steps.branch.outputs.branch }}-${{ steps.time.outputs.time }}
+          tags: ${{ secrets.DOCKERHUB_SNAPSHOT_USERNAME }}/arex-replay-schedule:${{ steps.branch.outputs.branch }}-${{ steps.time.outputs.formattedTime }}
