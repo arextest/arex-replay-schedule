@@ -129,11 +129,6 @@
       <artifactId>aspectjweaver</artifactId>
       <groupId>org.aspectj</groupId>
     </dependency>
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-model</artifactId>
-      <version>3.6.3</version>
-    </dependency>
   </dependencies>
   <modelVersion>4.0.0</modelVersion>
   <name>${project.groupId}:${project.artifactId}</name>
@@ -185,6 +180,12 @@
             <version>1.6.13</version>
           </plugin>
         </plugins>
+        <resources>
+          <resource>
+            <directory>src/main/resources</directory>
+            <filtering>true</filtering>
+          </resource>
+        </resources>
       </build>
       <id>war</id>
       <properties>
@@ -197,6 +198,12 @@
     </profile>
     <profile>
       <build>
+        <resources>
+          <resource>
+            <directory>src/main/resources</directory>
+            <filtering>true</filtering>
+          </resource>
+        </resources>
         <plugins>
           <plugin>
             <artifactId>maven-compiler-plugin</artifactId>
