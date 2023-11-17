@@ -18,11 +18,14 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class CheckHealthController {
 
-  private static Model POM_MODEL;
+  private static final String POM_PATH_TOMCAT = "/usr/local/tomcat/webapps/ROOT/META-INF/maven"
+      + "/com.arextest/arex-schedule-web-api/pom.xml";
+  private static String VERSION;
 
   static {
     try {
-      POM_MODEL = new MavenXpp3Reader().read(new FileReader("pom.xml"));
+      Model pomModel = new MavenXpp3Reader().read(new FileReader(POM_PATH_TOMCAT));
+      VERSION = pomModel.getVersion();
     } catch (Exception e) {
       LOGGER.error("Read pom failed!", e);
     }
@@ -31,14 +34,6 @@ public class CheckHealthController {
   @GetMapping(value = "/health", produces = "application/json")
   @ResponseBody
   public Response checkHealth() {
-    return ResponseUtils.successResponse(getVersion());
-  }
-
-  private static String getVersion() {
-    if (POM_MODEL != null) {
-      return POM_MODEL.getVersion();
-    } else {
-      return "error";
-    }
+    return ResponseUtils.successResponse(VERSION);
   }
 }
