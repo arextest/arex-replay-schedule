@@ -1,8 +1,6 @@
 name: Docker Image CI
 
-on:
-  workflow_dispatch:
-
+on: push
 jobs:
   docker:
     runs-on: ubuntu-latest
