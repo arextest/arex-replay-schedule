@@ -15,7 +15,7 @@ jobs:
         id: branch
         run: |
           FULL_BRANCH_NAME=$GITHUB_REF_NAME
-          BRANCH_NAME="${FULL_BRANCH_NAME//-/_}"
+          BRANCH_NAME="${FULL_BRANCH_NAME//\//_}"
           echo "branch=${BRANCH_NAME}" >> $GITHUB_OUTPUT
       - name: Checkout
         uses: actions/checkout@v4
