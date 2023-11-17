@@ -43,4 +43,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ jobs.tag.outputs.tag }}
+          tags: ${{ needs.tag.outputs.tag }}
