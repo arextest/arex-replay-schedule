@@ -198,6 +198,12 @@
     </profile>
     <profile>
       <build>
+        <resources>
+          <resource>
+            <directory>src/main/resources</directory>
+            <filtering>true</filtering>
+          </resource>
+        </resources>
         <plugins>
           <plugin>
             <artifactId>maven-compiler-plugin</artifactId>
@@ -272,10 +278,6 @@
             <excludes>
               <exclude>**/application*.properties</exclude>
             </excludes>
-          </resource>
-          <resource>
-            <directory>src/main/resources</directory>
-            <filtering>true</filtering>
           </resource>
         </resources>
       </build>
