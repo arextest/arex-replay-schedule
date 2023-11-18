@@ -65,4 +65,4 @@ jobs:
           # Required sender full name (address can be skipped):
           from: ArexAdmin02 # <user@example.com>
           # Optional plain body:
-          body: Build job of ${{github.repository}} completed successfully! /n Image tag ${{ needs.tag.outputs.tag }}
+          body: Build job of ${{github.repository}} completed successfully! \n Image tag ${{ needs.tag.outputs.tag }}
