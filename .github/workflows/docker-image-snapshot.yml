@@ -59,10 +59,10 @@ jobs:
           # Optional (recommended) mail server password:
           password: ${{secrets.MAIL_PASSWORD}}
           # Required mail subject:
-          subject: Github Actions job result
+          subject: Arex Schedule Snapshot Image Build Job Completed
           # Required recipients' addresses:
           to: ${{ vars.ACTION_RESULT_MAIL }}
           # Required sender full name (address can be skipped):
           from: ArexAdmin02 # <user@example.com>
           # Optional plain body:
-          body: Build job of ${{github.repository}} completed successfully! \n Image tag ${{ needs.tag.outputs.tag }}
+          body: Build job of ${{github.repository}} completed successfully! Image tag ${{ needs.tag.outputs.tag }}
