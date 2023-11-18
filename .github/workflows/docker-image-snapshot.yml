@@ -61,8 +61,8 @@ jobs:
           # Required mail subject:
           subject: Github Actions job result
           # Required recipients' addresses:
-          to: moqizhengz@gmail.com
+          to: ${{ vars.ACTION_RESULT_MAIL }}
           # Required sender full name (address can be skipped):
           from: ArexAdmin02 # <user@example.com>
           # Optional plain body:
-          body: Build job of ${{github.repository}} completed successfully!
+          body: Build job of ${{github.repository}} completed successfully! /n Image tag ${{ needs.tag.outputs.tag }}
