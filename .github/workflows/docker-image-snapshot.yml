@@ -48,21 +48,12 @@ jobs:
       - name: Send mail
         uses: dawidd6/action-send-mail@v3
         with:
-          # Required mail server address if not connection_url:
           server_address: smtp.gmail.com
-          # Server port, default 25:
           server_port: 465
-          # Optional whether this connection use TLS (default is true if server_port is 465)
           secure: true
-          # Optional (recommended) mail server username:
           username: ${{secrets.MAIL_USERNAME}}
-          # Optional (recommended) mail server password:
           password: ${{secrets.MAIL_PASSWORD}}
-          # Required mail subject:
           subject: Arex Schedule Snapshot Image Build Job Completed
-          # Required recipients' addresses:
           to: ${{ vars.ACTION_RESULT_MAIL }}
-          # Required sender full name (address can be skipped):
-          from: ArexAdmin02 # <user@example.com>
-          # Optional plain body:
+          from: ArexAdmin02
           body: Build job of ${{github.repository}} completed successfully! Image tag ${{ needs.tag.outputs.tag }}
