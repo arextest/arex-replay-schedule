@@ -46,5 +46,7 @@ public class ReplayNoiseCollection extends ModelBase {
 
     private Integer caseCount;
 
+    private Integer status;
+
   }
 }

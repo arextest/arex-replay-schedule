@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -43,7 +42,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.util.StopWatch;
 
 @Slf4j
-@AllArgsConstructor
 @Builder
 public class DefaultReplayResultComparer implements ReplayResultComparer {
 
@@ -53,8 +51,31 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
   private static final String IGNORE_TIME_PRECISION_MILLIS_KEY = "ignore.time.precision.millis";
   private static long ignoreTimePrecisionMillis = 2000;
 
-  @PostConstruct
-  public void init() {
+  private final CompareConfigService compareConfigService;
+  private final PrepareCompareSourceRemoteLoader sourceRemoteLoader;
+  private final ProgressTracer progressTracer;
+  private final ComparisonWriter comparisonOutputWriter;
+  private final ReplayActionCaseItemRepository caseItemRepository;
+  private final MetricService metricService;
+  private final CustomComparisonConfigurationHandler configHandler;
+
+  public DefaultReplayResultComparer(CompareConfigService compareConfigService,
+      PrepareCompareSourceRemoteLoader sourceRemoteLoader,
+      ProgressTracer progressTracer,
+      ComparisonWriter comparisonOutputWriter,
+      ReplayActionCaseItemRepository caseItemRepository,
+      MetricService metricService,
+      CustomComparisonConfigurationHandler configHandler) {
+    this.compareConfigService = compareConfigService;
+    this.sourceRemoteLoader = sourceRemoteLoader;
+    this.progressTracer = progressTracer;
+    this.comparisonOutputWriter = comparisonOutputWriter;
+    this.caseItemRepository = caseItemRepository;
+    this.metricService = metricService;
+    this.configHandler = configHandler;
+    addGlobalOptionToSDK(compareConfigService);
+  }
+  public void addGlobalOptionToSDK(CompareConfigService compareConfigService) {
     SystemConfig comparisonSystemConfig = compareConfigService.getComparisonSystemConfig();
     COMPARE_INSTANCE.getGlobalOptions()
         .putNameToLower(comparisonSystemConfig.getCompareNameToLower())
@@ -65,14 +86,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         .putOnlyCompareCoincidentColumn(comparisonSystemConfig.getOnlyCompareCoincidentColumn())
         .putUuidIgnore(comparisonSystemConfig.getUuidIgnore());
   }
-
-  private final CompareConfigService compareConfigService;
-  private final PrepareCompareSourceRemoteLoader sourceRemoteLoader;
-  private final ProgressTracer progressTracer;
-  private final ComparisonWriter comparisonOutputWriter;
-  private final ReplayActionCaseItemRepository caseItemRepository;
-  private final MetricService metricService;
-  private final CustomComparisonConfigurationHandler configHandler;
 
   public static CompareSDK getCompareSDKInstance() {
     return COMPARE_INSTANCE;

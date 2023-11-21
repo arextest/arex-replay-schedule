@@ -101,10 +101,6 @@
       <groupId>com.arextest</groupId>
     </dependency>
     <dependency>
-      <artifactId>arex-storage-config</artifactId>
-      <groupId>com.arextest</groupId>
-    </dependency>
-    <dependency>
       <artifactId>log4j-mongodb4</artifactId>
       <groupId>org.apache.logging.log4j</groupId>
     </dependency>
@@ -143,7 +139,7 @@
   <parent>
     <artifactId>arex-schedule-parent</artifactId>
     <groupId>com.arextest</groupId>
-    <version>1.0.40</version>
+    <version>1.0.43</version>
   </parent>
 
   <profiles>
@@ -184,6 +180,12 @@
             <version>1.6.13</version>
           </plugin>
         </plugins>
+        <resources>
+          <resource>
+            <directory>src/main/resources</directory>
+            <filtering>true</filtering>
+          </resource>
+        </resources>
       </build>
       <id>war</id>
       <properties>
@@ -192,6 +194,44 @@
         </releases.repo>
         <snapshots.repo>https://s01.oss.sonatype.org/content/repositories/snapshots/
         </snapshots.repo>
+      </properties>
+    </profile>
+    <profile>
+      <build>
+        <resources>
+          <resource>
+            <directory>src/main/resources</directory>
+            <filtering>true</filtering>
+          </resource>
+        </resources>
+        <plugins>
+          <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <groupId>org.apache.maven.plugins</groupId>
+          </plugin>
+          <plugin>
+            <version>${spring.boot.version}</version>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <configuration>
+              <includeSystemScope>true</includeSystemScope>
+              <mainClass>com.arextest.schedule.web.boot.WebSpringBootServletInitializer</mainClass>
+              <outputDirectory>../arex-schedule-jar</outputDirectory>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>repackage</goal>
+                </goals>
+                <phase>package</phase>
+              </execution>
+            </executions>
+            <groupId>org.springframework.boot</groupId>
+          </plugin>
+        </plugins>
+      </build>
+      <id>jar</id>
+      <properties>
+        <packagingType>jar</packagingType>
       </properties>
     </profile>
     <profile>
@@ -241,7 +281,7 @@
           </resource>
         </resources>
       </build>
-      <id>jar</id>
+      <id>jar-servlet-initializer-exclusion</id>
       <properties>
         <packagingType>jar</packagingType>
         <releases.repo>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/
@@ -280,5 +320,5 @@
       </properties>
     </profile>
   </profiles>
-  <version>1.0.40</version>
+  <version>1.0.43</version>
 </project>

@@ -1,4 +1,4 @@
-package com.arextest.schedule.model.report;
+package com.arextest.schedule.model.noiseidentify;
 
 import com.arextest.diff.model.log.NodeEntity;
 import com.arextest.model.mock.MockCategoryType;
@@ -39,11 +39,18 @@ public class QueryNoiseResponseType {
   @Data
   public static class NoiseItem {
 
+    private String identifier;
+
     private List<NodeEntity> nodeEntity;
 
     private List<Integer> logIndexes;
 
     private String compareResultId;
+
+    /**
+     * @see ReplayNoiseStatus
+     */
+    private Integer status;
 
   }
 

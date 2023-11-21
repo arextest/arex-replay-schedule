@@ -22,6 +22,7 @@ import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.service.noise.ReplayNoiseIdentify;
 import com.arextest.schedule.utils.ReplayParentBinder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -251,6 +252,10 @@ public class PlanConsumePrepareService {
     CompletableFuture removeRecordsAndScenesTask = CompletableFuture.runAsync(
         () -> replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap),
         rerunPrepareExecutorService);
+    CompletableFuture removeErrorMsgTask = CompletableFuture.runAsync(
+        () -> replayReportService.removeErrorMsg(replayPlan.getId(),
+            new ArrayList<>(actionIdAndRecordIdsMap.keySet())),
+        rerunPrepareExecutorService);
     // XXX: Whether batch update actionCaseItem status is redundant, rerun in doFixedCaseSave has already
     // implemented this processing
     CompletableFuture batchUpdateStatusTask = CompletableFuture.runAsync(
@@ -260,8 +265,8 @@ public class PlanConsumePrepareService {
         () -> replayNoiseIdentify.rerunNoiseAnalysisRecovery(replayPlan.getReplayActionItemList()),
         rerunPrepareExecutorService);
 
-    CompletableFuture.allOf(removeRecordsAndScenesTask, batchUpdateStatusTask, noiseAnalysisRecover)
-        .join();
+    CompletableFuture.allOf(removeRecordsAndScenesTask, batchUpdateStatusTask, noiseAnalysisRecover,
+            removeErrorMsgTask).join();
   }
 
   public void doResumeOperationDescriptor(ReplayPlan replayPlan) {

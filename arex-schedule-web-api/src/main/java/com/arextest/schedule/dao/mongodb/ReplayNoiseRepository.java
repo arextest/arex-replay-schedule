@@ -3,8 +3,11 @@ package com.arextest.schedule.dao.mongodb;
 import com.arextest.schedule.dao.mongodb.util.MongoHelper;
 import com.arextest.schedule.model.converter.ReplayNoiseConverter;
 import com.arextest.schedule.model.dao.mongodb.ReplayNoiseCollection;
+import com.arextest.schedule.model.dao.mongodb.ReplayNoiseCollection.ReplayNoiseItemDao;
 import com.arextest.schedule.model.noiseidentify.ReplayNoiseDto;
+import com.arextest.schedule.model.noiseidentify.UpdateNoiseItem;
 import com.arextest.schedule.utils.MapUtils;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -101,6 +104,44 @@ public class ReplayNoiseRepository implements RepositoryField {
         .collect(Collectors.toList());
   }
 
+  public boolean updateReplayNoiseStatus(List<UpdateNoiseItem> updateNoiseItems) {
+
+    try {
+      BulkOperations bulkOperations =
+          mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, ReplayNoiseCollection.class);
+      for (UpdateNoiseItem updateNoiseItem : updateNoiseItems) {
+        Map<String, Object> queryFields = updateNoiseItem.getQueryFields();
+        Map<String, Object> updateFields = updateNoiseItem.getUpdateFields();
+        if (MapUtils.isEmpty(queryFields) || MapUtils.isEmpty(updateFields)) {
+          continue;
+        }
+
+        List<Criteria> criteriaList = new ArrayList<>();
+        for (Map.Entry<String, Object> entry : queryFields.entrySet()) {
+          if (entry.getKey() == null) {
+            continue;
+          }
+          criteriaList.add(Criteria.where(entry.getKey()).is(entry.getValue()));
+        }
+        if (CollectionUtils.isEmpty(criteriaList)) {
+          continue;
+        }
+        Query query = new Query().addCriteria(new Criteria().andOperator(criteriaList));
+
+        Update update = MongoHelper.getUpdate();
+        for (Map.Entry<String, Object> entry : updateFields.entrySet()) {
+          update.set(entry.getKey(), entry.getValue());
+        }
+        bulkOperations.updateMulti(query, update);
+      }
+      bulkOperations.execute();
+    } catch (RuntimeException e) {
+      LOGGER.error("ReplayNoiseRepository.updateReplayNoiseStatus error", e);
+      return false;
+    }
+    return true;
+  }
+
   private void appendUpdate(Update update,
       Map<String, ReplayNoiseCollection.ReplayNoiseItemDao> needUpdateContent,
       String updateKey) {
@@ -120,6 +161,11 @@ public class ReplayNoiseRepository implements RepositoryField {
             MongoHelper.appendDot(updateKey, path,
                 ReplayNoiseCollection.ReplayNoiseItemDao.FIELD_LOG_INDEXES),
             replayNoiseItemDao.getLogIndexes());
+        if (replayNoiseItemDao.getStatus() != null) {
+          update.set(
+              MongoHelper.appendDot(updateKey, path, ReplayNoiseItemDao.FIELD_STATUS),
+              replayNoiseItemDao.getStatus());
+        }
         update.inc(
             MongoHelper.appendDot(updateKey, path,
                 ReplayNoiseCollection.ReplayNoiseItemDao.FIELD_PATH_COUNT),
