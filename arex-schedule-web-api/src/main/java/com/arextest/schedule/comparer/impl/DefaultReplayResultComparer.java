@@ -10,6 +10,7 @@ import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.comparer.CompareItem;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.CustomComparisonConfigurationHandler;
+import com.arextest.schedule.comparer.EncodingUtils;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
@@ -26,14 +27,12 @@ import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.MetricService;
 import com.arextest.web.model.contract.contracts.config.SystemConfig;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.annotation.PostConstruct;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -319,8 +318,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     CompareOptions options = configHandler.buildSkdOption(category, compareConfig);
     try {
       // to-do: 64base extract record and result
-      String decodedRecord = base64decode(record);
-      String decodedResult = base64decode(result);
+      String decodedRecord = EncodingUtils.base64decode(record);
+      String decodedResult = EncodingUtils.base64decode(result);
       if (compareMode == CompareModeType.FULL.getValue()) {
         return COMPARE_INSTANCE.compare(decodedRecord, decodedResult, options);
       }
@@ -330,33 +329,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
       LOGGER.error("run compare sdk process error:{} ,source: {} ,target:{}", e.getMessage(),
           record, result);
       return CompareSDK.fromException(record, result, e.getMessage());
-    }
-  }
-
-  private String base64decode(String encoded) {
-    try {
-      // to-do: 64base extract record and result
-      if (encoded == null) {
-        return null;
-      }
-      if (isJson(encoded)) {
-        return encoded;
-      }
-      String decoded = new String(Base64.getDecoder().decode(encoded));
-      if (isJson(decoded)) {
-        return decoded;
-      }
-      return encoded;
-    } catch (Exception e) {
-      return encoded;
-    }
-  }
-
-  private boolean isJson(String value) {
-    if (value.startsWith("{") && value.endsWith("}")) {
-      return true;
-    } else {
-      return value.startsWith("[") && value.endsWith("]");
     }
   }
 
