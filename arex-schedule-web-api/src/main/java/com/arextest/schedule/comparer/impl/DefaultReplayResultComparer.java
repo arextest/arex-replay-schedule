@@ -318,8 +318,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     CompareOptions options = configHandler.buildSkdOption(category, compareConfig);
     try {
       // to-do: 64base extract record and result
-      String decodedRecord = EncodingUtils.base64decode(record);
-      String decodedResult = EncodingUtils.base64decode(result);
+      String decodedRecord = EncodingUtils.tryBase64Decode(record);
+      String decodedResult = EncodingUtils.tryBase64Decode(result);
       if (compareMode == CompareModeType.FULL.getValue()) {
         return COMPARE_INSTANCE.compare(decodedRecord, decodedResult, options);
       }

@@ -66,8 +66,8 @@ public class QueryReplayMsgService {
     // bo may contain only quick compare result, need to fill log entities into BO
     if (DiffResultCode.COMPARED_WITH_DIFFERENCE == compareResultBo.getDiffResultCode()
         && CollectionUtils.isEmpty(compareResultBo.getLogs())) {
-      String base = EncodingUtils.base64decode(compareResultBo.getBaseMsg());
-      String test = EncodingUtils.base64decode(compareResultBo.getTestMsg());
+      String base = EncodingUtils.tryBase64Decode(compareResultBo.getBaseMsg());
+      String test = EncodingUtils.tryBase64Decode(compareResultBo.getTestMsg());
       List<LogEntity> logs = COMPARE_INSTANCE.compare(base, test, compareOptions).getLogs();
 
       compareResultBo.setLogs(logs);

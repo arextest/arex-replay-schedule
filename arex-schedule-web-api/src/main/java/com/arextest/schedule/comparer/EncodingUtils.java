@@ -2,11 +2,15 @@ package com.arextest.schedule.comparer;
 
 import java.util.Base64;
 
+/**
+ * Created by qzmo on 2023-11-27
+ * <p>
+ * Extracted from DefaultReplayResultComparer
+ */
 public class EncodingUtils {
 
-  public static String base64decode(String encoded) {
+  public static String tryBase64Decode(String encoded) {
     try {
-      // to-do: 64base extract record and result
       if (encoded == null) {
         return null;
       }
