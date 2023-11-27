@@ -248,10 +248,14 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
       Map<?, ?> responseHeaders,
       Object responseBody) {
     String body = encodeResponseAsString(responseBody);
-    LOGGER.info("invoke result url:{} ,request header:{},response header:{}, body:{}", url,
+    LOGGER.info("invoke result url:{} ,request header:{},response header: {}", url,
         requestHeaders,
-        responseHeaders, body);
+        responseHeaders);
     if (responseHeaders == null) {
+      LOGGER.error("invoke result url:{} ,request header:{}, body: {}", url,
+          requestHeaders,
+          body
+      );
       return ReplaySendResult.failed("replay post error,review log find more details", url);
     }
     if (!isReplayRequest(requestHeaders)) {
@@ -259,6 +263,11 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
     }
     String resultId = replayResultId(responseHeaders);
     if (StringUtils.isEmpty(resultId)) {
+      LOGGER.error("invoke result url:{} ,request header:{},response header: {}, body: {}", url,
+          requestHeaders,
+          responseHeaders,
+          body
+      );
       return ReplaySendResult.failed(
           "Could not fetch replay result id from the headers of response", url);
     }
