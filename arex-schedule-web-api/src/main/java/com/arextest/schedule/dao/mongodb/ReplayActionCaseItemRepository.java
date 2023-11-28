@@ -109,7 +109,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
   public List<ReplayActionCaseItem> failedCaseList(String planId, String planItemId) {
     Query query = new Query();
     query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
-    if (org.apache.commons.lang3.StringUtils.isNotEmpty(planItemId)) {
+    if (StringUtils.hasText(planItemId)) {
       query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ITEM_ID).is(planItemId));
     }
     query.addCriteria(new Criteria().orOperator(
