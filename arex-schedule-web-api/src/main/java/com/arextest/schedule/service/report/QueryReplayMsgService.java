@@ -10,6 +10,7 @@ import com.arextest.diff.model.log.UnmatchedPairEntity;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.comparer.CustomComparisonConfigurationHandler;
+import com.arextest.schedule.comparer.EncodingUtils;
 import com.arextest.schedule.comparer.impl.DefaultReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
 import com.arextest.schedule.model.ReplayCompareResult;
@@ -65,8 +66,9 @@ public class QueryReplayMsgService {
     // bo may contain only quick compare result, need to fill log entities into BO
     if (DiffResultCode.COMPARED_WITH_DIFFERENCE == compareResultBo.getDiffResultCode()
         && CollectionUtils.isEmpty(compareResultBo.getLogs())) {
-      List<LogEntity> logs = COMPARE_INSTANCE.compare(compareResultBo.getBaseMsg(),
-          compareResultBo.getTestMsg(), compareOptions).getLogs();
+      String base = EncodingUtils.tryBase64Decode(compareResultBo.getBaseMsg());
+      String test = EncodingUtils.tryBase64Decode(compareResultBo.getTestMsg());
+      List<LogEntity> logs = COMPARE_INSTANCE.compare(base, test, compareOptions).getLogs();
 
       compareResultBo.setLogs(logs);
       replayCompareResultRepository.save(compareResultBo);
