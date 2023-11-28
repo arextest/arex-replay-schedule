@@ -6,7 +6,6 @@ import com.arextest.schedule.comparer.CompareItem;
 import com.arextest.schedule.comparer.CustomComparisonConfigurationHandler;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.config.ComparisonDependencyConfig;
-import com.arextest.schedule.model.config.ComparisonGlobalConfig;
 import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import java.util.Collections;
@@ -30,16 +29,14 @@ public class DefaultCustomComparisonConfigurationHandler implements
   }
 
   @Override
-  public ReplayComparisonConfig pickConfig(ComparisonGlobalConfig globalConfig,
-      ComparisonInterfaceConfig operationConfig,
+  public ReplayComparisonConfig pickConfig(ComparisonInterfaceConfig operationConfig,
       CompareItem compareItem, String category) {
-    return this.pickConfig(globalConfig, operationConfig, category,
+    return this.pickConfig(operationConfig, category,
         compareItem.getCompareOperation());
   }
 
   @Override
-  public ReplayComparisonConfig pickConfig(ComparisonGlobalConfig globalConfig,
-      ComparisonInterfaceConfig operationConfig,
+  public ReplayComparisonConfig pickConfig(ComparisonInterfaceConfig operationConfig,
       String category, String operationName) {
     boolean mainEntryType = Optional.ofNullable(operationConfig.getOperationTypes())
         .map(types -> types.contains(category)).orElse(false);
@@ -68,7 +65,7 @@ public class DefaultCustomComparisonConfigurationHandler implements
         .map(dependencyConfig -> dependencyConfig.get(depKey));
 
     // if not matched, use global config
-    return matchedDep.isPresent() ? matchedDep.get() : globalConfig;
+    return matchedDep.orElse(null);
   }
 
 
