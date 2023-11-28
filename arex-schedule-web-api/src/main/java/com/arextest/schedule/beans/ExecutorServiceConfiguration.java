@@ -93,6 +93,17 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
         new ThreadPoolExecutor.CallerRunsPolicy());
   }
 
+  @Bean
+  public ExecutorService replayLocalExecutorService() {
+    ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(
+            "replay-local-%d")
+        .setDaemon(true).setUncaughtExceptionHandler(this).build();
+    return new ThreadPoolExecutor(CORE_POOL_SIZE, MAXIMUM_POOL_SIZE, KEEP_ALIVE_TIME,
+        TimeUnit.MILLISECONDS,
+        new LinkedBlockingQueue<>(COMPARE_QUEUE_MAX_CAPACITY_SIZE), threadFactory,
+        new ThreadPoolExecutor.CallerRunsPolicy());
+  }
+
   @Override
   public void uncaughtException(Thread t, Throwable e) {
     LOGGER.error("uncaughtException {} ,error :{}", t.getName(), e.getMessage(), e);

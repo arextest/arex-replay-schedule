@@ -2,6 +2,7 @@ package com.arextest.schedule.comparer;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
+import com.arextest.schedule.common.JsonUtils;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.config.ComparisonDependencyConfig;
@@ -14,8 +15,6 @@ import com.arextest.schedule.utils.MapUtils;
 import com.arextest.web.model.contract.contracts.config.SystemConfig;
 import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig;
 import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig.DependencyComparisonItem;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
@@ -52,8 +51,6 @@ public final class CompareConfigService {
   private String systemConfigUrl;
   @Resource
   private ProgressEvent progressEvent;
-  @Resource
-  private ObjectMapper objectMapper;
 
   private static final RetryTemplate RETRY_TEMPLATE = RetryTemplate.builder().maxAttempts(3)
       .fixedBackoff(200L)
@@ -127,7 +124,7 @@ public final class CompareConfigService {
       redisCacheProvider.put(ComparisonInterfaceConfig.dependencyKey(actionItem.getId())
               .getBytes(StandardCharsets.UTF_8),
           4 * 24 * 60 * 60L,
-          objectToJsonString(config).getBytes(StandardCharsets.UTF_8));
+          JsonUtils.objectToJsonString(config).getBytes(StandardCharsets.UTF_8));
 
       LOGGER.info("prepare load compare config, action id:{}", actionItem.getId());
     }
@@ -145,7 +142,7 @@ public final class CompareConfigService {
       if (json == null) {
         return ComparisonInterfaceConfig.empty();
       }
-      ComparisonInterfaceConfig config = byteToObject(json, ComparisonInterfaceConfig.class);
+      ComparisonInterfaceConfig config = JsonUtils.byteToObject(json, ComparisonInterfaceConfig.class);
       if (config == null) {
         return ComparisonInterfaceConfig.empty();
       }
@@ -164,7 +161,7 @@ public final class CompareConfigService {
       if (json == null) {
         return ComparisonGlobalConfig.empty();
       }
-      ComparisonGlobalConfig config = byteToObject(json, ComparisonGlobalConfig.class);
+      ComparisonGlobalConfig config = JsonUtils.byteToObject(json, ComparisonGlobalConfig.class);
       if (config == null) {
         return ComparisonGlobalConfig.empty();
       }
@@ -244,24 +241,6 @@ public final class CompareConfigService {
     }
 
     return res;
-  }
-
-  private <T> T byteToObject(byte[] bytes, Class<T> tClass) {
-    try {
-      return objectMapper.readValue(bytes, tClass);
-    } catch (IOException e) {
-      LOGGER.error("byteToObject error:{}", e.getMessage(), e);
-    }
-    return null;
-  }
-
-  private String objectToJsonString(Object value) {
-    try {
-      return objectMapper.writeValueAsString(value);
-    } catch (IOException e) {
-      LOGGER.error("byteToObject error:{}", e.getMessage(), e);
-    }
-    return StringUtils.EMPTY;
   }
 
   @Data

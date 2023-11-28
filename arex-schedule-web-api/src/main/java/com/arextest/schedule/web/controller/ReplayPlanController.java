@@ -118,7 +118,7 @@ public class ReplayPlanController {
     return debugRequestService.debugRequest(requestItem);
   }
 
-  private void fillOptionalValueIfRequestMissed(BuildReplayPlanRequest request) {
+  public void fillOptionalValueIfRequestMissed(BuildReplayPlanRequest request) {
     long currentTimeMillis = System.currentTimeMillis();
     Date fromDate = new Date(currentTimeMillis - CommonConstant.ONE_DAY_MILLIS);
     Date toDate = new Date(currentTimeMillis);
@@ -144,7 +144,7 @@ public class ReplayPlanController {
     try {
       MDCTracer.addAppId(request.getAppId());
       fillOptionalValueIfRequestMissed(request);
-      return planProduceService.createPlan(request);
+      return planProduceService.createPlan(request, false);
     } catch (Throwable e) {
       LOGGER.error("create plan error: {} , request: {}", e.getMessage(), request, e);
       progressEvent.onReplayPlanCreateException(request, e);

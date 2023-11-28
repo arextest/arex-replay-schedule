@@ -14,4 +14,5 @@ public class QueryReplayCaseIdResponse {
 
   private Map<String, String> batchWarmUpCaseIdMap;
 
+  private String planId;
 }

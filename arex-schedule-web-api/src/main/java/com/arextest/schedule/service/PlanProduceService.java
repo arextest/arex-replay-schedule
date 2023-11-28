@@ -80,7 +80,7 @@ public class PlanProduceService {
     return (String.format(PLAN_RUNNING_KEY_FORMAT, planId)).getBytes(StandardCharsets.UTF_8);
   }
 
-  public CommonResponse createPlan(BuildReplayPlanRequest request) throws PlanRunningException {
+  public CommonResponse createPlan(BuildReplayPlanRequest request, boolean local) throws PlanRunningException {
     progressEvent.onBeforePlanCreate(request);
 
     long planCreateMillis = System.currentTimeMillis();
@@ -146,12 +146,15 @@ public class PlanProduceService {
         System.currentTimeMillis(), null, null);
     BizLogger.recordPlanStart(replayPlan);
     progressEvent.onReplayPlanCreated(replayPlan);
+    if (local) {
+      return CommonResponse.successResponse("", replayPlan);
+    }
     planConsumeService.runAsyncConsume(replayPlan);
     return CommonResponse.successResponse("create plan success！" + result.getRemark(),
         new BuildReplayPlanResponse(replayPlan.getId()));
   }
 
-  private ReplayPlan build(BuildReplayPlanRequest request, PlanContext planContext) {
+  public ReplayPlan build(BuildReplayPlanRequest request, PlanContext planContext) {
     String appId = request.getAppId();
     ReplayPlan replayPlan = new ReplayPlan();
 
@@ -213,7 +216,7 @@ public class PlanProduceService {
     return serviceInstances.stream().map(ServiceInstance::getIp).collect(Collectors.joining(","));
   }
 
-  private ReplayPlanBuilder select(BuildReplayPlanRequest request) {
+  public ReplayPlanBuilder select(BuildReplayPlanRequest request) {
     for (ReplayPlanBuilder replayPlanBuilder : replayPlanBuilderList) {
       if (replayPlanBuilder.isSupported(request)) {
         return replayPlanBuilder;
@@ -284,7 +287,7 @@ public class PlanProduceService {
   /**
    * map internal validation code to VO reason code
    */
-  private BuildReplayFailReasonEnum validateToResultReason(BuildPlanValidateResult validateResult) {
+  public BuildReplayFailReasonEnum validateToResultReason(BuildPlanValidateResult validateResult) {
     switch (validateResult.getCodeValue()) {
       case BuildPlanValidateResult.REQUESTED_EMPTY_OPERATION:
         return BuildReplayFailReasonEnum.NO_INTERFACE_FOUND;

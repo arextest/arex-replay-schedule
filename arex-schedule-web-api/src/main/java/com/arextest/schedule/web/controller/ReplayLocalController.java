@@ -1,11 +1,21 @@
 package com.arextest.schedule.web.controller;
 
 import com.arextest.schedule.model.CommonResponse;
+import com.arextest.schedule.model.plan.PostSendRequest;
+import com.arextest.schedule.model.plan.preSendRequest;
+import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
+import com.arextest.schedule.model.plan.BuildReplayPlanResponse;
+import com.arextest.schedule.model.plan.QueryReplaySenderParametersRequest;
+import com.arextest.schedule.model.plan.QueryReplaySenderParametersResponse;
 import com.arextest.schedule.service.LocalReplayService;
-import com.arextest.web.model.contract.contracts.QueryReplayCaseRequestType;
+import com.arextest.schedule.service.PlanProduceService;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import javax.annotation.Resource;
+import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,18 +32,57 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @RequestMapping(path = "/api/replay/local/", produces = {MediaType.APPLICATION_JSON_VALUE})
 public class ReplayLocalController {
 
-  @Autowired
+  private static final String SUCCESS_DESC = "success";
+
+  @Resource
   private LocalReplayService localReplayService;
+  @Resource
+  private PlanProduceService planProduceService;
+  @Resource
+  private ReplayPlanController replayPlanController;
 
   @PostMapping(value = "/queryCaseId")
   @ResponseBody
-  public CommonResponse queryCaseId(@RequestBody BuildReplayPlanRequest request) {
-    return CommonResponse.successResponse("success", localReplayService.queryReplayCaseId(request));
+  public CommonResponse queryCaseId(@Valid @RequestBody BuildReplayPlanRequest request) {
+    try {
+      replayPlanController.fillOptionalValueIfRequestMissed(request);
+      return localReplayService.queryReplayCaseId(request);
+    } catch (Exception e) {
+      LOGGER.error("queryCaseId error: {} , request: {}", e.getMessage(), request, e);
+      return CommonResponse.badResponse("queryCaseId error！" + e.getMessage(),
+          new BuildReplayPlanResponse(BuildReplayFailReasonEnum.UNKNOWN));
+    } finally {
+      planProduceService.removeCreating(request.getAppId(), request.getTargetEnv());
+    }
   }
 
-  @PostMapping(value = "/queryCases")
+  @PostMapping(value = "/queryReplaySenderParameters")
   @ResponseBody
-  public CommonResponse queryCases(@RequestBody QueryReplayCaseRequestType request) {
-    return null;
+  public CommonResponse queryCases(@Valid @RequestBody QueryReplaySenderParametersRequest request) {
+    if (CollectionUtils.isEmpty(request.getCaseIds())) {
+      return CommonResponse.badResponse("No caseId!");
+    }
+    QueryReplaySenderParametersResponse response = localReplayService.queryReplaySenderParameters(request);
+    String desc = "";
+    if (Objects.equals(response.getReplaySenderParametersMap().size(), request.getCaseIds().size())) {
+      desc = "QueryCases success!";
+    } else {
+      desc = "Some cases are missing.";
+    }
+    return CommonResponse.successResponse(desc, response);
+  }
+
+  @PostMapping(value = "/preSend")
+  @ResponseBody
+  public CommonResponse preSend(@Valid @RequestBody preSendRequest request) {
+    boolean success = localReplayService.preSend(request);
+    return CommonResponse.successResponse(SUCCESS_DESC, success);
+  }
+
+  @PostMapping(value = "/postSend")
+  @ResponseBody
+  public CommonResponse postSend(@Valid @RequestBody PostSendRequest request) {
+    CompletableFuture.runAsync(() -> localReplayService.postSend(request));
+    return CommonResponse.successResponse(SUCCESS_DESC, true);
   }
 }

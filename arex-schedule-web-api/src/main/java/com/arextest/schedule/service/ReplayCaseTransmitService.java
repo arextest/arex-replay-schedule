@@ -6,7 +6,6 @@ import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
-import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.ExecutionStatus;
@@ -181,7 +180,7 @@ public class ReplayCaseTransmitService {
     MDCTracer.removeDetailId();
   }
 
-  void updateSendResult(ReplayActionCaseItem caseItem, CaseSendStatusType sendStatusType) {
+  public void updateSendResult(ReplayActionCaseItem caseItem, CaseSendStatusType sendStatusType) {
     if (caseItem.getSourceResultId() == null) {
       caseItem.setSourceResultId(StringUtils.EMPTY);
     }
@@ -194,7 +193,8 @@ public class ReplayCaseTransmitService {
       replayActionCaseItemRepository.updateSendResult(caseItem);
 
       // async compare task
-      AsyncCompareCaseTaskRunnable compareTask = new AsyncCompareCaseTaskRunnable(caseItem);
+      AsyncCompareCaseTaskRunnable compareTask = new AsyncCompareCaseTaskRunnable(
+          replayResultComparer, caseItem);
       compareExecutorService.execute(compareTask);
       LOGGER.info("Async compare task distributed, case id: {}", caseItem.getId());
     } else {
@@ -244,22 +244,5 @@ public class ReplayCaseTransmitService {
       LOGGER.error("doSendFailedAsFinish error:{}", throwable.getMessage(), throwable);
     }
 
-  }
-
-  private class AsyncCompareCaseTaskRunnable extends AbstractTracedRunnable {
-
-    private final ReplayActionCaseItem caseItem;
-
-    AsyncCompareCaseTaskRunnable(ReplayActionCaseItem caseItem) {
-      this.caseItem = caseItem;
-    }
-
-    @Override
-    protected void doWithTracedRunning() {
-      boolean compareSuccess = replayResultComparer.compare(caseItem, true);
-      if (!compareSuccess) {
-        LOGGER.error("Comparer returned false, retry, case id: {}", caseItem.getId());
-      }
-    }
   }
 }
