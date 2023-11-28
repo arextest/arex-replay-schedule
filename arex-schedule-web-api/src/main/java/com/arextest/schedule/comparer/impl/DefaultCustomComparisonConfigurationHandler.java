@@ -46,26 +46,15 @@ public class DefaultCustomComparisonConfigurationHandler implements
     if (mainEntryType && mainEntryNameMatched) {
       return operationConfig;
     }
-
-    if (Objects.equals(operationConfig.getSkipAssemble(), Boolean.TRUE)) {
-      ComparisonDependencyConfig defaultDependencyConfig = operationConfig.getDefaultDependencyConfig();
-      ReplayComparisonConfig configWhenMissing =
-          defaultDependencyConfig != null ? defaultDependencyConfig : new ReplayComparisonConfig();
-      String depKey = ComparisonDependencyConfig.dependencyKey(category, operationName);
-      Optional<ComparisonDependencyConfig> matchedDep = Optional.ofNullable(
-              operationConfig.getDependencyConfigMap())
-          .map(dependencyConfig -> dependencyConfig.get(depKey));
-      // if not matched, use global config
-      return matchedDep.isPresent() ? matchedDep.get() : configWhenMissing;
-    }
-
+    ComparisonDependencyConfig defaultDependencyConfig = operationConfig.getDefaultDependencyConfig();
+    ReplayComparisonConfig configWhenMissing =
+        defaultDependencyConfig != null ? defaultDependencyConfig : new ReplayComparisonConfig();
     String depKey = ComparisonDependencyConfig.dependencyKey(category, operationName);
     Optional<ComparisonDependencyConfig> matchedDep = Optional.ofNullable(
             operationConfig.getDependencyConfigMap())
         .map(dependencyConfig -> dependencyConfig.get(depKey));
-
-    // if not matched, use empty config
-    return matchedDep.isPresent() ? matchedDep.get() : ReplayComparisonConfig.empty();
+    // if not matched, use global config
+    return matchedDep.isPresent() ? matchedDep.get() : configWhenMissing;
   }
 
 
