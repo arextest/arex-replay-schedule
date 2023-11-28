@@ -62,6 +62,9 @@ final class PrepareCompareItemBuilder {
     Map<String, Object> attributes = target.getAttributes();
     if (attributes != null) {
       for (Entry<String, Object> entry : attributes.entrySet()) {
+        if (StringUtils.equals(entry.getKey(), "eigenMap")) {
+          continue;
+        }
         Object value = entry.getValue();
         if (value instanceof String) {
           obj.put(entry.getKey(), (String) value);
