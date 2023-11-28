@@ -64,8 +64,8 @@ public class DefaultCustomComparisonConfigurationHandler implements
             operationConfig.getDependencyConfigMap())
         .map(dependencyConfig -> dependencyConfig.get(depKey));
 
-    // if not matched, use global config
-    return matchedDep.orElse(null);
+    // if not matched, use empty config
+    return matchedDep.isPresent() ? matchedDep.get() : ReplayComparisonConfig.empty();
   }
 
 
