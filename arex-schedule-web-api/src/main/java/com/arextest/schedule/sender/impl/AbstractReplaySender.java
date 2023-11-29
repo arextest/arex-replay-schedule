@@ -1,5 +1,7 @@
 package com.arextest.schedule.sender.impl;
 
+import com.arextest.common.model.classloader.RemoteJarClassLoader;
+import com.arextest.common.utils.RemoteJarLoaderUtils;
 import com.arextest.schedule.common.ClassLoaderUtils;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
@@ -15,7 +17,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -35,7 +36,14 @@ abstract class AbstractReplaySender implements ReplaySender {
     String loadJarFilePath =
         StringUtils.isEmpty(JAR_FILE_PATH) ? TOMCAT_JAR_FILE_PATH : JAR_FILE_PATH;
     ClassLoaderUtils.loadJar(loadJarFilePath);
-    ServiceLoader.load(ReplayExtensionInvoker.class).forEach(INVOKERS::add);
+    try {
+      RemoteJarClassLoader classLoader = RemoteJarLoaderUtils.loadJar(loadJarFilePath);
+      INVOKERS.addAll(RemoteJarLoaderUtils.loadService(ReplayExtensionInvoker.class, classLoader));
+    } catch (Throwable t) {
+      LOGGER.error("Load invoker jar failed, application startup blocked", t);
+      throw new RuntimeException("Load invoker jar failed");
+    }
+    LOGGER.info("Load invoker jar success, invokers: {}", INVOKERS);
   }
 
   @Resource
