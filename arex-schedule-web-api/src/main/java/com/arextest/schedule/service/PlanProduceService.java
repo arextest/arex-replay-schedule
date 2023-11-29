@@ -22,6 +22,7 @@ import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.model.plan.BuildReplayPlanResponse;
 import com.arextest.schedule.model.plan.PlanStageEnum;
+import com.arextest.schedule.model.plan.ReRunReplayPlanRequest;
 import com.arextest.schedule.model.plan.StageStatusEnum;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
@@ -306,7 +307,9 @@ public class PlanProduceService {
     }
   }
 
-  public CommonResponse reRunPlan(String planId) throws PlanRunningException {
+  public CommonResponse reRunPlan(ReRunReplayPlanRequest request) throws PlanRunningException {
+    final String planId = request.getPlanId();
+    final String planItemId = request.getPlanItemId();
     ReplayPlan replayPlan = replayPlanRepository.query(planId);
     progressEvent.onBeforePlanReRun(replayPlan);
     if (replayPlan == null) {
@@ -318,7 +321,7 @@ public class PlanProduceService {
       return CommonResponse.badResponse("The plan's version is too old");
     }
     List<ReplayActionCaseItem> failedCaseList = replayActionCaseItemRepository.failedCaseList(
-        replayPlan.getId());
+        planId, planItemId);
     if (CollectionUtils.isEmpty(failedCaseList)) {
       progressEvent.onReplayPlanReRunException(replayPlan);
       return CommonResponse.badResponse("No failed case found");

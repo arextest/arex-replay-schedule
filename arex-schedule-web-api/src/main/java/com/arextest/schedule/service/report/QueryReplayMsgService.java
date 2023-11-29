@@ -14,7 +14,6 @@ import com.arextest.schedule.comparer.EncodingUtils;
 import com.arextest.schedule.comparer.impl.DefaultReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
 import com.arextest.schedule.model.ReplayCompareResult;
-import com.arextest.schedule.model.config.ComparisonGlobalConfig;
 import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.model.converter.ReplayCompareResultConverter;
@@ -54,10 +53,8 @@ public class QueryReplayMsgService {
 
     ComparisonInterfaceConfig operationConfig = compareConfigService.loadInterfaceConfig(
         compareResultBo.getPlanItemId());
-    ComparisonGlobalConfig globalConfig = compareConfigService.loadGlobalConfig(
-        compareResultBo.getPlanId());
 
-    ReplayComparisonConfig itemConfig = configHandler.pickConfig(globalConfig, operationConfig,
+    ReplayComparisonConfig itemConfig = configHandler.pickConfig(operationConfig,
         compareResultBo.getCategoryName(), compareResultBo.getOperationName());
 
     CompareOptions compareOptions = configHandler.buildSkdOption(compareResultBo.getCategoryName(),

@@ -95,4 +95,10 @@ public class ReplayComparisonConfig {
       jsonGenerator.writeFieldName(string);
     }
   }
+
+  public static ReplayComparisonConfig empty() {
+    ReplayComparisonConfig config = new ReplayComparisonConfig();
+    config.fillCommonFields();
+    return config;
+  }
 }
