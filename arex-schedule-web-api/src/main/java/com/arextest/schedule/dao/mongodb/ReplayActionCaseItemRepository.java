@@ -106,9 +106,12 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
   /**
    * Get the case list that failed to send or compare.
    */
-  public List<ReplayActionCaseItem> failedCaseList(String planId) {
+  public List<ReplayActionCaseItem> failedCaseList(String planId, String planItemId) {
     Query query = new Query();
     query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
+    if (StringUtils.hasText(planItemId)) {
+      query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ITEM_ID).is(planItemId));
+    }
     query.addCriteria(new Criteria().orOperator(
         Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS)
             .ne(CaseSendStatusType.SUCCESS.getValue()),

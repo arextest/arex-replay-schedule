@@ -75,7 +75,7 @@ public class ReplayPlanController {
   @ResponseBody
   public CommonResponse reRunPlan(@RequestBody ReRunReplayPlanRequest request) {
     try {
-      return planProduceService.reRunPlan(request.getPlanId());
+      return planProduceService.reRunPlan(request);
     } catch (PlanRunningException e) {
       return CommonResponse.badResponse(e.getMessage(),
           new BuildReplayPlanResponse(e.getCode()));

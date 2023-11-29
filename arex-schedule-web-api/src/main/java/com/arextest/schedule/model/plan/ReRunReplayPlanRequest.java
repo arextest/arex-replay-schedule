@@ -10,5 +10,6 @@ import lombok.Data;
 public class ReRunReplayPlanRequest {
 
   private String planId;
+  private String planItemId;
   private String operator;
 }

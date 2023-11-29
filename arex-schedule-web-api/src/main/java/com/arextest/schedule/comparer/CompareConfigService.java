@@ -5,7 +5,6 @@ import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.config.ComparisonDependencyConfig;
-import com.arextest.schedule.model.config.ComparisonGlobalConfig;
 import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.model.converter.ReplayConfigConverter;
@@ -154,25 +153,6 @@ public final class CompareConfigService {
       LOGGER.error(throwable.getMessage(), throwable);
     }
     return ComparisonInterfaceConfig.empty();
-  }
-
-  @Deprecated
-  public ComparisonGlobalConfig loadGlobalConfig(String planId) {
-    try {
-      String redisKey = ComparisonGlobalConfig.dependencyKey(planId);
-      byte[] json = redisCacheProvider.get(redisKey.getBytes(StandardCharsets.UTF_8));
-      if (json == null) {
-        return ComparisonGlobalConfig.empty();
-      }
-      ComparisonGlobalConfig config = byteToObject(json, ComparisonGlobalConfig.class);
-      if (config == null) {
-        return ComparisonGlobalConfig.empty();
-      }
-      return config;
-    } catch (Throwable throwable) {
-      LOGGER.error(throwable.getMessage(), throwable);
-    }
-    return ComparisonGlobalConfig.empty();
   }
 
   private Map<String, ComparisonInterfaceConfig> getReplayComparisonConfig(
