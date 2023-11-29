@@ -180,12 +180,12 @@
             <version>1.6.13</version>
           </plugin>
         </plugins>
-        <resources>
-          <resource>
-            <directory>src/main/resources</directory>
-            <filtering>true</filtering>
-          </resource>
-        </resources>
+<!--        <resources>-->
+<!--          <resource>-->
+<!--            <directory>src/main/resources</directory>-->
+<!--            <filtering>true</filtering>-->
+<!--          </resource>-->
+<!--        </resources>-->
       </build>
       <id>war</id>
       <properties>
@@ -198,12 +198,12 @@
     </profile>
     <profile>
       <build>
-        <resources>
-          <resource>
-            <directory>src/main/resources</directory>
-            <filtering>true</filtering>
-          </resource>
-        </resources>
+<!--        <resources>-->
+<!--          <resource>-->
+<!--            <directory>src/main/resources</directory>-->
+<!--            <filtering>true</filtering>-->
+<!--          </resource>-->
+<!--        </resources>-->
         <plugins>
           <plugin>
             <artifactId>maven-compiler-plugin</artifactId>
