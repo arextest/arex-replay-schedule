@@ -5,6 +5,7 @@ import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.replay.QueryMockCacheResponseType;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.JsonUtils;
+import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
@@ -49,6 +50,7 @@ import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 
 /**
@@ -85,6 +87,8 @@ public class LocalReplayService {
   private MockCachePreLoader mockCachePreLoader;
   @Resource
   private ReplayCaseTransmitService replayCaseTransmitService;
+  @Resource
+  private CompareConfigService compareConfigService;
 
   public CommonResponse queryReplayCaseId(BuildReplayPlanRequest request) {
     final QueryReplayCaseIdResponse response = new QueryReplayCaseIdResponse();
@@ -93,63 +97,11 @@ public class LocalReplayService {
     response.setBatchCaseIdsMap(batchCaseIdsMap);
     response.setBatchWarmUpCaseIdMap(batchWarmUpCaseIdMap);
 
-    long planCreateMillis = System.currentTimeMillis();
-    String appId = request.getAppId();
-    if (planProduceService.isCreating(appId, request.getTargetEnv())) {
-      return CommonResponse.badResponse("This appid is creating plan",
-          new BuildReplayPlanResponse(BuildReplayFailReasonEnum.CREATING));
+    Pair<ReplayPlan, CommonResponse> pair = buildReplayPlan(request);
+    if (pair.getLeft() == null) {
+      return pair.getRight();
     }
-    ReplayPlanBuilder planBuilder = planProduceService.select(request);
-    if (planBuilder == null) {
-      return CommonResponse.badResponse(
-          "appId:" + appId + " unsupported replay planType : " + request.getReplayPlanType(),
-          new BuildReplayPlanResponse(BuildReplayFailReasonEnum.INVALID_REPLAY_TYPE));
-    }
-    PlanContext planContext = planContextCreator.createByAppId(appId);
-    BuildPlanValidateResult result = planBuilder.validate(request, planContext);
-    if (result.failure()) {
-      return CommonResponse.badResponse("appId:" + appId + " error: " + result.getRemark(),
-          new BuildReplayPlanResponse(planProduceService.validateToResultReason(result)));
-    }
-
-    List<ReplayActionItem> replayActionItemList = planBuilder.buildReplayActionList(request,
-        planContext);
-    if (CollectionUtils.isEmpty(replayActionItemList)) {
-      return CommonResponse.badResponse("appId:" + appId + " error: empty replay actions",
-          new BuildReplayPlanResponse(BuildReplayFailReasonEnum.NO_INTERFACE_FOUND));
-    }
-
-    ReplayPlan replayPlan = planProduceService.build(request, planContext);
-    replayPlan.setPlanCreateMillis(planCreateMillis);
-    replayPlan.setReplayActionItemList(replayActionItemList);
-    ReplayParentBinder.setupReplayActionParent(replayActionItemList, replayPlan);
-    int planCaseCount = planBuilder.buildReplayCaseCount(replayActionItemList);
-    if (planCaseCount == 0) {
-      return CommonResponse.badResponse("loaded empty case,try change time range submit again ",
-          new BuildReplayPlanResponse(BuildReplayFailReasonEnum.NO_CASE_IN_RANGE));
-    }
-    replayPlan.setCaseTotalCount(planCaseCount);
-    if (!replayPlanRepository.save(replayPlan)) {
-      return CommonResponse.badResponse("save replan plan error, " + replayPlan,
-          new BuildReplayPlanResponse(BuildReplayFailReasonEnum.DB_ERROR));
-    }
-    planProduceService.isRunning(replayPlan.getId());
-    if (!replayPlanActionRepository.save(replayActionItemList)) {
-      return CommonResponse.badResponse("save replay action error, " + replayPlan,
-          new BuildReplayPlanResponse(BuildReplayFailReasonEnum.DB_ERROR));
-    }
-    progressEvent.onReplayPlanCreated(replayPlan);
-
-    planConsumePrepareService.prepareRunData(replayPlan);
-    replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
-    if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
-      replayPlan.setErrorMessage("Got empty execution context");
-      progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
-      return CommonResponse.badResponse("Got empty execution context, " + replayPlan);
-    }
-
-    progressTracer.initTotal(replayPlan);
-
+    ReplayPlan replayPlan = pair.getLeft();
     Set<String> planItemIds = new HashSet<>();
     for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
       ContextDependenciesHolder dependencyHolder = (ContextDependenciesHolder) executionContext.getDependencies();
@@ -191,7 +143,7 @@ public class LocalReplayService {
       }
     }
     response.setPlanId(replayPlan.getId());
-    cacheReplayActionItem(replayActionItemList, planItemIds);
+    cacheReplayActionItem(replayPlan.getReplayActionItemList(), planItemIds);
     return CommonResponse.successResponse("queryReplayCaseId success!", response);
   }
 
@@ -330,5 +282,70 @@ public class LocalReplayService {
     }
     int index = Math.abs(caseItemId.hashCode() % serviceInstances.size());
     return serviceInstances.get(index);
+  }
+
+  private Pair<ReplayPlan, CommonResponse> buildReplayPlan(BuildReplayPlanRequest request) {
+    long planCreateMillis = System.currentTimeMillis();
+    String appId = request.getAppId();
+    if (planProduceService.isCreating(appId, request.getTargetEnv())) {
+      return Pair.of(null, CommonResponse.badResponse("This appid is creating plan",
+          new BuildReplayPlanResponse(BuildReplayFailReasonEnum.CREATING)));
+    }
+    ReplayPlanBuilder planBuilder = planProduceService.select(request);
+    if (planBuilder == null) {
+      return Pair.of(null, CommonResponse.badResponse(
+          "appId:" + appId + " unsupported replay planType : " + request.getReplayPlanType(),
+          new BuildReplayPlanResponse(BuildReplayFailReasonEnum.INVALID_REPLAY_TYPE)));
+    }
+    PlanContext planContext = planContextCreator.createByAppId(appId);
+    BuildPlanValidateResult result = planBuilder.validate(request, planContext);
+    if (result.failure()) {
+      return Pair.of(null,
+          CommonResponse.badResponse("appId:" + appId + " error: " + result.getRemark(),
+              new BuildReplayPlanResponse(planProduceService.validateToResultReason(result))));
+    }
+
+    List<ReplayActionItem> replayActionItemList = planBuilder.buildReplayActionList(request,
+        planContext);
+    if (CollectionUtils.isEmpty(replayActionItemList)) {
+      return Pair.of(null,
+          CommonResponse.badResponse("appId:" + appId + " error: empty replay actions",
+              new BuildReplayPlanResponse(BuildReplayFailReasonEnum.NO_INTERFACE_FOUND)));
+    }
+
+    ReplayPlan replayPlan = planProduceService.build(request, planContext);
+    replayPlan.setPlanCreateMillis(planCreateMillis);
+    replayPlan.setReplayActionItemList(replayActionItemList);
+    ReplayParentBinder.setupReplayActionParent(replayActionItemList, replayPlan);
+    int planCaseCount = planBuilder.buildReplayCaseCount(replayActionItemList);
+    if (planCaseCount == 0) {
+      return Pair.of(null,
+          CommonResponse.badResponse("loaded empty case,try change time range submit again ",
+              new BuildReplayPlanResponse(BuildReplayFailReasonEnum.NO_CASE_IN_RANGE)));
+    }
+    replayPlan.setCaseTotalCount(planCaseCount);
+    if (!replayPlanRepository.save(replayPlan)) {
+      return Pair.of(null, CommonResponse.badResponse("save replan plan error, " + replayPlan,
+          new BuildReplayPlanResponse(BuildReplayFailReasonEnum.DB_ERROR)));
+    }
+    planProduceService.isRunning(replayPlan.getId());
+    if (!replayPlanActionRepository.save(replayActionItemList)) {
+      return Pair.of(null, CommonResponse.badResponse("save replay action error, " + replayPlan,
+          new BuildReplayPlanResponse(BuildReplayFailReasonEnum.DB_ERROR)));
+    }
+    progressEvent.onReplayPlanCreated(replayPlan);
+
+    planConsumePrepareService.prepareRunData(replayPlan);
+    replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
+    if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
+      replayPlan.setErrorMessage("Got empty execution context");
+      progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
+      return Pair.of(null,
+          CommonResponse.badResponse("Got empty execution context, " + replayPlan));
+    }
+
+    progressTracer.initTotal(replayPlan);
+    compareConfigService.preload(replayPlan);
+    return Pair.of(replayPlan, null);
   }
 }

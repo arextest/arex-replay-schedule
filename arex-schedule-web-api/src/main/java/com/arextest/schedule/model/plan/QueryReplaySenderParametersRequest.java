@@ -2,6 +2,7 @@ package com.arextest.schedule.model.plan;
 
 import java.util.List;
 import javax.validation.constraints.Max;
+import javax.validation.constraints.Size;
 import lombok.Data;
 
 /**
@@ -15,7 +16,7 @@ public class QueryReplaySenderParametersRequest {
    * @see BuildReplayPlanType
    */
   private int replayPlanType;
-  @Max(100)
+  @Size(max = 100, min = 1)
   private List<String> caseIds;
 
 }
