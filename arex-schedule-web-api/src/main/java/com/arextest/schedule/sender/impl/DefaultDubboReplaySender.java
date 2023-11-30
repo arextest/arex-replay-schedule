@@ -190,7 +190,7 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
 
   public List<Object> toParameters(String body, String type) {
     List<Object> parameters = new ArrayList<>();
-    if (StringUtils.isNotEmpty(body)) {
+    if (StringUtils.isNotEmpty(body) && StringUtils.isNotEmpty(type)) {
       JSONArray array = null;
       //type starts with "[", cuz single-object body could start with "["
       if (type.startsWith(CommonConstant.JSON_ARRAY_START)) {
