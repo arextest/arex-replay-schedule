@@ -183,7 +183,16 @@
         <resources>
           <resource>
             <directory>src/main/resources</directory>
+            <excludes>
+              <exclude>**/*.jar</exclude>
+            </excludes>
             <filtering>true</filtering>
+          </resource>
+          <resource>
+            <directory>src/main/resources</directory>
+            <includes>
+              <include>**/*.jar</include>
+            </includes>
           </resource>
         </resources>
       </build>
@@ -201,7 +210,16 @@
         <resources>
           <resource>
             <directory>src/main/resources</directory>
+            <excludes>
+              <exclude>**/*.jar</exclude>
+            </excludes>
             <filtering>true</filtering>
+          </resource>
+          <resource>
+            <directory>src/main/resources</directory>
+            <includes>
+              <include>**/*.jar</include>
+            </includes>
           </resource>
         </resources>
         <plugins>
