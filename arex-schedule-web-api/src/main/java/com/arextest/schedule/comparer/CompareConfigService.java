@@ -123,12 +123,14 @@ public final class CompareConfigService {
 
       customComparisonConfigurationHandler.build(config, actionItem);
 
+      String configValue = objectToJsonString(config);
       redisCacheProvider.put(ComparisonInterfaceConfig.dependencyKey(actionItem.getId())
               .getBytes(StandardCharsets.UTF_8),
           4 * 24 * 60 * 60L,
-          objectToJsonString(config).getBytes(StandardCharsets.UTF_8));
+          configValue.getBytes(StandardCharsets.UTF_8));
 
-      LOGGER.info("prepare load compare config, action id:{}", actionItem.getId());
+      LOGGER.info("prepare load compare config, action id:{}, config:{}", actionItem.getId(),
+          configValue);
     }
     progressEvent.onCompareConfigLoaded(plan);
   }
@@ -164,7 +166,8 @@ public final class CompareConfigService {
             new ParameterizedTypeReference<GenericResponseType<ReplayCompareConfig>>() {
             });
 
-    if (replayComparisonConfigEntity == null) {
+    if (replayComparisonConfigEntity == null || replayComparisonConfigEntity.getBody() == null
+        || replayComparisonConfigEntity.getBody().getBody() == null) {
       return new HashMap<>();
     }
 
@@ -173,7 +176,6 @@ public final class CompareConfigService {
         .map(GenericResponseType::getBody)
         .map(ReplayCompareConfig::getReplayComparisonItems)
         .orElse(Collections.emptyList());
-    // TODO: add the log of the ComparisonConfig
 
     // converts
     Map<String, ComparisonInterfaceConfig> opConverted = convertOperationConfig(operationConfigs);
