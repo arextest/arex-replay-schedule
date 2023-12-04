@@ -162,7 +162,7 @@ public final class CompareConfigService {
     Map<String, String> urlVariables = Collections.singletonMap("appId", plan.getAppId());
 
     ResponseEntity<GenericResponseType<ReplayCompareConfig>> replayComparisonConfigEntity =
-        httpWepServiceApiClient.get(summaryConfigUrl, urlVariables,
+        httpWepServiceApiClient.retryGet(summaryConfigUrl, urlVariables,
             new ParameterizedTypeReference<GenericResponseType<ReplayCompareConfig>>() {
             });
 

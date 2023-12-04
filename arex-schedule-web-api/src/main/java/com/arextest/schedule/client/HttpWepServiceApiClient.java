@@ -1,6 +1,7 @@
 package com.arextest.schedule.client;
 
 import static com.arextest.schedule.common.CommonConstant.URL;
+
 import com.arextest.schedule.utils.SSLUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
@@ -168,6 +169,18 @@ public final class HttpWepServiceApiClient {
       ParameterizedTypeReference<TResponse> responseType) {
     try {
       return restTemplate.exchange(url, HttpMethod.GET, null, responseType, urlVariables);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  public <TResponse> ResponseEntity<TResponse> retryGet(String url, Map<String, ?> urlVariables,
+      ParameterizedTypeReference<TResponse> responseType) {
+    try {
+      return retryTemplate.execute(retryCallback -> {
+        retryCallback.setAttribute(URL, url);
+        return restTemplate.exchange(url, HttpMethod.GET, null, responseType, urlVariables);
+      });
     } catch (Exception e) {
       return null;
     }
