@@ -242,6 +242,10 @@ public class PlanProduceService {
     }
 
     replayPlan.setMinInstanceCount(planContext.determineMinInstanceCount());
+
+    // add the condition of "caseTag"
+    replayPlan.setCaseTags(request.getCaseTags());
+
     progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_PLAN,
         StageStatusEnum.SUCCEEDED,
         null, System.currentTimeMillis(), null);

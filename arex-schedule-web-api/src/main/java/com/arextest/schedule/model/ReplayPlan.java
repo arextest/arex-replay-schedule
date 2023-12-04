@@ -109,6 +109,9 @@ public class ReplayPlan {
   private long lastUpdateTime = System.currentTimeMillis();
   private boolean reRun;
 
+  @JsonIgnore
+  private Map<String, Object> caseTags;
+
   public void enqueueBizLog(BizLog log) {
     this.bizLogs.add(log);
   }
