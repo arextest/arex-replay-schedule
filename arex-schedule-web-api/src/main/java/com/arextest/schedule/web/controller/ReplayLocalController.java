@@ -76,7 +76,11 @@ public class ReplayLocalController {
   @ResponseBody
   public CommonResponse preSend(@Valid @RequestBody preSendRequest request) {
     boolean success = localReplayService.preSend(request);
-    return CommonResponse.successResponse(SUCCESS_DESC, success);
+    if (success) {
+      return CommonResponse.successResponse(SUCCESS_DESC, success);
+    } else {
+      return CommonResponse.badResponse("SendLimiter break!", success);
+    }
   }
 
   @PostMapping(value = "/postSend")

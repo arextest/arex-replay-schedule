@@ -10,6 +10,10 @@ import lombok.Data;
 @Data
 public class preSendRequest {
   @NotNull
+  private String planId;
+  @NotNull
+  private String caseId;
+  @NotNull
   private int replayPlanType;
   @NotNull
   private String recordId;

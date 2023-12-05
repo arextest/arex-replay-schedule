@@ -10,8 +10,9 @@ import lombok.Data;
 @Data
 public class PostSendRequest {
   @NotNull
-  private String caseId;
+  private String planId;
   @NotNull
+  private String caseId;
   private String replayId;
   @NotNull
   private Integer sendStatusType;

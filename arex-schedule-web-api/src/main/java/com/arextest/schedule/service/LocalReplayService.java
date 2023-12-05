@@ -5,6 +5,8 @@ import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.replay.QueryMockCacheResponseType;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.JsonUtils;
+import com.arextest.schedule.common.SendLimiter;
+import com.arextest.schedule.common.SendRedisLimiter;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
@@ -36,6 +38,7 @@ import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySenderParameters;
 import com.arextest.schedule.sender.impl.MockCachePreLoader;
+import com.arextest.schedule.utils.DecodeUtils;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -174,25 +177,48 @@ public class LocalReplayService {
   }
 
   public boolean preSend(preSendRequest request) {
+    ReplayPlan replayPlan = replayPlanRepository.query(request.getPlanId());
+    SendLimiter sendLimiter = new SendRedisLimiter(replayPlan, redisCacheProvider);
+    ReplayActionCaseItem caseItem = restoreCase(request.getCaseId(), null);
+    if (sendLimiter.failBreak()) {
+      replayCaseTransmitService.updateSendResult(caseItem, CaseSendStatusType.EXCEPTION_FAILED);
+      return false;
+    }
+    if (isStop(request.getPlanId())) {
+      replayCaseTransmitService.updateSendResult(caseItem, CaseSendStatusType.CANCELED);
+      return false;
+    }
     QueryMockCacheResponseType queryMockCacheResponseType = mockCachePreLoader.fillMockSource(
         request.getRecordId(), request.getReplayPlanType());
     return queryMockCacheResponseType != null;
   }
 
   public boolean postSend(PostSendRequest request) {
-    ReplayActionCaseItem caseItem = replayActionCaseItemRepository.queryById(request.getCaseId());
-    caseItem.setTargetResultId(request.getReplayId());
+    ReplayPlan replayPlan = replayPlanRepository.query(request.getPlanId());
+    SendLimiter sendLimiter = new SendRedisLimiter(replayPlan, redisCacheProvider);
+    sendLimiter.release(request.getSendStatusType() == CaseSendStatusType.SUCCESS.getValue());
+
+    ReplayActionCaseItem caseItem = restoreCase(request.getCaseId(), request.getReplayId());
+
+    replayCaseTransmitService.updateSendResult(caseItem,
+        CaseSendStatusType.of(request.getSendStatusType()));
+    return true;
+  }
+
+  private ReplayActionCaseItem restoreCase(String caseId, String replayId) {
+    ReplayActionCaseItem caseItem = replayActionCaseItemRepository.queryById(caseId);
+    caseItem.setTargetResultId(replayId);
     caseItem.setSourceResultId(StringUtils.EMPTY);
-    ReplayActionItemForCache replayActionItemForCache = loadReplayActionItemCache(caseItem.getPlanItemId());
+    ReplayActionItemForCache replayActionItemForCache = loadReplayActionItemCache(
+        caseItem.getPlanItemId());
     if (replayActionItemForCache == null) {
       LOGGER.error("loadReplayActionItemCache failed, planItemId:{}", caseItem.getPlanItemId());
-      return false;
+      return null;
     }
     ReplayActionItem replayActionItem = transformFromCache(replayActionItemForCache);
     replayActionItem.setParent(replayPlanRepository.query(caseItem.getPlanId()));
     caseItem.setParent(replayActionItem);
-    replayCaseTransmitService.updateSendResult(caseItem, CaseSendStatusType.of(request.getSendStatusType()));
-    return true;
+    return caseItem;
   }
 
   private void cacheReplayActionItem(List<ReplayActionItem> replayActionItemList,
@@ -252,8 +278,14 @@ public class LocalReplayService {
     ReplaySenderParameters senderParameter = new ReplaySenderParameters();
     senderParameter.setAppId(replayActionItem.getAppId());
     senderParameter.setConsumeGroup(caseItem.consumeGroup());
-    senderParameter.setMessage(caseItem.requestMessage());
-    senderParameter.setOperation(replayActionItem.getOperationName());
+    byte[] decodeMessage = (byte[]) DecodeUtils.decode(caseItem.requestMessage());
+    String stringMessage = new String(decodeMessage, StandardCharsets.UTF_8);
+    senderParameter.setMessage(stringMessage);
+    String operationName = caseItem.requestPath();
+    if (StringUtils.isEmpty(operationName)) {
+      operationName = replayActionItem.getOperationName();
+    }
+    senderParameter.setOperation(operationName);
     Map<String, String> headers = caseItem.requestHeaders();
     if (headers == null) {
       headers = new HashMap<>();
@@ -347,5 +379,9 @@ public class LocalReplayService {
     progressTracer.initTotal(replayPlan);
     compareConfigService.preload(replayPlan);
     return Pair.of(replayPlan, null);
+  }
+
+  private boolean isStop(String planId) {
+    return redisCacheProvider.get(PlanProduceService.buildStopPlanRedisKey(planId)) != null;
   }
 }
