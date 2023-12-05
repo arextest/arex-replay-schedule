@@ -92,7 +92,7 @@ public class SendRedisLimiter implements SendLimiter {
 
 
   private int byteArrayToInt(byte[] bytes) {
-    if (bytes.length != Integer.BYTES) {
+    if (bytes == null || bytes.length != Integer.BYTES) {
       return 0;
     }
     return ByteBuffer.wrap(bytes).getInt();
