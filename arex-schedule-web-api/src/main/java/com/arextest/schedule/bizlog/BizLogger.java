@@ -221,7 +221,7 @@ public class BizLogger {
     QPS_LIMITER_INIT(100,
         "Qps limiter init with initial total rate of {0} for {1} instances."),
     QPS_LIMITER_CHANGE(101, "Qps limit changed from {0} to {1}."),
-    QPS_LIMITER_RESET(102, "Qps limit reset initial rate to {0}."),
+    QPS_LIMITER_RESET(102, "Qps limit will reset initial rate to {0}."),
 
     CONTEXT_START(200, "Context: {0} init with action: {1}, before hook took {2} ms."),
     CONTEXT_AFTER_RUN(202, "Context: {0} done, after hook took {1} ms."),
