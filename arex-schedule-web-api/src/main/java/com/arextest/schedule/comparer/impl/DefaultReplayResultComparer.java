@@ -5,13 +5,7 @@ import com.arextest.diff.model.CompareResult;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.model.mock.MockCategoryType;
-import com.arextest.schedule.comparer.CategoryComparisonHolder;
-import com.arextest.schedule.comparer.CompareConfigService;
-import com.arextest.schedule.comparer.CompareItem;
-import com.arextest.schedule.comparer.ComparisonWriter;
-import com.arextest.schedule.comparer.CustomComparisonConfigurationHandler;
-import com.arextest.schedule.comparer.EncodingUtils;
-import com.arextest.schedule.comparer.ReplayResultComparer;
+import com.arextest.schedule.comparer.*;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSendStatusType;
@@ -55,6 +49,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
   private final ReplayActionCaseItemRepository caseItemRepository;
   private final MetricService metricService;
   private final CustomComparisonConfigurationHandler configHandler;
+  private final InvalidReplayCaseService invalidReplayCaseService;
 
   public DefaultReplayResultComparer(CompareConfigService compareConfigService,
       PrepareCompareSourceRemoteLoader sourceRemoteLoader,
@@ -62,7 +57,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
       ComparisonWriter comparisonOutputWriter,
       ReplayActionCaseItemRepository caseItemRepository,
       MetricService metricService,
-      CustomComparisonConfigurationHandler configHandler) {
+      CustomComparisonConfigurationHandler configHandler,
+      InvalidReplayCaseService invalidReplayCaseService) {
     this.compareConfigService = compareConfigService;
     this.sourceRemoteLoader = sourceRemoteLoader;
     this.progressTracer = progressTracer;
@@ -70,6 +66,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     this.caseItemRepository = caseItemRepository;
     this.metricService = metricService;
     this.configHandler = configHandler;
+    this.invalidReplayCaseService = invalidReplayCaseService;
     addGlobalOptionToSDK(compareConfigService);
   }
   public void addGlobalOptionToSDK(CompareConfigService compareConfigService) {
@@ -96,6 +93,15 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     try {
       MDCTracer.addPlanId(planId);
       MDCTracer.addPlanItemId(caseItem.getPlanItemId());
+
+      if (invalidReplayCaseService.isInvalidCase(caseItem.getTargetResultId())) {
+        caseItemRepository.updateCompareStatus(caseItem.getId(),
+            CompareProcessStatusType.ERROR.getValue());
+        caseItem.setCompareStatus(CompareProcessStatusType.ERROR.getValue());
+        comparisonOutputWriter.writeIncomparable(caseItem,
+            CaseSendStatusType.REPLAY_SERVICE_EXCEPTION.name());
+        return true;
+      }
 
       List<CategoryComparisonHolder> waitCompareMap =
           sourceRemoteLoader.buildWaitCompareList(caseItem, useReplayId);

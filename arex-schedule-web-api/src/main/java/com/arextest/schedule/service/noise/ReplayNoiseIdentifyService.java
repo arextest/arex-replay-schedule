@@ -5,6 +5,7 @@ import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.CustomComparisonConfigurationHandler;
+import com.arextest.schedule.comparer.InvalidReplayCaseService;
 import com.arextest.schedule.comparer.impl.DefaultReplayResultComparer;
 import com.arextest.schedule.comparer.impl.PrepareCompareSourceRemoteLoader;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
@@ -64,11 +65,11 @@ public class ReplayNoiseIdentifyService implements ReplayNoiseIdentify {
       ReplayPlanActionRepository replayPlanActionRepository,
       ReplaySenderFactory replaySenderFactory,
       PrepareCompareSourceRemoteLoader sourceRemoteLoader, ExecutorService sendExecutorService,
-      ExecutorService analysisNoiseExecutorService) {
+      ExecutorService analysisNoiseExecutorService, InvalidReplayCaseService invalidReplayCaseService) {
     this.defaultResultComparer =
         new DefaultReplayResultComparer(compareConfigService, sourceRemoteLoader, progressTracer,
             comparisonOutputWriter, caseItemRepository, metricService,
-            customComparisonConfigurationHandler);
+            customComparisonConfigurationHandler, invalidReplayCaseService);
     this.replayCompareResultRepository = replayCompareResultRepository;
     this.replayNoiseRepository = replayNoiseRepository;
     this.replayPlanActionRepository = replayPlanActionRepository;
