@@ -128,6 +128,17 @@ public class ReplayPlanController {
 
 
 
+  @GetMapping("/api/invalidReplayCase/{replayId}")
+  @ResponseBody
+  public CommonResponse invalidReplayCase(@PathVariable String replayId) {
+    if (StringUtils.isEmpty(replayId)) {
+      return CommonResponse.badResponse("replayId is empty");
+    }
+    invalidReplayCaseService.saveInvalidCase(replayId);
+    return CommonResponse.successResponse("ok", null);
+  }
+
+
 
   private CommonResponse createPlan(BuildReplayPlanRequest request) {
     if (request == null) {
