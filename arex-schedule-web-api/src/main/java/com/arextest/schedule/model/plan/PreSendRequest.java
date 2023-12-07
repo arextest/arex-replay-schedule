@@ -8,7 +8,7 @@ import lombok.Data;
  * @create 2023/11/27 11:00
  */
 @Data
-public class preSendRequest {
+public class PreSendRequest {
   @NotNull
   private String planId;
   @NotNull

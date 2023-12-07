@@ -11,5 +11,10 @@ import lombok.Data;
  */
 @Data
 public class QueryReplaySenderParametersResponse {
-  private Map<String, ReplaySenderParameters> replaySenderParametersMap;
+
+  /**
+   * value: compress from ReplaySenderParameters by ZSTD.
+   * @see  ReplaySenderParameters
+   */
+  private Map<String, String> replaySenderParametersMap;
 }

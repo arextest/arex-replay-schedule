@@ -2,7 +2,7 @@ package com.arextest.schedule.web.controller;
 
 import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.plan.PostSendRequest;
-import com.arextest.schedule.model.plan.preSendRequest;
+import com.arextest.schedule.model.plan.PreSendRequest;
 import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.model.plan.BuildReplayPlanResponse;
@@ -38,14 +38,12 @@ public class ReplayLocalController {
   private LocalReplayService localReplayService;
   @Resource
   private PlanProduceService planProduceService;
-  @Resource
-  private ReplayPlanController replayPlanController;
 
   @PostMapping(value = "/queryCaseId")
   @ResponseBody
   public CommonResponse queryCaseId(@Valid @RequestBody BuildReplayPlanRequest request) {
     try {
-      replayPlanController.fillOptionalValueIfRequestMissed(request);
+      planProduceService.fillOptionalValueIfRequestMissed(request);
       return localReplayService.queryReplayCaseId(request);
     } catch (Exception e) {
       LOGGER.error("queryCaseId error: {} , request: {}", e.getMessage(), request, e);
@@ -63,18 +61,12 @@ public class ReplayLocalController {
       return CommonResponse.badResponse("No caseId!");
     }
     QueryReplaySenderParametersResponse response = localReplayService.queryReplaySenderParameters(request);
-    String desc = "";
-    if (Objects.equals(response.getReplaySenderParametersMap().size(), request.getCaseIds().size())) {
-      desc = "QueryCases success!";
-    } else {
-      desc = "Some cases are missing.";
-    }
-    return CommonResponse.successResponse(desc, response);
+    return CommonResponse.successResponse(SUCCESS_DESC, response);
   }
 
   @PostMapping(value = "/preSend")
   @ResponseBody
-  public CommonResponse preSend(@Valid @RequestBody preSendRequest request) {
+  public CommonResponse preSend(@Valid @RequestBody PreSendRequest request) {
     boolean success = localReplayService.preSend(request);
     if (success) {
       return CommonResponse.successResponse(SUCCESS_DESC, success);
