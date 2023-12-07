@@ -1,6 +1,7 @@
 package com.arextest.schedule.web.controller;
 
 import com.arextest.schedule.common.CommonConstant;
+import com.arextest.schedule.comparer.InvalidReplayCaseService;
 import com.arextest.schedule.exceptions.PlanRunningException;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSourceEnvType;
@@ -24,12 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @author jmo
@@ -48,6 +44,8 @@ public class ReplayPlanController {
   private ProgressEvent progressEvent;
   @Resource
   private DebugRequestService debugRequestService;
+  @Resource
+  private InvalidReplayCaseService invalidReplayCaseService;
 
 
   @PostMapping(value = "/api/createPlan")
@@ -117,6 +115,17 @@ public class ReplayPlanController {
     }
     return debugRequestService.debugRequest(requestItem);
   }
+
+  @GetMapping("/api/invalidReplayCase/{replayId}")
+  @ResponseBody
+  public CommonResponse invalidReplayCase(@PathVariable String replayId) {
+    if (StringUtils.isEmpty(replayId)) {
+      return CommonResponse.badResponse("replayId is empty");
+    }
+    invalidReplayCaseService.saveInvalidCase(replayId);
+    return CommonResponse.successResponse("ok", null);
+  }
+
 
   private void fillOptionalValueIfRequestMissed(BuildReplayPlanRequest request) {
     long currentTimeMillis = System.currentTimeMillis();
