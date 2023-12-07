@@ -23,11 +23,8 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 public class ReplaySenderConfiguration {
 
-  @Value("${load.invokers.switch}")
-  private boolean loadInvokersSwitch;
-
-  private static final String JAR_FILE_PATH = System.getProperty("replay.sender.extension.jarPath");
-  private static final String TOMCAT_JAR_FILE_PATH = "/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/lib/dubboInvoker.jar";
+  @Value("${replay.sender.extension.jarPath}")
+  private String jarFilePath;
 
   @Bean
   public List<ReplaySender> replaySenderList(List<ReplaySender> replaySenders) {
@@ -40,15 +37,11 @@ public class ReplaySenderConfiguration {
   @Bean
   public List<ReplayExtensionInvoker> invokers() {
     List<ReplayExtensionInvoker> invokers = new ArrayList<>();
-    if (!loadInvokersSwitch) {
+    if (StringUtils.isEmpty(jarFilePath)) {
       return invokers;
     }
-    String loadJarFilePath =
-        StringUtils.isEmpty(JAR_FILE_PATH) ? TOMCAT_JAR_FILE_PATH : JAR_FILE_PATH;
-    ClassLoaderUtils.loadJar(loadJarFilePath);
-
     try {
-      RemoteJarClassLoader classLoader = RemoteJarLoaderUtils.loadJar(loadJarFilePath);
+      RemoteJarClassLoader classLoader = RemoteJarLoaderUtils.loadJar(jarFilePath);
       invokers.addAll(RemoteJarLoaderUtils.loadService(ReplayExtensionInvoker.class, classLoader));
     } catch (Throwable t) {
       LOGGER.error("Load invoker jar failed, application startup blocked", t);
