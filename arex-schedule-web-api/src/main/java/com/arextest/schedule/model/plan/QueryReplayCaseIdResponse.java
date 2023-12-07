@@ -10,9 +10,9 @@ import lombok.Data;
  */
 @Data
 public class QueryReplayCaseIdResponse {
-  private Map<String, List<String>> batchCaseIdsMap;
-
-  private Map<String, String> batchWarmUpCaseIdMap;
+  private List<ReplayCaseBatchInfo> replayCaseBatchInfos;
 
   private String planId;
+
+
 }

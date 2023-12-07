@@ -29,6 +29,7 @@ import com.arextest.schedule.model.plan.PreSendRequest;
 import com.arextest.schedule.model.plan.QueryReplayCaseIdResponse;
 import com.arextest.schedule.model.plan.QueryReplaySenderParametersRequest;
 import com.arextest.schedule.model.plan.QueryReplaySenderParametersResponse;
+import com.arextest.schedule.model.plan.ReplayCaseBatchInfo;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.plan.builder.BuildPlanValidateResult;
@@ -101,10 +102,8 @@ public class LocalReplayService {
 
   public CommonResponse queryReplayCaseId(BuildReplayPlanRequest request) {
     final QueryReplayCaseIdResponse response = new QueryReplayCaseIdResponse();
-    final Map<String, String> batchWarmUpCaseIdMap = new HashMap<>();
-    final Map<String, List<String>> batchCaseIdsMap = new HashMap<>();
-    response.setBatchCaseIdsMap(batchCaseIdsMap);
-    response.setBatchWarmUpCaseIdMap(batchWarmUpCaseIdMap);
+    final List<ReplayCaseBatchInfo> replayCaseBatchInfos = new ArrayList<>();
+    response.setReplayCaseBatchInfos(replayCaseBatchInfos);
 
     Pair<ReplayPlan, CommonResponse> pair = buildReplayPlan(request);
     if (pair.getLeft() == null) {
@@ -113,6 +112,10 @@ public class LocalReplayService {
     ReplayPlan replayPlan = pair.getLeft();
     Set<String> planItemIds = new HashSet<>();
     for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
+      ReplayCaseBatchInfo replayCaseBatchInfo = new ReplayCaseBatchInfo();
+      replayCaseBatchInfo.setCaseIds(new ArrayList<>());
+      ReplayCaseBatchInfo replayCaseBatchInfoForWarmUp = new ReplayCaseBatchInfo();
+
       ContextDependenciesHolder dependencyHolder = (ContextDependenciesHolder) executionContext.getDependencies();
       String contextIdentifier = dependencyHolder.getContextIdentifier();
       if (StringUtils.isNotEmpty(contextIdentifier)) {
@@ -121,13 +124,12 @@ public class LocalReplayService {
             replayPlan.getId(),
             dependencyHolder.getContextIdentifier());
         if (warmupCase != null) {
-          batchWarmUpCaseIdMap.put(contextIdentifier, warmupCase.getId());
+          replayCaseBatchInfoForWarmUp.setWarmUpId(contextIdentifier);
+          replayCaseBatchInfoForWarmUp.setCaseIds(Collections.singletonList(warmupCase.getId()));
+          replayCaseBatchInfos.add(replayCaseBatchInfoForWarmUp);
         }
       }
 
-      if (contextIdentifier == null) {
-        contextIdentifier = "null";
-      }
       // other cases
       List<ReplayActionCaseItem> caseItems = Collections.emptyList();
       while (true) {
@@ -142,13 +144,16 @@ public class LocalReplayService {
         if (CollectionUtils.isEmpty(caseItems)) {
           break;
         }
-        List<String> caseIdList = batchCaseIdsMap.getOrDefault(contextIdentifier,
-            new ArrayList<>());
+        List<String> caseIdList = replayCaseBatchInfo.getCaseIds();
         caseItems.forEach(replayActionCaseItem -> {
           planItemIds.add(replayActionCaseItem.getPlanItemId());
           caseIdList.add(replayActionCaseItem.getId());
         });
-        batchCaseIdsMap.put(contextIdentifier, caseIdList);
+      }
+      if (StringUtils.isEmpty(contextIdentifier)) {
+        replayCaseBatchInfos.set(0, replayCaseBatchInfo);
+      } else {
+        replayCaseBatchInfos.add(replayCaseBatchInfo);
       }
     }
     response.setPlanId(replayPlan.getId());
