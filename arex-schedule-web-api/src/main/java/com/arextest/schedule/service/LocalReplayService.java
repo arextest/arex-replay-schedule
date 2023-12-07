@@ -151,7 +151,7 @@ public class LocalReplayService {
         });
       }
       if (StringUtils.isEmpty(contextIdentifier)) {
-        replayCaseBatchInfos.set(0, replayCaseBatchInfo);
+        replayCaseBatchInfos.add(0, replayCaseBatchInfo);
       } else {
         replayCaseBatchInfos.add(replayCaseBatchInfo);
       }
