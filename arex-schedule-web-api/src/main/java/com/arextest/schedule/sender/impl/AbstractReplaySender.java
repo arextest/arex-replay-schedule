@@ -1,10 +1,6 @@
 package com.arextest.schedule.sender.impl;
 
-import com.arextest.common.model.classloader.RemoteJarClassLoader;
-import com.arextest.common.utils.RemoteJarLoaderUtils;
-import com.arextest.schedule.common.ClassLoaderUtils;
 import com.arextest.schedule.common.CommonConstant;
-import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.deploy.ServiceInstance;
@@ -12,7 +8,6 @@ import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.ReplaySender;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -26,25 +21,6 @@ import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 abstract class AbstractReplaySender implements ReplaySender {
-
-  protected static final List<ReplayExtensionInvoker> INVOKERS = new ArrayList<>();
-  private static final String JAR_FILE_PATH = System.getProperty("replay.sender.extension.jarPath");
-  private static final String TOMCAT_JAR_FILE_PATH = "/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/lib/dubboInvoker.jar";
-
-  static {
-    //If no invoker is specified by JAR_FILE_PATH, load default DubboInvoker. This mechanism is to avoid dependency conflicts.
-    String loadJarFilePath =
-        StringUtils.isEmpty(JAR_FILE_PATH) ? TOMCAT_JAR_FILE_PATH : JAR_FILE_PATH;
-    ClassLoaderUtils.loadJar(loadJarFilePath);
-    try {
-      RemoteJarClassLoader classLoader = RemoteJarLoaderUtils.loadJar(loadJarFilePath);
-      INVOKERS.addAll(RemoteJarLoaderUtils.loadService(ReplayExtensionInvoker.class, classLoader));
-    } catch (Throwable t) {
-      LOGGER.error("Load invoker jar failed, application startup blocked", t);
-      throw new RuntimeException("Load invoker jar failed");
-    }
-    LOGGER.info("Load invoker jar success, invokers: {}", INVOKERS);
-  }
 
   @Resource
   private MockCachePreLoader mockCachePreLoader;

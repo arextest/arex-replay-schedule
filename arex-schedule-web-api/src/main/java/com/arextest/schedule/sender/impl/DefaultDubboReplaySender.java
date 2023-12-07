@@ -15,12 +15,14 @@ import com.arextest.schedule.sender.SenderParameters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Resource;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
@@ -31,6 +33,9 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 public class DefaultDubboReplaySender extends AbstractReplaySender {
+
+  @Resource
+  private List<ReplayExtensionInvoker> replayExtensionInvokers;
 
   @Override
   public boolean isSupported(String categoryType) {
@@ -94,10 +99,10 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
     if (dubboInvocation == null) {
       return false;
     }
-    if (CollectionUtils.isEmpty(INVOKERS)) {
+    if (CollectionUtils.isEmpty(replayExtensionInvokers)) {
       LOGGER.error("no invokers");
     }
-    for (ReplayExtensionInvoker invoker : AbstractReplaySender.INVOKERS) {
+    for (ReplayExtensionInvoker invoker : replayExtensionInvokers) {
       if (invoker.isSupported(caseItem.getCaseType())) {
         dubboInvocation.setInvoker(invoker);
         replayInvokeResult = invoker.invoke(dubboInvocation);
