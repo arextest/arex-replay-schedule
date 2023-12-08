@@ -52,7 +52,7 @@ public interface ProgressEvent {
     if (this.onBeforeReplayPlanFinish(replayPlan)) {
       this.onReplayPlanFinish(replayPlan, ReplayStatusType.FINISHED);
     } else {
-      this.onReplayPlanReRun(replayPlan);
+      this.onReplayPlanAutoRerun(replayPlan);
     }
   }
 

@@ -276,7 +276,7 @@ public final class ReplayReportService implements ComparisonWriter {
     request.setPlanId(planId);
     request.setAppId(appId);
     request.setPageSize(1);
-    request.setPageIndex(0);
+    request.setPageIndex(1);
     QueryPlanStatisticsResponseType response = httpWepServiceApiClient.jsonPost(
         queryPlanStatisticsUrl, request, QueryPlanStatisticsResponseType.class);
     LOGGER.info("queryPlanStatistic request:{}, response:{}", request, response);
