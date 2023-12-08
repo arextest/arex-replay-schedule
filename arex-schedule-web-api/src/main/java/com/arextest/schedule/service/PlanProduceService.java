@@ -7,11 +7,13 @@ import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_EXPIRE
 import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_KEY;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.bizlog.BizLogger;
+import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.exceptions.PlanRunningException;
 import com.arextest.schedule.mdc.MDCTracer;
+import com.arextest.schedule.model.CaseSourceEnvType;
 import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
@@ -33,6 +35,7 @@ import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import com.arextest.schedule.utils.StageUtils;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -82,6 +85,7 @@ public class PlanProduceService {
   }
 
   public CommonResponse createPlan(BuildReplayPlanRequest request) throws PlanRunningException {
+    fillOptionalValueIfRequestMissed(request);
     progressEvent.onBeforePlanCreate(request);
 
     long planCreateMillis = System.currentTimeMillis();
@@ -152,7 +156,26 @@ public class PlanProduceService {
         new BuildReplayPlanResponse(replayPlan.getId()));
   }
 
-  private ReplayPlan build(BuildReplayPlanRequest request, PlanContext planContext) {
+  public void fillOptionalValueIfRequestMissed(BuildReplayPlanRequest request) {
+    long currentTimeMillis = System.currentTimeMillis();
+    Date fromDate = new Date(currentTimeMillis - CommonConstant.ONE_DAY_MILLIS);
+    Date toDate = new Date(currentTimeMillis);
+    if (request.getCaseSourceFrom() == null) {
+      request.setCaseSourceFrom(fromDate);
+    }
+    if (request.getCaseSourceTo() == null) {
+      request.setCaseSourceTo(toDate);
+    }
+    if (StringUtils.isBlank(request.getPlanName())) {
+      request.setPlanName(
+          request.getAppId() + "_" + new SimpleDateFormat("MMdd_HH:mm").format(toDate));
+    }
+    if (request.getCaseSourceType() == null) {
+      request.setCaseSourceType(CaseSourceEnvType.TEST.getValue());
+    }
+  }
+
+  public ReplayPlan build(BuildReplayPlanRequest request, PlanContext planContext) {
     String appId = request.getAppId();
     ReplayPlan replayPlan = new ReplayPlan();
 
@@ -214,7 +237,7 @@ public class PlanProduceService {
     return serviceInstances.stream().map(ServiceInstance::getIp).collect(Collectors.joining(","));
   }
 
-  private ReplayPlanBuilder select(BuildReplayPlanRequest request) {
+  public ReplayPlanBuilder select(BuildReplayPlanRequest request) {
     for (ReplayPlanBuilder replayPlanBuilder : replayPlanBuilderList) {
       if (replayPlanBuilder.isSupported(request)) {
         return replayPlanBuilder;
@@ -285,7 +308,7 @@ public class PlanProduceService {
   /**
    * map internal validation code to VO reason code
    */
-  private BuildReplayFailReasonEnum validateToResultReason(BuildPlanValidateResult validateResult) {
+  public BuildReplayFailReasonEnum validateToResultReason(BuildPlanValidateResult validateResult) {
     switch (validateResult.getCodeValue()) {
       case BuildPlanValidateResult.REQUESTED_EMPTY_OPERATION:
         return BuildReplayFailReasonEnum.NO_INTERFACE_FOUND;

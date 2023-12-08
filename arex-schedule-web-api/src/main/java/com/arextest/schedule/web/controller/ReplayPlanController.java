@@ -118,24 +118,7 @@ public class ReplayPlanController {
     return debugRequestService.debugRequest(requestItem);
   }
 
-  private void fillOptionalValueIfRequestMissed(BuildReplayPlanRequest request) {
-    long currentTimeMillis = System.currentTimeMillis();
-    Date fromDate = new Date(currentTimeMillis - CommonConstant.ONE_DAY_MILLIS);
-    Date toDate = new Date(currentTimeMillis);
-    if (request.getCaseSourceFrom() == null) {
-      request.setCaseSourceFrom(fromDate);
-    }
-    if (request.getCaseSourceTo() == null) {
-      request.setCaseSourceTo(toDate);
-    }
-    if (StringUtils.isBlank(request.getPlanName())) {
-      request.setPlanName(
-          request.getAppId() + "_" + new SimpleDateFormat("MMdd_HH:mm").format(toDate));
-    }
-    if (request.getCaseSourceType() == null) {
-      request.setCaseSourceType(CaseSourceEnvType.TEST.getValue());
-    }
-  }
+
 
   private CommonResponse createPlan(BuildReplayPlanRequest request) {
     if (request == null) {
@@ -143,7 +126,6 @@ public class ReplayPlanController {
     }
     try {
       MDCTracer.addAppId(request.getAppId());
-      fillOptionalValueIfRequestMissed(request);
       return planProduceService.createPlan(request);
     } catch (Throwable e) {
       LOGGER.error("create plan error: {} , request: {}", e.getMessage(), request, e);

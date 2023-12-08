@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @SuppressWarnings("UnstableApiUsage")
 @Slf4j
-public final class SendSemaphoreLimiter {
+public final class SendSemaphoreLimiter implements SendLimiter {
 
   public static final double[] QPS_STEP_RATIO = {0.3, 0.5, 0.7, 1};
   public static final int DEFAULT_MAX_RATE = 20;
@@ -59,19 +59,23 @@ public final class SendSemaphoreLimiter {
     this.permits = actualInitialMinQps;
   }
 
+  @Override
   public boolean failBreak() {
     return checker.failBreak();
   }
 
+  @Override
   public void acquire() {
     checker.tryChangeRate();
     rateLimiter.acquire();
   }
 
+  @Override
   public void release(boolean success) {
     checker.statistic(success);
   }
 
+  @Override
   public void batchRelease(boolean success, int size) {
     if (success) {
       checker.batchSuccess(size);
@@ -122,14 +126,17 @@ public final class SendSemaphoreLimiter {
     return rate;
   }
 
+  @Override
   public int totalError() {
     return this.checker.failCounter.get();
   }
 
+  @Override
   public int continuousError() {
     return this.checker.continuousSuccessCounter.get();
   }
 
+  @Override
   public synchronized void reset() {
     this.checker.reset();
     this.rateLimiter.setRate(this.sendInitialRate);

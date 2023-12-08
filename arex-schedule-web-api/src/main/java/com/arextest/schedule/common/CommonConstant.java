@@ -17,6 +17,7 @@ public final class CommonConstant {
   public static final String X_AREX_EXCLUSION_OPERATIONS = "X-AREX-Exclusion-Operations";
 
   public static final long ONE_DAY_MILLIS = 60 * 60 * 24 * 1000L;
+  public static final long ONE_HOUR_MILLIS = 60 * 60 * 1000L;
   public static final long THREE_SECOND_MILLIS = 3 * 1000L;
   public static final int OPERATION_MAX_CASE_COUNT = 1000;
 
