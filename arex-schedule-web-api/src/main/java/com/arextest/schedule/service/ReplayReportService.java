@@ -15,9 +15,12 @@ import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.converter.ReplayCompareResultConverter;
 import com.arextest.web.model.contract.contracts.ChangeReplayStatusRequestType;
+import com.arextest.web.model.contract.contracts.QueryPlanStatisticsRequestType;
+import com.arextest.web.model.contract.contracts.QueryPlanStatisticsResponseType;
 import com.arextest.web.model.contract.contracts.RemoveErrorMsgRequest;
 import com.arextest.web.model.contract.contracts.RemoveRecordsAndScenesRequest;
 import com.arextest.web.model.contract.contracts.ReportInitialRequestType;
+import com.arextest.web.model.contract.contracts.common.PlanStatistic;
 import com.arextest.web.model.contract.contracts.replay.AnalyzeCompareResultsRequestType;
 import com.arextest.web.model.contract.contracts.replay.UpdateReportInfoRequestType;
 import java.util.ArrayList;
@@ -57,6 +60,9 @@ public final class ReplayReportService implements ComparisonWriter {
   private String removeRecordsUrl;
   @Value("${arex.api.remove.errorMsg.url}")
   private String removeErrorMsgUrl;
+  @Value("${arex.api.queryPlanStatistics.url}")
+  private String queryPlanStatisticsUrl;
+
 
   public boolean initReportInfo(ReplayPlan replayPlan) {
     ReportInitialRequestType requestType = new ReportInitialRequestType();
@@ -263,5 +269,20 @@ public final class ReplayReportService implements ComparisonWriter {
     Response response = httpWepServiceApiClient.jsonPost(removeErrorMsgUrl, request,
         GenericResponseType.class);
     LOGGER.info("removeErrorMsg request:{}, response:{}", request, response);
+  }
+
+  public PlanStatistic queryPlanStatistic(String planId, String appId) {
+    QueryPlanStatisticsRequestType request = new QueryPlanStatisticsRequestType();
+    request.setPlanId(planId);
+    request.setAppId(appId);
+    request.setPageSize(1);
+    request.setPageIndex(0);
+    QueryPlanStatisticsResponseType response = httpWepServiceApiClient.jsonPost(
+        queryPlanStatisticsUrl, request, QueryPlanStatisticsResponseType.class);
+    LOGGER.info("queryPlanStatistic request:{}, response:{}", request, response);
+    if (response == null || CollectionUtils.isEmpty(response.getPlanStatisticList())) {
+      return null;
+    }
+    return response.getPlanStatisticList().get(0);
   }
 }
