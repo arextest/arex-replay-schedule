@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Setter
 final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
 
-  private transient final ReplayCaseTransmitService transmitService;
+  private transient final ReplayCaseTransmitServiceImpl transmitService;
   private transient ReplaySender replaySender;
   private transient ReplayActionCaseItem caseItem;
   private transient CountDownLatch groupSentLatch;
@@ -29,7 +29,7 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
   private transient ExecutionStatus executionStatus;
   private transient MetricService metricService;
 
-  AsyncSendCaseTaskRunnable(ReplayCaseTransmitService transmitService) {
+  AsyncSendCaseTaskRunnable(ReplayCaseTransmitServiceImpl transmitService) {
     this.transmitService = transmitService;
   }
 

@@ -22,4 +22,13 @@ public enum CaseSendStatusType {
   CaseSendStatusType(int value) {
     this.value = value;
   }
+
+  public static CaseSendStatusType of (int value) {
+    for (CaseSendStatusType type : CaseSendStatusType.values()) {
+      if (type.getValue() == value) {
+        return type;
+      }
+    }
+    throw new IllegalArgumentException("Unkonwn value: " + value);
+  }
 }
