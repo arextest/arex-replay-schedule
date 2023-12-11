@@ -46,7 +46,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   @Resource
   private CacheProvider redisCacheProvider;
   @Resource
-  private AsyncEventBus asyncEventBus;
+  private AsyncEventBus autoRerunAsyncEventBus;
 
   @Value("${auto.rerun.threshold}")
   private double autoRerunThreshold;
@@ -120,7 +120,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   public void onReplayPlanAutoRerun(ReplayPlan replayPlan) {
     PlanAutoRerunEvent event = new PlanAutoRerunEvent();
     event.setPlanId(replayPlan.getId());
-    asyncEventBus.post(event);
+    autoRerunAsyncEventBus.post(event);
   }
 
   @Override
