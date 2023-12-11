@@ -4,13 +4,12 @@ import com.alibaba.fastjson2.util.DateUtils;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
-import com.arextest.schedule.exceptions.PlanRunningException;
+import com.arextest.schedule.eventBus.PlanAutoRerunEvent;
 import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.plan.PlanStageEnum;
-import com.arextest.schedule.model.plan.ReRunReplayPlanRequest;
 import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
 import com.arextest.schedule.model.plan.StageBaseInfo;
 import com.arextest.schedule.model.plan.StageStatusEnum;
@@ -20,6 +19,7 @@ import com.arextest.schedule.service.PlanProduceService;
 import com.arextest.schedule.service.ReplayReportService;
 import com.arextest.schedule.utils.StageUtils;
 import com.arextest.web.model.contract.contracts.common.PlanStatistic;
+import com.google.common.eventbus.AsyncEventBus;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -42,11 +42,11 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   @Resource
   private ReplayReportService replayReportService;
   @Resource
-  private PlanProduceService planProduceService;
-  @Resource
   private MetricService metricService;
   @Resource
   private CacheProvider redisCacheProvider;
+  @Resource
+  private AsyncEventBus asyncEventBus;
 
   @Value("${auto.rerun.threshold}")
   private double autoRerunThreshold;
@@ -92,7 +92,17 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     if (replayPlan.isReRun()) {
       return true;
     }
+    if (autoRerunThreshold == 1) {
+      return true;
+    }
     // When pass rate is more than the threshold
+    // wait 5 seconds to check the plan statistic
+    try {
+      Thread.sleep(5000);
+    } catch (InterruptedException e) {
+      LOGGER.error("sleep error:{}", e.getMessage(), e);
+    }
+
     PlanStatistic planStatistic = replayReportService.queryPlanStatistic(replayPlan.getId(),
         replayPlan.getAppId());
     if (planStatistic == null || planStatistic.getTotalCaseCount() == 0) {
@@ -108,15 +118,9 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
 
   @Override
   public void onReplayPlanAutoRerun(ReplayPlan replayPlan) {
-    ReRunReplayPlanRequest reRunReplayPlanRequest = new ReRunReplayPlanRequest();
-    reRunReplayPlanRequest.setPlanId(replayPlan.getId());
-    reRunReplayPlanRequest.setOperator("auto");
-    try {
-      planProduceService.reRunPlan(reRunReplayPlanRequest);
-    } catch (PlanRunningException e) {
-      LOGGER.error("auto rerun plan error, plan id:{}", replayPlan.getId(), e);
-      onReplayPlanFinish(replayPlan, ReplayStatusType.FINISHED);
-    }
+    PlanAutoRerunEvent event = new PlanAutoRerunEvent();
+    event.setPlanId(replayPlan.getId());
+    asyncEventBus.post(event);
   }
 
   @Override
