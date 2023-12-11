@@ -101,6 +101,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
       Thread.sleep(5000);
     } catch (InterruptedException e) {
       LOGGER.error("sleep error:{}", e.getMessage(), e);
+      Thread.currentThread().interrupt();
     }
 
     PlanStatistic planStatistic = replayReportService.queryPlanStatistic(replayPlan.getId(),
