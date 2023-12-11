@@ -43,7 +43,7 @@ public final class PlanConsumeService {
   @Resource
   private ReplayActionCaseItemRepository replayActionCaseItemRepository;
   @Resource
-  private ReplayCaseTransmitService replayCaseTransmitService;
+  private ReplayCaseTransmitServiceImpl replayCaseTransmitServiceRemoteImpl;
   @Resource
   private ExecutorService preloadExecutorService;
   @Resource
@@ -120,7 +120,7 @@ public final class PlanConsumeService {
     switch (executionContext.getActionType()) {
       case SKIP_CASE_OF_CONTEXT:
         // skip all cases of this context leaving the status as default
-        replayCaseTransmitService.releaseCasesOfContext(replayPlan, executionContext);
+        replayCaseTransmitServiceRemoteImpl.releaseCasesOfContext(replayPlan, executionContext);
         break;
       case NORMAL:
       default:
@@ -150,7 +150,7 @@ public final class PlanConsumeService {
       }
       contextCount += caseItems.size();
       ReplayParentBinder.setupCaseItemParent(caseItems, replayPlan);
-      replayCaseTransmitService.send(caseItems, executionContext);
+      replayCaseTransmitServiceRemoteImpl.send(caseItems, executionContext);
     }
     BizLogger.recordContextProcessedNormal(executionContext, contextCount);
   }

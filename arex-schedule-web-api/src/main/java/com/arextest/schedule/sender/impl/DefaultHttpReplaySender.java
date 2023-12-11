@@ -11,6 +11,7 @@ import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.ReplaySenderParameters;
 import com.arextest.schedule.sender.SenderParameters;
 import com.arextest.schedule.service.MetricService;
+import com.arextest.schedule.utils.DecodeUtils;
 import java.util.Base64;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -29,9 +30,6 @@ import org.springframework.util.StopWatch;
 @Slf4j
 @Component
 public final class DefaultHttpReplaySender extends AbstractReplaySender {
-
-  private static final String PATTERN_STRING = "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$";
-  private static final Pattern BASE_64_PATTERN = Pattern.compile(PATTERN_STRING);
   @Resource
   private HttpWepServiceApiClient httpWepServiceApiClient;
   @Resource
@@ -158,7 +156,7 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
     Class<?> responseType = String.class;
     final HttpEntity<?> httpEntity;
     if (shouldApplyHttpBody(httpMethod)) {
-      Object decodeMessage = decode(requestMessage);
+      Object decodeMessage = DecodeUtils.decode(requestMessage);
       if (byte[].class == decodeMessage.getClass()) {
         responseType = byte[].class;
       }
@@ -200,13 +198,6 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
     }
     httpHeaders.setContentType(contentType);
     return httpHeaders;
-  }
-
-  private Object decode(String requestMessage) {
-    if (BASE_64_PATTERN.matcher(requestMessage).matches()) {
-      return Base64.getDecoder().decode(requestMessage);
-    }
-    return requestMessage;
   }
 
   private boolean shouldApplyHttpBody(HttpMethod httpMethod) {

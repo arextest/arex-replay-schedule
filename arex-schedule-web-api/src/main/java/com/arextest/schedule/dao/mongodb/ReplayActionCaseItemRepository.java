@@ -6,6 +6,7 @@ import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.CompareProcessStatusType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.converter.ReplayRunDetailsConverter;
+import com.arextest.schedule.model.dao.mongodb.ModelBase;
 import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
@@ -230,6 +231,23 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         ReplayRunDetailsCollection.class);
     return converter.dtoFromDao(replayRunDetailsCollection);
   }
+
+  public ReplayActionCaseItem queryById(String caseId) {
+    Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_ID).is(caseId));
+    ReplayRunDetailsCollection replayRunDetailsCollection = mongoTemplate.findOne(query,
+        ReplayRunDetailsCollection.class);
+    return converter.dtoFromDao(replayRunDetailsCollection);
+  }
+
+  public List<ReplayActionCaseItem> batchQueryById(List<String> caseIdList) {
+    Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_ID).in(caseIdList));
+    List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query,
+        ReplayRunDetailsCollection.class);
+    return replayRunDetailsCollections.stream()
+        .map(replayRunDetailsCollection -> converter.dtoFromDao(replayRunDetailsCollection))
+        .collect(Collectors.toList());
+  }
+
 
   @Data
   private static class GroupCountRes {
