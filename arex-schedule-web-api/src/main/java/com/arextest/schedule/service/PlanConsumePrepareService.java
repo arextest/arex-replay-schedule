@@ -73,9 +73,7 @@ public class PlanConsumePrepareService {
     metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(),
         replayPlan.getAppId(), null, System.currentTimeMillis() - replayPlan.getPlanCreateMillis());
     int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());
-    if (replayPlan.isReRun()) {
-      replayPlan.setReRunCaseCount(planSavedCaseSize);
-    } else if (planSavedCaseSize != replayPlan.getCaseTotalCount()) {
+    if (!replayPlan.isReRun() && planSavedCaseSize != replayPlan.getCaseTotalCount()) {
       LOGGER.info("update the plan TotalCount, plan id:{} ,appId: {} , size: {} -> {}",
           replayPlan.getId(),
           replayPlan.getAppId(), replayPlan.getCaseTotalCount(), planSavedCaseSize);
@@ -100,9 +98,7 @@ public class PlanConsumePrepareService {
       int actionSavedCount = streamingCaseItemSave(replayActionItem);
 
       planSavedCaseSize += actionSavedCount;
-      if (replayActionItem.getParent().isReRun()) {
-        replayActionItem.setRerunCaseCount(actionSavedCount);
-      } else if (preloaded != actionSavedCount) {
+      if (!replayActionItem.getParent().isReRun() && preloaded != actionSavedCount) {
         replayActionItem.setReplayCaseCount(actionSavedCount);
         LOGGER.warn("The saved case size of actionItem not equals, preloaded size:{},saved size:{}",
             preloaded,

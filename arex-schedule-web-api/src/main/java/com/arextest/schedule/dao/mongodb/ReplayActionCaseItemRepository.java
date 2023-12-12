@@ -91,8 +91,12 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     Optional.ofNullable(baseCriteria).ifPresent(criteria -> criteria.forEach(query::addCriteria));
 
     query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
-    query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS)
-        .is(CaseSendStatusType.WAIT_HANDLING.getValue()));
+    query.addCriteria(new Criteria().orOperator(
+        Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS)
+            .is(CaseSendStatusType.WAIT_HANDLING.getValue()),
+        Criteria.where(ReplayActionCaseItem.FIELD_COMPARE_STATUS)
+            .is(CompareProcessStatusType.WAIT_HANDLING.getValue())
+    ));
     if (StringUtils.hasText(minId)) {
       query.addCriteria(Criteria.where(DASH_ID).gt(new ObjectId(minId)));
     }
