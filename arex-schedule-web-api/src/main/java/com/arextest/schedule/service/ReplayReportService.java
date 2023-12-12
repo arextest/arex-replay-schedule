@@ -2,6 +2,7 @@ package com.arextest.schedule.service;
 
 import com.arextest.common.model.response.GenericResponseType;
 import com.arextest.common.model.response.Response;
+import com.arextest.common.model.response.ResponseStatusType;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.model.mock.MockCategoryType;
@@ -15,9 +16,12 @@ import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.converter.ReplayCompareResultConverter;
 import com.arextest.web.model.contract.contracts.ChangeReplayStatusRequestType;
+import com.arextest.web.model.contract.contracts.QueryPlanStatisticRequestType;
+import com.arextest.web.model.contract.contracts.QueryPlanStatisticResponseType;
 import com.arextest.web.model.contract.contracts.RemoveErrorMsgRequest;
 import com.arextest.web.model.contract.contracts.RemoveRecordsAndScenesRequest;
 import com.arextest.web.model.contract.contracts.ReportInitialRequestType;
+import com.arextest.web.model.contract.contracts.common.PlanStatistic;
 import com.arextest.web.model.contract.contracts.replay.AnalyzeCompareResultsRequestType;
 import com.arextest.web.model.contract.contracts.replay.UpdateReportInfoRequestType;
 import java.util.ArrayList;
@@ -26,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -57,6 +62,9 @@ public final class ReplayReportService implements ComparisonWriter {
   private String removeRecordsUrl;
   @Value("${arex.api.remove.errorMsg.url}")
   private String removeErrorMsgUrl;
+  @Value("${arex.api.queryPlanStatistic.url}")
+  private String queryPlanStatisticUrl;
+
 
   public boolean initReportInfo(ReplayPlan replayPlan) {
     ReportInitialRequestType requestType = new ReportInitialRequestType();
@@ -263,5 +271,24 @@ public final class ReplayReportService implements ComparisonWriter {
     Response response = httpWepServiceApiClient.jsonPost(removeErrorMsgUrl, request,
         GenericResponseType.class);
     LOGGER.info("removeErrorMsg request:{}, response:{}", request, response);
+  }
+
+  public PlanStatistic queryPlanStatistic(String planId, String appId) {
+    QueryPlanStatisticRequestType request = new QueryPlanStatisticRequestType();
+    request.setPlanId(planId);
+    request.setAppId(appId);
+      QueryPlanStatisticResponseWrapper response = httpWepServiceApiClient.jsonPost(
+          queryPlanStatisticUrl, request, QueryPlanStatisticResponseWrapper.class);
+      LOGGER.info("queryPlanStatistic request:{}, response:{}", request, response);
+      if (response == null || response.getBody() == null) {
+        return null;
+      }
+      return response.getBody().getPlanStatistic();
+  }
+
+  @Data
+  static class QueryPlanStatisticResponseWrapper implements Response {
+    private QueryPlanStatisticResponseType body;
+    private ResponseStatusType responseStatusType;
   }
 }

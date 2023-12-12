@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.util.DateUtils;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
+import com.arextest.schedule.eventBus.PlanAutoRerunEvent;
 import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
@@ -16,13 +17,15 @@ import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.service.MetricService;
 import com.arextest.schedule.service.PlanProduceService;
 import com.arextest.schedule.service.ReplayReportService;
-import com.arextest.schedule.service.ReplayStorageService;
 import com.arextest.schedule.utils.StageUtils;
+import com.arextest.web.model.contract.contracts.common.PlanStatistic;
+import com.google.common.eventbus.AsyncEventBus;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * @author jmo
@@ -42,6 +45,11 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   private MetricService metricService;
   @Resource
   private CacheProvider redisCacheProvider;
+  @Resource
+  private AsyncEventBus autoRerunAsyncEventBus;
+
+  @Value("${auto.rerun.threshold}")
+  private double autoRerunThreshold;
 
   @Override
   public void onReplayPlanReRunException(ReplayPlan plan, Throwable t) {
@@ -77,6 +85,44 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
         null, System.currentTimeMillis(), null);
   }
 
+  @Override
+  public boolean onBeforeReplayPlanFinish(ReplayPlan replayPlan) {
+    redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayPlan.getId()));
+    // only auto rerun once
+    if (replayPlan.isReRun()) {
+      return true;
+    }
+    if (autoRerunThreshold == 1) {
+      return true;
+    }
+    // When pass rate is more than the threshold
+    // wait 5 seconds to check the plan statistic
+    try {
+      Thread.sleep(5000);
+    } catch (InterruptedException e) {
+      LOGGER.error("sleep error:{}", e.getMessage(), e);
+      Thread.currentThread().interrupt();
+    }
+
+    PlanStatistic planStatistic = replayReportService.queryPlanStatistic(replayPlan.getId(),
+        replayPlan.getAppId());
+    if (planStatistic == null || planStatistic.getTotalCaseCount() == 0) {
+      LOGGER.error("query plan statistic error, plan id:{}", replayPlan.getId());
+      return true;
+    }
+    if (((double) planStatistic.getSuccessCaseCount()) / planStatistic.getTotalCaseCount()
+        < autoRerunThreshold) {
+      return true;
+    }
+    return false;
+  }
+
+  @Override
+  public void onReplayPlanAutoRerun(ReplayPlan replayPlan) {
+    PlanAutoRerunEvent event = new PlanAutoRerunEvent();
+    event.setPlanId(replayPlan.getId());
+    autoRerunAsyncEventBus.post(event);
+  }
 
   @Override
   public void onReplayPlanFinish(ReplayPlan replayPlan, ReplayStatusType reason) {
@@ -86,7 +132,6 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
     replayReportService.pushPlanStatus(planId, reason, null, replayPlan.isReRun());
     recordPlanExecutionTime(replayPlan);
-    redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayPlan.getId()));
   }
 
   @Override

@@ -30,7 +30,9 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
   private static final int COMPARE_QUEUE_MAX_CAPACITY_SIZE = 2000;
   private static final int PRELOAD_QUEUE_MAX_CAPACITY_SIZE = 100;
   private static final int NOISE_ANALYSIS_QUEUE_MAX_CAPACITY_SIZE = 100;
+  private static final int AUTO_RERUN_QUEUE_MAX_CAPACITY_SIZE = 100;
   private static final int POST_SEND_QUEUE_MAX_CAPACITY_SIZE = 100;
+
 
   @Value("${arex.schedule.pool.io.cpuratio}")
   private int cpuRatio;
@@ -94,6 +96,17 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
         new ThreadPoolExecutor.CallerRunsPolicy());
   }
 
+  @Bean
+  public ExecutorService autoRerunExecutorService() {
+    ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("replay-auto-rerun-%d")
+        .setDaemon(true)
+        .setUncaughtExceptionHandler(this).build();
+    return new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_POOL_SIZE, KEEP_ALIVE_TIME,
+        TimeUnit.MILLISECONDS,
+        new LinkedBlockingQueue<>(AUTO_RERUN_QUEUE_MAX_CAPACITY_SIZE), threadFactory,
+        new ThreadPoolExecutor.CallerRunsPolicy());
+  }                       
+                                
   @Bean
   public ExecutorService postSendExecutorService() {
     ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("post-send-%d")

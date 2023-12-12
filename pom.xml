@@ -289,7 +289,7 @@
     <sonar.jacoco.reportPath>${jacoco.report.path}</sonar.jacoco.reportPath>
     <!-- Users could specify this property as true to skip the deploy process -->
     <spring.boot.version>2.6.3</spring.boot.version>
-    <web-contract.version>0.6.0.9</web-contract.version>
+    <web-contract.version>0.6.0.12</web-contract.version>
   </properties>
 
   <scm>
@@ -299,5 +299,5 @@
     <url>https://github.com/arextest/arex-replay-schedule</url>
   </scm>
   <url>https://github.com/arextest/arex-replay-schedule</url>
-  <version>1.0.46</version>
+  <version>1.0.47</version>
 </project>

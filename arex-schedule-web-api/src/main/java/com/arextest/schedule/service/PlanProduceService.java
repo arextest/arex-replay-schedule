@@ -11,6 +11,7 @@ import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
+import com.arextest.schedule.eventBus.PlanAutoRerunEvent;
 import com.arextest.schedule.exceptions.PlanRunningException;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSourceEnvType;
@@ -18,6 +19,7 @@ import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.deploy.DeploymentVersion;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
@@ -34,11 +36,14 @@ import com.arextest.schedule.planexecution.PlanExecutionMonitor;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import com.arextest.schedule.utils.StageUtils;
+import com.google.common.eventbus.AsyncEventBus;
+import com.google.common.eventbus.Subscribe;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -53,6 +58,7 @@ import org.springframework.stereotype.Service;
 public class PlanProduceService {
 
   private static final String PLAN_RUNNING_KEY_FORMAT = "plan_running_%s";
+  private static final String AUTO_OPERATOR = "Auto";
   @Resource
   private List<ReplayPlanBuilder> replayPlanBuilderList;
   @Resource
@@ -75,6 +81,13 @@ public class PlanProduceService {
   private PlanExecutionMonitor planExecutionMonitorImpl;
   @Resource
   private ReplayActionCaseItemRepository replayActionCaseItemRepository;
+  @Resource
+  private AsyncEventBus autoRerunAsyncEventBus;
+
+  @PostConstruct
+  public void init() {
+    autoRerunAsyncEventBus.register(this);
+  }
 
   public static byte[] buildStopPlanRedisKey(String planId) {
     return (STOP_PLAN_REDIS_KEY + planId).getBytes(StandardCharsets.UTF_8);
@@ -389,5 +402,28 @@ public class PlanProduceService {
     planConsumeService.runAsyncConsume(replayPlan);
     return CommonResponse.successResponse("ReRun plan success！",
         new BuildReplayPlanResponse(replayPlan.getId()));
+  }
+
+  @Subscribe
+  public void planAutoRerun(PlanAutoRerunEvent event) {
+    ReRunReplayPlanRequest request = new ReRunReplayPlanRequest();
+    request.setPlanId(event.getPlanId());
+    request.setOperator(AUTO_OPERATOR);
+    try {
+      CommonResponse response = this.reRunPlan(request);
+      if (response.getResult() != 1) {
+        LOGGER.error("Auto rerun plan fail, planId: {}", event.getPlanId());
+        finishPlan(event.getPlanId());
+      }
+    } catch (PlanRunningException e) {
+      LOGGER.error("Auto rerun plan fail, planId: {}", event.getPlanId(), e);
+      finishPlan(event.getPlanId());
+    }
+  }
+
+  private void finishPlan(String planId) {
+    ReplayPlan replayPlan = new ReplayPlan();
+    replayPlan.setId(planId);
+    progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.FINISHED);
   }
 }
