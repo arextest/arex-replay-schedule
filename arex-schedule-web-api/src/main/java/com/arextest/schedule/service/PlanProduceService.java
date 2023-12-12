@@ -58,6 +58,7 @@ import org.springframework.stereotype.Service;
 public class PlanProduceService {
 
   private static final String PLAN_RUNNING_KEY_FORMAT = "plan_running_%s";
+  private static final String AUTO_OPERATOR = "Auto";
   @Resource
   private List<ReplayPlanBuilder> replayPlanBuilderList;
   @Resource
@@ -407,7 +408,7 @@ public class PlanProduceService {
   public void planAutoRerun(PlanAutoRerunEvent event) {
     ReRunReplayPlanRequest request = new ReRunReplayPlanRequest();
     request.setPlanId(event.getPlanId());
-    request.setOperator("Auto");
+    request.setOperator(AUTO_OPERATOR);
     try {
       CommonResponse response = this.reRunPlan(request);
       if (response.getResult() != 1) {
