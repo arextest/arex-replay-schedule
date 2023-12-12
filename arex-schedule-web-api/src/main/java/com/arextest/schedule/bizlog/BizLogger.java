@@ -6,10 +6,6 @@ import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.bizlog.BizLog;
 import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -37,13 +33,6 @@ public class BizLogger {
   public static void recordPlanAsyncStart(ReplayPlan plan) {
     BizLog log = BizLog.info().logType(BizLogContent.PLAN_ASYNC_RUN_START.getType())
         .message(BizLogContent.PLAN_ASYNC_RUN_START.format()).build();
-
-    log.postProcessAndEnqueue(plan);
-  }
-
-  public static void recordPlanCaseSaved(ReplayPlan plan, int size, long elapsed) {
-    BizLog log = BizLog.debug().logType(BizLogContent.PLAN_CASE_SAVED.getType())
-        .message(BizLogContent.PLAN_CASE_SAVED.format(size, elapsed)).build();
 
     log.postProcessAndEnqueue(plan);
   }
@@ -79,95 +68,15 @@ public class BizLogger {
   // endregion
 
 
-  public static void recordActionItemCaseCount(ReplayPlan plan) {
-    String totalMsg = plan.getReplayActionItemList().stream()
-        .filter(action -> action.getReplayCaseCount() > 0).map(
-            action -> BizLogContent.ACTION_ITEM_INIT_TOTAL_COUNT.format(action.getOperationName(),
-                action.getId(), action.getReplayCaseCount()))
-        .collect(Collectors.joining(System.lineSeparator()));
-
-    BizLog log = BizLog.debug().logType(BizLogContent.ACTION_ITEM_INIT_TOTAL_COUNT.getType())
-        .message(totalMsg)
-        .build();
-    log.postProcessAndEnqueue(plan);
-  }
-
-  public static void recordActionItemCaseReRunCount(ReplayActionItem action) {
-    BizLog log = BizLog.debug().logType(BizLogContent.ACTION_ITEM_INIT_TOTAL_RERUN_COUNT.getType())
-        .message(BizLogContent.ACTION_ITEM_INIT_TOTAL_RERUN_COUNT.format(action.getOperationName(),
-            action.getId(),
-            action.getReplayCaseCount()))
-        .build();
-
-    log.postProcessAndEnqueue(action);
-  }
-
-  // region <QPS>
-  public static void recordQpsInit(ReplayPlan plan, int initQps, int instanceCount) {
-    BizLog log = BizLog.debug().logType(BizLogContent.QPS_LIMITER_INIT.getType())
-        .message(BizLogContent.QPS_LIMITER_INIT.format(initQps, instanceCount)).build();
-
-    log.postProcessAndEnqueue(plan);
-  }
-
-  public static void recordQPSChange(ReplayPlan plan, int source, int target) {
-    BizLog log = BizLog.debug().logType(BizLogContent.QPS_LIMITER_CHANGE.getType())
-        .message(BizLogContent.QPS_LIMITER_CHANGE.format(source, target)).build();
-    if (plan != null) {
-      log.postProcessAndEnqueue(plan);
-    }
-  }
-
-  public static void recordQPSReset(@NotNull ReplayPlan plan, int target) {
-    BizLog log = BizLog.debug().logType(BizLogContent.QPS_LIMITER_RESET.getType())
-        .message(BizLogContent.QPS_LIMITER_RESET.format(target)).build();
-    log.postProcessAndEnqueue(plan);
-  }
-  // endregion
-
   // region <Context Level Log>
-  public static void recordContextBuilt(ReplayPlan plan, long elapsed) {
-    BizLog log = BizLog.debug().logType(BizLogContent.PLAN_CONTEXT_BUILT.getType())
-        .message(BizLogContent.PLAN_CONTEXT_BUILT
-            .format(
-                Optional.ofNullable(plan.getExecutionContexts()).map(Collection::size).orElse(0),
-                elapsed))
-        .build();
-
-    log.postProcessAndEnqueue(plan);
-  }
-
-  public static void recordContextBeforeRun(PlanExecutionContext<?> context, long elapsed) {
-    BizLog log = BizLog.debug().logType(BizLogContent.CONTEXT_START.getType())
-        .message(
-            BizLogContent.CONTEXT_START.format(context.getContextName(),
-                context.getActionType().name(), elapsed))
-        .build();
-
-    log.postProcessAndEnqueue(context);
-  }
-
-  public static void recordContextAfterRun(PlanExecutionContext<?> context, long elapsed) {
-    BizLog log = BizLog.debug().logType(BizLogContent.CONTEXT_AFTER_RUN.getType())
-        .message(BizLogContent.CONTEXT_AFTER_RUN.format(context.getContextName(), elapsed)).build();
-
-    log.postProcessAndEnqueue(context);
-  }
 
   public static void recordContextSkipped(PlanExecutionContext<?> context,
       ReplayActionItem actionItem,
       long skipCount) {
-    BizLog log = BizLog.info().logType(BizLogContent.CONTEXT_SKIP.getType())
+    BizLog log = BizLog.warn().logType(BizLogContent.CONTEXT_SKIP.getType())
         .message(BizLogContent.CONTEXT_SKIP.format(context.getContextName(), actionItem.getId(),
             skipCount))
         .build();
-
-    log.postProcessAndEnqueue(context);
-  }
-
-  public static void recordContextProcessedNormal(PlanExecutionContext<?> context, long sentCount) {
-    BizLog log = BizLog.debug().logType(BizLogContent.CONTEXT_NORMAL.getType())
-        .message(BizLogContent.CONTEXT_NORMAL.format(context.getContextName(), sentCount)).build();
 
     log.postProcessAndEnqueue(context);
   }
@@ -190,28 +99,13 @@ public class BizLogger {
   }
   // endregion
 
-  // region <noise identify Log>
-  public static void recordCaseForNoiseSendStart(@NotNull PlanExecutionContext<?> context,
-      int sentCount) {
-    BizLog log = BizLog.debug().logType(BizLogContent.NOISE_IDENTIFY_CASE_SEND_START.getType())
-        .message(BizLogContent.NOISE_IDENTIFY_CASE_SEND_START.format(context.getContextName(),
-            sentCount)).build();
-    log.postProcessAndEnqueue(context);
-  }
-
-  public static void recordCaseForNoiseSendFinish(@NotNull PlanExecutionContext<?> context,
-      int sentCount, long elapsedMills) {
-    BizLog log = BizLog.debug().logType(BizLogContent.NOISE_IDENTIFY_CASE_SEND_FINISH.getType())
-        .message(BizLogContent.NOISE_IDENTIFY_CASE_SEND_FINISH.format(context.getContextName(),
-            sentCount, elapsedMills)).build();
-    log.postProcessAndEnqueue(context);
-  }
-  // endregion
 
   @Getter
   public enum BizLogContent {
     PLAN_START(0, "Plan passes validation, starts building replay report."),
+    @Deprecated
     PLAN_CASE_SAVED(1, "Plan saved total {0} cases to send, took {1} ms."),
+    @Deprecated
     PLAN_CONTEXT_BUILT(2, "{0} execution context built, took {1} ms."),
     PLAN_DONE(3, "Plan send job done normally."),
     PLAN_ASYNC_RUN_START(4, "Plan async task init, starts processing cases."),
@@ -219,14 +113,19 @@ public class BizLogger {
     PLAN_FATAL_ERROR(6, "Plan execution encountered unchecked exception or error, "
         + "please contact Arex admins"),
 
+    @Deprecated
     QPS_LIMITER_INIT(100,
         "Qps limiter init with initial total rate of {0} for {1} instances."),
+    @Deprecated
     QPS_LIMITER_CHANGE(101, "Qps limit changed from {0} to {1}."),
+    @Deprecated
     QPS_LIMITER_RESET(102, "Qps limit will reset to initial rate {0}."),
-
+    @Deprecated
     CONTEXT_START(200, "Config Context: {0} init with action: {1}, before hook took {2} ms."),
+    @Deprecated
     CONTEXT_AFTER_RUN(202, "Config Context: {0} done, after hook took {1} ms."),
     CONTEXT_SKIP(203, "Config Context: {0}, Action: {1}, skipped {2} cases "),
+    @Deprecated
     CONTEXT_NORMAL(204, "Config Context: {0}, execute normal, {1} cases sent."),
     CONTEXT_PREPARE_ERR(205,
         "Config Context: {0}, prepare remote dependency failed, skip cases with this config version,"
@@ -238,6 +137,7 @@ public class BizLogger {
     @Deprecated
     ACTION_ITEM_EXECUTE_CONTEXT(300,
         "Operation: {0} id: {1} under context: {2} starts executing action type: {3}."),
+    @Deprecated
     ACTION_ITEM_INIT_TOTAL_RERUN_COUNT(301, "Operation: {0} id: {1} rerun total case count: {2}."),
     ACTION_ITEM_INIT_TOTAL_COUNT(302, "Operation: {0} id: {1} init total case count: {2}."),
     @Deprecated
@@ -250,7 +150,9 @@ public class BizLogger {
 
     RESUME_START(400, "Plan resumed with operation size of {0}"),
 
+    @Deprecated
     NOISE_IDENTIFY_CASE_SEND_START(500, "Context: {0}, {1} case start sending to identify noise."),
+    @Deprecated
     NOISE_IDENTIFY_CASE_SEND_FINISH(501,
         "Context: {0}, {1} case finish sending to identify noise, took {2} ms."),
 

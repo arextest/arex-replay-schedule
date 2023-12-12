@@ -118,6 +118,7 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
         progressTracer.finishCaseByAction(replayActionItem, contextCasesCount);
       }
       BizLogger.recordContextSkipped(executionContext, replayActionItem, contextCasesCount);
+      LOGGER.info("action item {} skip {} cases", replayActionItem.getId(), contextCasesCount);
     }
   }
 

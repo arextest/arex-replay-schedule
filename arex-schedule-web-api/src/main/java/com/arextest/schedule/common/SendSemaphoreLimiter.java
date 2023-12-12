@@ -1,6 +1,5 @@
 package com.arextest.schedule.common;
 
-import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.model.ReplayPlan;
 import com.google.common.util.concurrent.RateLimiter;
 import java.util.Optional;
@@ -114,7 +113,6 @@ public final class SendSemaphoreLimiter implements SendLimiter {
       this.permits = newQps;
       this.rateLimiter.setRate(newQps);
       LOGGER.info("send rate permits: {} -> {} (per second)", originalQps, newQps);
-      BizLogger.recordQPSChange(this.replayPlan, originalQps, newQps);
     }
   }
 
@@ -144,7 +142,6 @@ public final class SendSemaphoreLimiter implements SendLimiter {
     this.currentStep = QPS_INITIAL_STEP;
     LOGGER.info("send rate reset to initial status, from {} to {}", this.permits,
         this.sendInitialRate);
-    BizLogger.recordQPSReset(this.replayPlan, this.sendInitialRate);
   }
 
   private final class ReplayHealthy {

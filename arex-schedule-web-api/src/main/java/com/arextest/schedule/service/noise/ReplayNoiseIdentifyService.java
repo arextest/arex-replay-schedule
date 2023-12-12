@@ -1,6 +1,5 @@
 package com.arextest.schedule.service.noise;
 
-import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.comparer.CompareConfigService;
@@ -126,10 +125,11 @@ public class ReplayNoiseIdentifyService implements ReplayNoiseIdentify {
         .flatMap(List::stream).collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
     CreateReplayNoiseSendTaskRequest request = new CreateReplayNoiseSendTaskRequest(
         replayActionCaseItems, limiter);
-    BizLogger.recordCaseForNoiseSendStart(executionContext, replayActionCaseItems.size());
+    LOGGER.info("context {} start to send {} cases for noise identify", contextName,
+        replayActionCaseItems.size());
     this.doReplayNoiseSendTasks(request);
-    BizLogger.recordCaseForNoiseSendFinish(executionContext, replayActionCaseItems.size(),
-        System.currentTimeMillis() - start);
+    LOGGER.info("context {} finish to send {} cases for noise identify", contextName,
+        replayActionCaseItems.size());
     limiter.reset();
 
     // async analysis

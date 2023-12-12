@@ -88,14 +88,16 @@ public final class PlanConsumeService {
       start = System.currentTimeMillis();
       planExecutionContextProvider.onBeforeContextExecution(executionContext, replayPlan);
       end = System.currentTimeMillis();
-      BizLogger.recordContextBeforeRun(executionContext, end - start);
+      LOGGER.info("context {} start hook took {} ms", executionContext.getContextName(),
+          end - start);
 
       consumeContext(replayPlan, executionContext);
 
       start = System.currentTimeMillis();
       planExecutionContextProvider.onAfterContextExecution(executionContext, replayPlan);
       end = System.currentTimeMillis();
-      BizLogger.recordContextAfterRun(executionContext, end - start);
+      LOGGER.info("context {} finish hook took {} ms", executionContext.getContextName(),
+          end - start);
 
       StageStatusEnum stageStatusEnum = null;
       Long endTime = null;
@@ -152,7 +154,6 @@ public final class PlanConsumeService {
       ReplayParentBinder.setupCaseItemParent(caseItems, replayPlan);
       replayCaseTransmitServiceRemoteImpl.send(caseItems, executionContext);
     }
-    BizLogger.recordContextProcessedNormal(executionContext, contextCount);
   }
 
   private void finalizePlanStatus(ReplayPlan replayPlan) {
@@ -210,8 +211,8 @@ public final class PlanConsumeService {
       replayPlan.getReplayActionItemList()
           .forEach(replayActionItem -> replayActionItem.setSendRateLimiter(qpsLimiter));
       replayPlan.buildActionItemMap();
-      BizLogger.recordQpsInit(replayPlan, qpsLimiter.getPermits(),
-          replayPlan.getMinInstanceCount());
+
+      LOGGER.info("plan {} init with rate {}", replayPlan, qpsLimiter.getPermits());
     }
 
     @Override
@@ -231,16 +232,12 @@ public final class PlanConsumeService {
         progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
             StageStatusEnum.SUCCEEDED,
             null, end, null);
-        BizLogger.recordPlanCaseSaved(replayPlan, planSavedCaseSize, end - start);
 
         // build context to send
-        start = System.currentTimeMillis();
         progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_CONTEXT,
             StageStatusEnum.ONGOING,
             start, null, null);
         replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
-        end = System.currentTimeMillis();
-        BizLogger.recordContextBuilt(replayPlan, end - start);
 
         if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
           LOGGER.error("Invalid context built for plan {}", replayPlan);
