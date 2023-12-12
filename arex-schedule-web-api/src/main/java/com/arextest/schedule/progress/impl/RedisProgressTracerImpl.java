@@ -49,12 +49,12 @@ final class RedisProgressTracerImpl implements ProgressTracer {
     int actionCaseCount;
     for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
       actionCaseCount = replayActionItem.getReplayCaseCount();
-      BizLogger.recordActionItemCaseCount(replayActionItem);
       if (actionCaseCount > 0) {
         setupRedisNxWithExpire(toPlanActionTotalKeyBytes(replayActionItem.getId()),
             String.valueOf(actionCaseCount).getBytes(StandardCharsets.UTF_8));
       }
     }
+    BizLogger.recordActionItemCaseCount(replayPlan);
     this.refreshUpdateTime(planId);
   }
 

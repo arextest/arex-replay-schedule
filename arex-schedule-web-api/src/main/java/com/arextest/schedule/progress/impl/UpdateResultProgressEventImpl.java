@@ -2,6 +2,7 @@ package com.arextest.schedule.progress.impl;
 
 import com.alibaba.fastjson2.util.DateUtils;
 import com.arextest.common.cache.CacheProvider;
+import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.eventBus.PlanAutoRerunEvent;
@@ -147,6 +148,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
         replayPlan.isReRun());
     recordPlanExecutionTime(replayPlan);
     redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayPlan.getId()));
+    BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
   }
 
   @Override
