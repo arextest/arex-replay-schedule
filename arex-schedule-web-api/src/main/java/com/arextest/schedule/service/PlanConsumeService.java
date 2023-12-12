@@ -185,11 +185,8 @@ public final class PlanConsumeService {
     for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
       if (executionStatus.isCanceled() && !replayActionItem.sendDone()) {
         progressEvent.onActionCancelled(replayActionItem);
-        BizLogger.recordActionStatusChange(replayActionItem, ReplayStatusType.CANCELLED.name(), "");
       } else if (executionStatus.isInterrupted() && !replayActionItem.sendDone()) {
         progressEvent.onActionInterrupted(replayActionItem);
-        BizLogger.recordActionStatusChange(replayActionItem,
-            ReplayStatusType.FAIL_INTERRUPTED.name(), "");
       }
     }
 

@@ -40,7 +40,7 @@ public class BizLogger {
   }
 
   public static void recordPlanCaseSaved(ReplayPlan plan, int size, long elapsed) {
-    BizLog log = BizLog.info().logType(BizLogContent.PLAN_CASE_SAVED.getType())
+    BizLog log = BizLog.debug().logType(BizLogContent.PLAN_CASE_SAVED.getType())
         .message(BizLogContent.PLAN_CASE_SAVED.format(size, elapsed)).build();
 
     log.postProcessAndEnqueue(plan);
@@ -62,18 +62,9 @@ public class BizLogger {
   }
   // endregion
 
-  public static void recordActionItemCaseSaved(ReplayActionItem action, int saveCount,
-      long elapsed) {
-    BizLog log = BizLog.info().logType(BizLogContent.ACTION_ITEM_CASE_SAVED.getType())
-        .message(BizLogContent.ACTION_ITEM_CASE_SAVED.format(action.getOperationName(), saveCount,
-            elapsed))
-        .build();
-
-    log.postProcessAndEnqueue(action);
-  }
 
   public static void recordActionItemCaseCount(ReplayActionItem action) {
-    BizLog log = BizLog.info().logType(BizLogContent.ACTION_ITEM_INIT_TOTAL_COUNT.getType())
+    BizLog log = BizLog.debug().logType(BizLogContent.ACTION_ITEM_INIT_TOTAL_COUNT.getType())
         .message(BizLogContent.ACTION_ITEM_INIT_TOTAL_COUNT.format(action.getOperationName(),
             action.getId(),
             action.getReplayCaseCount()))
@@ -83,7 +74,7 @@ public class BizLogger {
   }
 
   public static void recordActionItemCaseReRunCount(ReplayActionItem action) {
-    BizLog log = BizLog.info().logType(BizLogContent.ACTION_ITEM_INIT_TOTAL_RERUN_COUNT.getType())
+    BizLog log = BizLog.debug().logType(BizLogContent.ACTION_ITEM_INIT_TOTAL_RERUN_COUNT.getType())
         .message(BizLogContent.ACTION_ITEM_INIT_TOTAL_RERUN_COUNT.format(action.getOperationName(),
             action.getId(),
             action.getRerunCaseCount()))
@@ -92,27 +83,16 @@ public class BizLogger {
     log.postProcessAndEnqueue(action);
   }
 
-  public static void recordActionStatusChange(ReplayActionItem action, String targetStatus,
-      String reason) {
-    BizLog log = BizLog.info().logType(BizLogContent.ACTION_ITEM_STATUS_CHANGED.getType())
-        .message(BizLogContent.ACTION_ITEM_STATUS_CHANGED.format(action.getOperationName(),
-            action.getId(),
-            targetStatus, reason))
-        .build();
-
-    log.postProcessAndEnqueue(action);
-  }
-
   // region <QPS>
   public static void recordQpsInit(ReplayPlan plan, int initQps, int instanceCount) {
-    BizLog log = BizLog.info().logType(BizLogContent.QPS_LIMITER_INIT.getType())
+    BizLog log = BizLog.debug().logType(BizLogContent.QPS_LIMITER_INIT.getType())
         .message(BizLogContent.QPS_LIMITER_INIT.format(initQps, instanceCount)).build();
 
     log.postProcessAndEnqueue(plan);
   }
 
   public static void recordQPSChange(ReplayPlan plan, int source, int target) {
-    BizLog log = BizLog.info().logType(BizLogContent.QPS_LIMITER_CHANGE.getType())
+    BizLog log = BizLog.debug().logType(BizLogContent.QPS_LIMITER_CHANGE.getType())
         .message(BizLogContent.QPS_LIMITER_CHANGE.format(source, target)).build();
     if (plan != null) {
       log.postProcessAndEnqueue(plan);
@@ -120,7 +100,7 @@ public class BizLogger {
   }
 
   public static void recordQPSReset(@NotNull ReplayPlan plan, int target) {
-    BizLog log = BizLog.info().logType(BizLogContent.QPS_LIMITER_RESET.getType())
+    BizLog log = BizLog.debug().logType(BizLogContent.QPS_LIMITER_RESET.getType())
         .message(BizLogContent.QPS_LIMITER_RESET.format(target)).build();
     log.postProcessAndEnqueue(plan);
   }
@@ -128,7 +108,7 @@ public class BizLogger {
 
   // region <Context Level Log>
   public static void recordContextBuilt(ReplayPlan plan, long elapsed) {
-    BizLog log = BizLog.info().logType(BizLogContent.PLAN_CONTEXT_BUILT.getType())
+    BizLog log = BizLog.debug().logType(BizLogContent.PLAN_CONTEXT_BUILT.getType())
         .message(BizLogContent.PLAN_CONTEXT_BUILT
             .format(
                 Optional.ofNullable(plan.getExecutionContexts()).map(Collection::size).orElse(0),
@@ -139,7 +119,7 @@ public class BizLogger {
   }
 
   public static void recordContextBeforeRun(PlanExecutionContext<?> context, long elapsed) {
-    BizLog log = BizLog.info().logType(BizLogContent.CONTEXT_START.getType())
+    BizLog log = BizLog.debug().logType(BizLogContent.CONTEXT_START.getType())
         .message(
             BizLogContent.CONTEXT_START.format(context.getContextName(),
                 context.getActionType().name(), elapsed))
@@ -149,7 +129,7 @@ public class BizLogger {
   }
 
   public static void recordContextAfterRun(PlanExecutionContext<?> context, long elapsed) {
-    BizLog log = BizLog.info().logType(BizLogContent.CONTEXT_AFTER_RUN.getType())
+    BizLog log = BizLog.debug().logType(BizLogContent.CONTEXT_AFTER_RUN.getType())
         .message(BizLogContent.CONTEXT_AFTER_RUN.format(context.getContextName(), elapsed)).build();
 
     log.postProcessAndEnqueue(context);
@@ -167,7 +147,7 @@ public class BizLogger {
   }
 
   public static void recordContextProcessedNormal(PlanExecutionContext<?> context, long sentCount) {
-    BizLog log = BizLog.info().logType(BizLogContent.CONTEXT_NORMAL.getType())
+    BizLog log = BizLog.debug().logType(BizLogContent.CONTEXT_NORMAL.getType())
         .message(BizLogContent.CONTEXT_NORMAL.format(context.getContextName(), sentCount)).build();
 
     log.postProcessAndEnqueue(context);
@@ -194,7 +174,7 @@ public class BizLogger {
   // region <noise identify Log>
   public static void recordCaseForNoiseSendStart(@NotNull PlanExecutionContext<?> context,
       int sentCount) {
-    BizLog log = BizLog.info().logType(BizLogContent.NOISE_IDENTIFY_CASE_SEND_START.getType())
+    BizLog log = BizLog.debug().logType(BizLogContent.NOISE_IDENTIFY_CASE_SEND_START.getType())
         .message(BizLogContent.NOISE_IDENTIFY_CASE_SEND_START.format(context.getContextName(),
             sentCount)).build();
     log.postProcessAndEnqueue(context);
@@ -202,26 +182,28 @@ public class BizLogger {
 
   public static void recordCaseForNoiseSendFinish(@NotNull PlanExecutionContext<?> context,
       int sentCount, long elapsedMills) {
-    BizLog log = BizLog.info().logType(BizLogContent.NOISE_IDENTIFY_CASE_SEND_FINISH.getType())
+    BizLog log = BizLog.debug().logType(BizLogContent.NOISE_IDENTIFY_CASE_SEND_FINISH.getType())
         .message(BizLogContent.NOISE_IDENTIFY_CASE_SEND_FINISH.format(context.getContextName(),
             sentCount, elapsedMills)).build();
     log.postProcessAndEnqueue(context);
   }
   // endregion
 
+  @Getter
   public enum BizLogContent {
-    PLAN_START(0, "Plan passes validation, starts execution."),
+    PLAN_START(0, "Plan passes validation, starts building replay report."),
     PLAN_CASE_SAVED(1, "Plan saved total {0} cases to send, took {1} ms."),
     PLAN_CONTEXT_BUILT(2, "{0} execution context built, took {1} ms."),
     PLAN_DONE(3, "Plan send job done normally."),
-    PLAN_ASYNC_RUN_START(4, "Plan async task init."),
+    PLAN_ASYNC_RUN_START(4, "Plan async task init, starts processing cases."),
     PLAN_STATUS_CHANGE(5, "Plan status changed to {0}, because of [{1}]."),
-    PLAN_FATAL_ERROR(6, "Plan execution encountered unchecked exception or error."),
+    PLAN_FATAL_ERROR(6, "Plan execution encountered unchecked exception or error, "
+        + "please contact Arex admins"),
 
     QPS_LIMITER_INIT(100,
         "Qps limiter init with initial total rate of {0} for {1} instances."),
     QPS_LIMITER_CHANGE(101, "Qps limit changed from {0} to {1}."),
-    QPS_LIMITER_RESET(102, "Qps limit will reset initial rate to {0}."),
+    QPS_LIMITER_RESET(102, "Qps limit will reset to initial rate {0}."),
 
     CONTEXT_START(200, "Context: {0} init with action: {1}, before hook took {2} ms."),
     CONTEXT_AFTER_RUN(202, "Context: {0} done, after hook took {1} ms."),
@@ -229,6 +211,7 @@ public class BizLogger {
     CONTEXT_NORMAL(204, "Context: {0}, execute normal, {1} cases sent."),
     CONTEXT_PREPARE_ERR(205, "Context: {0}, prepare remote dependency failed due to {1}."),
 
+    @Deprecated
     ACTION_ITEM_CASE_SAVED(306, "Operation {0} saved total {1} cases to send, took {2} ms."),
 
     @Deprecated
@@ -236,15 +219,15 @@ public class BizLogger {
         "Operation: {0} id: {1} under context: {2} starts executing action type: {3}."),
     ACTION_ITEM_INIT_TOTAL_RERUN_COUNT(301, "Operation: {0} id: {1} rerun total case count: {2}."),
     ACTION_ITEM_INIT_TOTAL_COUNT(302, "Operation: {0} id: {1} init total case count: {2}."),
+    @Deprecated
     ACTION_ITEM_STATUS_CHANGED(303,
         "Operation: {0} id: {1} status changed to {2}, because of [{3}]."),
-
     @Deprecated
     ACTION_ITEM_SENT(304, "All cases of Operation: {0} id: {1} sent, total size: {2}"),
     @Deprecated
     ACTION_ITEM_BATCH_SENT(305, "Batch cases of Operation: {0} id: {1} sent, size: {2}"),
 
-    RESUME_START(400, "Plan resumed with action size of {0}"),
+    RESUME_START(400, "Plan resumed with operation size of {0}"),
 
     NOISE_IDENTIFY_CASE_SEND_START(500, "Context: {0}, {1} case start sending to identify noise."),
     NOISE_IDENTIFY_CASE_SEND_FINISH(501,
@@ -252,9 +235,7 @@ public class BizLogger {
 
     ;
 
-    @Getter
     private final String template;
-    @Getter
     private final int type;
 
     BizLogContent(int type, String template) {
@@ -274,5 +255,4 @@ public class BizLogger {
       }
     }
   }
-
 }

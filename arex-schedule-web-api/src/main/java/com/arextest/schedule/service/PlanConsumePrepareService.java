@@ -1,6 +1,5 @@
 package com.arextest.schedule.service;
 
-import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
@@ -98,11 +97,7 @@ public class PlanConsumePrepareService {
         continue;
       }
       int preloaded = replayActionItem.getReplayCaseCount();
-
-      start = System.currentTimeMillis();
       int actionSavedCount = streamingCaseItemSave(replayActionItem);
-      end = System.currentTimeMillis();
-      BizLogger.recordActionItemCaseSaved(replayActionItem, actionSavedCount, end - start);
 
       planSavedCaseSize += actionSavedCount;
       if (replayActionItem.getParent().isReRun()) {
