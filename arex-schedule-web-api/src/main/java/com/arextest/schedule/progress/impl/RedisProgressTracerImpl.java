@@ -1,7 +1,6 @@
 package com.arextest.schedule.progress.impl;
 
 import com.arextest.common.cache.CacheProvider;
-import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
@@ -52,9 +51,10 @@ final class RedisProgressTracerImpl implements ProgressTracer {
       if (actionCaseCount > 0) {
         setupRedisNxWithExpire(toPlanActionTotalKeyBytes(replayActionItem.getId()),
             String.valueOf(actionCaseCount).getBytes(StandardCharsets.UTF_8));
+        LOGGER.info("init plan action total, action id: {}, case count: {}",
+            replayActionItem.getId(), actionCaseCount);
       }
     }
-    BizLogger.recordActionItemCaseCount(replayPlan);
     this.refreshUpdateTime(planId);
   }
 
@@ -218,7 +218,6 @@ final class RedisProgressTracerImpl implements ProgressTracer {
     int actionReRunCaseCount;
     for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
       actionReRunCaseCount = replayActionItem.getReplayCaseCount();
-      BizLogger.recordActionItemCaseReRunCount(replayActionItem);
       setRedisNxWithExpire(toPlanActionTotalKeyBytes(replayActionItem.getId()),
           String.valueOf(actionReRunCaseCount).getBytes(StandardCharsets.UTF_8));
     }
