@@ -212,18 +212,15 @@ final class RedisProgressTracerImpl implements ProgressTracer {
   @Override
   public void reRunPlan(ReplayPlan replayPlan) {
     String planId = replayPlan.getId();
-    int value = replayPlan.getCaseTotalCount() - replayPlan.getReRunCaseCount();
 
     byte[] totalKey = toPlanFinishKeyBytes(planId);
-    redisCacheProvider.put(totalKey, String.valueOf(value).getBytes(StandardCharsets.UTF_8));
+    redisCacheProvider.put(totalKey, String.valueOf(0).getBytes(StandardCharsets.UTF_8));
     int actionReRunCaseCount;
     for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
-      actionReRunCaseCount = replayActionItem.getRerunCaseCount();
+      actionReRunCaseCount = replayActionItem.getReplayCaseCount();
       BizLogger.recordActionItemCaseReRunCount(replayActionItem);
-      if (actionReRunCaseCount > 0) {
-        setRedisNxWithExpire(toPlanActionTotalKeyBytes(replayActionItem.getId()),
-            String.valueOf(actionReRunCaseCount).getBytes(StandardCharsets.UTF_8));
-      }
+      setRedisNxWithExpire(toPlanActionTotalKeyBytes(replayActionItem.getId()),
+          String.valueOf(actionReRunCaseCount).getBytes(StandardCharsets.UTF_8));
     }
     this.refreshUpdateTime(planId);
   }

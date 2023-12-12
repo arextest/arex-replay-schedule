@@ -86,7 +86,7 @@ public class BizLogger {
     BizLog log = BizLog.info().logType(BizLogContent.ACTION_ITEM_INIT_TOTAL_RERUN_COUNT.getType())
         .message(BizLogContent.ACTION_ITEM_INIT_TOTAL_RERUN_COUNT.format(action.getOperationName(),
             action.getId(),
-            action.getRerunCaseCount()))
+            action.getReplayCaseCount()))
         .build();
 
     log.postProcessAndEnqueue(action);
