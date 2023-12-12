@@ -5,6 +5,7 @@ import static com.arextest.schedule.common.CommonConstant.ONE_DAY_MILLIS;
 import static com.arextest.schedule.common.CommonConstant.OPERATION_MAX_CASE_COUNT;
 import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_EXPIRE;
 import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_KEY;
+
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
@@ -123,6 +124,7 @@ public class PlanProduceService {
     replayPlan.setReplayActionItemList(replayActionItemList);
     ReplayParentBinder.setupReplayActionParent(replayActionItemList, replayPlan);
     int planCaseCount = planBuilder.buildReplayCaseCount(replayActionItemList);
+    planBuilder.filterValidActionItems(replayPlan);
     if (planCaseCount == 0) {
       progressEvent.onReplayPlanCreateException(request);
       return CommonResponse.badResponse("loaded empty case,try change time range submit again ",
