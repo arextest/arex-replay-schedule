@@ -260,7 +260,7 @@
     <commons-lang3.version>3.3.2</commons-lang3.version>
     <compare-sdk.version>0.2.2</compare-sdk.version>
     <fastjson2.version>2.0.23</fastjson2.version>
-    <guava.version>32.1.3-jre</guava.version>
+    <guava.version>20.0</guava.version>
     <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
     <jacoco.report.path>${project.basedir}/code-coverage/jacoco.exec</jacoco.report.path>
     <java.version>1.8</java.version>
