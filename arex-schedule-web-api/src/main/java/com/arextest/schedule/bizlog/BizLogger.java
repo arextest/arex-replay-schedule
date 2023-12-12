@@ -52,7 +52,9 @@ public class BizLogger {
     String message = null;
     switch (status) {
       case FAIL_INTERRUPTED:
-        message = "Plan Interrupted because there are 40+ continuous failure or more than 10% of cases failed.";
+        message =
+            "Plan Interrupted because there are 40+ continuous failure or more than 10% of cases failed. "
+                + "Please check the detail of invalid cases in the report.";
         break;
       case CANCELLED:
         message = "Plan Cancelled by user.";

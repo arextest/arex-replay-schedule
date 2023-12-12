@@ -87,7 +87,6 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     replayReportService.pushPlanStatus(planId, reason, null, replayPlan.isReRun());
     recordPlanExecutionTime(replayPlan);
     redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayPlan.getId()));
-    BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.CANCELLED);
   }
 
   @Override

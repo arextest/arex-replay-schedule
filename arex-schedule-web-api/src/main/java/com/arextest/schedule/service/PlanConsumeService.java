@@ -166,6 +166,7 @@ public final class PlanConsumeService {
     // finalize plan status
     if (executionStatus.isCanceled()) {
       progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.CANCELLED);
+      BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.CANCELLED);
     } else if (executionStatus.isInterrupted()) {
       progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
     } else if (replayPlan.getCaseTotalCount() == 0) {
