@@ -3,6 +3,7 @@ package com.arextest.schedule.beans;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.CustomComparisonConfigurationHandler;
+import com.arextest.schedule.comparer.InvalidReplayCaseService;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.comparer.impl.DefaultCustomComparisonConfigurationHandler;
 import com.arextest.schedule.comparer.impl.DefaultReplayResultComparer;
@@ -35,7 +36,8 @@ public class ReplayComparerConfiguration {
       ComparisonWriter comparisonOutputWriter,
       ReplayActionCaseItemRepository caseItemRepository,
       MetricService metricService,
-      CustomComparisonConfigurationHandler customComparisonConfigurationHandler
+      CustomComparisonConfigurationHandler customComparisonConfigurationHandler,
+      InvalidReplayCaseService invalidReplayCaseService
   ) {
     return new DefaultReplayResultComparer(compareConfigService,
         sourceRemoteLoader,
@@ -43,7 +45,8 @@ public class ReplayComparerConfiguration {
         comparisonOutputWriter,
         caseItemRepository,
         metricService,
-        customComparisonConfigurationHandler
+        customComparisonConfigurationHandler,
+        invalidReplayCaseService
     );
   }
 }

@@ -14,6 +14,7 @@ public enum CaseSendStatusType {
   READY_DEPENDENCY_FAILED(101),
   REPLAY_CASE_NOT_FOUND(102),
   REPLAY_RESULT_NOT_FOUND(103),
+  GET_DATA_FAILED_FROM_STORAGE(104),
   ;
   @Getter
   final int value;
