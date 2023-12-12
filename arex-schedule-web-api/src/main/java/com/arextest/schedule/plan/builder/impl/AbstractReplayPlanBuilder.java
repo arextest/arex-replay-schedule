@@ -4,6 +4,7 @@ import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.AppServiceDescriptor;
 import com.arextest.schedule.model.CaseSourceEnvType;
 import com.arextest.schedule.model.ReplayActionItem;
+import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.deploy.DeploymentVersion;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
@@ -131,6 +132,11 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
       sum += actionCount;
     }
     return sum;
+  }
+
+  @Override
+  public void filterValidActionItems(ReplayPlan plan) {
+    plan.getReplayActionItemList().removeIf(actionItem -> actionItem.getReplayCaseCount() == 0);
   }
 
   abstract List<ReplayActionItem> getReplayActionList(BuildReplayPlanRequest request,

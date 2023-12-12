@@ -166,30 +166,20 @@ public final class PlanConsumeService {
     // finalize plan status
     if (executionStatus.isCanceled()) {
       progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.CANCELLED);
-      BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.CANCELLED.name(),
-          "Plan Canceled");
+      BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.CANCELLED);
     } else if (executionStatus.isInterrupted()) {
       progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
-      BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.FAIL_INTERRUPTED.name(),
-          "Plan Interrupted because there are 40+ continuous failure or more than 10% of cases failed.");
     } else if (replayPlan.getCaseTotalCount() == 0) {
       progressEvent.onReplayPlanFinish(replayPlan);
-      BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.FINISHED.name(),
-          "No cases to send.");
     } else {
       BizLogger.recordPlanDone(replayPlan);
-      LOGGER.info("All the plan action sent,waiting to compare, plan id:{} ,appId: {} ",
-          replayPlan.getId(), replayPlan.getAppId());
     }
 
     for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
       if (executionStatus.isCanceled() && !replayActionItem.sendDone()) {
         progressEvent.onActionCancelled(replayActionItem);
-        BizLogger.recordActionStatusChange(replayActionItem, ReplayStatusType.CANCELLED.name(), "");
       } else if (executionStatus.isInterrupted() && !replayActionItem.sendDone()) {
         progressEvent.onActionInterrupted(replayActionItem);
-        BizLogger.recordActionStatusChange(replayActionItem,
-            ReplayStatusType.FAIL_INTERRUPTED.name(), "");
       }
     }
 
@@ -256,9 +246,6 @@ public final class PlanConsumeService {
           LOGGER.error("Invalid context built for plan {}", replayPlan);
           replayPlan.setErrorMessage("Got empty execution context");
           progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
-          BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.FAIL_INTERRUPTED.name(),
-              "NO context to execute");
-
           progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_CONTEXT,
               StageStatusEnum.FAILED, null, end, null);
           return;
