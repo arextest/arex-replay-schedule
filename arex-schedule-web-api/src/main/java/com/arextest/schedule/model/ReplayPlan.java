@@ -110,7 +110,7 @@ public class ReplayPlan {
   private boolean reRun;
 
   @JsonIgnore
-  private Map<String, Object> caseTags;
+  private Map<String, String> caseTags;
 
   public void enqueueBizLog(BizLog log) {
     this.bizLogs.add(log);

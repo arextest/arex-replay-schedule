@@ -48,5 +48,5 @@ public class BuildReplayPlanRequest {
   /**
    * select the cases based on the tag of the recorded case
    */
-  private Map<String, Object> caseTags;
+  private Map<String, String> caseTags;
 }

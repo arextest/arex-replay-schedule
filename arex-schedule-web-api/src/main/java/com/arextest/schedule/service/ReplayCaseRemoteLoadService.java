@@ -217,7 +217,7 @@ public class ReplayCaseRemoteLoadService {
     requestType.setSourceProvider(providerName);
     // add the condition of "caseTag"
     if (MapUtils.isNotEmpty(parent.getCaseTags())){
-      requestType.setMockTags(parent.getCaseTags());
+      requestType.setTags(parent.getCaseTags());
     }
     return requestType;
   }
