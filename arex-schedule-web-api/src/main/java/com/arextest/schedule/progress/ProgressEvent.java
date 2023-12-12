@@ -49,8 +49,19 @@ public interface ProgressEvent {
 
 
   default void onReplayPlanFinish(ReplayPlan replayPlan) {
-    this.onReplayPlanFinish(replayPlan, ReplayStatusType.FINISHED);
+    if (this.onBeforeReplayPlanFinish(replayPlan)) {
+      this.onReplayPlanFinish(replayPlan, ReplayStatusType.FINISHED);
+    } else {
+      this.onReplayPlanAutoRerun(replayPlan);
+    }
   }
+
+  /**
+   * @return: true-finish, false-rerun.
+   */
+  boolean onBeforeReplayPlanFinish(ReplayPlan replayPlan);
+
+  void onReplayPlanAutoRerun(ReplayPlan replayPlan);
 
   void onReplayPlanFinish(ReplayPlan replayPlan, ReplayStatusType reason);
 
