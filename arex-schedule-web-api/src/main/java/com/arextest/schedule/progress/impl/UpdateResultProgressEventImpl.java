@@ -2,6 +2,7 @@ package com.arextest.schedule.progress.impl;
 
 import com.alibaba.fastjson2.util.DateUtils;
 import com.arextest.common.cache.CacheProvider;
+import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.model.LogType;
@@ -16,7 +17,6 @@ import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.service.MetricService;
 import com.arextest.schedule.service.PlanProduceService;
 import com.arextest.schedule.service.ReplayReportService;
-import com.arextest.schedule.service.ReplayStorageService;
 import com.arextest.schedule.utils.StageUtils;
 import java.util.Date;
 import java.util.List;
@@ -87,6 +87,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     replayReportService.pushPlanStatus(planId, reason, null, replayPlan.isReRun());
     recordPlanExecutionTime(replayPlan);
     redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayPlan.getId()));
+    BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.CANCELLED);
   }
 
   @Override
@@ -102,6 +103,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
         replayPlan.isReRun());
     recordPlanExecutionTime(replayPlan);
     redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayPlan.getId()));
+    BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
   }
 
   @Override

@@ -3,6 +3,7 @@ package com.arextest.schedule.bizlog;
 import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.bizlog.BizLog;
 import java.text.MessageFormat;
 import java.util.Collection;
@@ -47,9 +48,21 @@ public class BizLogger {
     log.postProcessAndEnqueue(plan);
   }
 
-  public static void recordPlanStatusChange(ReplayPlan plan, String targetStatus, String message) {
+  public static void recordPlanStatusChange(ReplayPlan plan, ReplayStatusType status) {
+    String message = null;
+    switch (status) {
+      case FAIL_INTERRUPTED:
+        message = "Plan Interrupted because there are 40+ continuous failure or more than 10% of cases failed.";
+        break;
+      case CANCELLED:
+        message = "Plan Cancelled by user.";
+        break;
+      default:
+        break;
+    }
+
     BizLog log = BizLog.info().logType(BizLogContent.PLAN_STATUS_CHANGE.getType())
-        .message(BizLogContent.PLAN_STATUS_CHANGE.format(targetStatus, message)).build();
+        .message(BizLogContent.PLAN_STATUS_CHANGE.format(status.name(), message)).build();
 
     log.postProcessAndEnqueue(plan);
   }
@@ -209,11 +222,13 @@ public class BizLogger {
     QPS_LIMITER_CHANGE(101, "Qps limit changed from {0} to {1}."),
     QPS_LIMITER_RESET(102, "Qps limit will reset to initial rate {0}."),
 
-    CONTEXT_START(200, "Context: {0} init with action: {1}, before hook took {2} ms."),
-    CONTEXT_AFTER_RUN(202, "Context: {0} done, after hook took {1} ms."),
-    CONTEXT_SKIP(203, "Context: {0}, Action: {1}, skipped {2} cases "),
-    CONTEXT_NORMAL(204, "Context: {0}, execute normal, {1} cases sent."),
-    CONTEXT_PREPARE_ERR(205, "Context: {0}, prepare remote dependency failed due to {1}."),
+    CONTEXT_START(200, "Config Context: {0} init with action: {1}, before hook took {2} ms."),
+    CONTEXT_AFTER_RUN(202, "Config Context: {0} done, after hook took {1} ms."),
+    CONTEXT_SKIP(203, "Config Context: {0}, Action: {1}, skipped {2} cases "),
+    CONTEXT_NORMAL(204, "Config Context: {0}, execute normal, {1} cases sent."),
+    CONTEXT_PREPARE_ERR(205,
+        "Config Context: {0}, prepare remote dependency failed, skip cases with this config version,"
+            + " please check if the target service is healthy and Arex service can access it. Original error message: {1}."),
 
     @Deprecated
     ACTION_ITEM_CASE_SAVED(306, "Operation {0} saved total {1} cases to send, took {2} ms."),
