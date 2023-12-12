@@ -7,6 +7,7 @@ import com.arextest.schedule.model.bizlog.BizLog;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -63,14 +64,17 @@ public class BizLogger {
   // endregion
 
 
-  public static void recordActionItemCaseCount(ReplayActionItem action) {
-    BizLog log = BizLog.debug().logType(BizLogContent.ACTION_ITEM_INIT_TOTAL_COUNT.getType())
-        .message(BizLogContent.ACTION_ITEM_INIT_TOTAL_COUNT.format(action.getOperationName(),
-            action.getId(),
-            action.getReplayCaseCount()))
-        .build();
+  public static void recordActionItemCaseCount(ReplayPlan plan) {
+    String totalMsg = plan.getReplayActionItemList().stream()
+        .filter(action -> action.getReplayCaseCount() > 0).map(
+            action -> BizLogContent.ACTION_ITEM_INIT_TOTAL_COUNT.format(action.getOperationName(),
+                action.getId(), action.getReplayCaseCount()))
+        .collect(Collectors.joining(System.lineSeparator()));
 
-    log.postProcessAndEnqueue(action);
+    BizLog log = BizLog.debug().logType(BizLogContent.ACTION_ITEM_INIT_TOTAL_COUNT.getType())
+        .message(totalMsg)
+        .build();
+    log.postProcessAndEnqueue(plan);
   }
 
   public static void recordActionItemCaseReRunCount(ReplayActionItem action) {
