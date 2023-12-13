@@ -202,6 +202,7 @@ public class PlanConsumePrepareService {
   // region rerun plan
   public void updateFailedActionAndCase(ReplayPlan replayPlan,
       List<ReplayActionCaseItem> failedCaseList) {
+    replayPlan.setCaseRerunCount(failedCaseList.size());
     List<ReplayActionItem> replayActionItems = replayPlanActionRepository.queryPlanActionList(
         replayPlan.getId());
 
@@ -217,6 +218,7 @@ public class PlanConsumePrepareService {
           actionItem.setParent(replayPlan);
           actionItem.setCaseItemList(failedCaseMap.get(actionItem.getId()));
           actionItem.setReplayStatus(ReplayStatusType.INIT.getValue());
+          actionItem.setRerunCaseCount(actionItem.getCaseItemList().size());
           ReplayParentBinder.setupCaseItemParent(actionItem.getCaseItemList(), actionItem);
         }).collect(Collectors.toList());
     replayPlan.setReplayActionItemList(failedActionList);

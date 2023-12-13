@@ -61,6 +61,7 @@ public class ReplayPlan {
   @JsonIgnore
   private String caseRecordVersion;
   private int caseTotalCount;
+  private int caseRerunCount;
   /**
    * see {@link CaseSourceEnvType}
    */
