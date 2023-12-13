@@ -3,7 +3,6 @@ package com.arextest.schedule.beans;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.CustomComparisonConfigurationHandler;
-import com.arextest.schedule.comparer.InvalidReplayCaseService;
 import com.arextest.schedule.comparer.impl.PrepareCompareSourceRemoteLoader;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
@@ -33,12 +32,12 @@ public class ServiceAutoConfiguration {
       ReplayPlanActionRepository replayPlanActionRepository,
       ReplaySenderFactory replaySenderFactory,
       PrepareCompareSourceRemoteLoader sourceRemoteLoader, ExecutorService sendExecutorService,
-      ExecutorService analysisNoiseExecutorService, InvalidReplayCaseService invalidReplayCaseService) {
+      ExecutorService analysisNoiseExecutorService) {
     return new ReplayNoiseIdentifyService(compareConfigService, progressTracer,
         comparisonOutputWriter,
         caseItemRepository, metricService, customComparisonConfigurationHandler,
         replayCompareResultRepository,
         replayNoiseRepository, replayPlanActionRepository, replaySenderFactory, sourceRemoteLoader,
-        sendExecutorService, analysisNoiseExecutorService, invalidReplayCaseService);
+        sendExecutorService, analysisNoiseExecutorService);
   }
 }

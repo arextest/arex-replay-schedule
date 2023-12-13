@@ -11,7 +11,6 @@ import com.arextest.schedule.comparer.CompareItem;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.CustomComparisonConfigurationHandler;
 import com.arextest.schedule.comparer.EncodingUtils;
-import com.arextest.schedule.comparer.InvalidReplayCaseService;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
@@ -57,7 +56,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
   private final MetricService metricService;
   private final CustomComparisonConfigurationHandler configHandler;
 
-  private final InvalidReplayCaseService invalidReplayCaseService;
 
   public DefaultReplayResultComparer(CompareConfigService compareConfigService,
       PrepareCompareSourceRemoteLoader sourceRemoteLoader,
@@ -65,8 +63,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
       ComparisonWriter comparisonOutputWriter,
       ReplayActionCaseItemRepository caseItemRepository,
       MetricService metricService,
-      CustomComparisonConfigurationHandler configHandler,
-      InvalidReplayCaseService invalidReplayCaseService) {
+      CustomComparisonConfigurationHandler configHandler) {
     this.compareConfigService = compareConfigService;
     this.sourceRemoteLoader = sourceRemoteLoader;
     this.progressTracer = progressTracer;
@@ -74,7 +71,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     this.caseItemRepository = caseItemRepository;
     this.metricService = metricService;
     this.configHandler = configHandler;
-    this.invalidReplayCaseService = invalidReplayCaseService;
     addGlobalOptionToSDK(compareConfigService);
   }
   public void addGlobalOptionToSDK(CompareConfigService compareConfigService) {
@@ -101,15 +97,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     try {
       MDCTracer.addPlanId(planId);
       MDCTracer.addPlanItemId(caseItem.getPlanItemId());
-
-      if (invalidReplayCaseService.isInvalidCase(caseItem.getTargetResultId())) {
-        caseItemRepository.updateCompareStatus(caseItem.getId(),
-                CompareProcessStatusType.ERROR.getValue());
-        caseItem.setCompareStatus(CompareProcessStatusType.ERROR.getValue());
-        comparisonOutputWriter.writeIncomparable(caseItem,
-                CaseSendStatusType.GET_DATA_FAILED_FROM_STORAGE.name());
-        return true;
-      }
 
       List<CategoryComparisonHolder> waitCompareMap =
           sourceRemoteLoader.buildWaitCompareList(caseItem, useReplayId);
