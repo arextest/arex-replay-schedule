@@ -95,6 +95,10 @@ public final class PrepareCompareSourceRemoteLoader {
       LOGGER.warn("query replay result has error response : {}", responseStatusType);
       return Collections.emptyList();
     }
+    if (Boolean.TRUE.equals(replayResultResponseType.getInvalidResult())) {
+        LOGGER.warn("query replay result has invalid result: get data failed from storage");
+        return Collections.emptyList();
+    }
     List<ListResultHolder> resultHolderList = replayResultResponseType.getResultHolderList();
     if (CollectionUtils.isEmpty(resultHolderList)) {
       LOGGER.warn("query replay result has empty size");
