@@ -3,6 +3,7 @@ package com.arextest.schedule.service.report;
 import com.arextest.common.context.ArexContext;
 import com.arextest.common.utils.JsonTraverseUtils;
 import com.arextest.diff.model.CompareOptions;
+import com.arextest.diff.model.CompareResult;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.model.log.LogEntity;
 import com.arextest.diff.model.log.NodeEntity;
@@ -65,9 +66,11 @@ public class QueryReplayMsgService {
         && CollectionUtils.isEmpty(compareResultBo.getLogs())) {
       String base = EncodingUtils.tryBase64Decode(compareResultBo.getBaseMsg());
       String test = EncodingUtils.tryBase64Decode(compareResultBo.getTestMsg());
-      List<LogEntity> logs = COMPARE_INSTANCE.compare(base, test, compareOptions).getLogs();
-
-      compareResultBo.setLogs(logs);
+      CompareResult compareResult = COMPARE_INSTANCE.compare(base, test, compareOptions);
+      compareResultBo.setLogs(compareResult.getLogs());
+      // save the processed base and test msg into db
+      compareResultBo.setBaseMsg(compareResult.getProcessedBaseMsg());
+      compareResultBo.setTestMsg(compareResult.getProcessedTestMsg());
       replayCompareResultRepository.save(compareResultBo);
     }
 
