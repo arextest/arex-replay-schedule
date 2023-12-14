@@ -4,6 +4,7 @@ import com.arextest.schedule.model.CaseSourceEnvType;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import lombok.Data;
 
 /**
@@ -44,4 +45,8 @@ public class BuildReplayPlanRequest {
   private Date caseSourceTo;
 
   private List<OperationCaseInfo> operationCaseInfoList;   //replay_plan_type=1or2的时候 来这里获取 需要回放的接口或case
+  /**
+   * select the cases based on the tag of the recorded case
+   */
+  private Map<String, String> caseTags;
 }

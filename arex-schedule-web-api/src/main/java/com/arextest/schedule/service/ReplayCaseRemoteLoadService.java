@@ -16,6 +16,7 @@ import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.utils.MapUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
@@ -214,6 +215,10 @@ public class ReplayCaseRemoteLoadService {
     requestType.setOperation(replayActionItem.getOperationName());
     requestType.setCategory(MockCategoryType.createEntryPoint(replayActionItem.getActionType()));
     requestType.setSourceProvider(providerName);
+    // add the condition of "caseTag"
+    if (MapUtils.isNotEmpty(parent.getCaseTags())){
+      requestType.setTags(parent.getCaseTags());
+    }
     return requestType;
   }
 

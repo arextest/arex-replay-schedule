@@ -75,12 +75,13 @@ public final class ReplayReportService implements ComparisonWriter {
     Map<String, Object> customTags = new HashMap<>();
     customTags.put(CASE_COUNT_LIMIT_NAME, replayPlan.getCaseCountLimit());
     requestType.setCustomTags(customTags);
-    // for case env
+    // for case env and tag
     ReportInitialRequestType.CaseSourceEnvironment caseSourceEnv;
     caseSourceEnv = new ReportInitialRequestType.CaseSourceEnvironment();
     caseSourceEnv.setCaseStartTime(replayPlan.getCaseSourceFrom().getTime());
     caseSourceEnv.setCaseEndTime(replayPlan.getCaseSourceTo().getTime());
     caseSourceEnv.setCaseSourceType(replayPlan.getCaseSourceType());
+    caseSourceEnv.setCaseTags(replayPlan.getCaseTags());
     requestType.setCaseSourceEnv(caseSourceEnv);
     // for app
     ReportInitialRequestType.Application application = new ReportInitialRequestType.Application();

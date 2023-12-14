@@ -199,7 +199,7 @@
       <dependency>
         <artifactId>arex-model</artifactId>
         <groupId>com.arextest</groupId>
-        <version>1.0.49</version>
+        <version>${arex-storage-config.version}</version>
       </dependency>
       <dependency>
         <artifactId>arex-web-model-contract</artifactId>
@@ -289,7 +289,8 @@
     <sonar.jacoco.reportPath>${jacoco.report.path}</sonar.jacoco.reportPath>
     <!-- Users could specify this property as true to skip the deploy process -->
     <spring.boot.version>2.6.3</spring.boot.version>
-    <web-contract.version>0.6.0.12</web-contract.version>
+    <arex-storage-config.version>1.0.50</arex-storage-config.version>
+    <web-contract.version>0.6.0.14</web-contract.version>
   </properties>
 
   <scm>
