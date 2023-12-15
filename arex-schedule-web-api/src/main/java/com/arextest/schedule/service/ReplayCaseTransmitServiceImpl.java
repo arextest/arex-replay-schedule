@@ -1,5 +1,6 @@
 package com.arextest.schedule.service;
 
+import com.arextest.schedule.api.listener.ReplayResultListener;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
@@ -27,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -64,6 +66,9 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
   private ReplayNoiseIdentify replayNoiseIdentify;
   @Resource
   private ConfigProvider configProvider;
+
+  @Resource
+  private List<ReplayResultListener> replayResultListenerList;
 
   public void send(List<ReplayActionCaseItem> caseItems, PlanExecutionContext<?> executionContext) {
     ExecutionStatus executionStatus = executionContext.getExecutionStatus();
@@ -199,18 +204,15 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
 
     if (sendStatusType == CaseSendStatusType.SUCCESS) {
       replayActionCaseItemRepository.updateSendResult(caseItem);
-      // async compare task
-      int compareDelaySeconds = configProvider.getCompareDelaySeconds(
-          caseItem.getParent().getAppId());
-      if (compareDelaySeconds == 0) {
-        AsyncCompareCaseTaskRunnable compareTask = new AsyncCompareCaseTaskRunnable(
-            replayResultComparer, caseItem);
-        compareExecutorService.execute(compareTask);
-      } else {
-        AsyncDelayCompareCaseTaskRunnable delayCompareTask = new AsyncDelayCompareCaseTaskRunnable(
-            replayCompareService, caseItem);
-        compareScheduleExecutorService.schedule(delayCompareTask,
-            compareDelaySeconds, TimeUnit.SECONDS);
+      // notify listeners
+      if (CollectionUtils.isNotEmpty(replayResultListenerList)) {
+        for (ReplayResultListener listener : replayResultListenerList) {
+          try {
+            listener.notify(caseItem);
+          } catch (Exception throwable) {
+            LOGGER.error("notify listener: {} error:{}", listener.getClass().getName(),throwable.getMessage());
+          }
+        }
       }
       LOGGER.info("Async compare task distributed, case id: {}", caseItem.getId());
     } else {

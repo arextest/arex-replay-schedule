@@ -17,12 +17,15 @@ import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.planexecution.PlanExecutionMonitor;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
+import com.arextest.schedule.service.external.config.ExpectationScriptService;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import com.arextest.schedule.utils.StageUtils;
+import com.arextest.web.model.contract.contracts.config.expectation.ExpectationScriptModel;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -55,6 +58,8 @@ public final class PlanConsumeService {
   private PlanExecutionMonitor planExecutionMonitorImpl;
   @Resource
   private CompareConfigService compareConfigService;
+  @Resource
+  private ExpectationScriptService expectationScriptService;
 
   public void runAsyncConsume(ReplayPlan replayPlan) {
     BizLogger.recordPlanAsyncStart(replayPlan);
@@ -177,6 +182,21 @@ public final class PlanConsumeService {
         StageStatusEnum.SUCCEEDED, null, System.currentTimeMillis());
   }
 
+  private void fillExpectationScript(String appId, List<ReplayActionItem> replayActionItemList) {
+    if (CollectionUtils.isEmpty(replayActionItemList)) {
+      return;
+    }
+    List<ExpectationScriptModel> expectationScriptList = expectationScriptService.query(appId);
+    if (CollectionUtils.isEmpty(expectationScriptList)) {
+      return;
+    }
+    for (ReplayActionItem item : replayActionItemList) {
+      item.setExpectationScriptList(expectationScriptList.stream()
+          .filter(script -> item.getOperationId().equals(script.getOperationId()))
+          .collect(Collectors.toList()));
+    }
+  }
+
   private final class ReplayActionLoadingRunnableImpl extends AbstractTracedRunnable {
 
     private final ReplayPlan replayPlan;
@@ -248,6 +268,9 @@ public final class PlanConsumeService {
     }
 
     private void initReplayPlan() {
+        // load expectation script
+        fillExpectationScript(replayPlan.getAppId(), replayPlan.getReplayActionItemList());
+
       compareConfigService.preload(replayPlan);
 
       // limiter shared for entire plan, max qps = maxQps per instance * min instance count
