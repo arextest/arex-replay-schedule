@@ -8,6 +8,7 @@ import com.arextest.schedule.sender.ReplaySender;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -41,8 +42,8 @@ public class ReplaySenderConfiguration {
       return invokers;
     }
     try {
-      RemoteJarClassLoader classLoader = RemoteJarLoaderUtils.loadJar(jarFilePath);
-      invokers.addAll(RemoteJarLoaderUtils.loadService(ReplayExtensionInvoker.class, classLoader));
+      ClassLoaderUtils.loadJar(jarFilePath);
+      ServiceLoader.load(ReplayExtensionInvoker.class).forEach(invokers::add);
     } catch (Throwable t) {
       LOGGER.error("Load invoker jar failed, application startup blocked", t);
       throw new RuntimeException("Load invoker jar failed");
