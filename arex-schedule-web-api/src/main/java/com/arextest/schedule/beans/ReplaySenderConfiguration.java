@@ -1,7 +1,5 @@
 package com.arextest.schedule.beans;
 
-import com.arextest.common.model.classloader.RemoteJarClassLoader;
-import com.arextest.common.utils.RemoteJarLoaderUtils;
 import com.arextest.schedule.common.ClassLoaderUtils;
 import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
 import com.arextest.schedule.sender.ReplaySender;
