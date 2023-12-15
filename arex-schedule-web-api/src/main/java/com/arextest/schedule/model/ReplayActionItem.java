@@ -5,6 +5,7 @@ import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanItemCollection;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.deploy.ServiceInstanceOperation;
+import com.arextest.web.model.contract.contracts.config.expectation.ExpectationScriptModel;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Date;
 import java.util.List;
@@ -84,6 +85,11 @@ public class ReplayActionItem {
   private boolean itemProcessed;
   @JsonIgnore
   private AtomicInteger caseProcessCount = new AtomicInteger();
+
+  /**
+   * Expectation script list
+   */
+  private transient List<ExpectationScriptModel> expectationScriptList;
 
   public String getPlanId() {
     if (this.parent != null) {

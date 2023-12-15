@@ -287,9 +287,9 @@
     </sonar.exclusions>
     <!-- Users could specify this property as true to skip the attaching source process -->
     <sonar.jacoco.reportPath>${jacoco.report.path}</sonar.jacoco.reportPath>
-    <!-- Users could specify this property as true to skip the deploy process -->
+    <!-- Users could specify this property as true to skip the deployment process -->
     <spring.boot.version>2.6.3</spring.boot.version>
-    <web-contract.version>0.6.0.12</web-contract.version>
+    <web-contract.version>0.6.0.15-SNAPSHOT</web-contract.version>
   </properties>
 
   <scm>

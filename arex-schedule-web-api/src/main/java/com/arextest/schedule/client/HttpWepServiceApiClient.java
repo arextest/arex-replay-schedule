@@ -207,6 +207,16 @@ public final class HttpWepServiceApiClient {
   }
 
   public <TRequest, TResponse> TResponse jsonPost(String url, TRequest request,
+      ParameterizedTypeReference<TResponse> responseType) {
+    try {
+      return restTemplate.exchange(url, HttpMethod.POST, wrapJsonContentType(request), responseType).getBody();
+    } catch (Exception e) {
+      LOGGER.error("[[title=jsonPost]]eror: {}, url: {}", e.getMessage(), url);
+      return null;
+    }
+  }
+
+  public <TRequest, TResponse> TResponse jsonPost(String url, TRequest request,
       Class<TResponse> responseType,
       Map<String, String> headers) {
     try {

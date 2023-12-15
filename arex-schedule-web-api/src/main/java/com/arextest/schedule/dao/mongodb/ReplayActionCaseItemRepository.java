@@ -6,7 +6,6 @@ import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.CompareProcessStatusType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.converter.ReplayRunDetailsConverter;
-import com.arextest.schedule.model.dao.mongodb.ModelBase;
 import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;

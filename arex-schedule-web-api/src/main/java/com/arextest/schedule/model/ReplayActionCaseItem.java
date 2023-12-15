@@ -5,6 +5,7 @@ import com.alibaba.fastjson2.TypeReference;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.Mocker.Target;
 import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
+import com.arextest.schedule.model.replay.ReplayCaseContext;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Map;
 import lombok.Data;
@@ -28,7 +29,13 @@ public class ReplayActionCaseItem {
   private String planItemId;
   private String planId;
   private String recordId;
+  /**
+   * Target environment replay case id
+   */
   private String targetResultId;
+  /**
+   * Base environment replay case id
+   */
   private String sourceResultId;
   private String contextIdentifier;
 
@@ -62,6 +69,8 @@ public class ReplayActionCaseItem {
   private CompareModeType compareMode = CompareModeType.QUiCK;
   @JsonIgnore
   private String sendErrorMessage;
+
+  private transient ReplayCaseContext replayCaseContext;
 
   public String replayDependency() {
     return requestAttribute(MockAttributeNames.CONFIG_BATCH_NO);
@@ -122,5 +131,9 @@ public class ReplayActionCaseItem {
     this.parent.getParent()
         .setErrorMessage(StringUtils.isNotEmpty(this.sendErrorMessage) ? this.sendErrorMessage
             : otherErrorMessage);
+  }
+
+  public boolean isMultiEnvCompare() {
+    return StringUtils.isNotEmpty(this.sourceResultId);
   }
 }

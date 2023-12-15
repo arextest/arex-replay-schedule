@@ -5,10 +5,12 @@ import com.arextest.common.enums.AuthRejectStrategy;
 import com.arextest.common.model.response.Response;
 import com.arextest.common.utils.ResponseUtils;
 import com.arextest.schedule.model.report.QueryLogEntityRequestTye;
+import com.arextest.schedule.result.expectation.ExpectationService;
 import com.arextest.schedule.service.report.QueryReplayMsgService;
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -32,6 +34,9 @@ public class ReplayReportController {
   @Resource
   private QueryReplayMsgService queryReplayMsgService;
 
+  @Resource
+  private ExpectationService expectationService;
+
   @ResponseBody
   @GetMapping("/queryDiffMsgById/{id}")
   @AppAuth(rejectStrategy = AuthRejectStrategy.DOWNGRADE)
@@ -43,5 +48,12 @@ public class ReplayReportController {
   @ResponseBody
   public Response queryLogEntity(@Valid @RequestBody QueryLogEntityRequestTye request) {
     return ResponseUtils.successResponse(queryReplayMsgService.queryLogEntity(request));
+  }
+
+  @GetMapping("/expectation/result/{caseId}")
+  @ResponseBody
+  @Cacheable(cacheNames = "report", key = "#caseId")
+  public Response queryExpectationResult(@PathVariable String caseId) {
+    return ResponseUtils.successResponse(expectationService.query(caseId));
   }
 }
