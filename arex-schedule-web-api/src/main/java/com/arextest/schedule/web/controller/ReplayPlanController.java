@@ -3,12 +3,12 @@ package com.arextest.schedule.web.controller;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.exceptions.PlanRunningException;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.model.CaseSourceEnvType;
 import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.DebugRequestItem;
 import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.model.plan.BuildReplayPlanResponse;
+import com.arextest.schedule.model.plan.OperationCaseInfo;
 import com.arextest.schedule.model.plan.ReRunReplayPlanRequest;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
@@ -16,14 +16,17 @@ import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.service.DebugRequestService;
 import com.arextest.schedule.service.PlanProduceService;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -56,16 +59,37 @@ public class ReplayPlanController {
 
   @GetMapping(value = "/api/createPlan")
   @ResponseBody
-  public CommonResponse createPlanGet(@RequestParam(name = "appId", required = true) String appId,
-      @RequestParam(name = "targetEnv", required = true) String targetEnv) {
+  public CommonResponse createPlanGet(@RequestParam(name = "appId") String appId,
+      @RequestParam(name = "targetEnv") String targetEnv,
+      @RequestParam(name = "caseSourceFrom", required = false) Long caseSourceFrom,
+      @RequestParam(name = "caseSourceTo", required = false) Long caseSourceTo,
+      @RequestParam(name = "planName", required = false) String planName,
+      @RequestParam(name = "operationIds", required = false) List<String> operationIds
+  ) {
     BuildReplayPlanRequest req = new BuildReplayPlanRequest();
     req.setAppId(appId);
     req.setTargetEnv(targetEnv);
 
     req.setReplayPlanType(0);
     req.setOperator("Webhook");
-    req.setCaseSourceFrom(new Date(System.currentTimeMillis() - CommonConstant.ONE_DAY_MILLIS));
-    req.setCaseSourceTo(new Date());
+    req.setPlanName(planName);
+
+    // date
+    Date dateFrom = Optional.ofNullable(caseSourceFrom).map(Date::new)
+        .orElse(new Date(System.currentTimeMillis() - CommonConstant.ONE_DAY_MILLIS));
+    req.setCaseSourceFrom(dateFrom);
+    Date dateTo = Optional.ofNullable(caseSourceTo).map(Date::new).orElse(new Date());
+    req.setCaseSourceTo(dateTo);
+
+    // operation filter
+    if (!CollectionUtils.isEmpty(operationIds)) {
+      req.setOperationCaseInfoList(operationIds.stream().map(operationId -> {
+        OperationCaseInfo operationCaseInfo = new OperationCaseInfo();
+        operationCaseInfo.setOperationId(operationId);
+        return operationCaseInfo;
+      }).collect(Collectors.toList()));
+    }
+
     return createPlan(req);
   }
 
