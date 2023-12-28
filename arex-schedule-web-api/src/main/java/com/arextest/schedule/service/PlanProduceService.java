@@ -350,6 +350,7 @@ public class PlanProduceService {
     final String planId = request.getPlanId();
     final String planItemId = request.getPlanItemId();
     ReplayPlan replayPlan = replayPlanRepository.query(planId);
+    replayPlan.setPlanCreateMillis(System.currentTimeMillis());
     progressEvent.onBeforePlanReRun(replayPlan);
     if (replayPlan == null) {
       progressEvent.onReplayPlanReRunException(replayPlan);

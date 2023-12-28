@@ -70,8 +70,14 @@ public class PlanConsumePrepareService {
   private ReplayNoiseIdentify replayNoiseIdentify;
 
   public int prepareRunData(ReplayPlan replayPlan) {
-    metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(),
-        replayPlan.getAppId(), null, System.currentTimeMillis() - replayPlan.getPlanCreateMillis());
+    if (replayPlan.getPlanCreateMillis() == 0) {
+      LOGGER.warn("The plan create time is null, planId:{}, appId:{}", replayPlan.getId(),
+          replayPlan.getAppId());
+    } else {
+      metricService.recordTimeEvent(LogType.PLAN_EXECUTION_DELAY.getValue(), replayPlan.getId(),
+          replayPlan.getAppId(), null,
+          System.currentTimeMillis() - replayPlan.getPlanCreateMillis());
+    }
     int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());
     if (!replayPlan.isReRun() && planSavedCaseSize != replayPlan.getCaseTotalCount()) {
       LOGGER.info("update the plan TotalCount, plan id:{} ,appId: {} , size: {} -> {}",
