@@ -112,7 +112,6 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
       // if we skip the rest of cases remaining in the action item, set its status
       if (replayActionItem.getReplayCaseCount() == replayActionItem.getCaseProcessCount()
           .intValue()) {
-        progressEvent.onActionInterrupted(replayActionItem);
         progressTracer.finishCaseByPlan(replayPlan, contextCasesCount);
       } else {
         progressTracer.finishCaseByAction(replayActionItem, contextCasesCount);

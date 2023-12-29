@@ -9,7 +9,6 @@ import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.model.ExecutionStatus;
 import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.plan.PlanStageEnum;
@@ -174,14 +173,6 @@ public final class PlanConsumeService {
       progressEvent.onReplayPlanFinish(replayPlan);
     } else {
       BizLogger.recordPlanDone(replayPlan);
-    }
-
-    for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
-      if (executionStatus.isCanceled() && !replayActionItem.sendDone()) {
-        progressEvent.onActionCancelled(replayActionItem);
-      } else if (executionStatus.isInterrupted() && !replayActionItem.sendDone()) {
-        progressEvent.onActionInterrupted(replayActionItem);
-      }
     }
 
     progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.FINISH,

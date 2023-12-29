@@ -45,16 +45,6 @@ final class RedisProgressTracerImpl implements ProgressTracer {
     int value = replayPlan.getCaseTotalCount();
     byte[] totalKey = toPlanTotalKeyBytes(planId);
     setupRedisNxWithExpire(totalKey, valueToBytes(value));
-    int actionCaseCount;
-    for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
-      actionCaseCount = replayActionItem.getReplayCaseCount();
-      if (actionCaseCount > 0) {
-        setupRedisNxWithExpire(toPlanActionTotalKeyBytes(replayActionItem.getId()),
-            String.valueOf(actionCaseCount).getBytes(StandardCharsets.UTF_8));
-        LOGGER.info("init plan action total, action id: {}, case count: {}",
-            replayActionItem.getId(), actionCaseCount);
-      }
-    }
     this.refreshUpdateTime(planId);
   }
 
@@ -82,10 +72,6 @@ final class RedisProgressTracerImpl implements ProgressTracer {
     return ByteBuffer.allocate(Long.BYTES).putLong(value).array();
   }
 
-  private byte[] toPlanActionTotalKeyBytes(String actionId) {
-    return allocateArray(PLAN_ACTION_TOTAL_KEY, actionId.getBytes(StandardCharsets.UTF_8));
-  }
-
   private byte[] toPlanUpdateTimeKeyBytes(String planId) {
     return allocateArray(PLAN_UPDATE_TIME_KEY, planId.getBytes(StandardCharsets.UTF_8));
   }
@@ -111,7 +97,6 @@ final class RedisProgressTracerImpl implements ProgressTracer {
 
   @Override
   public void finishCaseByAction(ReplayActionItem actionItem, int count) {
-    doReplayActionFinish(actionItem, count);
     ReplayPlan replayPlan = actionItem.getParent();
     doPlanFinish(replayPlan, count);
     this.refreshUpdateTime(replayPlan.getId());
@@ -147,20 +132,6 @@ final class RedisProgressTracerImpl implements ProgressTracer {
     } catch (Throwable throwable) {
       LOGGER.error("do doWithRetry error: {}", throwable.getMessage(), throwable);
       return action.get();
-    }
-  }
-
-  private void doReplayActionFinish(ReplayActionItem replayActionItem, int count) {
-    String actionId = replayActionItem.getId();
-    try {
-      Long finished = doWithRetry(
-          () -> redisCacheProvider.decrValueBy(toPlanActionTotalKeyBytes(actionId), count));
-      if (finished != null && finished == 0) {
-        progressEvent.onActionComparisonFinish(replayActionItem);
-      }
-    } catch (Throwable throwable) {
-      LOGGER.error("do plan action finish error: {} ,action id: {}", throwable.getMessage(),
-          actionId, throwable);
     }
   }
 
@@ -218,14 +189,6 @@ final class RedisProgressTracerImpl implements ProgressTracer {
 
     byte[] totalKey = toPlanFinishKeyBytes(planId);
     redisCacheProvider.put(totalKey, String.valueOf(0).getBytes(StandardCharsets.UTF_8));
-    int actionReRunCaseCount;
-    for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
-      actionReRunCaseCount = replayPlan.isReRun()
-          ? replayActionItem.getRerunCaseCount()
-          : replayActionItem.getReplayCaseCount();
-      setRedisNxWithExpire(toPlanActionTotalKeyBytes(replayActionItem.getId()),
-          String.valueOf(actionReRunCaseCount).getBytes(StandardCharsets.UTF_8));
-    }
     this.refreshUpdateTime(planId);
   }
 }

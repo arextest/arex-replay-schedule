@@ -75,15 +75,9 @@ public interface ProgressEvent {
 
   void onReplayPlanReRun(ReplayPlan replayPlan);
 
-  void onActionComparisonFinish(ReplayActionItem actionItem);
-
   void onActionBeforeSend(ReplayActionItem actionItem);
 
   void onActionAfterSend(ReplayActionItem actionItem);
 
   void onActionCaseLoaded(ReplayActionItem actionItem);
-
-  void onActionInterrupted(ReplayActionItem actionItem);
-
-  void onActionCancelled(ReplayActionItem actionItem);
 }

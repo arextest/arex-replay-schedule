@@ -92,9 +92,6 @@ public class PlanConsumePrepareService {
 
   private int saveAllActionCase(List<ReplayActionItem> replayActionItemList) {
     int planSavedCaseSize = 0;
-    long start;
-    long end;
-
     for (ReplayActionItem replayActionItem : replayActionItemList) {
       if (replayActionItem.getReplayStatus() != ReplayStatusType.INIT.getValue()) {
         planSavedCaseSize += replayActionItem.getReplayCaseCount();
