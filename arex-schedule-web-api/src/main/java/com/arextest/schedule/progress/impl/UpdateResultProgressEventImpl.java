@@ -62,11 +62,11 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   public void onReplayPlanCreated(ReplayPlan replayPlan) {
     try {
       onReplayPlanStageUpdate(replayPlan, PlanStageEnum.INIT_REPORT, StageStatusEnum.ONGOING,
-          System.currentTimeMillis(), null, null);
+          System.currentTimeMillis(), null);
       boolean success = replayReportService.initReportInfo(replayPlan);
       StageStatusEnum stageStatusEnum = StageStatusEnum.success(success);
       onReplayPlanStageUpdate(replayPlan, PlanStageEnum.INIT_REPORT, stageStatusEnum,
-          null, System.currentTimeMillis(), null);
+          null, System.currentTimeMillis());
     } catch (Throwable throwable) {
       LOGGER.error("prepare load compare config error: {}, plan id:{}", throwable.getMessage(),
           replayPlan.getId(), throwable);
@@ -76,13 +76,13 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   @Override
   public void onCompareConfigBeforeLoading(ReplayPlan replayPlan) {
     onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.ONGOING,
-        System.currentTimeMillis(), null, null);
+        System.currentTimeMillis(), null);
   }
 
   @Override
   public void onCompareConfigLoaded(ReplayPlan replayPlan) {
     onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.SUCCEEDED,
-        null, System.currentTimeMillis(), null);
+        null, System.currentTimeMillis());
   }
 
   @Override

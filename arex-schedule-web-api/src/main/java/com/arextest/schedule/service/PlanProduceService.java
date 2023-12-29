@@ -146,8 +146,7 @@ public class PlanProduceService {
     replayPlan.setCaseTotalCount(planCaseCount);
     // todo: add trans
     progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.SAVE_PLAN,
-        StageStatusEnum.ONGOING,
-        System.currentTimeMillis(), null, null);
+        StageStatusEnum.ONGOING, System.currentTimeMillis(), null);
     if (!replayPlanRepository.save(replayPlan)) {
       progressEvent.onReplayPlanCreateException(request);
       return CommonResponse.badResponse("save replan plan error, " + replayPlan.toString(),
@@ -163,7 +162,7 @@ public class PlanProduceService {
     }
     progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.SAVE_PLAN,
         StageStatusEnum.SUCCEEDED,
-        System.currentTimeMillis(), null, null);
+        System.currentTimeMillis(), null);
     BizLogger.recordPlanStart(replayPlan);
     progressEvent.onReplayPlanCreated(replayPlan);
     planConsumeService.runAsyncConsume(replayPlan);
@@ -197,8 +196,7 @@ public class PlanProduceService {
     // init
     replayPlan.setReplayPlanStageList(StageUtils.initPlanStageList(StageUtils.INITIAL_STAGES));
     progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_PLAN,
-        StageStatusEnum.ONGOING,
-        System.currentTimeMillis(), null, null);
+        StageStatusEnum.ONGOING, System.currentTimeMillis(), null);
 
     replayPlan.setAppId(appId);
     replayPlan.setPlanName(request.getPlanName());
@@ -247,8 +245,7 @@ public class PlanProduceService {
     replayPlan.setCaseTags(request.getCaseTags());
 
     progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_PLAN,
-        StageStatusEnum.SUCCEEDED,
-        null, System.currentTimeMillis(), null);
+        StageStatusEnum.SUCCEEDED, null, System.currentTimeMillis());
     return replayPlan;
   }
 
@@ -384,8 +381,7 @@ public class PlanProduceService {
 
       progressEvent.onReplayPlanReRun(replayPlan);
       progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
-          StageStatusEnum.ONGOING,
-          System.currentTimeMillis(), null, null);
+          StageStatusEnum.ONGOING, System.currentTimeMillis(), null);
 
       planConsumePrepareService.updateFailedActionAndCase(replayPlan, failedCaseList);
       if (CollectionUtils.isEmpty(replayPlan.getReplayActionItemList())) {
@@ -393,15 +389,12 @@ public class PlanProduceService {
       }
 
       progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
-          StageStatusEnum.SUCCEEDED,
-          null, System.currentTimeMillis(), null);
+          StageStatusEnum.SUCCEEDED, null, System.currentTimeMillis());
     } catch (Exception e) {
       progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
-          StageStatusEnum.FAILED,
-          null, System.currentTimeMillis(), null);
+          StageStatusEnum.FAILED, null, System.currentTimeMillis());
       progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.RE_RUN,
-          StageStatusEnum.FAILED,
-          System.currentTimeMillis(), null, null);
+          StageStatusEnum.FAILED, System.currentTimeMillis(), null);
       planExecutionMonitorImpl.deregister(replayPlan);
       progressEvent.onReplayPlanReRunException(replayPlan, e);
       return CommonResponse.badResponse("ReRun plan failed！");
