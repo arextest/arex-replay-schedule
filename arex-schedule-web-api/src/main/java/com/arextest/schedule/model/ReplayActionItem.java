@@ -103,10 +103,6 @@ public class ReplayActionItem {
     return replayCaseCount == 0;
   }
 
-  public boolean finalized() {
-    return ReplayStatusType.ofCode(this.getReplayStatus()).finalized();
-  }
-
   public void recordProcessCaseCount(int incoming) {
     this.caseProcessCount.addAndGet(incoming);
   }

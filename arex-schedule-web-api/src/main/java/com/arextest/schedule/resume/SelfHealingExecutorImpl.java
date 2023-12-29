@@ -89,12 +89,6 @@ public class SelfHealingExecutorImpl implements SelfHealingExecutor {
       progressEvent.onReplayPlanFinish(replayPlan);
       return;
     }
-    if (isActionFinished(actionItems)) {
-      LOGGER.warn("skip resume when the all actions finished, plan id: {} mark to plan finish ",
-          planId);
-      progressEvent.onReplayPlanFinish(replayPlan);
-      return;
-    }
     ConfigurationService.ScheduleConfiguration schedule =
         configurationService.schedule(replayPlan.getAppId());
     if (schedule != null) {
@@ -109,16 +103,6 @@ public class SelfHealingExecutorImpl implements SelfHealingExecutor {
     LOGGER.info("try resume the plan running, plan id: {}", planId);
     planExecutionMonitorImpl.register(replayPlan);
     planConsumeService.runAsyncConsume(replayPlan);
-  }
-
-  private boolean isActionFinished(List<ReplayActionItem> actionItems) {
-    for (ReplayActionItem actionItem : actionItems) {
-      if (actionItem.finalized()) {
-        continue;
-      }
-      return false;
-    }
-    return true;
   }
 
   private void doResumeLastRecordTime(List<ReplayActionItem> actionItems) {
