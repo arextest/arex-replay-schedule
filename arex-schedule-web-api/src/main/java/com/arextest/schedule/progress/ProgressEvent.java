@@ -70,20 +70,18 @@ public interface ProgressEvent {
   void onReplayPlanTerminate(String replayId);
 
   void onReplayPlanStageUpdate(ReplayPlan replayPlan, PlanStageEnum stageType,
-      StageStatusEnum stageStatus,
-      Long startTime, Long endTime, String msg);
+      StageStatusEnum stageStatus, Long startTime, Long endTime, String msg);
+
+  default void onReplayPlanStageUpdate(ReplayPlan replayPlan, PlanStageEnum stageType,
+      StageStatusEnum stageStatus, Long startTime, Long endTime) {
+    this.onReplayPlanStageUpdate(replayPlan, stageType, stageStatus, startTime, endTime, null);
+  }
 
   void onReplayPlanReRun(ReplayPlan replayPlan);
-
-  void onActionComparisonFinish(ReplayActionItem actionItem);
 
   void onActionBeforeSend(ReplayActionItem actionItem);
 
   void onActionAfterSend(ReplayActionItem actionItem);
 
   void onActionCaseLoaded(ReplayActionItem actionItem);
-
-  void onActionInterrupted(ReplayActionItem actionItem);
-
-  void onActionCancelled(ReplayActionItem actionItem);
 }

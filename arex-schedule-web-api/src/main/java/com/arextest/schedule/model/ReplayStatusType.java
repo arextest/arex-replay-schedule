@@ -68,8 +68,4 @@ public enum ReplayStatusType {
         return INIT;
     }
   }
-
-  public boolean finalized() {
-    return this == FINISHED || this == FAIL_INTERRUPTED || this == CANCELLED;
-  }
 }

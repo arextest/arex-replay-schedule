@@ -9,7 +9,6 @@ import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.model.ExecutionStatus;
 import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.plan.PlanStageEnum;
@@ -158,7 +157,7 @@ public final class PlanConsumeService {
 
   private void finalizePlanStatus(ReplayPlan replayPlan) {
     progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.FINISH, StageStatusEnum.ONGOING,
-        System.currentTimeMillis(), null, null);
+        System.currentTimeMillis(), null);
 
     ExecutionStatus executionStatus = replayPlan.getPlanStatus();
 
@@ -176,17 +175,8 @@ public final class PlanConsumeService {
       BizLogger.recordPlanDone(replayPlan);
     }
 
-    for (ReplayActionItem replayActionItem : replayPlan.getReplayActionItemList()) {
-      if (executionStatus.isCanceled() && !replayActionItem.sendDone()) {
-        progressEvent.onActionCancelled(replayActionItem);
-      } else if (executionStatus.isInterrupted() && !replayActionItem.sendDone()) {
-        progressEvent.onActionInterrupted(replayActionItem);
-      }
-    }
-
     progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.FINISH,
-        StageStatusEnum.SUCCEEDED,
-        null, System.currentTimeMillis(), null);
+        StageStatusEnum.SUCCEEDED, null, System.currentTimeMillis());
   }
 
   private final class ReplayActionLoadingRunnableImpl extends AbstractTracedRunnable {
@@ -225,18 +215,16 @@ public final class PlanConsumeService {
         this.init();
         start = System.currentTimeMillis();
         progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
-            StageStatusEnum.ONGOING,
-            start, null, null);
+            StageStatusEnum.ONGOING, start, null);
         int planSavedCaseSize = planConsumePrepareService.prepareRunData(replayPlan);
         end = System.currentTimeMillis();
         progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
-            StageStatusEnum.SUCCEEDED,
-            null, end, null);
+            StageStatusEnum.SUCCEEDED, null, end);
 
         // build context to send
         progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_CONTEXT,
             StageStatusEnum.ONGOING,
-            start, null, null);
+            start, null);
         replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
 
         if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
@@ -244,17 +232,17 @@ public final class PlanConsumeService {
           replayPlan.setErrorMessage("Got empty execution context");
           progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
           progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_CONTEXT,
-              StageStatusEnum.FAILED, null, end, null);
+              StageStatusEnum.FAILED, null, end);
           return;
         }
         progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_CONTEXT,
-            StageStatusEnum.SUCCEEDED, null, end, null);
+            StageStatusEnum.SUCCEEDED, null, end);
 
         // process plan
         PlanStageEnum planStageEnum =
             replayPlan.isReRun() ? PlanStageEnum.RE_RUN : PlanStageEnum.RUN;
         progressEvent.onReplayPlanStageUpdate(replayPlan, planStageEnum, StageStatusEnum.ONGOING,
-            System.currentTimeMillis(), null, null);
+            System.currentTimeMillis(), null);
         consumePlan(replayPlan);
 
         // finalize exceptional status

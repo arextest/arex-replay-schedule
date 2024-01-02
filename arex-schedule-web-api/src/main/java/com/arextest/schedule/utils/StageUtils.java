@@ -2,7 +2,6 @@ package com.arextest.schedule.utils;
 
 import com.arextest.schedule.model.plan.PlanStageEnum;
 import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
-import com.arextest.schedule.model.plan.StageBaseInfo;
 import com.arextest.schedule.model.plan.StageStatusEnum;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,29 +54,6 @@ public class StageUtils {
     replayPlanStageInfo.setMsg(null);
     if (CollectionUtils.isNotEmpty(replayPlanStageInfo.getSubStageInfoList())) {
       replayPlanStageInfo.getSubStageInfoList().forEach(StageUtils::resetStageStatus);
-    }
-  }
-
-  public static int getStageStatus(List<ReplayPlanStageInfo> replayPlanStageInfoList,
-      PlanStageEnum planStageEnum) {
-    if (planStageEnum.isMainStage()) {
-      return replayPlanStageInfoList.stream()
-          .filter(replayPlanStageInfo -> replayPlanStageInfo.getStageType()
-              == (planStageEnum.getCode()))
-          .map(StageBaseInfo::getStageStatus)
-          .findFirst()
-          .orElse(StageStatusEnum.UNKNOWN.getCode());
-    } else {
-      PlanStageEnum parentStage = PlanStageEnum.of(planStageEnum.getParentStage());
-      ReplayPlanStageInfo parentStageInfo = replayPlanStageInfoList.stream()
-          .filter(
-              replayPlanStageInfo -> replayPlanStageInfo.getStageType() == (parentStage.getCode()))
-          .findFirst()
-          .orElse(null);
-      if (parentStageInfo == null) {
-        return StageStatusEnum.UNKNOWN.getCode();
-      }
-      return getStageStatus(parentStageInfo.getSubStageInfoList(), planStageEnum);
     }
   }
 }

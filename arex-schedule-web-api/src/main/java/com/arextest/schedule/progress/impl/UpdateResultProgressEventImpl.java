@@ -23,7 +23,6 @@ import com.arextest.web.model.contract.contracts.common.PlanStatistic;
 import com.google.common.eventbus.AsyncEventBus;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -63,11 +62,11 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   public void onReplayPlanCreated(ReplayPlan replayPlan) {
     try {
       onReplayPlanStageUpdate(replayPlan, PlanStageEnum.INIT_REPORT, StageStatusEnum.ONGOING,
-          System.currentTimeMillis(), null, null);
+          System.currentTimeMillis(), null);
       boolean success = replayReportService.initReportInfo(replayPlan);
       StageStatusEnum stageStatusEnum = StageStatusEnum.success(success);
       onReplayPlanStageUpdate(replayPlan, PlanStageEnum.INIT_REPORT, stageStatusEnum,
-          null, System.currentTimeMillis(), null);
+          null, System.currentTimeMillis());
     } catch (Throwable throwable) {
       LOGGER.error("prepare load compare config error: {}, plan id:{}", throwable.getMessage(),
           replayPlan.getId(), throwable);
@@ -77,13 +76,13 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   @Override
   public void onCompareConfigBeforeLoading(ReplayPlan replayPlan) {
     onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.ONGOING,
-        System.currentTimeMillis(), null, null);
+        System.currentTimeMillis(), null);
   }
 
   @Override
   public void onCompareConfigLoaded(ReplayPlan replayPlan) {
     onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CONFIG, StageStatusEnum.SUCCEEDED,
-        null, System.currentTimeMillis(), null);
+        null, System.currentTimeMillis());
   }
 
   @Override
@@ -172,7 +171,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     } else {
       ReplayPlanStageInfo parentStage = findParentStage(replayPlan.getReplayPlanStageList(),
           stageType);
-      updateParentStage(parentStage, stageType, stageStatus, startTime, endTime, msg);
+      updateParentStage(parentStage, stageType, stageStatus, startTime, endTime);
 
       stageBaseInfo = findStage(parentStage.getSubStageInfoList(), stageType);
     }
@@ -252,7 +251,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
 
   private void updateParentStage(StageBaseInfo parentStage, PlanStageEnum stageType,
       StageStatusEnum stageStatus,
-      Long startTime, Long endTime, String msg) {
+      Long startTime, Long endTime) {
     PlanStageEnum parentStageEnum = PlanStageEnum.of(parentStage.getStageType());
     // when first subStage starts, start its parent stage
     boolean firstSubStageOnGoing =
@@ -285,7 +284,6 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     for (addIndex++; addIndex < stageInfoList.size(); addIndex++) {
       StageUtils.resetStageStatus(stageInfoList.get(addIndex));
     }
-
   }
 
   private void recordPlanExecutionTime(ReplayPlan replayPlan) {
@@ -303,35 +301,12 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   }
 
   @Override
-  public void onActionComparisonFinish(ReplayActionItem actionItem) {
-    actionItem.setReplayFinishTime(new Date());
-    updateReplayActionStatus(actionItem, ReplayStatusType.FINISHED, null);
-  }
-
-  @Override
   public void onActionBeforeSend(ReplayActionItem actionItem) {
     actionItem.setReplayBeginTime(new Date());
-    boolean isReRun = Optional.ofNullable(actionItem.getParent()).map(ReplayPlan::isReRun)
-        .orElse(false);
-    ReplayStatusType statusType = isReRun ? ReplayStatusType.RERUNNING : ReplayStatusType.RUNNING;
-    updateReplayActionStatus(actionItem, statusType, null);
-  }
-
-  private void updateReplayActionStatus(ReplayActionItem actionItem,
-      ReplayStatusType replayStatusType, String errorMessage) {
-    actionItem.setReplayStatus(replayStatusType.getValue());
-    boolean rerun = Optional.ofNullable(actionItem.getParent()).map(ReplayPlan::isReRun)
-        .orElse(false);
-    replayPlanActionRepository.update(actionItem);
-    LOGGER.info("update the replay action send status: {}, action id:{}", replayStatusType,
-        actionItem.getId());
-    replayReportService.pushActionStatus(actionItem.getPlanId(),
-        replayStatusType, actionItem.getId(), errorMessage, rerun);
   }
 
   @Override
   public void onActionAfterSend(ReplayActionItem actionItem) {
-
   }
 
   @Override
@@ -344,28 +319,5 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     replayPlanActionRepository.update(actionItem);
     LOGGER.info("update the replay action case count, action id:{} , size: {}", actionItem.getId(),
         actionItem.getReplayCaseCount());
-  }
-
-  @Override
-  public void onActionInterrupted(ReplayActionItem actionItem) {
-    final Date now = new Date();
-    if (actionItem.getReplayBeginTime() == null) {
-      actionItem.setReplayBeginTime(now);
-    }
-    actionItem.setReplayFinishTime(now);
-    updateReplayActionStatus(actionItem, ReplayStatusType.FAIL_INTERRUPTED,
-        actionItem.getErrorMessage());
-    metricService.recordCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(), actionItem.getPlanId(),
-        actionItem.getAppId(),
-        actionItem.getCaseItemList() == null ? 0 : actionItem.getCaseItemList().size());
-  }
-
-  public void onActionCancelled(ReplayActionItem actionItem) {
-    final Date now = new Date();
-    if (actionItem.getReplayBeginTime() == null) {
-      actionItem.setReplayBeginTime(now);
-    }
-    actionItem.setReplayFinishTime(now);
-    updateReplayActionStatus(actionItem, ReplayStatusType.CANCELLED, null);
   }
 }
