@@ -31,3 +31,5 @@ jobs:
         if: success() || failure() # always run even if the previous step fails
         with:
           report_paths: '**/target/surefire-reports/TEST-*.xml'
+      - name: Codecov
+        uses: codecov/codecov-action@v3
