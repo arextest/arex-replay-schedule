@@ -50,13 +50,6 @@
       <artifactId>spring-boot-starter-web</artifactId>
       <groupId>org.springframework.boot</groupId>
     </dependency>
-
-    <!-- mock -->
-    <dependency>
-      <artifactId>jmockit</artifactId>
-      <groupId>org.jmockit</groupId>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <artifactId>spring-boot-starter-log4j2</artifactId>
       <groupId>org.springframework.boot</groupId>

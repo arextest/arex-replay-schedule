@@ -169,24 +169,15 @@
         <version>${spring.boot.version}</version>
       </dependency>
       <dependency>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <groupId>org.springframework.boot</groupId>
+        <version>${spring.boot.version}</version>
+      </dependency>
+      <dependency>
         <artifactId>lombok</artifactId>
         <groupId>org.projectlombok</groupId>
         <scope>provided</scope>
         <version>${lombok.version}</version>
-      </dependency>
-      <!-- mock -->
-      <dependency>
-        <artifactId>jmockit</artifactId>
-        <groupId>org.jmockit</groupId>
-        <scope>test</scope>
-        <version>${jmockit.version}</version>
-      </dependency>
-      <!-- test -->
-      <dependency>
-        <artifactId>junit</artifactId>
-        <groupId>junit</groupId>
-        <scope>test</scope>
-        <version>${junit.version}</version>
       </dependency>
       <dependency>
         <groupId>org.mapstruct</groupId>

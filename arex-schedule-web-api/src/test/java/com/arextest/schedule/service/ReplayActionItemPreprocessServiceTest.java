@@ -1,23 +1,24 @@
 package com.arextest.schedule.service;
 
 import static org.junit.Assert.assertEquals;
+
 import com.arextest.schedule.model.ReplayActionItem;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import mockit.Injectable;
-import mockit.integration.junit4.JMockit;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(JMockit.class)
+@RunWith(MockitoJUnitRunner.class)
 @Ignore
 public class ReplayActionItemPreprocessServiceTest {
 
-  @Injectable
+  @InjectMocks
   private ReplayActionItemPreprocessService service;
 
   @Test

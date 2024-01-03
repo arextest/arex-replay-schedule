@@ -12,8 +12,6 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import mockit.Injectable;
-import mockit.integration.junit4.JMockit;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,12 +20,14 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
+import org.mockito.InjectMocks;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @Ignore
-@RunWith(JMockit.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ReplayNoiseIdentifyServiceTest {
 
-  @Injectable
+  @InjectMocks
   AsyncNoiseCaseAnalysisTaskRunnable runnable;
 
   @Test
