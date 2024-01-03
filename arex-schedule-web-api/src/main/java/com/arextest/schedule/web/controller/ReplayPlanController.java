@@ -64,6 +64,7 @@ public class ReplayPlanController {
       @RequestParam(name = "targetEnv") String targetEnv,
       @RequestParam(name = "caseSourceFrom", required = false) Long caseSourceFrom,
       @RequestParam(name = "caseSourceTo", required = false) Long caseSourceTo,
+      @RequestParam(name = "caseCountLimit", required = false) Integer caseCountLimit,
       @RequestParam(name = "planName", required = false) String planName,
       @RequestParam(name = "operationIds", required = false) List<String> operationIds
   ) {
@@ -74,6 +75,7 @@ public class ReplayPlanController {
     req.setReplayPlanType(BuildReplayPlanType.BY_APP_ID.getValue());
     req.setOperator("Webhook");
     req.setPlanName(planName);
+    req.setCaseCountLimit(caseCountLimit);
 
     // date
     Date dateFrom = Optional.ofNullable(caseSourceFrom).map(Date::new)

@@ -233,7 +233,7 @@ public class PlanProduceService {
     if (schedule != null) {
       replayPlan.setReplaySendMaxQps(schedule.getSendMaxQps());
     }
-    if (request.getCaseCountLimit() <= 0) {
+    if (request.getCaseCountLimit() == null || request.getCaseCountLimit() <= 0) {
       replayPlan.setCaseCountLimit(OPERATION_MAX_CASE_COUNT);
     } else {
       replayPlan.setCaseCountLimit(request.getCaseCountLimit());
