@@ -8,6 +8,7 @@ import com.arextest.schedule.model.DebugRequestItem;
 import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.model.plan.BuildReplayPlanResponse;
+import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.schedule.model.plan.OperationCaseInfo;
 import com.arextest.schedule.model.plan.ReRunReplayPlanRequest;
 import com.arextest.schedule.progress.ProgressEvent;
@@ -70,7 +71,7 @@ public class ReplayPlanController {
     req.setAppId(appId);
     req.setTargetEnv(targetEnv);
 
-    req.setReplayPlanType(0);
+    req.setReplayPlanType(BuildReplayPlanType.BY_APP_ID.getValue());
     req.setOperator("Webhook");
     req.setPlanName(planName);
 
@@ -88,6 +89,7 @@ public class ReplayPlanController {
         operationCaseInfo.setOperationId(operationId);
         return operationCaseInfo;
       }).collect(Collectors.toList()));
+      req.setReplayPlanType(BuildReplayPlanType.BY_OPERATION_OF_APP_ID.getValue());
     }
 
     return createPlan(req);
