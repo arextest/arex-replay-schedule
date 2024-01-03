@@ -68,11 +68,6 @@
       <groupId>org.apache.commons</groupId>
     </dependency>
     <dependency>
-      <artifactId>junit</artifactId>
-      <groupId>junit</groupId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <artifactId>spring-boot-starter-test</artifactId>
       <groupId>org.springframework.boot</groupId>
       <scope>test</scope>
@@ -221,7 +216,7 @@
             <artifactId>spring-boot-maven-plugin</artifactId>
             <configuration>
               <includeSystemScope>true</includeSystemScope>
-              <mainClass>com.arextest.schedule.web.boot.WebSpringBootServletInitializer</mainClass>
+              <mainClass>com.arextest.schedule.WebSpringBootServletInitializer</mainClass>
               <outputDirectory>../arex-schedule-jar</outputDirectory>
             </configuration>
             <executions>

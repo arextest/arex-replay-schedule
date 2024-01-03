@@ -1,6 +1,5 @@
 package com.arextest.schedule.service;
 
-import static org.junit.Assert.assertEquals;
 
 import com.arextest.schedule.model.ReplayActionItem;
 import java.lang.reflect.Method;
@@ -8,16 +7,21 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
 
-@RunWith(MockitoJUnitRunner.class)
 public class ReplayActionItemPreprocessServiceTest {
 
   @InjectMocks
   private ReplayActionItemPreprocessService service;
+
+  @BeforeEach
+  public void setUp() throws Exception {
+    MockitoAnnotations.openMocks(this);
+  }
 
   @Test
   public void testIncludeFilter() throws Exception {
@@ -34,7 +38,7 @@ public class ReplayActionItemPreprocessServiceTest {
 
     filterMethod.invoke(service, replayActionItemList, includeOperations, null);
 
-    assertEquals(2, replayActionItemList.size());
+    Assertions.assertEquals(2, replayActionItemList.size());
   }
 
   @Test
@@ -52,7 +56,7 @@ public class ReplayActionItemPreprocessServiceTest {
 
     filterMethod.invoke(service, replayActionItemList, null, excludeOperations);
 
-    assertEquals(8, replayActionItemList.size());
+    Assertions.assertEquals(8, replayActionItemList.size());
   }
 
   @Test
@@ -73,9 +77,9 @@ public class ReplayActionItemPreprocessServiceTest {
     excludeOperations.add("operation8");
 
     filterMethod.invoke(service, replayActionItemList, includeOperations, excludeOperations);
-    assertEquals(2, replayActionItemList.size());
-    assertEquals("operation2", replayActionItemList.get(0).getOperationName());
-    assertEquals("operation3", replayActionItemList.get(1).getOperationName());
+    Assertions.assertEquals(2, replayActionItemList.size());
+    Assertions.assertEquals("operation2", replayActionItemList.get(0).getOperationName());
+    Assertions.assertEquals("operation3", replayActionItemList.get(1).getOperationName());
   }
 
 
