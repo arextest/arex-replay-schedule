@@ -287,12 +287,8 @@
     <compare-sdk.version>0.2.2</compare-sdk.version>
     <fastjson2.version>2.0.23</fastjson2.version>
     <guava.version>29.0-jre</guava.version>
-    <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
-    <jacoco.report.path>${project.basedir}/code-coverage/jacoco.exec</jacoco.report.path>
     <java.version>1.8</java.version>
-    <jmockit.version>1.37</jmockit.version>
 
-    <!-- single jacoco.exec file relative to root directory of the project -->
     <lombok.version>1.18.30</lombok.version>
     <mapstruct.version>1.5.5.Final</mapstruct.version>
     <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
@@ -310,10 +306,7 @@
       **/model/**,
       **/mapping/**
     </sonar.exclusions>
-    <!-- Users could specify this property as true to skip the attaching source process -->
     <sonar.jacoco.reportPath>${jacoco.report.path}</sonar.jacoco.reportPath>
-    <!-- Users could specify this property as true to skip the deploy process -->
-    <spring.boot.version>2.7.18</spring.boot.version>
     <arex-storage-config.version>1.0.50</arex-storage-config.version>
     <web-contract.version>0.6.0.14</web-contract.version>
   </properties>
