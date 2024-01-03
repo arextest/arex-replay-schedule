@@ -4,6 +4,7 @@ import com.arextest.schedule.dao.RepositoryWriter;
 import com.arextest.schedule.dao.mongodb.util.MongoHelper;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.converter.ReplayPlanItemConverter;
+import com.arextest.schedule.model.dao.mongodb.ModelBase.Fields;
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanItemCollection;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
@@ -90,7 +91,7 @@ public class ReplayPlanActionRepository implements RepositoryWriter<ReplayAction
   public boolean updateNoiseOfContextFinished(String id, String contextName, int count) {
     Query query = Query.query(Criteria.where(DASH_ID).is(id));
     Update update = new Update()
-        .inc(MongoHelper.appendDot(ReplayPlanItemCollection.FIELD_NOISE_FINISHED_CONTEXTS,
+        .inc(MongoHelper.appendDot(ReplayPlanItemCollection.Fields.NOISE_FINISHED_CONTEXTS,
             contextName), count);
     UpdateResult updateResult = mongoTemplate.updateMulti(query, update,
         ReplayPlanItemCollection.class);
@@ -107,9 +108,9 @@ public class ReplayPlanActionRepository implements RepositoryWriter<ReplayAction
           mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, ReplayPlanItemCollection.class);
       for (ReplayActionItem actionItem : actionItems) {
         Query query = Query.query(
-            Criteria.where(ReplayPlanItemCollection.FIELD_ID).is(actionItem.getId()));
+            Criteria.where(Fields.ID).is(actionItem.getId()));
         Update update = MongoHelper.getUpdate();
-        update.set(ReplayPlanItemCollection.FIELD_NOISE_FINISHED_CONTEXTS,
+        update.set(ReplayPlanItemCollection.Fields.NOISE_FINISHED_CONTEXTS,
             actionItem.getNoiseFinishedContexts());
         bulkOperations.updateMulti(query, update);
       }

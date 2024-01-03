@@ -140,11 +140,11 @@ public class ReplayNoiseHandlerService {
         UpdateNoiseItem updateNoiseItem = new UpdateNoiseItem();
         updateNoiseItem.setQueryFields(
             MapUtils.createMap(
-                ReplayNoiseCollection.FIELD_PLAN_ID,
+                ReplayNoiseCollection.Fields.PLAN_ID,
                 excludeNoiseRequestType.getPlanId(),
-                ReplayNoiseCollection.FIELD_OPERATION_ID,
+                ReplayNoiseCollection.Fields.OPERATION_ID,
                 operationId,
-                ReplayNoiseCollection.FIELD_CATEGORY_NAME,
+                ReplayNoiseCollection.Fields.CATEGORY_NAME,
                 mockerNoiseItem.getOperationType()
             )
         );
@@ -155,8 +155,8 @@ public class ReplayNoiseHandlerService {
         for (QueryNoiseResponseType.NoiseItem noiseItem : noiseItemList) {
           String identifier = noiseItem.getIdentifier();
           // add exclude noise item
-          updateFields.put(MongoHelper.appendDot(ReplayNoiseCollection.FIELD_MAY_IGNORE_ITEMS,
-              identifier, ReplayNoiseItemDao.FIELD_STATUS), ReplayNoiseStatus.STATUS_EXCLUDE);
+          updateFields.put(MongoHelper.appendDot(ReplayNoiseCollection.Fields.MAY_IGNORE_ITEMS,
+              identifier, ReplayNoiseItemDao.Fields.STATUS), ReplayNoiseStatus.STATUS_EXCLUDE);
 
           // add exclusions to config
           ComparisonExclusionsConfiguration exclusionConfig = new ComparisonExclusionsConfiguration();

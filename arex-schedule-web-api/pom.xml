@@ -62,12 +62,8 @@
       <groupId>org.springframework.boot</groupId>
     </dependency>
     <dependency>
-      <artifactId>mapstruct-jdk8</artifactId>
       <groupId>org.mapstruct</groupId>
-    </dependency>
-    <dependency>
-      <artifactId>mapstruct-processor</artifactId>
-      <groupId>org.mapstruct</groupId>
+      <artifactId>mapstruct</artifactId>
     </dependency>
 
     <dependency>
