@@ -283,6 +283,8 @@
 
   <packaging>pom</packaging>
   <properties>
+    <spring.boot.version>2.7.18</spring.boot.version>
+
     <commons-lang3.version>3.3.2</commons-lang3.version>
     <compare-sdk.version>0.2.2</compare-sdk.version>
     <fastjson2.version>2.0.23</fastjson2.version>
@@ -306,7 +308,6 @@
       **/model/**,
       **/mapping/**
     </sonar.exclusions>
-    <sonar.jacoco.reportPath>${jacoco.report.path}</sonar.jacoco.reportPath>
     <arex-storage-config.version>1.0.50</arex-storage-config.version>
     <web-contract.version>0.6.0.14</web-contract.version>
   </properties>
