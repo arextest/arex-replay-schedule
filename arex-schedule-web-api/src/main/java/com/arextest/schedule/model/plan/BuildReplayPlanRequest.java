@@ -31,7 +31,7 @@ public class BuildReplayPlanRequest {
    */
   private Integer caseSourceType;
 
-  private int caseCountLimit;
+  private Integer caseCountLimit;
 
   /**
    * yyyy-MM-dd HH:mm:ss
