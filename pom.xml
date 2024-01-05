@@ -12,6 +12,23 @@
             <encoding>${project.build.sourceEncoding}</encoding>
             <source>${java.version}</source>
             <target>${java.version}</target>
+            <annotationProcessorPaths>
+              <path>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct-processor</artifactId>
+                <version>${mapstruct.version}</version>
+              </path>
+              <path>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+              </path>
+              <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok-mapstruct-binding</artifactId>
+                <version>0.2.0</version>
+              </dependency>
+            </annotationProcessorPaths>
           </configuration>
           <groupId>org.apache.maven.plugins</groupId>
           <version>${maven-compiler-plugin.version}</version>
@@ -67,13 +84,14 @@
     </pluginManagement>
     <plugins>
       <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <groupId>org.apache.maven.plugins</groupId>
-      </plugin>
-      <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <groupId>org.apache.maven.plugins</groupId>
       </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <groupId>org.apache.maven.plugins</groupId>
+      </plugin>
+
       <plugin>
         <artifactId>maven-source-plugin</artifactId>
         <executions>
@@ -121,6 +139,28 @@
         <groupId>org.codehaus.mojo</groupId>
         <version>2.8.1</version>
       </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.11</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <excludes>**/*.jar</excludes>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <dependencyManagement>
@@ -152,33 +192,19 @@
         <version>${spring.boot.version}</version>
       </dependency>
       <dependency>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <groupId>org.springframework.boot</groupId>
+        <version>${spring.boot.version}</version>
+      </dependency>
+      <dependency>
         <artifactId>lombok</artifactId>
         <groupId>org.projectlombok</groupId>
         <scope>provided</scope>
         <version>${lombok.version}</version>
       </dependency>
-      <!-- mock -->
       <dependency>
-        <artifactId>jmockit</artifactId>
-        <groupId>org.jmockit</groupId>
-        <scope>test</scope>
-        <version>${jmockit.version}</version>
-      </dependency>
-      <!-- test -->
-      <dependency>
-        <artifactId>junit</artifactId>
-        <groupId>junit</groupId>
-        <scope>test</scope>
-        <version>${junit.version}</version>
-      </dependency>
-      <dependency>
-        <artifactId>mapstruct-jdk8</artifactId>
         <groupId>org.mapstruct</groupId>
-        <version>${mapstruct.version}</version>
-      </dependency>
-      <dependency>
-        <artifactId>mapstruct-processor</artifactId>
-        <groupId>org.mapstruct</groupId>
+        <artifactId>mapstruct</artifactId>
         <version>${mapstruct.version}</version>
       </dependency>
       <dependency>
@@ -257,25 +283,22 @@
 
   <packaging>pom</packaging>
   <properties>
+    <spring.boot.version>2.7.18</spring.boot.version>
+
     <commons-lang3.version>3.3.2</commons-lang3.version>
     <compare-sdk.version>0.2.2</compare-sdk.version>
     <fastjson2.version>2.0.23</fastjson2.version>
-    <guava.version>20.0</guava.version>
-    <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
-    <jacoco.report.path>${project.basedir}/code-coverage/jacoco.exec</jacoco.report.path>
+    <guava.version>29.0-jre</guava.version>
     <java.version>1.8</java.version>
-    <jmockit.version>1.37</jmockit.version>
-    <junit.version>4.12</junit.version>
 
-    <!-- single jacoco.exec file relative to root directory of the project -->
-    <lombok.version>1.18.2</lombok.version>
-    <mapstruct.version>1.2.0.Final</mapstruct.version>
-    <maven-compiler-plugin.version>3.6.0</maven-compiler-plugin.version>
+    <lombok.version>1.18.30</lombok.version>
+    <mapstruct.version>1.5.5.Final</mapstruct.version>
+    <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
     <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
     <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
     <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
     <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
-    <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
+    <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
     <maven-war-plugin.version>3.0.0</maven-war-plugin.version>
     <maven.deploy.skip>false</maven.deploy.skip>
     <maven.source.skip>false</maven.source.skip>
@@ -285,10 +308,6 @@
       **/model/**,
       **/mapping/**
     </sonar.exclusions>
-    <!-- Users could specify this property as true to skip the attaching source process -->
-    <sonar.jacoco.reportPath>${jacoco.report.path}</sonar.jacoco.reportPath>
-    <!-- Users could specify this property as true to skip the deploy process -->
-    <spring.boot.version>2.6.3</spring.boot.version>
     <arex-storage-config.version>1.0.50</arex-storage-config.version>
     <web-contract.version>0.6.0.14</web-contract.version>
   </properties>

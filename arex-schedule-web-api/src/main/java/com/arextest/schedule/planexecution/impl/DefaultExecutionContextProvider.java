@@ -59,7 +59,7 @@ public class DefaultExecutionContextProvider
 
       context.setContextCaseQuery(
           Collections.singletonList(
-              Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).isNull()));
+              Criteria.where(ReplayActionCaseItem.Fields.CONTEXT_IDENTIFIER).isNull()));
       contexts.add(context);
     }
 
@@ -76,7 +76,7 @@ public class DefaultExecutionContextProvider
       // set up query for cases of this context
       context.setContextCaseQuery(Collections
           .singletonList(
-              Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).is(identifier)));
+              Criteria.where(ReplayActionCaseItem.Fields.CONTEXT_IDENTIFIER).is(identifier)));
       contexts.add(context);
     });
 

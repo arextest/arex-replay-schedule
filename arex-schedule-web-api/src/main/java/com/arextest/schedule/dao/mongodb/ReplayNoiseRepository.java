@@ -2,6 +2,7 @@ package com.arextest.schedule.dao.mongodb;
 
 import com.arextest.schedule.dao.mongodb.util.MongoHelper;
 import com.arextest.schedule.model.converter.ReplayNoiseConverter;
+import com.arextest.schedule.model.dao.mongodb.ModelBase.Fields;
 import com.arextest.schedule.model.dao.mongodb.ReplayNoiseCollection;
 import com.arextest.schedule.model.dao.mongodb.ReplayNoiseCollection.ReplayNoiseItemDao;
 import com.arextest.schedule.model.noiseidentify.ReplayNoiseDto;
@@ -46,33 +47,34 @@ public class ReplayNoiseRepository implements RepositoryField {
           mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, ReplayNoiseCollection.class);
       for (ReplayNoiseCollection replayNoiseCollection : collect) {
         Query query = Query
-            .query(Criteria.where(ReplayNoiseCollection.FIELD_PLAN_ID)
+            .query(Criteria.where(ReplayNoiseCollection.Fields.PLAN_ID)
                 .is(replayNoiseCollection.getPlanId())
-                .and(ReplayNoiseCollection.FIELD_PLAN_ITEM_ID)
+                .and(ReplayNoiseCollection.Fields.PLAN_ITEM_ID)
                 .is(replayNoiseCollection.getPlanItemId())
-                .and(ReplayNoiseCollection.FIELD_CATEGORY_NAME)
+                .and(ReplayNoiseCollection.Fields.CATEGORY_NAME)
                 .is(replayNoiseCollection.getCategoryName())
-                .and(ReplayNoiseCollection.FIELD_OPERATION_NAME)
+                .and(ReplayNoiseCollection.Fields.OPERATION_NAME)
                 .is(replayNoiseCollection.getOperationName()));
 
         Update update = MongoHelper.getUpdate();
-        update.setOnInsert(ReplayNoiseCollection.FIELD_DATA_CHANGE_CREATE_DATE, new Date());
-        update.setOnInsert(ReplayNoiseCollection.FIELD_PLAN_ID, replayNoiseCollection.getPlanId());
-        update.setOnInsert(ReplayNoiseCollection.FIELD_PLAN_ITEM_ID,
+        update.setOnInsert(Fields.DATA_CHANGE_CREATE_DATE, new Date());
+        update.setOnInsert(ReplayNoiseCollection.Fields.PLAN_ID, replayNoiseCollection.getPlanId());
+        update.setOnInsert(ReplayNoiseCollection.Fields.PLAN_ITEM_ID,
             replayNoiseCollection.getPlanItemId());
-        update.setOnInsert(ReplayNoiseCollection.FIELD_CATEGORY_NAME,
+        update.setOnInsert(ReplayNoiseCollection.Fields.CATEGORY_NAME,
             replayNoiseCollection.getCategoryName());
-        update.setOnInsert(ReplayNoiseCollection.FIELD_OPERATION_ID,
+        update.setOnInsert(ReplayNoiseCollection.Fields.OPERATION_ID,
             replayNoiseCollection.getOperationId());
-        update.setOnInsert(ReplayNoiseCollection.FIELD_OPERATION_NAME,
+        update.setOnInsert(ReplayNoiseCollection.Fields.OPERATION_NAME,
             replayNoiseCollection.getOperationName());
 
         Map<String, ReplayNoiseCollection.ReplayNoiseItemDao> mayIgnoreItems =
             replayNoiseCollection.getMayIgnoreItems();
         Map<String, ReplayNoiseCollection.ReplayNoiseItemDao> mayDisorderItems =
             replayNoiseCollection.getMayDisorderItems();
-        this.appendUpdate(update, mayIgnoreItems, ReplayNoiseCollection.FIELD_MAY_IGNORE_ITEMS);
-        this.appendUpdate(update, mayDisorderItems, ReplayNoiseCollection.FIELD_MAY_DISORDER_ITEMS);
+        this.appendUpdate(update, mayIgnoreItems, ReplayNoiseCollection.Fields.MAY_IGNORE_ITEMS);
+        this.appendUpdate(update, mayDisorderItems,
+            ReplayNoiseCollection.Fields.MAY_DISORDER_ITEMS);
         bulkOperations.upsert(query, update);
       }
       bulkOperations.execute();
@@ -88,15 +90,15 @@ public class ReplayNoiseRepository implements RepositoryField {
       return true;
     }
     Query query = Query.query(
-        Criteria.where(ReplayNoiseCollection.FIELD_PLAN_ITEM_ID).in(planItemIds));
+        Criteria.where(ReplayNoiseCollection.Fields.PLAN_ITEM_ID).in(planItemIds));
     mongoTemplate.remove(query, ReplayNoiseCollection.class);
     return true;
   }
 
   public List<ReplayNoiseDto> queryReplayNoise(@NotBlank String planId, String planItemId) {
-    Query query = Query.query(Criteria.where(ReplayNoiseCollection.FIELD_PLAN_ID).is(planId));
+    Query query = Query.query(Criteria.where(ReplayNoiseCollection.Fields.PLAN_ID).is(planId));
     if (StringUtils.isNotEmpty(planItemId)) {
-      query.addCriteria(Criteria.where(ReplayNoiseCollection.FIELD_PLAN_ITEM_ID).is(planItemId));
+      query.addCriteria(Criteria.where(ReplayNoiseCollection.Fields.PLAN_ITEM_ID).is(planItemId));
     }
     List<ReplayNoiseCollection> replayNoiseCollections = mongoTemplate.find(query,
         ReplayNoiseCollection.class);
@@ -151,35 +153,35 @@ public class ReplayNoiseRepository implements RepositoryField {
         ReplayNoiseCollection.ReplayNoiseItemDao replayNoiseItemDao = entry.getValue();
         update.set(
             MongoHelper.appendDot(updateKey, path,
-                ReplayNoiseCollection.ReplayNoiseItemDao.FIELD_NODE_PATH),
+                ReplayNoiseCollection.ReplayNoiseItemDao.Fields.NODE_PATH),
             replayNoiseItemDao.getNodePath());
         update.set(
             MongoHelper.appendDot(updateKey, path,
-                ReplayNoiseCollection.ReplayNoiseItemDao.FIELD_COMPARE_RESULT_ID),
+                ReplayNoiseCollection.ReplayNoiseItemDao.Fields.COMPARE_RESULT_ID),
             replayNoiseItemDao.getCompareResultId());
         update.set(
             MongoHelper.appendDot(updateKey, path,
-                ReplayNoiseCollection.ReplayNoiseItemDao.FIELD_LOG_INDEXES),
+                ReplayNoiseCollection.ReplayNoiseItemDao.Fields.LOG_INDEXES),
             replayNoiseItemDao.getLogIndexes());
         if (replayNoiseItemDao.getStatus() != null) {
           update.set(
-              MongoHelper.appendDot(updateKey, path, ReplayNoiseItemDao.FIELD_STATUS),
+              MongoHelper.appendDot(updateKey, path, ReplayNoiseItemDao.Fields.STATUS),
               replayNoiseItemDao.getStatus());
         }
         update.inc(
             MongoHelper.appendDot(updateKey, path,
-                ReplayNoiseCollection.ReplayNoiseItemDao.FIELD_PATH_COUNT),
+                ReplayNoiseCollection.ReplayNoiseItemDao.Fields.PATH_COUNT),
             replayNoiseItemDao.getPathCount());
         update.inc(
             MongoHelper.appendDot(updateKey, path,
-                ReplayNoiseCollection.ReplayNoiseItemDao.FIELD_CASE_COUNT),
+                ReplayNoiseCollection.ReplayNoiseItemDao.Fields.CASE_COUNT),
             replayNoiseItemDao.getCaseCount());
         Optional.ofNullable(replayNoiseItemDao.getSubPaths()).ifPresent(map -> {
           for (Map.Entry<String, Integer> subEntry : map.entrySet()) {
             String subPath = subEntry.getKey();
             Integer subCount = subEntry.getValue();
             update.inc(MongoHelper.appendDot(updateKey, path,
-                ReplayNoiseCollection.ReplayNoiseItemDao.FIELD_SUB_PATHS, subPath), subCount);
+                ReplayNoiseCollection.ReplayNoiseItemDao.Fields.SUB_PATHS, subPath), subCount);
           }
         });
       }

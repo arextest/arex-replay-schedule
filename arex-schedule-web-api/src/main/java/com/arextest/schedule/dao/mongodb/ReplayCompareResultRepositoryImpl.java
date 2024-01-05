@@ -4,16 +4,11 @@ import com.arextest.schedule.dao.RepositoryWriter;
 import com.arextest.schedule.model.ReplayCompareResult;
 import com.arextest.schedule.model.converter.ReplayCompareResultConverter;
 import com.arextest.schedule.model.dao.mongodb.ReplayCompareResultCollection;
-import com.arextest.schedule.model.storage.CompareResultDbAggStruct;
-import com.mongodb.BasicDBObject;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.GroupOperation;
-import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Component;
@@ -47,8 +42,8 @@ public class ReplayCompareResultRepositoryImpl implements RepositoryWriter<Repla
 
   public boolean deleteByRecord(String recordId, String planItemId) {
     Query query = new Query();
-    query.addCriteria(Criteria.where(ReplayCompareResult.FIELD_RECORD_ID).is(recordId)
-        .and(ReplayCompareResult.FIELD_PLAN_ITEM_ID).is(planItemId));
+    query.addCriteria(Criteria.where(ReplayCompareResult.Fields.RECORD_ID).is(recordId)
+        .and(ReplayCompareResult.Fields.PLAN_ITEM_ID).is(planItemId));
     return mongoTemplate.remove(query, ReplayCompareResultCollection.class).getDeletedCount() > 0;
   }
 
