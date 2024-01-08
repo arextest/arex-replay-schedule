@@ -14,6 +14,8 @@ public interface CompareItem {
 
   String getCompareKey();
 
+  String getOperationType();
+
   long getCreateTime();
 
   boolean isEntryPointCategory();

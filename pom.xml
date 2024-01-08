@@ -309,7 +309,7 @@
       **/mapping/**
     </sonar.exclusions>
     <arex-storage-config.version>1.0.50</arex-storage-config.version>
-    <web-contract.version>0.6.0.14</web-contract.version>
+    <web-contract.version>0.6.0.16</web-contract.version>
   </properties>
 
   <scm>
