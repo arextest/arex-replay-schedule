@@ -150,23 +150,6 @@ public final class ReplayReportService implements ComparisonWriter {
     LOGGER.info("updateReportCaseCount request:{}, response:{}", requestType, response);
   }
 
-  public void pushActionStatus(String planId, ReplayStatusType statusType, String actionId,
-      String errorMessage,
-      boolean rerun) {
-    ChangeReplayStatusRequestType requestType = new ChangeReplayStatusRequestType();
-    ChangeReplayStatusRequestType.ReplayItem replayItem = new ChangeReplayStatusRequestType.ReplayItem();
-    replayItem.setPlanItemId(actionId);
-    replayItem.setStatus(statusType.getValue());
-    replayItem.setErrorMessage(errorMessage);
-    requestType.setPlanId(planId);
-    requestType.setItems(Collections.singletonList(replayItem));
-    requestType.setRerun(rerun);
-    Object response = httpWepServiceApiClient.jsonPost(pushReplayStatusUrl, requestType,
-        GenericResponseType.class);
-    LOGGER.info("push action status actionId: {},status: {}, result:{}", actionId,
-        statusType, response);
-  }
-
   public void pushPlanStatus(String planId, ReplayStatusType statusType, String errorMessage,
       boolean rerun) {
     ChangeReplayStatusRequestType requestType = new ChangeReplayStatusRequestType();

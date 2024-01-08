@@ -14,12 +14,10 @@ import com.arextest.schedule.service.noise.ReplayNoiseIdentify;
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 
 class PlanConsumePrepareServiceTest extends TestBase {
 
@@ -52,12 +50,6 @@ class PlanConsumePrepareServiceTest extends TestBase {
   private ExecutorService rerunPrepareExecutorService;
   @Mock
   private ReplayNoiseIdentify replayNoiseIdentify;
-
-
-  @BeforeEach
-  public void setUp() throws Exception {
-    MockitoAnnotations.openMocks(this);
-  }
 
   @Test
   void simple() {
