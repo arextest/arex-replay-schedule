@@ -41,8 +41,7 @@ final class PrepareCompareItemBuilder {
       body = Objects.isNull(instance.getTargetRequest()) ? null
           : instance.getTargetRequest().getBody();
     }
-    return new CompareItemImpl(operationKey, body, compareKey, createTime, entryPointCategory,
-        categoryType.getName());
+    return new CompareItemImpl(operationKey, body, compareKey, createTime, entryPointCategory);
   }
 
   private String operationName(MockCategoryType categoryType, Target target) {
@@ -85,23 +84,21 @@ final class PrepareCompareItemBuilder {
     private final String compareKey;
     private final long createTime;
     private final boolean entryPointCategory;
-    private final String operationType;
 
     private CompareItemImpl(String compareOperation, String compareMessage, String compareKey,
-        long createTime, boolean entryPointCategory, String operationType) {
-      this(compareOperation, compareMessage, null, compareKey, createTime, entryPointCategory,
-          operationType);
+        long createTime, boolean entryPointCategory) {
+      this(compareOperation, compareMessage, null, compareKey, createTime, entryPointCategory);
     }
 
     private CompareItemImpl(String compareOperation, String compareMessage, String compareService,
-        String compareKey, long createTime, boolean entryPointCategory, String operationType) {
+        String compareKey,
+        long createTime, boolean entryPointCategory) {
       this.compareMessage = compareMessage;
       this.compareOperation = compareOperation;
       this.compareService = compareService;
       this.compareKey = compareKey;
       this.createTime = createTime;
       this.entryPointCategory = entryPointCategory;
-      this.operationType = operationType;
     }
 
     @Override
@@ -122,11 +119,6 @@ final class PrepareCompareItemBuilder {
     @Override
     public String getCompareKey() {
       return compareKey;
-    }
-
-    @Override
-    public String getOperationType() {
-      return operationType;
     }
 
     @Override

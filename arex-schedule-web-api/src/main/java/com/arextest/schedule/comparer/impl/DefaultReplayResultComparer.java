@@ -173,22 +173,29 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
           caseItem.getParent().getOperationName(), ignoreCategoryList)) {
         continue;
       }
-      filterIgnoredCompareItem(bindHolder.getReplayResult(), operationConfig);
-      filterIgnoredCompareItem(bindHolder.getRecord(), operationConfig);
+      filterIgnoredCompareItem(bindHolder, ignoreCategoryList);
       replayCompareResults.addAll(compareReplayResult(bindHolder, caseItem, operationConfig));
     }
     return replayCompareResults;
   }
 
-  private void filterIgnoredCompareItem(List<CompareItem> replayResults,
-      ComparisonInterfaceConfig operationConfig) {
-    List<CategoryDetail> ignoreCategoryTypes = operationConfig.getIgnoreCategoryTypes();
+  private void filterIgnoredCompareItem(CategoryComparisonHolder bindHolder,
+      List<CategoryDetail> ignoreCategoryTypes) {
     if (CollectionUtils.isEmpty(ignoreCategoryTypes)) {
       return;
     }
-    replayResults.removeIf(compareItem -> {
+    filterIgnoredCompareItem(bindHolder.getCategoryName(), bindHolder.getReplayResult(), ignoreCategoryTypes);
+    filterIgnoredCompareItem(bindHolder.getCategoryName(), bindHolder.getRecord(), ignoreCategoryTypes);
+  }
+
+  private void filterIgnoredCompareItem(String operationType, List<CompareItem> compareItems,
+      List<CategoryDetail> ignoreCategoryTypes) {
+    if (CollectionUtils.isEmpty(ignoreCategoryTypes)) {
+      return;
+    }
+    compareItems.removeIf(compareItem -> {
       for (CategoryDetail categoryDetail : ignoreCategoryTypes) {
-        if (Objects.equals(categoryDetail.getOperationType(), categoryDetail.getOperationType())
+        if (Objects.equals(categoryDetail.getOperationType(), operationType)
             && (
             categoryDetail.getOperationName() == null
                 || Objects.equals(categoryDetail.getOperationName(),
