@@ -48,7 +48,7 @@ public class ReplayComparisonConfig {
    */
   private Map<String, Object> additionalConfig;
 
-  public final boolean checkIgnoreMockMessageType(String type, String name,
+  public final boolean checkIgnoreMockMessageType(String type,
       List<CategoryDetail> ignoreCategoryTypes) {
     // [b_yu] 2022-10-11 Dynamic type does not compare
     if (Objects.equals(type, MockCategoryType.DYNAMIC_CLASS.getName())) {
@@ -60,15 +60,7 @@ public class ReplayComparisonConfig {
     if (Objects.equals(type, MockCategoryType.Q_MESSAGE_CONSUMER.getName())) {
       return true;
     }
-    if (CollectionUtils.isNotEmpty(ignoreCategoryTypes)) {
-      // Ignore condition: 1. type is equal 2. name is null or name is equal
-      for (CategoryDetail categoryDetail : ignoreCategoryTypes) {
-        if (Objects.equals(categoryDetail.getOperationType(), type)
-            && (categoryDetail.getOperationName() == null)
-              || Objects.equals(categoryDetail.getOperationName(), name)) {
-          return true;
-        }
-      }
+    if (ignoreCategoryTypes != null && ignoreCategoryTypes.contains(type)) {
       return true;
     }
 
