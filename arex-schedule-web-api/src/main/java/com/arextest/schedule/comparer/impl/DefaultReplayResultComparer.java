@@ -24,12 +24,14 @@ import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.MetricService;
+import com.arextest.web.model.contract.contracts.compare.CategoryDetail;
 import com.arextest.web.model.contract.contracts.config.SystemConfig;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Builder;
@@ -163,7 +165,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
       List<CategoryComparisonHolder> waitCompareMap) {
     ComparisonInterfaceConfig operationConfig = compareConfigService.loadInterfaceConfig(
         caseItem.getParent());
-    List<String> ignoreCategoryList = operationConfig.getIgnoreCategoryTypes();
+    List<CategoryDetail> ignoreCategoryList = operationConfig.getIgnoreCategoryTypes();
 
     List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
     for (CategoryComparisonHolder bindHolder : waitCompareMap) {
@@ -171,9 +173,38 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
           ignoreCategoryList)) {
         continue;
       }
+      filterIgnoredCompareItem(bindHolder, ignoreCategoryList);
       replayCompareResults.addAll(compareReplayResult(bindHolder, caseItem, operationConfig));
     }
     return replayCompareResults;
+  }
+
+  private void filterIgnoredCompareItem(CategoryComparisonHolder bindHolder,
+      List<CategoryDetail> ignoreCategoryTypes) {
+    if (CollectionUtils.isEmpty(ignoreCategoryTypes)) {
+      return;
+    }
+    filterIgnoredCompareItem(bindHolder.getCategoryName(), bindHolder.getReplayResult(), ignoreCategoryTypes);
+    filterIgnoredCompareItem(bindHolder.getCategoryName(), bindHolder.getRecord(), ignoreCategoryTypes);
+  }
+
+  private void filterIgnoredCompareItem(String operationType, List<CompareItem> compareItems,
+      List<CategoryDetail> ignoreCategoryTypes) {
+    if (CollectionUtils.isEmpty(ignoreCategoryTypes)) {
+      return;
+    }
+    compareItems.removeIf(compareItem -> {
+      for (CategoryDetail categoryDetail : ignoreCategoryTypes) {
+        if (Objects.equals(categoryDetail.getOperationType(), operationType)
+            && (
+            categoryDetail.getOperationName() == null
+                || Objects.equals(categoryDetail.getOperationName(),
+                compareItem.getCompareOperation()))) {
+          return true;
+        }
+      }
+      return false;
+    });
   }
 
   /**
