@@ -4,7 +4,9 @@
   </Properties>
 
   <Appenders>
-    <Socket name="socket" host="10.144.62.53" port="50000" reconnectionDelayMillis="5000">
+    <!--Read from env-->
+    <Socket name="socket" host="${sys:elk.host}" port="${sys:elk.port}"
+      reconnectionDelayMillis="5000">
       <JsonLayout properties="true" compact="true" eventEol="true">
         <KeyValuePair key="serviceName" value="Arex-Scheduler"/>
       </JsonLayout>
