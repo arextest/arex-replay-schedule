@@ -2,9 +2,9 @@ package com.arextest.schedule.utils;
 
 import com.arextest.diff.model.log.NodeEntity;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
-import org.bson.internal.Base64;
 
 
 public class ListUtils {
@@ -45,7 +45,7 @@ public class ListUtils {
         sb.append(p.getNodeName());
       }
     }
-    return Base64.encode(sb.toString().getBytes());
+    return Base64.getEncoder().encodeToString(sb.toString().getBytes());
   }
 
 

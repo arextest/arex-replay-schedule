@@ -1,59 +1,57 @@
-# <img src="https://avatars.githubusercontent.com/u/103105168?s=200&v=4" alt="Arex Icon" width="27" height=""> AREX's Replay Schedule Service
+# <img src="https://avatars.githubusercontent.com/u/103105168?s=200&v=4" alt="Arex Icon" width="27" height=""> AREX Schedule Service
 
 ## Introduction
 
-After your success installed the **AREX's Agent**, and configure it used
-the [`Remote Storage Service`](https://github.com/arextest/arex-storage).
+Once you have successfully installed the **AREX's Agent** and configured it to use the [`Storage Service`](https://github.com/arextest/arex-storage), you can initiate a replay to verify the impact of new version deployments on your target host. This process helps in understanding whether the changes are as expected or not.
 
-You should be run a replay from what your operations and how many recorded sources retrieved you
-wants to validate the changes of a new version deployed on the target host is expected or
-unexpected.
+## How to Run a Replay
 
-To implements the purpose, we accept a target host to create a plan by your requested and a schedule
-trigger will running for :
+The replay process involves the following steps:
 
-1. Loading all records from `Remote Storage Service` by each operations(your APIs) and group it by
-   dependent on version.
-1. Prepare the request message and send it to the target host.
-1. If send success we retrieve all the response results(include entry service and called dependency
-   service) by `recordId` + `replayId`
-1. Use configuration indicate that how to compare the results which grouped by `MockCategoryType`
-   such as : http servlet, redis, db .....
-1. send replay compared results to the [`Report Service`](https://github.com/arextest/arex-report),
-   which should be able to analysis and build summary.
+1. **Retrieve Records:**
+   Load all records from the `Remote Storage Service` for each API operation, categorizing them by version.
 
-**Note:**
+2. **Prepare and Send Requests:**
+   Organize the request messages and dispatch them to the target host.
 
-* The plan should not create if the target host is unreachable.
-* The plan should interrupt if sending request too many exceptions over then 10%
+3. **Collect Responses:**
+   Upon successful request transmission, gather all response results (including entry and dependent services) using `recordId` + `replayId`.
+
+4. **Result Comparison:**
+   Compare these results as per configurations, categorized by `MockCategoryType` (e.g., HTTP servlet, Redis, DB).
+
+5. **Report Generation:**
+   Send the replay comparison results to the [`API Service`](https://github.com/arextest/arex-api) for analysis and summary creation.
+
+## Important Notes
+
+- **Host Availability:** Do not create a plan if the target host is unreachable.
+- **Error Handling:** Interrupt the plan if more than 10% of request sending results in exceptions.
 
 ## Getting Started
 
-1. **Modify default `localhost` connection string value**
+### 1. Configuring Connection Strings
 
-   you should be change the connection string in the file of path '
-   resources/META-INF/application.properties'.
+To set up the connection, modify the default `localhost` values in `resources/META-INF/application.properties`. Here's how you can configure for `Redis`, `MySQL`, and dependent `web services`:
 
-   example for `Redis`,`mysql` and dependent `web services` as following:
-    ```yaml
-   # web api
-   arex.storage.service.api=http://10.3.2.42:8093/api/storage/replay/query
-   arex.api.service.api=http://10.3.2.42:8090/api/report
-   arex.config.service.api=http://10.3.2.42:8091/api/config
-   # mysql
-   spring.datasource.url=jdbc:mysql://10.3.2.42:3306/arexdb?&useUnicode=true&characterEncoding=UTF-8
-   spring.datasource.username=arex_admin
-   spring.datasource.password=arex_admin_password
-   # redis
-   arex.redis.uri=redis://10.3.2.42:6379/
-    ```
-1. **Extends the replay sender if you have a requirement**
+```yaml
+# Web API
+arex.storage.service.api=http://10.3.2.42:8093/api/storage/replay/query
+arex.api.service.api=http://10.3.2.42:8090/api/report
+arex.config.service.api=http://10.3.2.42:8091/api/config
 
-   There is a `DefaultHttpReplaySender` implemented `ReplaySender` used to handle http request,such
-   as:put,get,post,delete etc.
+# MySQL
+spring.datasource.url=jdbc:mysql://10.3.2.42:3306/arexdb?useUnicode=true&characterEncoding=UTF-8
+spring.datasource.username=arex_admin
+spring.datasource.password=arex_admin_password
 
-   You should be write another implementation which loaded by spring,the `ReplaySender` defined as
-   following:
+# Redis
+arex.redis.uri=redis://10.3.2.42:6379/
+```
+
+### 2. Extending the Replay Sender
+
+The `DefaultHttpReplaySender` handles HTTP requests (PUT, GET, POST, DELETE, etc.). To implement a custom sender, follow the `ReplaySender` interface pattern:
 
    ```java
    public interface ReplaySender {
@@ -86,22 +84,19 @@ trigger will running for :
        }
    }
    ```
-1. **Extends the deploy environment**
 
-   To create a plan for report, we should be required more info such as target image's version and
-   the source code author.
+### 3. Extending Deployment Environments
 
-   By default,there is a empty instance implemented `DeploymentEnvironmentProvider` which defined as
-   following:
+To generate comprehensive reports, additional information such as the target image version and source code author is required. Implement the `DeploymentEnvironmentProvider` interface to provide this data:
 
-   ```java
-   public interface DeploymentEnvironmentProvider {
+```java
+public interface DeploymentEnvironmentProvider {
    
-       DeploymentVersion getVersion(String appId, String env);
+   DeploymentVersion getVersion(String appId, String env);
    
-       List<ServiceInstance> getActiveInstanceList(AppServiceDescriptor serviceDescriptor, String env);
-   }
-   ```
+   List<ServiceInstance> getActiveInstanceList(AppServiceDescriptor serviceDescriptor, String env);
+}
+```
 
 ## License
 

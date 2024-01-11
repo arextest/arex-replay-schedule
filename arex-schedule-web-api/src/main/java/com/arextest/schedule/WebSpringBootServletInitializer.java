@@ -1,4 +1,4 @@
-package com.arextest.schedule.web.boot;
+package com.arextest.schedule;
 
 import com.arextest.common.metrics.PrometheusConfiguration;
 import java.awt.Desktop;

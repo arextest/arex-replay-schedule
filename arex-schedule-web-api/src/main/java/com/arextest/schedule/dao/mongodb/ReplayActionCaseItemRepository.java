@@ -6,7 +6,6 @@ import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.CompareProcessStatusType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.converter.ReplayRunDetailsConverter;
-import com.arextest.schedule.model.dao.mongodb.ModelBase;
 import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
@@ -90,11 +89,11 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
     Optional.ofNullable(baseCriteria).ifPresent(criteria -> criteria.forEach(query::addCriteria));
 
-    query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
+    query.addCriteria(Criteria.where(ReplayActionCaseItem.Fields.PLAN_ID).is(planId));
     query.addCriteria(new Criteria().orOperator(
-        Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS)
+        Criteria.where(ReplayActionCaseItem.Fields.SEND_STATUS)
             .is(CaseSendStatusType.WAIT_HANDLING.getValue()),
-        Criteria.where(ReplayActionCaseItem.FIELD_COMPARE_STATUS)
+        Criteria.where(ReplayActionCaseItem.Fields.COMPARE_STATUS)
             .is(CompareProcessStatusType.WAIT_HANDLING.getValue())
     ));
     if (StringUtils.hasText(minId)) {
@@ -113,14 +112,14 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
    */
   public List<ReplayActionCaseItem> failedCaseList(String planId, String planItemId) {
     Query query = new Query();
-    query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
+    query.addCriteria(Criteria.where(ReplayActionCaseItem.Fields.PLAN_ID).is(planId));
     if (StringUtils.hasText(planItemId)) {
-      query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ITEM_ID).is(planItemId));
+      query.addCriteria(Criteria.where(ReplayActionCaseItem.Fields.PLAN_ITEM_ID).is(planItemId));
     }
     query.addCriteria(new Criteria().orOperator(
-        Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS)
+        Criteria.where(ReplayActionCaseItem.Fields.SEND_STATUS)
             .ne(CaseSendStatusType.SUCCESS.getValue()),
-        Criteria.where(ReplayActionCaseItem.FIELD_COMPARE_STATUS)
+        Criteria.where(ReplayActionCaseItem.Fields.COMPARE_STATUS)
             .ne(CompareProcessStatusType.PASS.getValue())
     ));
 
@@ -138,10 +137,10 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
     Aggregation aggregation = Aggregation.newAggregation(
         Aggregation.match(criteria),
-        Aggregation.match(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId)),
-        Aggregation.match(Criteria.where(ReplayActionCaseItem.FIELD_SEND_STATUS)
+        Aggregation.match(Criteria.where(ReplayActionCaseItem.Fields.PLAN_ID).is(planId)),
+        Aggregation.match(Criteria.where(ReplayActionCaseItem.Fields.SEND_STATUS)
             .is(CaseSendStatusType.WAIT_HANDLING.getValue())),
-        Aggregation.group(ReplayActionCaseItem.FIELD_PLAN_ITEM_ID).count().as(COUNT_FIELD)
+        Aggregation.group(ReplayActionCaseItem.Fields.PLAN_ITEM_ID).count().as(COUNT_FIELD)
     );
     List<GroupCountRes> aggRes = mongoTemplate.aggregate(aggregation,
         ReplayRunDetailsCollection.class, GroupCountRes.class).getMappedResults();
@@ -214,37 +213,37 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
   // region <context>
   public Set<String> getAllContextIdentifiers(String planId) {
-    Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
+    Query query = Query.query(Criteria.where(ReplayActionCaseItem.Fields.PLAN_ID).is(planId));
     return new HashSet<>(
-        mongoTemplate.findDistinct(query, ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER,
+        mongoTemplate.findDistinct(query, ReplayActionCaseItem.Fields.CONTEXT_IDENTIFIER,
             ReplayRunDetailsCollection.class, String.class));
   }
 
   public boolean hasNullIdentifier(String planId) {
-    Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
-    query.addCriteria(Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).isNull());
+    Query query = Query.query(Criteria.where(ReplayActionCaseItem.Fields.PLAN_ID).is(planId));
+    query.addCriteria(Criteria.where(ReplayActionCaseItem.Fields.CONTEXT_IDENTIFIER).isNull());
     return mongoTemplate.exists(query, ReplayRunDetailsCollection.class);
   }
 
   // get one mocker of the given context
   public ReplayActionCaseItem getOneOfContext(String planId, String contextIdentifier) {
-    Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_PLAN_ID).is(planId));
+    Query query = Query.query(Criteria.where(ReplayActionCaseItem.Fields.PLAN_ID).is(planId));
     query.addCriteria(
-        Criteria.where(ReplayActionCaseItem.FIELD_CONTEXT_IDENTIFIER).is(contextIdentifier));
+        Criteria.where(ReplayActionCaseItem.Fields.CONTEXT_IDENTIFIER).is(contextIdentifier));
     ReplayRunDetailsCollection replayRunDetailsCollection = mongoTemplate.findOne(query,
         ReplayRunDetailsCollection.class);
     return converter.dtoFromDao(replayRunDetailsCollection);
   }
 
   public ReplayActionCaseItem queryById(String caseId) {
-    Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_ID).is(caseId));
+    Query query = Query.query(Criteria.where(ReplayActionCaseItem.Fields.ID).is(caseId));
     ReplayRunDetailsCollection replayRunDetailsCollection = mongoTemplate.findOne(query,
         ReplayRunDetailsCollection.class);
     return converter.dtoFromDao(replayRunDetailsCollection);
   }
 
   public List<ReplayActionCaseItem> batchQueryById(List<String> caseIdList) {
-    Query query = Query.query(Criteria.where(ReplayActionCaseItem.FIELD_ID).in(caseIdList));
+    Query query = Query.query(Criteria.where(ReplayActionCaseItem.Fields.ID).in(caseIdList));
     List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query,
         ReplayRunDetailsCollection.class);
     return replayRunDetailsCollections.stream()

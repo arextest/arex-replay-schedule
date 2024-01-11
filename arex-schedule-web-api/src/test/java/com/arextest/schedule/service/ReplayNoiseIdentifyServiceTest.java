@@ -12,24 +12,25 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import mockit.Injectable;
-import mockit.integration.junit4.JMockit;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
+import org.mockito.InjectMocks;
+import org.mockito.MockitoAnnotations;
 
-@Ignore
-@RunWith(JMockit.class)
 public class ReplayNoiseIdentifyServiceTest {
 
-  @Injectable
+  @InjectMocks
   AsyncNoiseCaseAnalysisTaskRunnable runnable;
 
+  @BeforeEach
+  public void setUp() throws Exception {
+    MockitoAnnotations.openMocks(this);
+  }
   @Test
   public void testAnalysisNoiseFromCompareResult()
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
