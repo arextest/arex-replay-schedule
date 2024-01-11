@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Configuration>
+  <Properties>
+  </Properties>
+
+  <Appenders>
+    <Socket name="socket" host="10.144.62.53" port="50000" reconnectionDelayMillis="5000">
+      <JsonLayout properties="true" compact="true" eventEol="true">
+        <KeyValuePair key="serviceName" value="Arex-Scheduler"/>
+      </JsonLayout>
+    </Socket>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+    </Console>
+  </Appenders>
+
+  <Loggers>
+    <Root level="info">
+      <AppenderRef ref="socket"/>
+      <AppenderRef ref="Console"/>
+    </Root>
+  </Loggers>
+</Configuration>
