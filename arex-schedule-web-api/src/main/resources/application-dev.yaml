@@ -1,0 +1,15 @@
+server:
+  port: 8092
+logging:
+  config: classpath:log4j2-dev.xml
+arex:
+  api:
+    service:
+      api: http://10.144.62.53:8090
+  mongo:
+    uri: mongodb://arex:iLoveArex@10.144.62.53:27017/arex_storage_db
+  redis:
+    uri: redis://10.144.62.53:6379
+  storage:
+    service:
+      api: http://10.144.62.53:8093
