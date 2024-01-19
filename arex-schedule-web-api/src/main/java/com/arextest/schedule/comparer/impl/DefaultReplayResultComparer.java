@@ -46,9 +46,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
 
   private static final CompareSDK COMPARE_INSTANCE = new CompareSDK();
   private static final long MAX_TIME = Long.MAX_VALUE;
-  private static final String APPLICATION_PROPERTIES_NAME = "/application.properties";
-  private static final String IGNORE_TIME_PRECISION_MILLIS_KEY = "ignore.time.precision.millis";
-  private static long ignoreTimePrecisionMillis = 2000;
 
   private final CompareConfigService compareConfigService;
   private final PrepareCompareSourceRemoteLoader sourceRemoteLoader;

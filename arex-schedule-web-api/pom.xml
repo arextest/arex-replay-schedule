@@ -175,6 +175,7 @@
           <resource>
             <directory>src/main/resources</directory>
             <includes>
+              <include>**/*.yaml</include>
               <include>**/*.jar</include>
             </includes>
           </resource>
@@ -202,6 +203,7 @@
           <resource>
             <directory>src/main/resources</directory>
             <includes>
+              <include>**/*.yaml</include>
               <include>**/*.jar</include>
             </includes>
           </resource>
@@ -278,7 +280,7 @@
           <resource>
             <directory>arex-replay-schedule</directory>
             <excludes>
-              <exclude>**/application*.properties</exclude>
+              <exclude>**/application*.yaml</exclude>
             </excludes>
           </resource>
         </resources>
@@ -309,7 +311,7 @@
           <resource>
             <directory>arex-replay-schedule</directory>
             <excludes>
-              <exclude>**/application*.properties</exclude>
+              <exclude>**/application*.yaml</exclude>
             </excludes>
           </resource>
         </resources>

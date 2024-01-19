@@ -1,0 +1,99 @@
+spring:
+  application:
+    name: Bootstrap Spring Boot
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      FAIL_ON_EMPTY_BEANS: false
+  profiles:
+    active: prod
+arex:
+  api:
+    config:
+      addExclusion:
+        url: ${arex.api.service.api}/api/config/comparison/exclusions/batchModify/INSERT
+      application:
+        url: ${arex.api.service.api}/api/config/application/useResult/appId/{appId}
+      applicationService:
+        url: ${arex.api.service.api}/api/config/applicationService/useResultAsList/appId/{appId}
+      comparison:
+        summary:
+          url: ${arex.api.service.api}/api/config/comparison/summary/queryByAppId/{appId}
+      desensitization:
+        url: ${arex.api.service.api}/api/desensitization/listJar
+      schedule:
+        url: ${arex.api.service.api}/api/config/schedule/useResult/appId/{appId}
+      system:
+        url: ${arex.api.service.api}/api/system/config/list
+    init:
+      url: ${arex.api.service.api}/api/report/init
+    push:
+      compareResult:
+        url: ${arex.api.service.api}/api/report/analyzeCompareResults
+      replayStatus:
+        url: ${arex.api.service.api}/api/report/pushReplayStatus
+    queryPlanStatistic:
+      url: ${arex.api.service.api}/api/report/queryPlanStatistic
+    remove:
+      errorMsg:
+        url: ${arex.api.service.api}/api/report/removeErrorMsg
+      records:
+        url: ${arex.api.service.api}/api/report/removeRecordsAndScenes
+    update:
+      report:
+        info:
+          url: ${arex.api.service.api}/api/report/updateReportInfo
+  app:
+    auth:
+      switch: false
+  client:
+    https:
+      cert:
+        disable: true
+  connect:
+    time:
+      out: 10000
+  prometheus:
+    port: 20092
+  read:
+    time:
+      out: 10000
+  retry:
+    back:
+      'off':
+        period: 1000
+    max:
+      attempts: 2
+  schedule:
+    bizLog:
+      secondToSave: 30
+      sizeToSave: 100
+    monitor:
+      secondToRefresh: 5
+    pool:
+      io:
+        cpuratio: 4
+  storage:
+    cacheLoad:
+      url: ${arex.storage.service.api}/api/storage/replay/query/cacheLoad
+    cacheRemove:
+      url: ${arex.storage.service.api}/api/storage/replay/query/cacheRemove
+    countByRange:
+      url: ${arex.storage.service.api}/api/storage/replay/query/countByRange
+    postProcess:
+      url: ${arex.storage.service.api}/api/storage/replay/postprocessResult
+    replayCase:
+      url: ${arex.storage.service.api}/api/storage/replay/query/replayCase
+    replayResult:
+      url: ${arex.storage.service.api}/api/storage/replay/query/replayResult
+    viewRecord:
+      url: ${arex.storage.service.api}/api/storage/replay/query/viewRecord
+auto:
+  rerun:
+    threshold: 1.0
+pom:
+  version: ${project.version}
+replay:
+  sender:
+    extension:
+      jarPath: /usr/local/tomcat/webapps/ROOT/WEB-INF/classes/lib/dubboInvoker.jar
