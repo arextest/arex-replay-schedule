@@ -3,7 +3,7 @@ arex:
     service:
       api: http://arex-report-service:8080
   mongo:
-    uri: mongodb://arex:iLoveArex@mongodb:27017/arex_storage_db
+    uri: mongodb://arex:password@mongodb:27017/arex_storage_db
   redis:
     uri: redis://redis:6379
   storage:
