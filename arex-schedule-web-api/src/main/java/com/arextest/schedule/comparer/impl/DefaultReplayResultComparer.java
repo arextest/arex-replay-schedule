@@ -81,7 +81,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         .putIgnoreNodeSet(comparisonSystemConfig.getIgnoreNodeSet())
         .putSelectIgnoreCompare(comparisonSystemConfig.getSelectIgnoreCompare())
         .putOnlyCompareCoincidentColumn(comparisonSystemConfig.getOnlyCompareCoincidentColumn())
-        .putUuidIgnore(comparisonSystemConfig.getUuidIgnore());
+        .putUuidIgnore(comparisonSystemConfig.getUuidIgnore())
+        .putIpIgnore(comparisonSystemConfig.getIpIgnore());
   }
 
   public static CompareSDK getCompareSDKInstance() {
