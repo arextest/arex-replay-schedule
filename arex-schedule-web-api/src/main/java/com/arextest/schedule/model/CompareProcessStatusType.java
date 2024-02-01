@@ -10,7 +10,8 @@ public enum CompareProcessStatusType {
   WAIT_HANDLING(0),
   ERROR(-1),
   PASS(1),
-  HAS_DIFF(2);
+  HAS_DIFF(2),
+  IGNORE(3);
   @Getter
   final int value;
 

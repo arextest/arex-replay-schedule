@@ -60,9 +60,9 @@ public class ReplayComparisonConfig {
     if (Objects.equals(type, MockCategoryType.Q_MESSAGE_CONSUMER.getName())) {
       return true;
     }
-    if (ignoreCategoryTypes != null && ignoreCategoryTypes.contains(type)) {
-      return true;
-    }
+//    if (ignoreCategoryTypes != null && ignoreCategoryTypes.contains(type)) {
+//      return true;
+//    }
 
     return false;
   }
