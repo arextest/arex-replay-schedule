@@ -19,6 +19,8 @@ public class CompareResultDetail {
   private Integer diffResultCode;
   private String exceptionMsg;
 
+  private Boolean ignore;
+
   @Data
   public static class LogInfo {
 
