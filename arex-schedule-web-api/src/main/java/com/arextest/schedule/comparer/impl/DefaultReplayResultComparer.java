@@ -177,7 +177,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     replayCompareResults.forEach(compareResult -> {
       boolean ignore = ignoreCategory(compareResult.getCategoryName(), compareResult.getOperationName(), ignoreCategoryList);
       if (ignore) {
-        compareResult.setDiffResultCode(CompareProcessStatusType.PASS.getValue());
+        compareResult.setDiffResultCode(DiffResultCode.COMPARED_WITHOUT_DIFFERENCE);
         compareResult.setIgnore(true);
         compareResult.setMsgInfo(null);
         compareResult.setLogs(null);
