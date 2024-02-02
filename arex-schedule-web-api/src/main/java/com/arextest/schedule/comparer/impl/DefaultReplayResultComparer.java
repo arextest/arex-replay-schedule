@@ -363,13 +363,4 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     }
     return false;
   }
-
-  private CompareResult buildIgnoreResult(String record, String result) {
-    CompareResult compareResult = new CompareResult();
-    compareResult.setCode(CompareProcessStatusType.IGNORE.getValue());
-    compareResult.setProcessedBaseMsg(record);
-    compareResult.setProcessedTestMsg(result);
-    return compareResult;
-  }
-
 }
