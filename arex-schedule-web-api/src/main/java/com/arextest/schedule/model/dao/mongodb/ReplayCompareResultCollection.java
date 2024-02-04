@@ -38,6 +38,8 @@ public class ReplayCompareResultCollection extends ModelBase {
 
   private String logs;
 
+  private Boolean ignore;
+
   private int diffResultCode;
 
   private Date dataCreateTime;

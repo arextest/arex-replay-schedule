@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import lombok.Data;
-import org.apache.commons.collections4.CollectionUtils;
 
 /**
  * Created by wang_yc on 2021/10/14
@@ -48,8 +47,7 @@ public class ReplayComparisonConfig {
    */
   private Map<String, Object> additionalConfig;
 
-  public final boolean checkIgnoreMockMessageType(String type,
-      List<CategoryDetail> ignoreCategoryTypes) {
+  public final boolean checkIgnoreMockMessageType(String type) {
     // [b_yu] 2022-10-11 Dynamic type does not compare
     if (Objects.equals(type, MockCategoryType.DYNAMIC_CLASS.getName())) {
       return true;
@@ -60,10 +58,6 @@ public class ReplayComparisonConfig {
     if (Objects.equals(type, MockCategoryType.Q_MESSAGE_CONSUMER.getName())) {
       return true;
     }
-    if (ignoreCategoryTypes != null && ignoreCategoryTypes.contains(type)) {
-      return true;
-    }
-
     return false;
   }
 
