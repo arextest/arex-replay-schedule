@@ -163,7 +163,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
       List<CategoryComparisonHolder> waitCompareMap) {
     ComparisonInterfaceConfig operationConfig = compareConfigService.loadInterfaceConfig(
         caseItem.getParent());
-    List<CategoryDetail> ignoreCategoryList = operationConfig.getIgnoreCategoryTypes();
 
     List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
     for (CategoryComparisonHolder bindHolder : waitCompareMap) {
@@ -193,14 +192,14 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     if (sourceEmpty) {
       replayResults.forEach(replayResult -> {
         compareResults.add(
-            compareRecordAndResult(operationConfig, caseItem, category, replayResult, null, true));
+            compareRecordAndResult(operationConfig, caseItem, category, replayResult, null));
       });
       return compareResults;
     }
     if (targetEmpty) {
       recordResults.forEach(recordResult -> {
         compareResults.add(
-            compareRecordAndResult(operationConfig, caseItem, category, null, recordResult, true));
+            compareRecordAndResult(operationConfig, caseItem, category, null, recordResult));
       });
       return compareResults;
     }
@@ -217,14 +216,13 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
       if (resultCompareItem.isEntryPointCategory()) {
         compareResults.add(
             compareRecordAndResult(operationConfig, caseItem, category, resultCompareItem,
-                recordResults.get(0), false));
+                recordResults.get(0)));
         return compareResults;
       }
 
       if (StringUtils.isEmpty(compareKey)) {
         compareResults.add(
-            compareRecordAndResult(operationConfig, caseItem, category, resultCompareItem, null,
-                true));
+            compareRecordAndResult(operationConfig, caseItem, category, resultCompareItem, null));
         continue;
       }
 
@@ -235,12 +233,11 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         }
         compareResults.add(
             compareRecordAndResult(operationConfig, caseItem, category, resultCompareItem,
-                recordCompareItems.get(0), true));
+                recordCompareItems.get(0)));
         usedRecordKeys.add(compareKey);
       } else {
         compareResults.add(
-            compareRecordAndResult(operationConfig, caseItem, category, resultCompareItem, null,
-                true));
+            compareRecordAndResult(operationConfig, caseItem, category, resultCompareItem, null));
       }
     }
 
@@ -248,34 +245,27 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         .forEach(key -> {
           recordMap.get(key).forEach(recordItem -> {
             compareResults.add(
-                compareRecordAndResult(operationConfig, caseItem, category, null, recordItem,
-                    true));
+                compareRecordAndResult(operationConfig, caseItem, category, null, recordItem));
           });
         });
     return compareResults;
   }
 
   private ReplayCompareResult compareRecordAndResult(ComparisonInterfaceConfig operationConfig,
-      ReplayActionCaseItem caseItem, String category, CompareItem target, CompareItem source,
-      Boolean pickConfig) {
+      ReplayActionCaseItem caseItem, String category, CompareItem target, CompareItem source) {
 
     String operation = source != null ? source.getCompareOperation() : target.getCompareOperation();
     String record = source != null ? source.getCompareContent() : null;
     String replay = target != null ? target.getCompareContent() : null;
 
-    ReplayComparisonConfig compareConfig;
-
-    if (pickConfig) {
-      compareConfig = configHandler.pickConfig(operationConfig, category,
-          operation);
-    } else {
-      compareConfig = operationConfig;
-    }
+    ReplayComparisonConfig compareConfig = configHandler.pickConfig(operationConfig, category,
+        operation);
 
     CompareResult comparedResult = new CompareResult();
     ReplayCompareResult resultNew = ReplayCompareResult.createFrom(caseItem);
 
-    if (ignoreCategory(category, operation, compareConfig.getIgnoreCategoryTypes())) {
+    // use operation config to ignore category
+    if (ignoreCategory(category, operation, operationConfig.getIgnoreCategoryTypes())) {
       comparedResult.setCode(DiffResultCode.COMPARED_WITHOUT_DIFFERENCE);
       comparedResult.setProcessedBaseMsg(record);
       comparedResult.setProcessedTestMsg(replay);
