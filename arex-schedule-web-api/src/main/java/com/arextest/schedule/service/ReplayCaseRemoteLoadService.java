@@ -6,6 +6,8 @@ import com.arextest.model.mock.Mocker.Target;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.PagedResponseType;
 import com.arextest.model.replay.QueryCaseCountResponseType;
+import com.arextest.model.replay.SortingOption;
+import com.arextest.model.replay.SortingTypeEnum;
 import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.ViewRecordResponseType;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
@@ -21,6 +23,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.Resource;
@@ -41,6 +44,7 @@ public class ReplayCaseRemoteLoadService {
 
   private static final int EMPTY_SIZE = 0;
   private static final int AUTO_PINED_CASE_LIMIT = 20000;
+  private static final String CREATE_TIME_COLUMN_NAME = "creationTime";
   @Resource
   private HttpWepServiceApiClient wepApiClientService;
   @Value("${arex.storage.viewRecord.url}")
@@ -154,9 +158,14 @@ public class ReplayCaseRemoteLoadService {
     List<PagedRequestType> requestTypeList = buildPagingSearchCaseRequests(replayActionItem,
         caseCountLimit, providerName);
 
+    SortingOption sortingOption = new SortingOption();
+    sortingOption.setLabel(CREATE_TIME_COLUMN_NAME);
+    sortingOption.setSortingType(SortingTypeEnum.DESCENDING.getCode());
+    List<SortingOption> sortingOptions = Collections.singletonList(sortingOption);
     for (PagedRequestType requestType : requestTypeList) {
       requestType.setBeginTime(beginTimeMills);
       requestType.setEndTime(endTimeMills);
+      requestType.setSortingOptions(sortingOptions);
       PagedResponseType responseType;
       StopWatch watch = new StopWatch();
       watch.start(LogType.LOAD_CASE_TIME.getValue());
