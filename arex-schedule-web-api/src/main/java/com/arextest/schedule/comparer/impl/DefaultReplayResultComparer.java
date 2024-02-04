@@ -279,6 +279,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     comparedResult = compareProcess(category, record, replay, compareConfig,
         caseItem.getCompareMode().getValue());
     stopWatch.stop();
+
+    // new call & call missing don't record time
     if (target != null && source != null) {
       metricService.recordTimeEvent(LogType.COMPARE_SDK.getValue(),
           caseItem.getParent().getPlanId(),
