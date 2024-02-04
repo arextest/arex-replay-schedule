@@ -192,19 +192,15 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     final String category = bindHolder.getCategoryName();
     if (sourceEmpty) {
       replayResults.forEach(replayResult -> {
-        ReplayComparisonConfig itemConfig = configHandler.pickConfig(operationConfig, replayResult,
-            category);
         compareResults.add(
-            compareRecordAndResult(itemConfig, caseItem, category, replayResult, null));
+            compareRecordAndResult(operationConfig, caseItem, category, replayResult, null, true));
       });
       return compareResults;
     }
     if (targetEmpty) {
       recordResults.forEach(recordResult -> {
-        ReplayComparisonConfig itemConfig = configHandler.pickConfig(operationConfig, recordResult,
-            category);
         compareResults.add(
-            compareRecordAndResult(itemConfig, caseItem, category, null, recordResult));
+            compareRecordAndResult(operationConfig, caseItem, category, null, recordResult, true));
       });
       return compareResults;
     }
@@ -221,15 +217,14 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
       if (resultCompareItem.isEntryPointCategory()) {
         compareResults.add(
             compareRecordAndResult(operationConfig, caseItem, category, resultCompareItem,
-                recordResults.get(0)));
+                recordResults.get(0), false));
         return compareResults;
       }
 
       if (StringUtils.isEmpty(compareKey)) {
-        ReplayComparisonConfig itemConfig = configHandler.pickConfig(operationConfig,
-            resultCompareItem, category);
         compareResults.add(
-            compareRecordAndResult(itemConfig, caseItem, category, resultCompareItem, null));
+            compareRecordAndResult(operationConfig, caseItem, category, resultCompareItem, null,
+                true));
         continue;
       }
 
@@ -238,40 +233,47 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
         if (CollectionUtils.isEmpty(recordCompareItems)) {
           continue;
         }
-        ReplayComparisonConfig compareConfig = configHandler.pickConfig(operationConfig,
-            recordCompareItems.get(0), category);
         compareResults.add(
-            compareRecordAndResult(compareConfig, caseItem, category, resultCompareItem,
-                recordCompareItems.get(0)));
+            compareRecordAndResult(operationConfig, caseItem, category, resultCompareItem,
+                recordCompareItems.get(0), true));
         usedRecordKeys.add(compareKey);
       } else {
-        ReplayComparisonConfig itemConfig = configHandler.pickConfig(operationConfig,
-            resultCompareItem, category);
         compareResults.add(
-            compareRecordAndResult(itemConfig, caseItem, category, resultCompareItem, null));
+            compareRecordAndResult(operationConfig, caseItem, category, resultCompareItem, null,
+                true));
       }
     }
 
     recordMap.keySet().stream().filter(key -> !usedRecordKeys.contains(key)) // unused keys
         .forEach(key -> {
           recordMap.get(key).forEach(recordItem -> {
-            ReplayComparisonConfig itemConfig = configHandler.pickConfig(operationConfig,
-                recordItem, category);
             compareResults.add(
-                compareRecordAndResult(itemConfig, caseItem, category, null, recordItem));
+                compareRecordAndResult(operationConfig, caseItem, category, null, recordItem,
+                    true));
           });
         });
     return compareResults;
   }
 
-  private ReplayCompareResult compareRecordAndResult(ReplayComparisonConfig compareConfig,
-      ReplayActionCaseItem caseItem, String category, CompareItem target, CompareItem source) {
-    CompareResult comparedResult = new CompareResult();
-    ReplayCompareResult resultNew = ReplayCompareResult.createFrom(caseItem);
+  private ReplayCompareResult compareRecordAndResult(ComparisonInterfaceConfig operationConfig,
+      ReplayActionCaseItem caseItem, String category, CompareItem target, CompareItem source,
+      Boolean pickConfig) {
 
     String operation = source != null ? source.getCompareOperation() : target.getCompareOperation();
     String record = source != null ? source.getCompareContent() : null;
     String replay = target != null ? target.getCompareContent() : null;
+
+    ReplayComparisonConfig compareConfig;
+
+    if (pickConfig) {
+      compareConfig = configHandler.pickConfig(operationConfig, category,
+          operation);
+    } else {
+      compareConfig = operationConfig;
+    }
+
+    CompareResult comparedResult = new CompareResult();
+    ReplayCompareResult resultNew = ReplayCompareResult.createFrom(caseItem);
 
     if (ignoreCategory(category, operation, compareConfig.getIgnoreCategoryTypes())) {
       comparedResult.setCode(DiffResultCode.COMPARED_WITHOUT_DIFFERENCE);

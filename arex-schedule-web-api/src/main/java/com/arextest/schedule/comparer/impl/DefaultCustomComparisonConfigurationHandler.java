@@ -38,14 +38,6 @@ public class DefaultCustomComparisonConfigurationHandler implements
   @Override
   public ReplayComparisonConfig pickConfig(ComparisonInterfaceConfig operationConfig,
       String category, String operationName) {
-    ReplayComparisonConfig config = pickConfigInner(operationConfig, category, operationName);
-    // ignoreCategory config is not in the dependencyConfig, so we need to set it manually.
-    config.setIgnoreCategoryTypes(operationConfig.getIgnoreCategoryTypes());
-    return config;
-  }
-
-  private ReplayComparisonConfig pickConfigInner(ComparisonInterfaceConfig operationConfig,
-      String category, String operationName) {
     boolean mainEntryType = Optional.ofNullable(operationConfig.getOperationTypes())
         .map(types -> types.contains(category)).orElse(false);
     boolean mainEntryNameMatched = Optional.ofNullable(operationConfig.getOperationName())
