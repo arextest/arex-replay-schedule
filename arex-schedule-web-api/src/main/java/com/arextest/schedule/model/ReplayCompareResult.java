@@ -41,6 +41,9 @@ public class ReplayCompareResult {
   private List<LogEntity> logs;
   private MsgInfo msgInfo;
 
+  // ignore
+  private Boolean ignore;
+
   public static ReplayCompareResult createFrom(ReplayActionCaseItem caseItem) {
     ReplayCompareResult newResult = new ReplayCompareResult();
     newResult.setRecordId(caseItem.getRecordId());
