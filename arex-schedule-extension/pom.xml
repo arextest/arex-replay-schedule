@@ -40,7 +40,7 @@
   <parent>
     <artifactId>arex-schedule-parent</artifactId>
     <groupId>com.arextest</groupId>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
   </parent>
 
   <version>1.0.33.1</version>
