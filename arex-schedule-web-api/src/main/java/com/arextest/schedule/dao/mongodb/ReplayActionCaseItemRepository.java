@@ -48,6 +48,8 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
   private static final String TARGET_RESULT_ID = "targetResultId";
   private static final String COMPARE_STATUS = "compareStatus";
   private static final String COUNT_FIELD = "count";
+  private static final String RECORD_TIME = "recordTime";
+  private static final String LAST_RECORD_TIME_FIELD = "lastRecordTime";
   @Autowired
   MongoTemplate mongoTemplate;
   @Resource
@@ -211,6 +213,28 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     return converter.dtoFromDao(replayRunDetailsCollections);
   }
 
+  /**
+   * Get the number of recorded cases and the earliest time
+   * @param planItemId
+   * @return
+   */
+  public GroupCountRes getLastRecord(String planItemId) {
+    Criteria criteria = Criteria.where(PLAN_ITEM_ID).is(planItemId);
+    Aggregation aggregation = Aggregation.newAggregation(
+        Aggregation.match(criteria),
+        Aggregation.group(PLAN_ITEM_ID)
+            .min(RECORD_TIME).as(LAST_RECORD_TIME_FIELD)
+            .count().as(COUNT_FIELD)
+    );
+
+    List<GroupCountRes> groupCountRes = mongoTemplate.aggregate(aggregation,
+        ReplayRunDetailsCollection.class, GroupCountRes.class).getMappedResults();
+    if (CollectionUtils.isEmpty(groupCountRes)) {
+      return null;
+    }
+    return groupCountRes.get(0);
+  }
+
   // region <context>
   public Set<String> getAllContextIdentifiers(String planId) {
     Query query = Query.query(Criteria.where(ReplayActionCaseItem.Fields.PLAN_ID).is(planId));
@@ -253,11 +277,12 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
 
   @Data
-  private static class GroupCountRes {
+  public static class GroupCountRes {
 
     @Id
     private String planItemId;
     private Long count;
+    private Long lastRecordTime;
   }
 
   // endregion <context>

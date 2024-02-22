@@ -48,6 +48,7 @@ public class ReplayActionItem {
   private List<ReplayActionCaseItem> caseItemList;
   @JsonIgnore
   private long lastRecordTime;
+  private long totalLoadedCount;
   @JsonIgnore
   private SendSemaphoreLimiter sendRateLimiter;
   /**
