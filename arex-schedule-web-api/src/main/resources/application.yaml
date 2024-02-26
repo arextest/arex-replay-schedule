@@ -73,6 +73,9 @@ arex:
     pool:
       io:
         cpuratio: 4
+    compare:
+      case:
+        url: ${arex.schedule.service.api}/api/compareCase
   storage:
     cacheLoad:
       url: ${arex.storage.service.api}/api/storage/replay/query/cacheLoad
