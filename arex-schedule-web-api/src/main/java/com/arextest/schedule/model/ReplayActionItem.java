@@ -46,8 +46,17 @@ public class ReplayActionItem {
   private String serviceKey;
   @JsonIgnore
   private List<ReplayActionCaseItem> caseItemList;
+  /**
+   * The earliest time of the saved case.
+   * This field is required when evoking a task
+   */
   @JsonIgnore
   private long lastRecordTime;
+  /**
+   * The number of corresponding matching cases that have been saved.
+   * This field is required when evoking a task
+   */
+  private long totalLoadedCount;
   @JsonIgnore
   private SendSemaphoreLimiter sendRateLimiter;
   /**

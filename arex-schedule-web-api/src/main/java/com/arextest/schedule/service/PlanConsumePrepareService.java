@@ -24,6 +24,7 @@ import com.arextest.schedule.utils.ReplayParentBinder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -143,19 +144,27 @@ public class PlanConsumePrepareService {
    */
   private int doPagingLoadCaseSave(ReplayActionItem replayActionItem, String providerName) {
     final ReplayPlan replayPlan = replayActionItem.getParent();
-    long beginTimeMills = replayActionItem.getLastRecordTime();
-    if (beginTimeMills == 0) {
-      beginTimeMills = replayPlan.getCaseSourceFrom().getTime();
-    }
+    long beginTimeMills = replayPlan.getCaseSourceFrom().getTime();
     // need all auto pined cases
     if (providerName.equals(CommonConstant.AUTO_PINED)) {
       beginTimeMills = 0;
     }
-    long endTimeMills = replayPlan.getCaseSourceTo().getTime();
+
+    long endTimeMills = replayActionItem.getLastRecordTime();
+    if (endTimeMills == 0) {
+      endTimeMills = replayPlan.getCaseSourceTo().getTime();
+    }
     int totalSize = 0;
+    // The task is pulled up to obtain the recorded case
+    if (replayActionItem.getTotalLoadedCount() > 0) {
+      totalSize = (int) replayActionItem.getTotalLoadedCount();
+    }
     int caseCountLimit = replayActionItem.getOperationTypes() == null ?
         replayPlan.getCaseCountLimit() :
         replayPlan.getCaseCountLimit() * replayActionItem.getOperationTypes().size();
+    if (totalSize == caseCountLimit) {
+      return totalSize;
+    }
     int pageSize = Math.min(caseCountLimit, CommonConstant.MAX_PAGE_SIZE);
     while (beginTimeMills < endTimeMills) {
       List<ReplayActionCaseItem> caseItemList = caseRemoteLoadService.pagingLoad(beginTimeMills,
@@ -167,12 +176,11 @@ public class PlanConsumePrepareService {
       caseItemPostProcess(caseItemList);
       ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
       totalSize += caseItemList.size();
-      beginTimeMills = caseItemList.get(caseItemList.size() - 1).getRecordTime();
+      endTimeMills = caseItemList.get(caseItemList.size() - 1).getRecordTime();
       replayActionCaseItemRepository.save(caseItemList);
       if (totalSize >= caseCountLimit || caseItemList.size() < pageSize) {
         break;
       }
-      replayActionItem.setLastRecordTime(beginTimeMills);
     }
     return totalSize;
   }
@@ -262,7 +270,7 @@ public class PlanConsumePrepareService {
         rerunPrepareExecutorService);
 
     CompletableFuture.allOf(removeRecordsAndScenesTask, batchUpdateStatusTask, noiseAnalysisRecover,
-            removeErrorMsgTask).join();
+        removeErrorMsgTask).join();
   }
 
   public void doResumeOperationDescriptor(ReplayPlan replayPlan) {

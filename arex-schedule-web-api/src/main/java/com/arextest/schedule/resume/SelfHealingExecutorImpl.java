@@ -2,10 +2,10 @@ package com.arextest.schedule.resume;
 
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
+import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository.GroupCountRes;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.planexecution.PlanExecutionMonitor;
@@ -107,10 +107,16 @@ public class SelfHealingExecutorImpl implements SelfHealingExecutor {
 
   private void doResumeLastRecordTime(List<ReplayActionItem> actionItems) {
     for (ReplayActionItem actionItem : actionItems) {
-      ReplayActionCaseItem lastCastItem = replayActionCaseItemRepository.lastOne(
+      GroupCountRes groupCountRes = replayActionCaseItemRepository.getLastRecord(
           actionItem.getId());
-      if (lastCastItem != null) {
-        actionItem.setLastRecordTime(lastCastItem.getRecordTime());
+      if (groupCountRes == null) {
+        continue;
+      }
+      if (groupCountRes.getCount() != null) {
+        actionItem.setTotalLoadedCount(groupCountRes.getCount());
+      }
+      if (groupCountRes.getLastRecordTime() != null) {
+        actionItem.setLastRecordTime(groupCountRes.getLastRecordTime());
       }
     }
   }
