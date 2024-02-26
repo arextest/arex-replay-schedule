@@ -13,3 +13,6 @@ arex:
   storage:
     service:
       api: http://10.144.62.53:8093
+  schedule:
+    service:
+      api: http://10.144.62.53:8092

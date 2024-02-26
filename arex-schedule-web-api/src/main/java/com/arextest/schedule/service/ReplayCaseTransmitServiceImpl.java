@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
@@ -44,6 +45,10 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
   @Resource
   private ReplayResultComparer replayResultComparer;
   @Resource
+  private ScheduledExecutorService compareScheduleExecutorService;
+  @Resource
+  private ReplayCompareService replayCompareService;
+  @Resource
   private ReplayActionCaseItemRepository replayActionCaseItemRepository;
   @Resource
   private ProgressTracer progressTracer;
@@ -55,9 +60,10 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
   private ProgressEvent progressEvent;
   @Resource
   private MetricService metricService;
-
   @Resource
   private ReplayNoiseIdentify replayNoiseIdentify;
+  @Resource
+  private ConfigProvider configProvider;
 
   public void send(List<ReplayActionCaseItem> caseItems, PlanExecutionContext<?> executionContext) {
     ExecutionStatus executionStatus = executionContext.getExecutionStatus();
@@ -192,11 +198,19 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
 
     if (sendStatusType == CaseSendStatusType.SUCCESS) {
       replayActionCaseItemRepository.updateSendResult(caseItem);
-
       // async compare task
-      AsyncCompareCaseTaskRunnable compareTask = new AsyncCompareCaseTaskRunnable(
-          replayResultComparer, caseItem);
-      compareExecutorService.execute(compareTask);
+      int compareDelaySeconds = configProvider.getCompareDelaySeconds(
+          caseItem.getParent().getAppId());
+      if (compareDelaySeconds == 0) {
+        AsyncCompareCaseTaskRunnable compareTask = new AsyncCompareCaseTaskRunnable(
+            replayResultComparer, caseItem);
+        compareExecutorService.execute(compareTask);
+      } else {
+        AsyncDelayCompareCaseTaskRunnable delayCompareTask = new AsyncDelayCompareCaseTaskRunnable(
+            replayCompareService, caseItem);
+        compareScheduleExecutorService.schedule(delayCompareTask,
+            compareDelaySeconds, TimeUnit.SECONDS);
+      }
       LOGGER.info("Async compare task distributed, case id: {}", caseItem.getId());
     } else {
       doSendFailedAsFinish(caseItem, sendStatusType);
