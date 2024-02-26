@@ -166,9 +166,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
 
     List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
     for (CategoryComparisonHolder bindHolder : waitCompareMap) {
-      if (operationConfig.checkIgnoreMockMessageType(bindHolder.getCategoryName())) {
-        continue;
-      }
+//      if (operationConfig.checkIgnoreMockMessageType(bindHolder.getCategoryName())) {
+//        continue;
+//      }
       replayCompareResults.addAll(compareReplayResult(bindHolder, caseItem, operationConfig));
     }
     return replayCompareResults;
