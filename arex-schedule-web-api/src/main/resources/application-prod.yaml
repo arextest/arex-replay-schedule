@@ -9,3 +9,6 @@ arex:
   storage:
     service:
       api: http://arex-storage-service:8080
+  schedule:
+    service:
+      api: http://arex-schedule-service:8080

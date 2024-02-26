@@ -75,6 +75,14 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
   }
 
   @Bean
+  public ExecutorService compareScheduleExecutorService() {
+    ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("replay-compare-schedule-%d")
+        .setDaemon(true)
+        .setUncaughtExceptionHandler(this).build();
+    return new ScheduledThreadPoolExecutor(CORE_POOL_SIZE, threadFactory);
+  }
+
+  @Bean
   public ExecutorService rerunPrepareExecutorService() {
     ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(
             "replay-rerun-prepare-%d")
