@@ -17,7 +17,7 @@ public class EncodingUtils {
       if (isJson(encoded)) {
         return encoded;
       }
-      String decoded = new String(Base64.getDecoder().decode(encoded));
+      String decoded = new String(Base64.getDecoder().decode(trimBase64Str(encoded)));
       if (isJson(decoded)) {
         return decoded;
       }
@@ -33,5 +33,9 @@ public class EncodingUtils {
     } else {
       return value.startsWith("[") && value.endsWith("]");
     }
+  }
+
+  private static String trimBase64Str(String in) {
+    return in.replace("\"", "");
   }
 }
