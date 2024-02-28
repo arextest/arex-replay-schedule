@@ -43,8 +43,10 @@ public class ControllerException {
   }
 
   @ExceptionHandler(ArexException.class)
-  public Response handleArexException(ArexException e) {
+  public ResponseEntity<Response> handleArexException(ArexException e) {
     LOGGER.warn("Arex internal exception", e);
-    return ResponseUtils_New.errorResponse(e.getMessage(), e.getResponseCode());
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
+    return new ResponseEntity<>(ResponseUtils_New.errorResponse(e.getMessage(), e.getResponseCode()), headers, HttpStatus.OK);
   }
 }
