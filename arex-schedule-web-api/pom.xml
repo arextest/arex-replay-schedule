@@ -117,12 +117,10 @@
     <dependency>
       <groupId>com.arextest</groupId>
       <artifactId>arex-storage-config</artifactId>
-      <version>${arex-storage-config.version}</version>
     </dependency>
     <dependency>
       <groupId>com.arextest</groupId>
       <artifactId>arex-common</artifactId>
-      <version>0.1.18</version>
     </dependency>
   </dependencies>
   <modelVersion>4.0.0</modelVersion>

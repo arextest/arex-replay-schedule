@@ -242,6 +242,16 @@
         <groupId>com.alibaba.fastjson2</groupId>
         <version>${fastjson2.version}</version>
       </dependency>
+      <dependency>
+        <groupId>com.arextest</groupId>
+        <artifactId>arex-storage-config</artifactId>
+        <version>${arex-storage-config.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.arextest</groupId>
+        <artifactId>arex-common</artifactId>
+        <version>0.1.18</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
   <description>AREX schedule is used for replay.</description>
