@@ -75,6 +75,7 @@
     <dependency>
       <artifactId>arex-web-model-contract</artifactId>
       <groupId>com.arextest</groupId>
+      <version>0.6.2.4</version>
     </dependency>
     <dependency>
       <artifactId>arex-common</artifactId>

@@ -2,10 +2,10 @@ package com.arextest.schedule.beans;
 
 import com.arextest.common.model.classloader.RemoteJarClassLoader;
 import com.arextest.common.utils.RemoteJarLoaderUtils;
+import com.arextest.config.model.dto.DesensitizationJar;
 import com.arextest.extension.desensitization.DataDesensitization;
 import com.arextest.extension.desensitization.DefaultDataDesensitization;
 import com.arextest.schedule.service.ConfigurationService;
-import com.arextest.web.model.contract.contracts.datadesensitization.DesensitizationJar;
 import java.util.List;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;

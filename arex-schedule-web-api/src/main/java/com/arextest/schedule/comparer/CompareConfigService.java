@@ -11,7 +11,7 @@ import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.model.converter.ReplayConfigConverter;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.utils.MapUtils;
-import com.arextest.web.model.contract.contracts.config.SystemConfig;
+import com.arextest.web.model.contract.contracts.config.SystemConfigWithProperties;
 import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig;
 import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig.DependencyComparisonItem;
 import java.nio.charset.StandardCharsets;
@@ -61,18 +61,18 @@ public final class CompareConfigService {
   private static final boolean DEFAULT_COMPARE_SELECT_IGNORE_COMPARE = true;
   private static final boolean DEFAULT_COMPARE_UUID_IGNORE = true;
 
-  private static SystemConfig systemConfig = null;
+  private static SystemConfigWithProperties systemConfig = null;
 
-  public SystemConfig getComparisonSystemConfig() {
+  public SystemConfigWithProperties getComparisonSystemConfig() {
 
     if (systemConfig != null) {
       return systemConfig;
     }
 
-    ResponseEntity<GenericResponseType<SystemConfig>> response = RETRY_TEMPLATE.execute(context -> {
-      ResponseEntity<GenericResponseType<SystemConfig>> temp = httpWepServiceApiClient.get(
+    ResponseEntity<GenericResponseType<SystemConfigWithProperties>> response = RETRY_TEMPLATE.execute(context -> {
+      ResponseEntity<GenericResponseType<SystemConfigWithProperties>> temp = httpWepServiceApiClient.get(
           systemConfigUrl, Collections.emptyMap(),
-          new ParameterizedTypeReference<GenericResponseType<SystemConfig>>() {
+          new ParameterizedTypeReference<GenericResponseType<SystemConfigWithProperties>>() {
           });
 
       if (temp == null || temp.getBody() == null || temp.getBody().getBody() == null) {
@@ -84,7 +84,7 @@ public final class CompareConfigService {
 
     if (response == null || response.getBody() == null || response.getBody().getBody() == null) {
       LOGGER.error("get compare system config failed");
-      SystemConfig defaultConfig = new SystemConfig();
+      SystemConfigWithProperties defaultConfig = new SystemConfigWithProperties();
       defaultConfig.setCompareIgnoreTimePrecisionMillis(
           DEFAULT_COMPARE_IGNORE_TIME_PRECISION_MILLIS);
       defaultConfig.setCompareNameToLower(DEFAULT_COMPARE_NAME_TO_LOWER);
