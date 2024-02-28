@@ -114,6 +114,11 @@
       <artifactId>aspectjweaver</artifactId>
       <groupId>org.aspectj</groupId>
     </dependency>
+    <dependency>
+      <groupId>com.arextest</groupId>
+      <artifactId>arex-storage-config</artifactId>
+      <version>${arex-storage-config.version}</version>
+    </dependency>
   </dependencies>
   <modelVersion>4.0.0</modelVersion>
   <name>${project.groupId}:${project.artifactId}</name>
@@ -124,7 +129,7 @@
   <parent>
     <artifactId>arex-schedule-parent</artifactId>
     <groupId>com.arextest</groupId>
-    <version>1.1.2</version>
+    <version>1.1.4</version>
   </parent>
 
   <profiles>

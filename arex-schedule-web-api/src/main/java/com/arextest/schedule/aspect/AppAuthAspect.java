@@ -7,9 +7,12 @@ import com.arextest.common.utils.JwtUtil;
 import com.arextest.common.utils.ResponseUtils;
 import com.arextest.config.model.dao.config.AppCollection;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection;
+import com.arextest.config.model.dao.config.SystemConfigurationCollection.KeySummary;
 import com.arextest.config.model.dto.SystemConfiguration;
 import com.arextest.config.repository.impl.SystemConfigurationRepositoryImpl;
 import com.arextest.schedule.dao.mongodb.ApplicationRepository;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
 import java.util.Optional;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -19,7 +22,12 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
+import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -42,7 +50,7 @@ public class AppAuthAspect {
   private ApplicationRepository applicationRepository;
 
   @Resource
-  private SystemConfigurationRepositoryImpl systemConfigurationRepository;
+  private MongoTemplate mongoTemplate;
 
   @Pointcut("@annotation(com.arextest.common.annotation.AppAuth)")
   public void appAuth() {
@@ -98,9 +106,10 @@ public class AppAuthAspect {
   }
 
   private void init() {
-    authSwitch = Optional.ofNullable(
-            systemConfigurationRepository.getSystemConfigByKey(SystemConfigurationCollection.KeySummary.AUTH_SWITCH))
-        .map(SystemConfiguration::getAuthSwitch)
+    Query query = new Query(Criteria.where(SystemConfigurationCollection.Fields.key).is(KeySummary.DESERIALIZATION_JAR));
+    SystemConfigurationCollection collection = mongoTemplate.findOne(query, SystemConfigurationCollection.class);
+    authSwitch = Optional.ofNullable(collection)
+        .map(SystemConfigurationCollection::getAuthSwitch)
         .orElse(null);
     if (authSwitch == null) {
       throw new RuntimeException("get authSwitch failed");
