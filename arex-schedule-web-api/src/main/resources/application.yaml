@@ -43,9 +43,6 @@ arex:
       report:
         info:
           url: ${arex.api.service.api}/api/report/updateReportInfo
-  app:
-    auth:
-      switch: false
   client:
     https:
       cert:

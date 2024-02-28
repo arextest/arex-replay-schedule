@@ -1,6 +1,7 @@
 package com.arextest.schedule.beans;
 
 import com.arextest.common.utils.SerializationUtils;
+import com.arextest.config.repository.impl.SystemConfigurationRepositoryImpl;
 import com.arextest.model.mock.Mocker;
 import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.model.dao.mongodb.ReplayBizLogCollection;
@@ -76,6 +77,12 @@ public class MongodbConfiguration {
     converter.setTypeMapper(new DefaultMongoTypeMapper(null));
     converter.afterPropertiesSet();
     return new MongoTemplate(mongoDatabaseFactory, converter);
+  }
+
+  @Bean
+  public SystemConfigurationRepositoryImpl systemConfigurationRepository (
+      MongoTemplate mongoTemplate) {
+    return new SystemConfigurationRepositoryImpl(mongoTemplate.getDb());
   }
 
   public static class CompressionMongoClientDatabaseFactory extends

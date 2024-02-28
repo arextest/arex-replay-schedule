@@ -6,7 +6,12 @@ import com.arextest.common.model.response.ResponseCode;
 import com.arextest.common.utils.JwtUtil;
 import com.arextest.common.utils.ResponseUtils;
 import com.arextest.config.model.dao.config.AppCollection;
+import com.arextest.config.model.dao.config.SystemConfigurationCollection;
+import com.arextest.config.model.dto.SystemConfiguration;
+import com.arextest.config.repository.impl.SystemConfigurationRepositoryImpl;
 import com.arextest.schedule.dao.mongodb.ApplicationRepository;
+import java.util.Optional;
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -15,7 +20,6 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -27,15 +31,18 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @Slf4j
 @Aspect
 @Component
-@ConditionalOnProperty(value = "arex.app.auth.switch", havingValue = "true")
 public class AppAuthAspect {
 
   private static final String NO_PERMISSION = "No permission";
   private static final String NO_APPID = "No appId";
   private static final String ERROR_APPID = "Error appId";
+  private static Boolean authSwitch;
 
   @Autowired
   private ApplicationRepository applicationRepository;
+
+  @Resource
+  private SystemConfigurationRepositoryImpl systemConfigurationRepository;
 
   @Pointcut("@annotation(com.arextest.common.annotation.AppAuth)")
   public void appAuth() {
@@ -43,6 +50,12 @@ public class AppAuthAspect {
 
   @Around("appAuth() && @annotation(auth)")
   public Object doAround(ProceedingJoinPoint point, AppAuth auth) throws Throwable {
+    if (authSwitch == null) {
+      init();
+    }
+    if (!authSwitch) {
+      return point.proceed();
+    }
     ArexContext context = ArexContext.getContext();
     ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
     HttpServletRequest request = requestAttributes.getRequest();
@@ -81,6 +94,16 @@ public class AppAuthAspect {
         ArexContext.getContext().setPassAuth(false);
       default:
         return point.proceed();
+    }
+  }
+
+  private void init() {
+    authSwitch = Optional.ofNullable(
+            systemConfigurationRepository.getSystemConfigByKey(SystemConfigurationCollection.KeySummary.AUTH_SWITCH))
+        .map(SystemConfiguration::getAuthSwitch)
+        .orElse(null);
+    if (authSwitch == null) {
+      throw new RuntimeException("get authSwitch failed");
     }
   }
 
