@@ -25,7 +25,7 @@ import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.MetricService;
 import com.arextest.web.model.contract.contracts.compare.CategoryDetail;
-import com.arextest.web.model.contract.contracts.config.SystemConfig;
+import com.arextest.web.model.contract.contracts.config.SystemConfigWithProperties;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -73,7 +73,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     addGlobalOptionToSDK(compareConfigService);
   }
   public void addGlobalOptionToSDK(CompareConfigService compareConfigService) {
-    SystemConfig comparisonSystemConfig = compareConfigService.getComparisonSystemConfig();
+    SystemConfigWithProperties comparisonSystemConfig = compareConfigService.getComparisonSystemConfig();
     COMPARE_INSTANCE.getGlobalOptions()
         .putNameToLower(comparisonSystemConfig.getCompareNameToLower())
         .putNullEqualsEmpty(comparisonSystemConfig.getCompareNullEqualsEmpty())
