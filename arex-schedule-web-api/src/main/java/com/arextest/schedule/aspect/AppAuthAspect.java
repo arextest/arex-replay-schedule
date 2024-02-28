@@ -112,7 +112,7 @@ public class AppAuthAspect {
         .map(SystemConfigurationCollection::getAuthSwitch)
         .orElse(null);
     if (authSwitch == null) {
-      throw new RuntimeException("get authSwitch failed");
+      throw new RuntimeException("get authSwitch failed, please update storage version");
     }
   }
 
