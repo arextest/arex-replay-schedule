@@ -2,6 +2,7 @@ package com.arextest.schedule.aspect;
 
 import com.arextest.common.annotation.AppAuth;
 import com.arextest.common.context.ArexContext;
+import com.arextest.common.exceptions.ArexException;
 import com.arextest.common.model.response.ResponseCode;
 import com.arextest.common.utils.JwtUtil;
 import com.arextest.common.utils.ResponseUtils;
@@ -112,8 +113,8 @@ public class AppAuthAspect {
         .map(SystemConfigurationCollection::getAuthSwitch)
         .orElse(null);
     if (authSwitch == null) {
-      throw new RuntimeException("get authSwitch failed, please update storage version");
-    }
+      throw new ArexException(ResponseCode.AUTHENTICATION_FAILED.getCodeValue(),
+          "get authSwitch failed, please update storage version");    }
   }
 
 }
