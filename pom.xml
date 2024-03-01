@@ -235,12 +235,17 @@
       <dependency>
         <artifactId>arex-common</artifactId>
         <groupId>com.arextest</groupId>
-        <version>0.1.15</version>
+        <version>0.1.18</version>
       </dependency>
       <dependency>
         <artifactId>fastjson2</artifactId>
         <groupId>com.alibaba.fastjson2</groupId>
         <version>${fastjson2.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.arextest</groupId>
+        <artifactId>arex-storage-config</artifactId>
+        <version>${arex-storage-config.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -308,7 +313,7 @@
       **/model/**,
       **/mapping/**
     </sonar.exclusions>
-    <arex-storage-config.version>1.1.5</arex-storage-config.version>
+    <arex-storage-config.version>1.1.17</arex-storage-config.version>
     <web-contract.version>0.6.2.3</web-contract.version>
   </properties>
 

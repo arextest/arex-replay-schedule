@@ -2,15 +2,10 @@ package com.arextest.schedule.beans;
 
 import com.arextest.common.utils.SerializationUtils;
 import com.arextest.model.mock.Mocker;
-import com.arextest.schedule.model.bizlog.BizLog;
-import com.arextest.schedule.model.dao.mongodb.ReplayBizLogCollection;
-import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
 import com.mongodb.MongoClientSettings;
-import com.mongodb.client.MongoDatabase;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
-import org.bson.Document;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
@@ -42,29 +37,12 @@ public class MongodbConfiguration {
   @ConditionalOnMissingBean
   public MongoDatabaseFactory mongoDbFactory() {
     try {
-      CompressionMongoClientDatabaseFactory fac = new CompressionMongoClientDatabaseFactory(
+      return new CompressionMongoClientDatabaseFactory(
           mongoUrl);
-      MongoDatabase db = fac.getMongoDatabase();
-      ensureIndex(db);
-      return fac;
     } catch (Exception e) {
       LOGGER.error("cannot connect mongodb {}", e.getMessage(), e);
       throw e;
     }
-  }
-
-
-  private void ensureIndex(MongoDatabase db) {
-    Document index = new Document();
-    // run details
-    index.append(ReplayRunDetailsCollection.Fields.PLAN_ID, 1);
-    index.append(ReplayRunDetailsCollection.Fields.SEND_STATUS, 1);
-    db.getCollection(ReplayRunDetailsCollection.COLLECTION_NAME).createIndex(index);
-
-    // biz log
-    index = new Document();
-    index.append(BizLog.Fields.PLAN_ID, 1);
-    db.getCollection(ReplayBizLogCollection.COLLECTION_NAME).createIndex(index);
   }
 
   @Bean
