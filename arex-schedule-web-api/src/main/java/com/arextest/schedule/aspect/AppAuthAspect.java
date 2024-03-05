@@ -101,8 +101,10 @@ public class AppAuthAspect {
   }
 
   private void init() {
-    Query query = new Query(Criteria.where(SystemConfigurationCollection.Fields.key).is(KeySummary.DESERIALIZATION_JAR));
-    SystemConfigurationCollection collection = mongoTemplate.findOne(query, SystemConfigurationCollection.class);
+    Query query = new Query(
+        Criteria.where(SystemConfigurationCollection.Fields.key).is(KeySummary.AUTH_SWITCH));
+    SystemConfigurationCollection collection = mongoTemplate.findOne(query,
+        SystemConfigurationCollection.class, SystemConfigurationCollection.DOCUMENT_NAME);
     authSwitch = Optional.ofNullable(collection)
         .map(SystemConfigurationCollection::getAuthSwitch)
         .orElse(null);
