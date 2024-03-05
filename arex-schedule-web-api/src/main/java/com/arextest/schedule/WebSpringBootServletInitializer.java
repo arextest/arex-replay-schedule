@@ -32,6 +32,7 @@ public class WebSpringBootServletInitializer extends SpringBootServletInitialize
     try {
       SpringApplication.run(WebSpringBootServletInitializer.class, args);
     } catch (BeanCreationException e) {
+      LOGGER.error("Application create error", e);
       System.exit(0);
     }
 
