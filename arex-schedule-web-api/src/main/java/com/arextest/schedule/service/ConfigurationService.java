@@ -10,6 +10,7 @@ import java.util.Set;
 import javax.annotation.Resource;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.retry.RetryException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
@@ -40,12 +41,12 @@ public class ConfigurationService {
     return scheduleResponse != null ? scheduleResponse.body : null;
   }
 
-  @Retryable(value = {RuntimeException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000))
+  @Retryable(value = {RetryException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000))
   public List<DesensitizationJar> desensitization() {
     DesensitizationResponse res = wepApiClientService.jsonPost(desensitizationConfigUrl, null,
         DesensitizationResponse.class);
     if (res == null) {
-      throw new RuntimeException("get desensitization config error");
+      throw new RetryException("get desensitization config error");
     } else {
       return res.getBody();
     }

@@ -26,6 +26,12 @@
   <dependencies>
     <dependency>
       <artifactId>guava</artifactId>
+      <exclusions>
+        <exclusion>
+          <artifactId>checker-qual</artifactId>
+          <groupId>org.checkerframework</groupId>
+        </exclusion>
+      </exclusions>
       <groupId>com.google.guava</groupId>
     </dependency>
     <dependency>
@@ -68,26 +74,22 @@
       <groupId>org.apache.commons</groupId>
     </dependency>
     <dependency>
-      <artifactId>spring-boot-starter-test</artifactId>
-      <groupId>org.springframework.boot</groupId>
-      <scope>test</scope>
+      <artifactId>log4j-mongodb4</artifactId>
+      <groupId>org.apache.logging.log4j</groupId>
     </dependency>
     <dependency>
       <artifactId>arex-web-model-contract</artifactId>
       <groupId>com.arextest</groupId>
-      <version>0.6.2.4</version>
-    </dependency>
-    <dependency>
-      <artifactId>arex-common</artifactId>
-      <groupId>com.arextest</groupId>
     </dependency>
     <dependency>
       <artifactId>compare-sdk</artifactId>
+      <exclusions>
+        <exclusion>
+          <artifactId>error_prone_annotations</artifactId>
+          <groupId>com.google.errorprone</groupId>
+        </exclusion>
+      </exclusions>
       <groupId>com.arextest</groupId>
-    </dependency>
-    <dependency>
-      <artifactId>log4j-mongodb4</artifactId>
-      <groupId>org.apache.logging.log4j</groupId>
     </dependency>
     <dependency>
       <artifactId>fastjson2</artifactId>
@@ -122,6 +124,12 @@
       <groupId>com.arextest</groupId>
       <artifactId>arex-common</artifactId>
     </dependency>
+    <!--test-->
+    <dependency>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <modelVersion>4.0.0</modelVersion>
   <name>${project.groupId}:${project.artifactId}</name>
@@ -132,7 +140,7 @@
   <parent>
     <artifactId>arex-schedule-parent</artifactId>
     <groupId>com.arextest</groupId>
-    <version>1.1.4</version>
+    <version>1.1.5</version>
   </parent>
 
   <profiles>
@@ -333,5 +341,5 @@
       </properties>
     </profile>
   </profiles>
-  <version>1.1.4</version>
+  <version>1.1.5</version>
 </project>

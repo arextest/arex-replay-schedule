@@ -8,10 +8,12 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.config.ComparisonDependencyConfig;
 import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
+import com.arextest.schedule.model.converter.TransformConfigConverter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @Author wang_yc
@@ -21,7 +23,6 @@ public class DefaultCustomComparisonConfigurationHandler implements
     CustomComparisonConfigurationHandler {
 
   private static final List<String> DEFAULT_DATABASE_IGNORE = Collections.singletonList("body");
-
 
   @Override
   public void build(ReplayComparisonConfig config, ReplayActionItem actionItem) {
@@ -71,6 +72,12 @@ public class DefaultCustomComparisonConfigurationHandler implements
       options.putInclusions(compareConfig.getInclusionList());
       options.putListSortConfig(compareConfig.getListSortMap());
       options.putReferenceConfig(compareConfig.getReferenceMap());
+      options.putTransformConfig(
+          Optional.ofNullable(compareConfig.getTransformDetails()).orElse(Collections.emptyList())
+              .stream()
+              .map(TransformConfigConverter.INSTANCE::toTransformConfig)
+              .collect(Collectors.toList())
+      );
     }
     return options;
   }
