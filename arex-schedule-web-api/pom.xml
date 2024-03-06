@@ -209,6 +209,7 @@
     </profile>
     <profile>
       <build>
+        <finalName>schedule</finalName>
         <resources>
           <resource>
             <directory>src/main/resources</directory>
