@@ -96,4 +96,4 @@ pom:
 replay:
   sender:
     extension:
-      jarPath: /usr/local/tomcat/webapps/ROOT/WEB-INF/classes/lib/dubboInvoker.jar
+      jarPath:

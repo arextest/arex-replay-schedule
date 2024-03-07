@@ -12,21 +12,29 @@ public class ClassLoaderUtils {
   public static final String JDK_INTER_APP_CLASSLOADER = "jdk.internal.loader.ClassLoaders$AppClassLoader";
 
   public static void loadJar(String jarPath) {
+    File jarFile = new File(jarPath);
+    if (!jarFile.exists()) {
+      LOGGER.error("JarFile doesn't exist! path:{}", jarPath);
+      return;
+    }
+    try {
+      loadJar(jarFile.toURI().toURL());
+    } catch (Exception e) {
+      LOGGER.error("Load jar failed! path:{}", jarPath, e);
+    }
+  }
+
+  public static void loadJar(URL jarUrl) {
     try {
       int javaVersion = getJavaVersion();
       ClassLoader classLoader = ClassLoaderUtils.class.getClassLoader();
-      File jarFile = new File(jarPath);
-      if (!jarFile.exists()) {
-        LOGGER.error("JarFile doesn't exist! path:{}", jarPath);
-      }
-
       Method addURL = Class.forName("java.net.URLClassLoader")
           .getDeclaredMethod("addURL", URL.class);
       addURL.setAccessible(true);
 
       if (javaVersion <= 8) {
         if (classLoader instanceof URLClassLoader) {
-          addURL.invoke(classLoader, jarFile.toURI().toURL());
+          addURL.invoke(classLoader, jarUrl);
         }
       } else if (javaVersion < 11) {
         /*
@@ -35,9 +43,9 @@ public class ClassLoaderUtils {
          */
         ClassLoader urlClassLoader = ClassLoader.getSystemClassLoader();
         if (!(urlClassLoader instanceof URLClassLoader)) {
-          urlClassLoader = new URLClassLoader(new URL[]{jarFile.toURI().toURL()}, urlClassLoader);
+          urlClassLoader = new URLClassLoader(new URL[]{jarUrl}, urlClassLoader);
         }
-        addURL.invoke(urlClassLoader, jarFile.toURI().toURL());
+        addURL.invoke(urlClassLoader, jarUrl);
       } else if (JDK_INTER_APP_CLASSLOADER.equalsIgnoreCase(classLoader.getClass().getName())) {
         /**
          * append jar jdk.internal.loader.ClassLoaders.AppClassLoader
@@ -46,11 +54,10 @@ public class ClassLoaderUtils {
         Method classPathMethod = classLoader.getClass()
             .getDeclaredMethod("appendToClassPathForInstrumentation", String.class);
         classPathMethod.setAccessible(true);
-        classPathMethod.invoke(classLoader, jarFile.getPath());
-
+        classPathMethod.invoke(classLoader, jarUrl.getPath());
       }
     } catch (Exception e) {
-      LOGGER.error("loadJar failed, jarPath:{}, message:{}", jarPath, e.getMessage());
+      LOGGER.error("loadJar failed, message:{}", e.getMessage());
     }
   }
 

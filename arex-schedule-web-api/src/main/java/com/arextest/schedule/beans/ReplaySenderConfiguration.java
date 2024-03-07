@@ -3,6 +3,7 @@ package com.arextest.schedule.beans;
 import com.arextest.schedule.common.ClassLoaderUtils;
 import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
 import com.arextest.schedule.sender.ReplaySender;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -25,6 +26,8 @@ public class ReplaySenderConfiguration {
   @Value("${replay.sender.extension.jarPath}")
   private String jarFilePath;
 
+  private static final String LOCAL_INVOKER_PATH = "lib/dubboInvoker.jar";
+
   @Bean
   public List<ReplaySender> replaySenderList(List<ReplaySender> replaySenders) {
     // sort by order
@@ -36,15 +39,23 @@ public class ReplaySenderConfiguration {
   @Bean
   public List<ReplayExtensionInvoker> invokers() {
     List<ReplayExtensionInvoker> invokers = new ArrayList<>();
-    if (StringUtils.isEmpty(jarFilePath)) {
-      return invokers;
-    }
-    try {
+    // load local invoker
+    URL localInvokerUrl = this.getClass().getClassLoader().getResource(LOCAL_INVOKER_PATH);
+    ClassLoaderUtils.loadJar(localInvokerUrl);
+
+    if (StringUtils.isNotEmpty(jarFilePath)) {
       ClassLoaderUtils.loadJar(jarFilePath);
+    }
+
+    try {
       ServiceLoader.load(ReplayExtensionInvoker.class).forEach(invokers::add);
     } catch (Throwable t) {
       LOGGER.error("Load invoker jar failed, application startup blocked", t);
       throw new RuntimeException("Load invoker jar failed");
+    }
+    if (invokers.isEmpty()) {
+      LOGGER.error("No invoker found, application startup blocked");
+      throw new RuntimeException("No invoker found");
     }
     LOGGER.info("Load invoker jar success, invokers: {}", invokers);
     return invokers;
