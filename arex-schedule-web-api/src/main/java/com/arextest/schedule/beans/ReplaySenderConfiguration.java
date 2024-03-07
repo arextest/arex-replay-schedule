@@ -39,12 +39,14 @@ public class ReplaySenderConfiguration {
   @Bean
   public List<ReplayExtensionInvoker> invokers() {
     List<ReplayExtensionInvoker> invokers = new ArrayList<>();
-    // load local invoker
-    URL localInvokerUrl = this.getClass().getClassLoader().getResource(LOCAL_INVOKER_PATH);
-    ClassLoaderUtils.loadJar(localInvokerUrl);
+
 
     if (StringUtils.isNotEmpty(jarFilePath)) {
       ClassLoaderUtils.loadJar(jarFilePath);
+    } else {
+      // load local invoker
+      URL localInvokerUrl = this.getClass().getClassLoader().getResource(LOCAL_INVOKER_PATH);
+      ClassLoaderUtils.loadJar(localInvokerUrl);
     }
 
     try {
