@@ -51,7 +51,6 @@ public class ReplaySenderConfiguration {
       ServiceLoader.load(ReplayExtensionInvoker.class).forEach(invokers::add);
     } catch (Throwable t) {
       LOGGER.error("Load invoker jar failed, application startup blocked", t);
-      throw new RuntimeException("Load invoker jar failed");
     }
     if (invokers.isEmpty()) {
       LOGGER.error("No invoker found, application startup blocked");
