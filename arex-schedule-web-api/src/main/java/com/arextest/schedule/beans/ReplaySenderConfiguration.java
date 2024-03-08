@@ -54,14 +54,6 @@ public class ReplaySenderConfiguration {
       } else {
         classPathResource = new File(jarFilePath).toURI().toURL();
       }
-
-//      ClassLoader original = Thread.currentThread().getContextClassLoader();
-//      URLClassLoader urlLoader = new URLClassLoader(new URL[]{classPathResource},
-//          this.getClass().getClassLoader());
-//      Thread.currentThread().setContextClassLoader(urlLoader);
-//      Class.forName(ReplayExtensionInvoker.class.getName(), true, urlLoader);
-//      ServiceLoader.load(ReplayExtensionInvoker.class).forEach(invokers::add);
-//      Thread.currentThread().setContextClassLoader(original);
       ClassLoaderUtils.loadJar(classPathResource);
       ServiceLoader.load(ReplayExtensionInvoker.class).forEach(invokers::add);
     } catch (Throwable t) {
@@ -87,6 +79,7 @@ public class ReplaySenderConfiguration {
     fos.close();
   }
 
+  // load .jar by inputstream and write to file.
   private URL loadLocalInvokerJar() throws IOException {
     ClassPathResource classPathResource = new ClassPathResource(LOCAL_INVOKER_PATH);
     InputStream inputStream = classPathResource.getInputStream();
