@@ -1,5 +1,6 @@
 package com.arextest.schedule.beans;
 
+import com.arextest.schedule.common.ClassLoaderUtils;
 import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
 import com.arextest.schedule.sender.ReplaySender;
 import java.io.File;
@@ -54,13 +55,15 @@ public class ReplaySenderConfiguration {
         classPathResource = new File(jarFilePath).toURI().toURL();
       }
 
-      ClassLoader original = Thread.currentThread().getContextClassLoader();
-      URLClassLoader urlLoader = new URLClassLoader(new URL[]{classPathResource},
-          this.getClass().getClassLoader());
-      Thread.currentThread().setContextClassLoader(urlLoader);
-      Class.forName(ReplayExtensionInvoker.class.getName(), true, urlLoader);
+//      ClassLoader original = Thread.currentThread().getContextClassLoader();
+//      URLClassLoader urlLoader = new URLClassLoader(new URL[]{classPathResource},
+//          this.getClass().getClassLoader());
+//      Thread.currentThread().setContextClassLoader(urlLoader);
+//      Class.forName(ReplayExtensionInvoker.class.getName(), true, urlLoader);
+//      ServiceLoader.load(ReplayExtensionInvoker.class).forEach(invokers::add);
+//      Thread.currentThread().setContextClassLoader(original);
+      ClassLoaderUtils.loadJar(classPathResource);
       ServiceLoader.load(ReplayExtensionInvoker.class).forEach(invokers::add);
-      Thread.currentThread().setContextClassLoader(original);
     } catch (Throwable t) {
       LOGGER.error("Load invoker jar failed, application startup blocked", t);
     }
