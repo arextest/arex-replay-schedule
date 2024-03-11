@@ -72,9 +72,12 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     this.configHandler = configHandler;
     addGlobalOptionToSDK(compareConfigService);
   }
+
   public void addGlobalOptionToSDK(CompareConfigService compareConfigService) {
     SystemConfigWithProperties comparisonSystemConfig = compareConfigService.getComparisonSystemConfig();
     COMPARE_INSTANCE.getGlobalOptions()
+        .putPluginJarUrl(comparisonSystemConfig.getComparePluginInfo() == null ? null
+            : comparisonSystemConfig.getComparePluginInfo().getComparePluginUrl())
         .putNameToLower(comparisonSystemConfig.getCompareNameToLower())
         .putNullEqualsEmpty(comparisonSystemConfig.getCompareNullEqualsEmpty())
         .putIgnoredTimePrecision(comparisonSystemConfig.getCompareIgnoreTimePrecisionMillis())
