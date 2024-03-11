@@ -1,5 +1,7 @@
 package com.arextest.schedule.beans;
 
+import com.arextest.common.exceptions.ArexException;
+import com.arextest.common.model.response.ResponseCode;
 import com.arextest.schedule.common.ClassLoaderUtils;
 import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
 import com.arextest.schedule.sender.ReplaySender;
@@ -68,14 +70,14 @@ public class ReplaySenderConfiguration {
 
   private void inputStreamToFile(InputStream inputStream, String filePath) throws IOException {
     File file = new File(filePath);
-    FileOutputStream fos = new FileOutputStream(file);
-    byte[] buffer = new byte[1024];
-    int length;
-    while ((length = inputStream.read(buffer)) > 0) {
-      fos.write(buffer, 0, length);
+    try (FileOutputStream fos = new FileOutputStream(file)) {
+      byte[] buffer = new byte[1024];
+      int length;
+      while ((length = inputStream.read(buffer)) > 0) {
+        fos.write(buffer, 0, length);
+      }
+      inputStream.close();
     }
-    inputStream.close();
-    fos.close();
   }
 
   // load .jar by inputstream and write to file.
