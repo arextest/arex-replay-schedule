@@ -1,8 +1,15 @@
 package com.arextest.schedule.beans;
 
+import com.arextest.common.exceptions.ArexException;
+import com.arextest.common.model.response.ResponseCode;
 import com.arextest.schedule.common.ClassLoaderUtils;
 import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
 import com.arextest.schedule.sender.ReplaySender;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -13,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 
 /**
  * @author: sldu
@@ -25,6 +33,9 @@ public class ReplaySenderConfiguration {
   @Value("${replay.sender.extension.jarPath}")
   private String jarFilePath;
 
+  private static final String LOCAL_INVOKER_PATH = "lib/dubboInvoker.jar";
+  private static final String NEW_INVOKER_PATH = "dubboInvoker.jar";
+
   @Bean
   public List<ReplaySender> replaySenderList(List<ReplaySender> replaySenders) {
     // sort by order
@@ -36,17 +47,48 @@ public class ReplaySenderConfiguration {
   @Bean
   public List<ReplayExtensionInvoker> invokers() {
     List<ReplayExtensionInvoker> invokers = new ArrayList<>();
-    if (StringUtils.isEmpty(jarFilePath)) {
-      return invokers;
-    }
+
     try {
-      ClassLoaderUtils.loadJar(jarFilePath);
+      URL classPathResource;
+      if (StringUtils.isEmpty(jarFilePath)) {
+        classPathResource = loadLocalInvokerJar();
+      } else {
+        classPathResource = new File(jarFilePath).toURI().toURL();
+      }
+      ClassLoaderUtils.loadJar(classPathResource);
       ServiceLoader.load(ReplayExtensionInvoker.class).forEach(invokers::add);
     } catch (Throwable t) {
       LOGGER.error("Load invoker jar failed, application startup blocked", t);
-      throw new RuntimeException("Load invoker jar failed");
+    }
+    if (invokers.isEmpty()) {
+      LOGGER.error("No invoker found, application startup blocked");
+      throw new RuntimeException("No invoker found");
     }
     LOGGER.info("Load invoker jar success, invokers: {}", invokers);
     return invokers;
   }
+
+  private void inputStreamToFile(InputStream inputStream, String filePath) throws IOException {
+    File file = new File(filePath);
+    try (FileOutputStream fos = new FileOutputStream(file)) {
+      byte[] buffer = new byte[1024];
+      int length;
+      while ((length = inputStream.read(buffer)) > 0) {
+        fos.write(buffer, 0, length);
+      }
+      inputStream.close();
+    }
+  }
+
+  // load .jar by inputstream and write to file.
+  private URL loadLocalInvokerJar() throws IOException {
+    ClassPathResource classPathResource = new ClassPathResource(LOCAL_INVOKER_PATH);
+    InputStream inputStream = classPathResource.getInputStream();
+    inputStreamToFile(inputStream, NEW_INVOKER_PATH);
+
+    File file = new File(NEW_INVOKER_PATH);
+    return file.toURI().toURL();
+  }
+
+
 }
