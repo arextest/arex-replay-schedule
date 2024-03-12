@@ -50,20 +50,6 @@ public class ReplayComparisonConfig {
    */
   private Map<String, Object> additionalConfig;
 
-  public final boolean checkIgnoreMockMessageType(String type) {
-    // [b_yu] 2022-10-11 Dynamic type does not compare
-    if (Objects.equals(type, MockCategoryType.DYNAMIC_CLASS.getName())) {
-      return true;
-    }
-    if (Objects.equals(type, MockCategoryType.REDIS.getName())) {
-      return true;
-    }
-    if (Objects.equals(type, MockCategoryType.Q_MESSAGE_CONSUMER.getName())) {
-      return true;
-    }
-    return false;
-  }
-
   public void fillCommonFields() {
     this.setExclusionList(Collections.emptySet());
     this.setInclusionList(Collections.emptySet());
