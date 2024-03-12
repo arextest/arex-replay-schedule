@@ -1,6 +1,6 @@
 package com.arextest.schedule.service;
 
-import com.arextest.config.model.dto.DesensitizationJar;
+import com.arextest.config.model.dto.system.DesensitizationJar;
 import com.arextest.model.response.ResponseStatusType;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import java.util.Collections;

@@ -2,7 +2,7 @@ package com.arextest.schedule.beans;
 
 import com.arextest.common.model.classloader.RemoteJarClassLoader;
 import com.arextest.common.utils.RemoteJarLoaderUtils;
-import com.arextest.config.model.dto.DesensitizationJar;
+import com.arextest.config.model.dto.system.DesensitizationJar;
 import com.arextest.extension.desensitization.DataDesensitization;
 import com.arextest.extension.desensitization.DefaultDataDesensitization;
 import com.arextest.schedule.service.ConfigurationService;
