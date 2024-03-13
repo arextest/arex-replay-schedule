@@ -178,7 +178,7 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
     return dubboParameters;
   }
 
-  public List<String> toParameterTypes(String type) {
+  public static List<String> toParameterTypes(String type) {
     List<String> parameterTypes = new ArrayList<>();
     if (StringUtils.isNotEmpty(type)) {
       JSONArray array = null;
@@ -194,7 +194,7 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
     return parameterTypes;
   }
 
-  public List<Object> toParameters(String body, String type) {
+  public static List<Object> toParameters(String body, String type) {
     List<Object> parameters = new ArrayList<>();
     if (StringUtils.isNotEmpty(body) && StringUtils.isNotEmpty(type)) {
       JSONArray array = null;
@@ -211,7 +211,7 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
     return parameters;
   }
 
-  private Object toParameter(String body) {
+  private static Object toParameter(String body) {
     JSONObject object = tryParseJsonObject(body);
     if (object != null) {
       return object;
@@ -223,7 +223,7 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
     return body;
   }
 
-  private JSONObject tryParseJsonObject(String body) {
+  private static JSONObject tryParseJsonObject(String body) {
     if (!body.startsWith(CommonConstant.JSON_START)) {
       return null;
     }
@@ -234,7 +234,7 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
     }
   }
 
-  private JSONArray tryParseJsonArray(String body) {
+  private static JSONArray tryParseJsonArray(String body) {
     if (!body.startsWith(CommonConstant.JSON_ARRAY_START)) {
       return null;
     }
