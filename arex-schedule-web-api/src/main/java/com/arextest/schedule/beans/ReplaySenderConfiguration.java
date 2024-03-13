@@ -1,7 +1,5 @@
 package com.arextest.schedule.beans;
 
-import com.arextest.common.exceptions.ArexException;
-import com.arextest.common.model.response.ResponseCode;
 import com.arextest.schedule.common.ClassLoaderUtils;
 import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
 import com.arextest.schedule.sender.ReplaySender;
@@ -18,6 +16,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -44,7 +43,8 @@ public class ReplaySenderConfiguration {
         .collect(Collectors.toList());
   }
 
-  @Bean
+  @Bean("replayExtensionInvoker")
+  @ConditionalOnProperty(name = "replay.sender.extension.switch", havingValue = "true")
   public List<ReplayExtensionInvoker> invokers() {
     List<ReplayExtensionInvoker> invokers = new ArrayList<>();
 
