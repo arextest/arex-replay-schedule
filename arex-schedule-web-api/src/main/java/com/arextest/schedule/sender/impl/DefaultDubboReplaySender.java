@@ -15,7 +15,6 @@ import com.arextest.schedule.sender.SenderParameters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Resource;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -23,6 +22,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
@@ -32,9 +32,10 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
+@ConditionalOnBean(parameterizedContainer = List.class, value = ReplayExtensionInvoker.class)
 public class DefaultDubboReplaySender extends AbstractReplaySender {
 
-  @Resource
+  @Autowired
   private List<ReplayExtensionInvoker> replayExtensionInvokers;
 
   @Override
