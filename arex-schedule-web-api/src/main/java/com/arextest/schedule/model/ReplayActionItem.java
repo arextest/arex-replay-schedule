@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -46,17 +45,6 @@ public class ReplayActionItem {
   private String serviceKey;
   @JsonIgnore
   private List<ReplayActionCaseItem> caseItemList;
-  /**
-   * The earliest time of the saved case.
-   * This field is required when evoking a task
-   */
-  @JsonIgnore
-  private long lastRecordTime;
-  /**
-   * The number of corresponding matching cases that have been saved.
-   * This field is required when evoking a task
-   */
-  private long totalLoadedCount;
   @JsonIgnore
   private SendSemaphoreLimiter sendRateLimiter;
   /**
@@ -80,7 +68,7 @@ public class ReplayActionItem {
   private int replayCaseCount;
   private int rerunCaseCount;
   private String appId;
-  private Set<String> operationTypes;
+  private List<OperationTypeData> operationTypes;
   /**
    * the interfaces which don't use the mock when replaying
    */

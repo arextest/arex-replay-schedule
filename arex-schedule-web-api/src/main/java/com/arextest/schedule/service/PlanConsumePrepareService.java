@@ -9,6 +9,7 @@ import com.arextest.schedule.model.AppServiceOperationDescriptor;
 import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.CompareProcessStatusType;
 import com.arextest.schedule.model.LogType;
+import com.arextest.schedule.model.OperationTypeData;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
@@ -22,9 +23,9 @@ import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.service.noise.ReplayNoiseIdentify;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -142,7 +143,26 @@ public class PlanConsumePrepareService {
    * else if caseCountLimit < CommonConstant.MAX_PAGE_SIZE or recording data size < request page
    * size, Only need to query once by page
    */
-  private int doPagingLoadCaseSave(ReplayActionItem replayActionItem, String providerName) {
+  public int doPagingLoadCaseSave(ReplayActionItem replayActionItem, String providerName) {
+    List<OperationTypeData> operationTypes = replayActionItem.getOperationTypes();
+    int totalCount = 0;
+
+    if (CollectionUtils.isEmpty(operationTypes)) {
+      return totalCount;
+    }
+
+    for (OperationTypeData operationTypeData : operationTypes) {
+      totalCount += loadCaseWithOperationType(replayActionItem, providerName, operationTypeData);
+    }
+    return totalCount;
+  }
+
+  /**
+   * Find data by paging according to operationType
+   * ps: providerName: Rolling, operationType: DubboProvider
+   */
+  private int loadCaseWithOperationType(ReplayActionItem replayActionItem, String providerName,
+      OperationTypeData operationTypeData) {
     final ReplayPlan replayPlan = replayActionItem.getParent();
     long beginTimeMills = replayPlan.getCaseSourceFrom().getTime();
     // need all auto pined cases
@@ -150,39 +170,37 @@ public class PlanConsumePrepareService {
       beginTimeMills = 0;
     }
 
-    long endTimeMills = replayActionItem.getLastRecordTime();
+    long endTimeMills = operationTypeData.getLastRecordTime();
     if (endTimeMills == 0) {
       endTimeMills = replayPlan.getCaseSourceTo().getTime();
     }
-    int totalSize = 0;
-    // The task is pulled up to obtain the recorded case
-    if (replayActionItem.getTotalLoadedCount() > 0) {
-      totalSize = (int) replayActionItem.getTotalLoadedCount();
-    }
-    int caseCountLimit = replayActionItem.getOperationTypes() == null ?
-        replayPlan.getCaseCountLimit() :
-        replayPlan.getCaseCountLimit() * replayActionItem.getOperationTypes().size();
-    if (totalSize == caseCountLimit) {
-      return totalSize;
-    }
+    int caseCountLimit = replayPlan.getCaseCountLimit();
     int pageSize = Math.min(caseCountLimit, CommonConstant.MAX_PAGE_SIZE);
+
+    // The task is pulled up to obtain the recorded case
+    int count = (int) operationTypeData.getTotalLoadedCount();
+
+    if (count == caseCountLimit) {
+      return count;
+    }
+
     while (beginTimeMills < endTimeMills) {
       List<ReplayActionCaseItem> caseItemList = caseRemoteLoadService.pagingLoad(beginTimeMills,
-          endTimeMills,
-          replayActionItem, caseCountLimit - totalSize, providerName);
+          endTimeMills, replayActionItem, caseCountLimit - count,
+          providerName, operationTypeData.getOperationType());
       if (CollectionUtils.isEmpty(caseItemList)) {
         break;
       }
       caseItemPostProcess(caseItemList);
       ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
-      totalSize += caseItemList.size();
+      count += caseItemList.size();
       endTimeMills = caseItemList.get(caseItemList.size() - 1).getRecordTime();
       replayActionCaseItemRepository.save(caseItemList);
-      if (totalSize >= caseCountLimit || caseItemList.size() < pageSize) {
+      if (count >= caseCountLimit || caseItemList.size() < pageSize) {
         break;
       }
     }
-    return totalSize;
+    return count;
   }
 
   private int doFixedCaseSave(ReplayActionItem replayActionItem) {
@@ -190,7 +208,11 @@ public class PlanConsumePrepareService {
     int size = 0;
     for (int i = 0; i < caseItemList.size(); i++) {
       ReplayActionCaseItem caseItem = caseItemList.get(i);
-      Set<String> operationTypes = caseItem.getParent().getOperationTypes();
+      Set<String> operationTypes = new HashSet<>();
+      if (CollectionUtils.isNotEmpty(caseItem.getParent().getOperationTypes())) {
+        operationTypes = caseItem.getParent().getOperationTypes().stream().map(OperationTypeData::getOperationType).collect(
+            Collectors.toSet());
+      }
       ReplayActionCaseItem viewReplay = caseRemoteLoadService.viewReplayLoad(caseItem,
           operationTypes);
       if (viewReplay == null) {
