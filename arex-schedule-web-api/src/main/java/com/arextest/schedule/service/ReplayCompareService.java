@@ -1,9 +1,9 @@
 package com.arextest.schedule.service;
 
 import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_KEY;
+
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
-import com.arextest.schedule.common.JsonUtils;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CommonResponse;
@@ -28,7 +28,6 @@ public class ReplayCompareService {
   @Resource
   private CacheProvider redisCacheProvider;
 
-
   public boolean checkAndCompare(ReplayActionCaseItem caseItem) {
     if (isCancelled(caseItem.getPlanId())) {
       LOGGER.info("[[title=compareCase]]compare cancelled, recordId: {}, planId: {}",
@@ -47,6 +46,8 @@ public class ReplayCompareService {
       CommonResponse response = httpWepServiceApiClient.retryJsonPost(compareCaseUrl, caseItem,
           CommonResponse.class);
       if (response == null || response.getData() == null) {
+        // if unable to reach the compare service, need to finalize this case manually
+        checkAndCompare(caseItem);
         LOGGER.warn("[[title=compareCase]]compareCase request recordId: {}, response is null",
             caseItem.getRecordId());
         return false;

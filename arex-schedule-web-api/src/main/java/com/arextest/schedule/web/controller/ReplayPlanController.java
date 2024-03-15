@@ -101,6 +101,8 @@ public class ReplayPlanController {
   @ResponseBody
   public CommonResponse reRunPlan(@RequestBody ReRunReplayPlanRequest request) {
     try {
+      MDCTracer.addPlanId(request.getPlanId());
+      MDCTracer.addPlanItemId(request.getPlanItemId());
       return planProduceService.reRunPlan(request);
     } catch (PlanRunningException e) {
       return CommonResponse.badResponse(e.getMessage(),
@@ -108,6 +110,8 @@ public class ReplayPlanController {
     } catch (Throwable e) {
       return CommonResponse.badResponse("create plan error！" + e.getMessage(),
           new BuildReplayPlanResponse(BuildReplayFailReasonEnum.UNKNOWN));
+    } finally {
+      MDCTracer.clear();
     }
   }
 
