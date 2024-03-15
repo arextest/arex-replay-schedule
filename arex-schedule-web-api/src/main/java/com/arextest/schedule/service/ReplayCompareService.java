@@ -46,9 +46,9 @@ public class ReplayCompareService {
       CommonResponse response = httpWepServiceApiClient.retryJsonPost(compareCaseUrl, caseItem,
           CommonResponse.class);
       if (response == null || response.getData() == null) {
-        // if unable to reach the compare service, need to finalize this case manually
         LOGGER.warn("[[title=compareCase]]compareCase request recordId: {}, response is null",
             caseItem.getRecordId());
+        // if unable to reach the compare service, need to finalize this case manually
         return checkAndCompare(caseItem);
       }
       return (boolean) response.getData();
