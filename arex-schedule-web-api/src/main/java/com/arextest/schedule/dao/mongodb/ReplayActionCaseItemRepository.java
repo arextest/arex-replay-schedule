@@ -47,9 +47,11 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
   private static final String SOURCE_RESULT_ID = "sourceResultId";
   private static final String TARGET_RESULT_ID = "targetResultId";
   private static final String COMPARE_STATUS = "compareStatus";
+  private static final String CASE_TYPE_FIELD = "caseType";
   private static final String COUNT_FIELD = "count";
   private static final String RECORD_TIME = "recordTime";
   private static final String LAST_RECORD_TIME_FIELD = "lastRecordTime";
+  private static final String ID_FIELD = "_id";
   @Autowired
   MongoTemplate mongoTemplate;
   @Resource
@@ -197,21 +199,20 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
    * @param planItemId
    * @return
    */
-  public GroupCountRes getLastRecord(String planItemId) {
+  public List<GroupCountRes> getLastRecord(String planItemId) {
     Criteria criteria = Criteria.where(PLAN_ITEM_ID).is(planItemId);
     Aggregation aggregation = Aggregation.newAggregation(
         Aggregation.match(criteria),
-        Aggregation.group(PLAN_ITEM_ID)
+        Aggregation.group(CASE_TYPE_FIELD)
             .min(RECORD_TIME).as(LAST_RECORD_TIME_FIELD)
-            .count().as(COUNT_FIELD)
+            .count().as(COUNT_FIELD),
+        Aggregation.project(LAST_RECORD_TIME_FIELD, COUNT_FIELD, CASE_TYPE_FIELD)
+            .and(ID_FIELD).as(CASE_TYPE_FIELD)
+            .andExclude(ID_FIELD)
     );
 
-    List<GroupCountRes> groupCountRes = mongoTemplate.aggregate(aggregation,
+    return mongoTemplate.aggregate(aggregation,
         ReplayRunDetailsCollection.class, GroupCountRes.class).getMappedResults();
-    if (CollectionUtils.isEmpty(groupCountRes)) {
-      return null;
-    }
-    return groupCountRes.get(0);
   }
 
   // region <context>
@@ -262,6 +263,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     private String planItemId;
     private Long count;
     private Long lastRecordTime;
+    private String caseType;
   }
 
   // endregion <context>

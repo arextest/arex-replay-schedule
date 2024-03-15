@@ -15,6 +15,7 @@ import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.CompareProcessStatusType;
 import com.arextest.schedule.model.LogType;
+import com.arextest.schedule.model.OperationTypeData;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
@@ -62,15 +63,17 @@ public class ReplayCaseRemoteLoadService {
     int queryTotalCount = EMPTY_SIZE;
     try {
       int caseCountLimit =
-          replayActionItem.getOperationTypes() == null ? replayActionItem.getParent()
-              .getCaseCountLimit()
-              : replayActionItem.getParent().getCaseCountLimit()
-                  * replayActionItem.getOperationTypes().size();
-      caseCountLimit =
-          CommonConstant.AUTO_PINED.equals(providerName) ? AUTO_PINED_CASE_LIMIT : caseCountLimit;
-      List<PagedRequestType> request = buildPagingSearchCaseRequests(replayActionItem,
-          caseCountLimit, providerName);
-      for (PagedRequestType pagedRequestType : request) {
+          CommonConstant.AUTO_PINED.equals(providerName) ? AUTO_PINED_CASE_LIMIT :
+              replayActionItem.getParent().getCaseCountLimit();
+
+      List<OperationTypeData> operationTypes = replayActionItem.getOperationTypes();
+      if (CollectionUtils.isEmpty(operationTypes)) {
+        return queryTotalCount;
+      }
+
+      for (OperationTypeData operationTypeData : operationTypes) {
+        PagedRequestType pagedRequestType = buildPagingSearchCaseRequest(replayActionItem,
+            caseCountLimit, providerName, operationTypeData.getOperationType());
         QueryCaseCountResponseType responseType =
             wepApiClientService.jsonPost(countByRangeUrl, pagedRequestType,
                 QueryCaseCountResponseType.class);
@@ -153,44 +156,46 @@ public class ReplayCaseRemoteLoadService {
   }
 
   public List<ReplayActionCaseItem> pagingLoad(long beginTimeMills, long endTimeMills,
-      ReplayActionItem replayActionItem, int caseCountLimit, String providerName) {
-    List<AREXMocker> recordList = new ArrayList<>(caseCountLimit);
-    List<PagedRequestType> requestTypeList = buildPagingSearchCaseRequests(replayActionItem,
-        caseCountLimit, providerName);
+      ReplayActionItem replayActionItem, int caseCountLimit, String providerName, String operationType) {
+    PagedRequestType requestType = buildPagingSearchCaseRequest(replayActionItem,
+        caseCountLimit, providerName, operationType);
+    buildSortOption(requestType);
+    requestType.setBeginTime(beginTimeMills);
+    requestType.setEndTime(endTimeMills);
 
+    PagedResponseType responseType;
+    StopWatch watch = new StopWatch();
+    watch.start(LogType.LOAD_CASE_TIME.getValue());
+    responseType = wepApiClientService.jsonPost(replayCaseUrl, requestType,
+        PagedResponseType.class);
+    watch.stop();
+    LOGGER.info("get replay case app id:{},time used:{} ms, operation:{}",
+        requestType.getAppId(),
+        watch.getTotalTimeMillis(), requestType.getOperation()
+    );
+    metricService.recordTimeEvent(LogType.LOAD_CASE_TIME.getValue(), replayActionItem.getPlanId(),
+        replayActionItem.getAppId(), null, watch.getTotalTimeMillis());
+    if (badResponse(responseType)) {
+      try {
+        LOGGER.warn("get replay case is empty,request:{} , response:{}",
+            objectMapper.writeValueAsString(requestType),
+            objectMapper.writeValueAsString(responseType));
+      } catch (JsonProcessingException e) {
+        LOGGER.error(e.getMessage(), e);
+      }
+      return Collections.emptyList();
+    }
+    return toCaseItemList(responseType.getRecords());
+  }
+
+  /**
+   * Flashback to pull data
+   */
+  private static void buildSortOption(PagedRequestType requestType) {
     SortingOption sortingOption = new SortingOption();
     sortingOption.setLabel(CREATE_TIME_COLUMN_NAME);
     sortingOption.setSortingType(SortingTypeEnum.DESCENDING.getCode());
-    List<SortingOption> sortingOptions = Collections.singletonList(sortingOption);
-    for (PagedRequestType requestType : requestTypeList) {
-      requestType.setBeginTime(beginTimeMills);
-      requestType.setEndTime(endTimeMills);
-      requestType.setSortingOptions(sortingOptions);
-      PagedResponseType responseType;
-      StopWatch watch = new StopWatch();
-      watch.start(LogType.LOAD_CASE_TIME.getValue());
-      responseType = wepApiClientService.jsonPost(replayCaseUrl, requestType,
-          PagedResponseType.class);
-      watch.stop();
-      LOGGER.info("get replay case app id:{},time used:{} ms, operation:{}",
-          requestType.getAppId(),
-          watch.getTotalTimeMillis(), requestType.getOperation()
-      );
-      metricService.recordTimeEvent(LogType.LOAD_CASE_TIME.getValue(), replayActionItem.getPlanId(),
-          replayActionItem.getAppId(), null, watch.getTotalTimeMillis());
-      if (badResponse(responseType)) {
-        try {
-          LOGGER.warn("get replay case is empty,request:{} , response:{}",
-              objectMapper.writeValueAsString(requestType),
-              objectMapper.writeValueAsString(responseType));
-        } catch (JsonProcessingException e) {
-          LOGGER.error(e.getMessage(), e);
-        }
-        continue;
-      }
-      recordList.addAll(responseType.getRecords());
-    }
-    return toCaseItemList(recordList);
+    requestType.setSortingOptions(Collections.singletonList(sortingOption));
   }
 
   private boolean badResponse(PagedResponseType responseType) {
@@ -213,7 +218,7 @@ public class ReplayCaseRemoteLoadService {
   }
 
   private PagedRequestType buildPagingSearchCaseRequest(ReplayActionItem replayActionItem,
-      int caseCountLimit, String providerName) {
+      int caseCountLimit, String providerName, String operationType) {
     ReplayPlan parent = replayActionItem.getParent();
     PagedRequestType requestType = new PagedRequestType();
     requestType.setAppId(parent.getAppId());
@@ -222,30 +227,17 @@ public class ReplayCaseRemoteLoadService {
     requestType.setBeginTime(parent.getCaseSourceFrom().getTime());
     requestType.setEndTime(parent.getCaseSourceTo().getTime());
     requestType.setOperation(replayActionItem.getOperationName());
-    requestType.setCategory(MockCategoryType.createEntryPoint(replayActionItem.getActionType()));
+    if (StringUtils.isEmpty(operationType)) {
+      requestType.setCategory(MockCategoryType.createEntryPoint(replayActionItem.getActionType()));
+    } else {
+      requestType.setCategory(MockCategoryType.createEntryPoint(operationType));
+    }
     requestType.setSourceProvider(providerName);
     // add the condition of "caseTag"
     if (MapUtils.isNotEmpty(parent.getCaseTags())){
       requestType.setTags(parent.getCaseTags());
     }
     return requestType;
-  }
-
-  private List<PagedRequestType> buildPagingSearchCaseRequests(ReplayActionItem replayActionItem,
-      int caseCountLimit, String providerName) {
-    if (CollectionUtils.isEmpty(replayActionItem.getOperationTypes())) {
-      return Arrays.asList(
-          buildPagingSearchCaseRequest(replayActionItem, caseCountLimit, providerName));
-    }
-    List<PagedRequestType> pagedRequestTypeList = new ArrayList<>();
-    for (String catagoryType : replayActionItem.getOperationTypes()) {
-      PagedRequestType pagedRequestType = buildPagingSearchCaseRequest(replayActionItem,
-          (int) Math.ceil(caseCountLimit / replayActionItem.getOperationTypes().size()),
-          providerName);
-      pagedRequestType.setCategory(MockCategoryType.createEntryPoint(catagoryType));
-      pagedRequestTypeList.add(pagedRequestType);
-    }
-    return pagedRequestTypeList;
   }
 
 }

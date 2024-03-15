@@ -6,6 +6,7 @@ import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository.GroupCou
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.mdc.MDCTracer;
+import com.arextest.schedule.model.OperationTypeData;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.planexecution.PlanExecutionMonitor;
@@ -16,6 +17,7 @@ import com.arextest.schedule.service.PlanConsumePrepareService;
 import com.arextest.schedule.service.PlanConsumeService;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -107,17 +109,23 @@ public class SelfHealingExecutorImpl implements SelfHealingExecutor {
 
   private void doResumeLastRecordTime(List<ReplayActionItem> actionItems) {
     for (ReplayActionItem actionItem : actionItems) {
-      GroupCountRes groupCountRes = replayActionCaseItemRepository.getLastRecord(
+      List<GroupCountRes> groupCountResList = replayActionCaseItemRepository.getLastRecord(
           actionItem.getId());
-      if (groupCountRes == null) {
+      if (CollectionUtils.isEmpty(groupCountResList)) {
         continue;
       }
-      if (groupCountRes.getCount() != null) {
-        actionItem.setTotalLoadedCount(groupCountRes.getCount());
+      List<OperationTypeData> operationTypeDataList = new ArrayList<>();
+      for (GroupCountRes groupCountRes : groupCountResList) {
+        OperationTypeData operationTypeData = new OperationTypeData(groupCountRes.getCaseType());
+        if (groupCountRes.getCount() != null) {
+          operationTypeData.setTotalLoadedCount(groupCountRes.getCount());
+        }
+        if (groupCountRes.getLastRecordTime() != null) {
+          operationTypeData.setLastRecordTime(groupCountRes.getLastRecordTime());
+        }
+        operationTypeDataList.add(operationTypeData);
       }
-      if (groupCountRes.getLastRecordTime() != null) {
-        actionItem.setLastRecordTime(groupCountRes.getLastRecordTime());
-      }
+      actionItem.setOperationTypes(operationTypeDataList);
     }
   }
 

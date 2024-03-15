@@ -2,6 +2,7 @@ package com.arextest.schedule.plan;
 
 import com.arextest.schedule.model.AppServiceDescriptor;
 import com.arextest.schedule.model.AppServiceOperationDescriptor;
+import com.arextest.schedule.model.OperationTypeData;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.deploy.DeploymentVersion;
 import com.arextest.schedule.model.deploy.ServiceInstance;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import lombok.Data;
 import org.apache.commons.collections4.CollectionUtils;
@@ -135,7 +137,14 @@ public final class PlanContext {
     replayActionItem.setServiceKey(serviceDescriptor.getServiceKey());
     replayActionItem.setServiceName(serviceDescriptor.getServiceName());
     replayActionItem.setOperationId(operationDescriptor.getId());
-    replayActionItem.setOperationTypes(operationDescriptor.getOperationTypes());
+    Set<String> operationTypes = operationDescriptor.getOperationTypes();
+    List<OperationTypeData> list = new ArrayList<>();
+    if (CollectionUtils.isNotEmpty(operationTypes)) {
+      for (String operationType : operationTypes) {
+        list.add(new OperationTypeData(operationType));
+      }
+    }
+    replayActionItem.setOperationTypes(list);
     if (CollectionUtils.isNotEmpty(serviceDescriptor.getTargetActiveInstanceList())) {
       replayActionItem.setMappedInstanceOperation(this.findActiveOperation(operationName,
           serviceDescriptor.getTargetActiveInstanceList().get(0)));
