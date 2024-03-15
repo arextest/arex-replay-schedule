@@ -346,6 +346,8 @@ public class PlanProduceService {
   public CommonResponse reRunPlan(ReRunReplayPlanRequest request) throws PlanRunningException {
     final String planId = request.getPlanId();
     final String planItemId = request.getPlanItemId();
+    MDCTracer.addPlanId(planId);
+    MDCTracer.addPlanItemId(planItemId);
     ReplayPlan replayPlan = replayPlanRepository.query(planId);
     replayPlan.setPlanCreateMillis(System.currentTimeMillis());
     progressEvent.onBeforePlanReRun(replayPlan);
