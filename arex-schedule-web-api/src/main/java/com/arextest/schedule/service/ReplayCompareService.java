@@ -47,10 +47,9 @@ public class ReplayCompareService {
           CommonResponse.class);
       if (response == null || response.getData() == null) {
         // if unable to reach the compare service, need to finalize this case manually
-        checkAndCompare(caseItem);
         LOGGER.warn("[[title=compareCase]]compareCase request recordId: {}, response is null",
             caseItem.getRecordId());
-        return false;
+        return checkAndCompare(caseItem);
       }
       return (boolean) response.getData();
     } catch (Exception e) {
