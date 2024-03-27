@@ -12,6 +12,7 @@ import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
 import com.arextest.schedule.dao.mongodb.ReplayNoiseRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.mdc.MDCTracer;
+import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.CompareModeType;
 import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionCaseItem;
@@ -97,23 +98,26 @@ public class ReplayNoiseIdentifyService implements ReplayNoiseIdentify {
         continue;
       }
 
-      int caseSize = cases.size();
-      int tempCount = 0;
       List<ReplayActionCaseItem> tempCases = new ArrayList<>();
 
       ReplayActionItem targetAction = new ReplayActionItem();
       BeanUtils.copyProperties(action, targetAction);
       targetAction.setSourceInstance(targetAction.getTargetInstance());
 
-      while (tempCount < CASE_COUNT_FOR_NOISE_IDENTIFY && tempCount < caseSize) {
-        ReplayActionCaseItem sourceCase = cases.get(tempCount);
+      for (ReplayActionCaseItem sourceCase : cases) {
+        if (sourceCase.getSendStatus() != CaseSendStatusType.WAIT_HANDLING.getValue()) {
+          continue;
+        }
+        if (tempCases.size() >= CASE_COUNT_FOR_NOISE_IDENTIFY) {
+          break;
+        }
         ReplayActionCaseItem targetCase = new ReplayActionCaseItem();
         BeanUtils.copyProperties(sourceCase, targetCase);
         targetCase.setParent(targetAction);
         targetCase.setCompareMode(CompareModeType.FULL);
         tempCases.add(targetCase);
-        tempCount++;
       }
+
       casesForNoise.add(new MutablePair<>(action, tempCases));
     }
 
