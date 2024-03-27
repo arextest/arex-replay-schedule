@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.common.CommonConstant;
+import com.arextest.schedule.common.UrlUtil;
 import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
 import com.arextest.schedule.extension.model.ReplayInvokeResult;
 import com.arextest.schedule.model.ReplayActionCaseItem;
@@ -34,6 +35,9 @@ import org.springframework.stereotype.Component;
 @Component
 @ConditionalOnBean(parameterizedContainer = List.class, value = ReplayExtensionInvoker.class)
 public class DefaultDubboReplaySender extends AbstractReplaySender {
+
+  private static final String VERSION = "version";
+  private static final String GROUP = "group";
 
   @Autowired
   private List<ReplayExtensionInvoker> replayExtensionInvokers;
@@ -84,11 +88,22 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
       LOGGER.error("selectLoadBalanceInstance failed, caseItem:{}", caseItem);
       return null;
     }
-    String url = instanceRunner.getUrl();
+    String url = appendVersionAndGroup(instanceRunner.getUrl(), headers);
+
     DubboParameters dubboParameters = getDubboParameters(caseItem);
     return new DubboInvocation(url, headers, interfaceNameAndMethod.left,
         interfaceNameAndMethod.right,
         dubboParameters.getParameterTypes(), dubboParameters.getParameters());
+  }
+
+  private String appendVersionAndGroup(String url, Map<String, String> headers) {
+    if(UrlUtil.getParamFromUrl(url, VERSION) == null && headers.containsKey(VERSION)) {
+      url = UrlUtil.appendParamToUrl(url, VERSION, headers.get(VERSION));
+    }
+    if(UrlUtil.getParamFromUrl(url, GROUP) == null && headers.containsKey(GROUP)) {
+      url = UrlUtil.appendParamToUrl(url, GROUP, headers.get(GROUP));
+    }
+    return url;
   }
 
   private boolean doSend(ReplayActionCaseItem caseItem, Map<String, String> headers) {
