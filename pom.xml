@@ -235,7 +235,7 @@
       <dependency>
         <artifactId>arex-common</artifactId>
         <groupId>com.arextest</groupId>
-        <version>0.1.18</version>
+        <version>${arex-common.version}</version>
       </dependency>
       <dependency>
         <artifactId>fastjson2</artifactId>
@@ -310,6 +310,7 @@
     </sonar.exclusions>
     <arex-storage-config.version>1.1.17</arex-storage-config.version>
     <web-contract.version>0.6.2.8</web-contract.version>
+    <arex-common.version>0.1.24</arex-common.version>
   </properties>
 
   <scm>
@@ -319,5 +320,5 @@
     <url>https://github.com/arextest/arex-replay-schedule</url>
   </scm>
   <url>https://github.com/arextest/arex-replay-schedule</url>
-  <version>1.1.9</version>
+  <version>1.1.10</version>
 </project>

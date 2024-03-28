@@ -9,6 +9,7 @@ import com.arextest.schedule.service.ConfigurationService;
 import java.util.List;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.CollectionUtils;
@@ -28,7 +29,7 @@ public class DataDesensitizationConfiguration {
       return new DefaultDataDesensitization();
     } else {
       try {
-        DesensitizationJar selected = uploaded.get(uploaded.size() - 1);
+        DesensitizationJar selected = uploaded.get(0);
         RemoteJarClassLoader classLoader = RemoteJarLoaderUtils.loadJar(selected.getJarUrl());
         return RemoteJarLoaderUtils.loadService(DataDesensitization.class, classLoader).get(0);
       } catch (Throwable t) {
