@@ -16,12 +16,12 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ConditionalOnMissingBean(CacheProvider.class)
+@SuppressWarnings("java:S6857")
 class CacheProviderConfiguration {
 
   @Value("${arex.redis.uri}")
   private String scheduleCacheRedisHost;
 
-  // sonar-ignore:java:S6857
   @Value("${arex.redis.sentinelUrl:}")
   private String sentinelUrl;
 
