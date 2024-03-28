@@ -28,7 +28,7 @@ public class StageUpdateHandler implements PlanMonitorHandler {
     }
     // expand SECOND_TO_REFRESH to avoid the edge case.
     if (System.currentTimeMillis() - plan.getLastUpdateTime()
-        < PlanExecutionMonitorImpl.SECOND_TO_REFRESH * 2 * 1000) {
+        < PlanExecutionMonitorImpl.DEFAULT_DELAY_SECOND * 2 * 1000) {
       replayPlanRepository.updateStage(plan);
     }
   }
@@ -46,6 +46,11 @@ public class StageUpdateHandler implements PlanMonitorHandler {
       runStage.setStageStatus(StageStatusEnum.FAILED.getCode());
     }
     replayPlanRepository.updateStage(plan);
+  }
+
+  @Override
+  public long getDelayTime() {
+    return PlanExecutionMonitorImpl.DEFAULT_DELAY_SECOND;
   }
 
   private void addCancelStage(ReplayPlan replayPlan) {
