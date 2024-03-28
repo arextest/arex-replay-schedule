@@ -105,17 +105,16 @@ public class ReplayNoiseIdentifyService implements ReplayNoiseIdentify {
       targetAction.setSourceInstance(targetAction.getTargetInstance());
 
       for (ReplayActionCaseItem sourceCase : cases) {
-        if (sourceCase.getSendStatus() != CaseSendStatusType.WAIT_HANDLING.getValue()) {
-          continue;
+        if (sourceCase.getSendStatus() == CaseSendStatusType.WAIT_HANDLING.getValue()) {
+          if (tempCases.size() >= CASE_COUNT_FOR_NOISE_IDENTIFY) {
+            break;
+          }
+          ReplayActionCaseItem targetCase = new ReplayActionCaseItem();
+          BeanUtils.copyProperties(sourceCase, targetCase);
+          targetCase.setParent(targetAction);
+          targetCase.setCompareMode(CompareModeType.FULL);
+          tempCases.add(targetCase);
         }
-        if (tempCases.size() >= CASE_COUNT_FOR_NOISE_IDENTIFY) {
-          break;
-        }
-        ReplayActionCaseItem targetCase = new ReplayActionCaseItem();
-        BeanUtils.copyProperties(sourceCase, targetCase);
-        targetCase.setParent(targetAction);
-        targetCase.setCompareMode(CompareModeType.FULL);
-        tempCases.add(targetCase);
       }
 
       casesForNoise.add(new MutablePair<>(action, tempCases));
