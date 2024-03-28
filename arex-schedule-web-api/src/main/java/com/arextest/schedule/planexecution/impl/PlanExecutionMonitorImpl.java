@@ -4,12 +4,14 @@ import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.planexecution.PlanExecutionMonitor;
 import com.arextest.schedule.planexecution.PlanMonitorHandler;
+import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 /**
@@ -19,7 +21,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
 
-  public static final int SECOND_TO_REFRESH = 5;
+  public static final int DEFAULT_DELAY_SECOND = 5;
   @Resource
   private ScheduledExecutorService monitorScheduler;
   @Resource
@@ -41,17 +43,31 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
   }
 
   @Override
-  public void register(ReplayPlan plan) {
-    MonitorTask task = new MonitorTask(plan);
-    ScheduledFuture<?> monitorFuture = monitorScheduler
-        .scheduleAtFixedRate(task, 0, SECOND_TO_REFRESH, TimeUnit.SECONDS);
-    plan.setMonitorFuture(monitorFuture);
+  public void register(ReplayPlan task) {
+    LOGGER.info("register monitor task {}", task.getId());
+    List<ScheduledFuture<?>> monitorFutures =
+        Lists.newArrayListWithCapacity(planMonitorHandlerList.size());
+    for (PlanMonitorHandler handler : planMonitorHandlerList) {
+      try {
+        ScheduledFuture<?> monitorFuture = monitorScheduler
+            .scheduleAtFixedRate(new MonitorTask(task, handler), 0, handler.getDelayTime(),
+                TimeUnit.SECONDS);
+        monitorFutures.add(monitorFuture);
+      } catch (Throwable t) {
+        LOGGER.error("failed to register monitor task. plan:{}", task.getId(), t);
+      }
+    }
+    task.setMonitorFutures(monitorFutures);
   }
 
   @Override
   public void deregister(ReplayPlan plan) {
-    plan.getMonitorFuture().cancel(false);
+    List<ScheduledFuture<?>> monitorFutures = plan.getMonitorFutures();
+    if (CollectionUtils.isEmpty(monitorFutures)) {
+      return;
+    }
     LOGGER.info("deregister monitor task, planId: {}", plan.getId());
+    monitorFutures.forEach(future -> future.cancel(false));
 
     for (PlanMonitorHandler handler : planMonitorHandlerList) {
       try {
@@ -68,16 +84,18 @@ public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
   private class MonitorTask implements Runnable {
 
     ReplayPlan replayPlan;
+    PlanMonitorHandler handler;
 
-    MonitorTask(ReplayPlan replayPlan) {
+    MonitorTask(ReplayPlan replayPlan, PlanMonitorHandler handler) {
       this.replayPlan = replayPlan;
+      this.handler = handler;
     }
 
     @Override
     public void run() {
       MDCTracer.addPlanId(replayPlan.getId());
       try {
-        monitorOne(replayPlan);
+        handler.handle(replayPlan);
       } catch (Throwable t) {
         LOGGER.error("Error monitoring plan", t);
       } finally {

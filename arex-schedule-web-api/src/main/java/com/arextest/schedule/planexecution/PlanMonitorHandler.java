@@ -17,4 +17,10 @@ public interface PlanMonitorHandler {
    * Execute when deRegister.
    */
   void end(ReplayPlan plan);
+
+  /**
+   * Get the delay time.
+   */
+  long getDelayTime();
+
 }

@@ -48,6 +48,11 @@ public class LogHandler implements PlanMonitorHandler {
     this.bizLoggerMonitor.flushLogs(plan);
   }
 
+  @Override
+  public long getDelayTime() {
+    return PlanExecutionMonitorImpl.DEFAULT_DELAY_SECOND;
+  }
+
   private void refreshLastUpdateTime(ReplayPlan plan) {
     this.progressMonitor.refreshLastUpdateTime(plan.getId());
   }
