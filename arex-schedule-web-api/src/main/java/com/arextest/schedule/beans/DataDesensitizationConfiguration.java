@@ -25,8 +25,8 @@ public class DataDesensitizationConfiguration {
   @Bean
   DataDesensitization desensitizationService() {
     List<DesensitizationJar> uploaded = configurationService.desensitization();
-    if (CollectionUtils.isEmpty(uploaded) || StringUtils.isEmpty(
-        uploaded.get(uploaded.size() - 1).getJarUrl())) {
+    if (CollectionUtils.isEmpty(uploaded) || uploaded.get(uploaded.size() - 1) == null
+        || StringUtils.isEmpty(uploaded.get(uploaded.size() - 1).getJarUrl())) {
       return new DefaultDataDesensitization();
     } else {
       try {
