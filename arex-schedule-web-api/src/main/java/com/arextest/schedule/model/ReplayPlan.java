@@ -101,7 +101,7 @@ public class ReplayPlan {
   @JsonIgnore
   private BlockingQueue<BizLog> bizLogs = new LinkedBlockingQueue<>();
   @JsonIgnore
-  private ScheduledFuture<?> monitorFuture;
+  private List<ScheduledFuture<?>> monitorFutures;
   @JsonIgnore
   private Map<String, ReplayActionItem> actionItemMap = new HashMap<>();
   private List<ReplayPlanStageInfo> replayPlanStageList;

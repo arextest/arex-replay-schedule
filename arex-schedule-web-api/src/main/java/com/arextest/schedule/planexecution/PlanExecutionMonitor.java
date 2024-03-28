@@ -11,5 +11,4 @@ public interface PlanExecutionMonitor {
 
   void deregister(ReplayPlan plan);
 
-  void monitorOne(ReplayPlan plan);
 }

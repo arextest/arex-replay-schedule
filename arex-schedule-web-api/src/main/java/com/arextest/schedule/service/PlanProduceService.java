@@ -153,8 +153,8 @@ public class PlanProduceService {
           new BuildReplayPlanResponse(BuildReplayFailReasonEnum.DB_ERROR));
     }
     isRunning(replayPlan.getId());
-    planExecutionMonitorImpl.register(replayPlan);
     MDCTracer.addPlanId(replayPlan.getId());
+    planExecutionMonitorImpl.register(replayPlan);
     if (!replayPlanActionRepository.save(replayActionItemList)) {
       progressEvent.onReplayPlanCreateException(request);
       return CommonResponse.badResponse("save replay action error, " + replayPlan.toString(),

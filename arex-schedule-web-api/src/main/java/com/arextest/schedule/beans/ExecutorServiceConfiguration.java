@@ -145,6 +145,6 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
         .setDaemon(true)
         .setUncaughtExceptionHandler(this).build();
 
-    return new ScheduledThreadPoolExecutor(1, threadFactory);
+    return new ScheduledThreadPoolExecutor(2, threadFactory);
   }
 }

@@ -28,7 +28,7 @@ public class StageUpdateHandler implements PlanMonitorHandler {
     }
     // expand SECOND_TO_REFRESH to avoid the edge case.
     if (System.currentTimeMillis() - plan.getLastUpdateTime()
-        < PlanExecutionMonitorImpl.SECOND_TO_REFRESH * 2 * 1000) {
+        < periodSeconds() * 2 * 1000) {
       replayPlanRepository.updateStage(plan);
     }
   }
