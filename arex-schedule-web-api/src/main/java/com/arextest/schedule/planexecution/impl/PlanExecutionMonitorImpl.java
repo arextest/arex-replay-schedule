@@ -1,15 +1,17 @@
 package com.arextest.schedule.planexecution.impl;
 
-import com.arextest.schedule.mdc.MDCTracer;
+import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.planexecution.PlanExecutionMonitor;
 import com.arextest.schedule.planexecution.PlanMonitorHandler;
+import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 /**
@@ -19,70 +21,58 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class PlanExecutionMonitorImpl implements PlanExecutionMonitor {
 
-  public static final int SECOND_TO_REFRESH = 5;
   @Resource
   private ScheduledExecutorService monitorScheduler;
   @Resource
   private List<PlanMonitorHandler> planMonitorHandlerList;
 
   @Override
-  public void monitorOne(ReplayPlan task) {
-    if (task == null) {
+  public void register(ReplayPlan plan) {
+    if (CollectionUtils.isNotEmpty(plan.getMonitorFutures())) {
+      LOGGER.info("duplicate register monitor task {}", plan.getId());
       return;
     }
-    LOGGER.info("Monitoring task {}", task.getId());
-    for (PlanMonitorHandler handler : planMonitorHandlerList) {
-      try {
-        handler.handle(task);
-      } catch (Throwable t) {
-        LOGGER.error("Error handling plan:{}", task.getId(), t);
-      }
-    }
-  }
 
-  @Override
-  public void register(ReplayPlan plan) {
-    MonitorTask task = new MonitorTask(plan);
-    ScheduledFuture<?> monitorFuture = monitorScheduler
-        .scheduleAtFixedRate(task, 0, SECOND_TO_REFRESH, TimeUnit.SECONDS);
-    plan.setMonitorFuture(monitorFuture);
+    try {
+      LOGGER.info("register monitor task {}", plan.getId());
+      List<ScheduledFuture<?>> monitorFutures = Lists.newArrayListWithCapacity(planMonitorHandlerList.size());
+
+      for (PlanMonitorHandler handler : planMonitorHandlerList) {
+        ScheduledFuture<?> monitorFuture = monitorScheduler.scheduleAtFixedRate(new AbstractTracedRunnable() {
+          @Override
+          protected void doWithTracedRunning() {
+            try {
+              handler.handle(plan);
+            } catch (Exception e) {
+              LOGGER.error("failed to handle monitor task. plan:{}, handler: {}", plan.getId(),
+                  handler.getClass().getName(), e);
+            }
+          }
+        }, 0, handler.periodSeconds(), TimeUnit.SECONDS);
+        monitorFutures.add(monitorFuture);
+      }
+      plan.setMonitorFutures(monitorFutures);
+    } catch (Exception e) {
+      LOGGER.error("failed to register monitor task. plan:{}", plan.getId(), e);
+    }
   }
 
   @Override
   public void deregister(ReplayPlan plan) {
-    plan.getMonitorFuture().cancel(false);
-    LOGGER.info("deregister monitor task, planId: {}", plan.getId());
+    List<ScheduledFuture<?>> monitorFutures = plan.getMonitorFutures();
+    if (CollectionUtils.isEmpty(monitorFutures)) {
+      return;
+    }
 
+    LOGGER.info("deregister monitor task, planId: {}", plan.getId());
+    monitorFutures.forEach(future -> future.cancel(false));
     for (PlanMonitorHandler handler : planMonitorHandlerList) {
       try {
         handler.end(plan);
-      } catch (Throwable t) {
-        LOGGER.error("Error ending plan:{}", plan.getId(), t);
+      } catch (Exception e) {
+        LOGGER.error("failed to end plan:{}, handler:{} ", plan.getId(), handler.getClass().getName(), e);
       }
     }
   }
 
-  /**
-   * Monitor task for each Replay plan
-   */
-  private class MonitorTask implements Runnable {
-
-    ReplayPlan replayPlan;
-
-    MonitorTask(ReplayPlan replayPlan) {
-      this.replayPlan = replayPlan;
-    }
-
-    @Override
-    public void run() {
-      MDCTracer.addPlanId(replayPlan.getId());
-      try {
-        monitorOne(replayPlan);
-      } catch (Throwable t) {
-        LOGGER.error("Error monitoring plan", t);
-      } finally {
-        MDCTracer.clear();
-      }
-    }
-  }
 }

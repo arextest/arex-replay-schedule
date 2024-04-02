@@ -17,4 +17,12 @@ public interface PlanMonitorHandler {
    * Execute when deRegister.
    */
   void end(ReplayPlan plan);
+
+  /**
+   * Get period.
+   */
+  default long periodSeconds() {
+    return 5L;
+  }
+
 }

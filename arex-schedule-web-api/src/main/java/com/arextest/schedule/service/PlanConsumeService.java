@@ -161,8 +161,6 @@ public final class PlanConsumeService {
 
     ExecutionStatus executionStatus = replayPlan.getPlanStatus();
 
-    planExecutionMonitorImpl.monitorOne(replayPlan);
-
     // finalize plan status
     if (executionStatus.isCanceled()) {
       progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.CANCELLED);
