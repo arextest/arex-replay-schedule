@@ -3,11 +3,13 @@ package com.arextest.schedule.client;
 import java.io.IOException;
 import java.util.Base64;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.stereotype.Component;
 
 /**
  * supply a interceptor to log request info
@@ -15,6 +17,8 @@ import org.springframework.http.client.ClientHttpResponse;
  * created by xinyuan_wang on 2023/7/26
  */
 @Slf4j
+@Component
+@Order(2)
 public class LoggingRequestInterceptor implements ClientHttpRequestInterceptor {
 
   @Override

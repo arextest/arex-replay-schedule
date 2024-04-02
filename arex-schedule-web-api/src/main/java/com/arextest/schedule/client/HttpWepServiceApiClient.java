@@ -15,6 +15,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -22,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -69,6 +72,9 @@ public final class HttpWepServiceApiClient {
   @Value("${arex.client.https.cert.disable:#{false}}")
   private boolean disableCertCheck;
 
+  @Autowired(required = false)
+  private List<ClientHttpRequestInterceptor> clientHttpRequestInterceptors;
+
   @PostConstruct
   private void initTemplate() {
     initRestTemplate();
@@ -97,7 +103,9 @@ public final class HttpWepServiceApiClient {
     httpMessageConverterList.add(converter);
     this.restTemplate = new RestTemplate(httpMessageConverterList);
     this.restTemplate.setRequestFactory(requestFactory);
-    this.restTemplate.getInterceptors().add(new LoggingRequestInterceptor());
+    if (CollectionUtils.isNotEmpty(clientHttpRequestInterceptors)){
+      restTemplate.setInterceptors(clientHttpRequestInterceptors);
+    }
   }
 
   private void initRetryTemplate() {
