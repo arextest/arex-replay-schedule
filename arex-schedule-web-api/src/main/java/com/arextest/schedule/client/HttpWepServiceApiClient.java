@@ -16,6 +16,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -71,7 +72,7 @@ public final class HttpWepServiceApiClient {
   private int backOffPeriod;
   @Value("${arex.client.https.cert.disable:#{false}}")
   private boolean disableCertCheck;
-  @Resource
+  @Autowired(required = false)
   private List<ClientHttpRequestInterceptor> clientHttpRequestInterceptors;
 
   @PostConstruct
