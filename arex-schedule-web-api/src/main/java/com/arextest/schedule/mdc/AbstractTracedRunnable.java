@@ -9,6 +9,7 @@ import org.slf4j.MDC;
  * @author jmo
  * @since 2021/11/5
  */
+@Deprecated
 @Slf4j
 public abstract class AbstractTracedRunnable implements Runnable {
 

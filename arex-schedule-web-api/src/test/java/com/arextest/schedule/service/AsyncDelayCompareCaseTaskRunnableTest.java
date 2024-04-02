@@ -33,7 +33,7 @@ public class AsyncDelayCompareCaseTaskRunnableTest {
         replayCompareService, caseItem);
 
     // Act
-    runnable.doWithTracedRunning();
+    runnable.doWithContextRunning();
 
     // Assert
     verify(replayCompareService).compareCaseDistributable(caseItem);
@@ -51,7 +51,7 @@ public class AsyncDelayCompareCaseTaskRunnableTest {
 
 
     // Act
-    runnable.doWithTracedRunning();
+    runnable.doWithContextRunning();
 
     // Assert
     verify(replayCompareService).compareCaseDistributable(caseItem);

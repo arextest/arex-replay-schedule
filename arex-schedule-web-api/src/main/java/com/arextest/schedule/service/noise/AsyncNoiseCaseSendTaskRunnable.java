@@ -1,5 +1,6 @@
 package com.arextest.schedule.service.noise;
 
+import com.arextest.common.runnable.AbstractContextWithTraceRunnable;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.model.ReplayActionCaseItem;
@@ -13,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Setter
-public class AsyncNoiseCaseSendTaskRunnable extends AbstractTracedRunnable {
+public class AsyncNoiseCaseSendTaskRunnable extends AbstractContextWithTraceRunnable {
 
   private transient ReplaySender replaySender;
   private SendSemaphoreLimiter semaphoreLimiter;
@@ -30,7 +31,7 @@ public class AsyncNoiseCaseSendTaskRunnable extends AbstractTracedRunnable {
   }
 
   @Override
-  protected void doWithTracedRunning() {
+  protected void doWithContextRunning() {
     boolean success = false;
     try {
       success = replaySender.send(caseItem);
