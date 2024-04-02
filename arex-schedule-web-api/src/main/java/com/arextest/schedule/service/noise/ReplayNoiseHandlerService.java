@@ -183,7 +183,7 @@ public class ReplayNoiseHandlerService {
     }
 
     if (CollectionUtils.isNotEmpty(exclusionConfigs)) {
-      GenericResponseType response = httpWepServiceApiClient.jsonPost(addExclusionConfigUrl,
+      GenericResponseType response = httpWepServiceApiClient.jsonPost(false, addExclusionConfigUrl,
           exclusionConfigs,
           GenericResponseType.class);
       if (response == null || Objects.equals(response.getBody(), false)) {

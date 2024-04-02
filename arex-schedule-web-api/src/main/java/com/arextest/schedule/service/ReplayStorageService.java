@@ -66,7 +66,7 @@ public class ReplayStorageService {
       category.setResultIds(Collections.singletonList(pair));
       resGroup.setCategoryGroups(Collections.singletonList(category));
 
-      String out = client.jsonPost(postProcessUrl, storageReq, String.class);
+      String out = client.jsonPost(true, postProcessUrl, storageReq, String.class);
       LOGGER.info("postProcessCompareResult result: {}", out);
     } catch (Exception e) {
       LOGGER.error("postProcessCompareResult error", e);

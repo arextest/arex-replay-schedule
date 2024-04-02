@@ -43,7 +43,8 @@ public class ReplayCompareService {
   public boolean compareCaseDistributable(ReplayActionCaseItem caseItem) {
     try {
       MDCTracer.addDetailId(caseItem.getId());
-      CommonResponse response = httpWepServiceApiClient.retryJsonPost(compareCaseUrl, caseItem,
+      CommonResponse response = httpWepServiceApiClient.retryJsonPost(true, compareCaseUrl,
+          caseItem,
           CommonResponse.class);
       if (response == null || response.getData() == null) {
         LOGGER.warn("[[title=compareCase]]compareCase request recordId: {}, response is null",
@@ -53,7 +54,8 @@ public class ReplayCompareService {
       }
       return (boolean) response.getData();
     } catch (Exception e) {
-      LOGGER.error("[[title=compareCase]]failed to compareCase {}, {}", caseItem.getPlanId(), caseItem.getRecordId(), e);
+      LOGGER.error("[[title=compareCase]]failed to compareCase {}, {}", caseItem.getPlanId(),
+          caseItem.getRecordId(), e);
       return false;
     } finally {
       MDCTracer.clear();

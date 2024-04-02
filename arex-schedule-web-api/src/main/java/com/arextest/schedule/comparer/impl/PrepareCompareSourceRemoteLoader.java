@@ -78,7 +78,7 @@ public final class PrepareCompareSourceRemoteLoader {
     QueryReplayResultRequestType resultRequest = new QueryReplayResultRequestType();
     resultRequest.setRecordId(replayId);
     resultRequest.setReplayResultId(resultId);
-    return httpWepServiceApiClient.retryJsonPost(replayResultUrl, resultRequest,
+    return httpWepServiceApiClient.retryJsonPost(true, replayResultUrl, resultRequest,
         QueryReplayResultResponseType.class);
   }
 
@@ -96,8 +96,8 @@ public final class PrepareCompareSourceRemoteLoader {
       return Collections.emptyList();
     }
     if (Boolean.TRUE.equals(replayResultResponseType.getInvalidResult())) {
-        LOGGER.warn("query replay result has invalid result: get data failed from storage");
-        return Collections.emptyList();
+      LOGGER.warn("query replay result has invalid result: get data failed from storage");
+      return Collections.emptyList();
     }
     List<ListResultHolder> resultHolderList = replayResultResponseType.getResultHolderList();
     if (CollectionUtils.isEmpty(resultHolderList)) {

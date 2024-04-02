@@ -28,7 +28,7 @@ public final class PlanContextCreator {
 
   public PlanContext createByAppId(String appId) {
     PlanContext planContext = new PlanContext();
-    GenericResponseType responseType = apiClient.get(applicationServiceUrl,
+    GenericResponseType responseType = apiClient.get(true, applicationServiceUrl,
         Collections.singletonMap("appId",
             appId),
         GenericResponseType.class);

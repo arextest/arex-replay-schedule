@@ -122,7 +122,7 @@ public final class ReplayReportService implements ComparisonWriter {
     }
     requestType.setReportItemList(reportItemList);
     LOGGER.info("initReport request:{}", requestType);
-    Response response = httpWepServiceApiClient.jsonPost(reportInitUrl, requestType,
+    Response response = httpWepServiceApiClient.jsonPost(true, reportInitUrl, requestType,
         GenericResponseType.class);
     LOGGER.info("initReport request:{}, response:{}", requestType, response);
     return response != null && !response.getResponseStatusType().hasError();
@@ -145,7 +145,7 @@ public final class ReplayReportService implements ComparisonWriter {
       }
       requestType.setUpdateReportItems(updateReportInfoList);
     }
-    Response response = httpWepServiceApiClient.jsonPost(updateReportInfoUrl, requestType,
+    Response response = httpWepServiceApiClient.jsonPost(true, updateReportInfoUrl, requestType,
         GenericResponseType.class);
     LOGGER.info("updateReportCaseCount request:{}, response:{}", requestType, response);
   }
@@ -161,7 +161,7 @@ public final class ReplayReportService implements ComparisonWriter {
     requestType.setPlanId(planId);
     requestType.setItems(Collections.singletonList(replayItem));
     requestType.setRerun(rerun);
-    Object response = httpWepServiceApiClient.jsonPost(pushReplayStatusUrl, requestType,
+    Object response = httpWepServiceApiClient.jsonPost(true, pushReplayStatusUrl, requestType,
         GenericResponseType.class);
     LOGGER.info("push action status actionId: {},status: {}, result:{}", actionId,
         statusType, response);
@@ -174,7 +174,7 @@ public final class ReplayReportService implements ComparisonWriter {
     requestType.setStatus(statusType.getValue());
     requestType.setErrorMessage(errorMessage);
     requestType.setRerun(rerun);
-    Object response = httpWepServiceApiClient.jsonPost(pushReplayStatusUrl, requestType,
+    Object response = httpWepServiceApiClient.jsonPost(true, pushReplayStatusUrl, requestType,
         GenericResponseType.class);
     LOGGER.info("push plan status planId: {},status: {}, result:{}", planId, statusType, response);
   }
@@ -201,7 +201,7 @@ public final class ReplayReportService implements ComparisonWriter {
     }
     request.setAnalyzeCompareInfos(reqItems);
 
-    Response response = httpWepServiceApiClient.jsonPost(pushReplayCompareResultUrl, request,
+    Response response = httpWepServiceApiClient.jsonPost(true, pushReplayCompareResultUrl, request,
         GenericResponseType.class);
     if (response == null || response.getResponseStatusType().hasError()) {
       LOGGER.error("push replay compared result to report size: {}, result:{}", comparedSize,
@@ -233,7 +233,7 @@ public final class ReplayReportService implements ComparisonWriter {
     request.setAnalyzeCompareInfos(
         Collections.singletonList(converter.reportContractFromBo(compareResult)));
 
-    Response response = httpWepServiceApiClient.jsonPost(pushReplayCompareResultUrl, request,
+    Response response = httpWepServiceApiClient.jsonPost(true, pushReplayCompareResultUrl, request,
         GenericResponseType.class);
     if (response == null || response.getResponseStatusType().hasError()) {
       LOGGER.error("writeQmqCompareResult to report result:{}", response);
@@ -260,7 +260,7 @@ public final class ReplayReportService implements ComparisonWriter {
   public void removeRecordsAndScenes(Map<String, List<String>> actionIdAndRecordIdsMap) {
     RemoveRecordsAndScenesRequest requestType = new RemoveRecordsAndScenesRequest();
     requestType.setActionIdAndRecordIdsMap(actionIdAndRecordIdsMap);
-    Response response = httpWepServiceApiClient.jsonPost(removeRecordsUrl, requestType,
+    Response response = httpWepServiceApiClient.jsonPost(true, removeRecordsUrl, requestType,
         GenericResponseType.class);
     LOGGER.info("removeRecordsAndScenes request:{}, response:{}", requestType, response);
   }
@@ -269,7 +269,7 @@ public final class ReplayReportService implements ComparisonWriter {
     RemoveErrorMsgRequest request = new RemoveErrorMsgRequest();
     request.setPlanId(planId);
     request.setPlanItemIdList(planItemIdList);
-    Response response = httpWepServiceApiClient.jsonPost(removeErrorMsgUrl, request,
+    Response response = httpWepServiceApiClient.jsonPost(true, removeErrorMsgUrl, request,
         GenericResponseType.class);
     LOGGER.info("removeErrorMsg request:{}, response:{}", request, response);
   }
@@ -278,7 +278,7 @@ public final class ReplayReportService implements ComparisonWriter {
     QueryPlanStatisticRequestType request = new QueryPlanStatisticRequestType();
     request.setPlanId(planId);
     request.setAppId(appId);
-      QueryPlanStatisticResponseWrapper response = httpWepServiceApiClient.jsonPost(
+      QueryPlanStatisticResponseWrapper response = httpWepServiceApiClient.jsonPost(true,
           queryPlanStatisticUrl, request, QueryPlanStatisticResponseWrapper.class);
       LOGGER.info("queryPlanStatistic request:{}, response:{}", request, response);
       if (response == null || response.getBody() == null) {

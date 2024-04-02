@@ -166,7 +166,7 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
     }
     final ResponseEntity<?> responseEntity;
     try {
-      responseEntity = httpWepServiceApiClient.exchange(fullUrl, httpMethod, httpEntity,
+      responseEntity = httpWepServiceApiClient.exchange(false, fullUrl, httpMethod, httpEntity,
           responseType);
     } catch (Throwable throwable) {
       LOGGER.error("http {} , url: {} ,error: {} ,request: {}", method, fullUrl,

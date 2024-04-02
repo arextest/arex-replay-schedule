@@ -15,6 +15,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -22,6 +23,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -53,6 +55,7 @@ import org.springframework.web.client.RestTemplate;
 public final class HttpWepServiceApiClient {
 
   private RestTemplate restTemplate;
+  private RestTemplate outerRestTemplate;
   private RetryTemplate retryTemplate;
   @Resource
   private ZstdJacksonMessageConverter zstdJacksonMessageConverter;
@@ -68,6 +71,8 @@ public final class HttpWepServiceApiClient {
   private int backOffPeriod;
   @Value("${arex.client.https.cert.disable:#{false}}")
   private boolean disableCertCheck;
+  @Resource
+  private List<ClientHttpRequestInterceptor> clientHttpRequestInterceptors;
 
   @PostConstruct
   private void initTemplate() {
@@ -97,7 +102,14 @@ public final class HttpWepServiceApiClient {
     httpMessageConverterList.add(converter);
     this.restTemplate = new RestTemplate(httpMessageConverterList);
     this.restTemplate.setRequestFactory(requestFactory);
-    this.restTemplate.getInterceptors().add(new LoggingRequestInterceptor());
+    if (CollectionUtils.isNotEmpty(clientHttpRequestInterceptors)) {
+      // Add interceptors (e.g. logging, metrics, etc
+      this.restTemplate.setInterceptors(clientHttpRequestInterceptors);
+    }
+
+    // set outer restTemplate
+    this.outerRestTemplate = new RestTemplate(httpMessageConverterList);
+    this.outerRestTemplate.setRequestFactory(requestFactory);
   }
 
   private void initRetryTemplate() {
@@ -156,73 +168,86 @@ public final class HttpWepServiceApiClient {
     });
   }
 
-  public <TResponse> TResponse get(String url, Map<String, ?> urlVariables,
+  public <TResponse> TResponse get(boolean inner, String url,
+      Map<String, ?> urlVariables,
       Class<TResponse> responseType) {
     try {
-      return restTemplate.getForObject(url, responseType, urlVariables);
+      RestTemplate template = inner ? restTemplate : outerRestTemplate;
+      return template.getForObject(url, responseType, urlVariables);
     } catch (Exception e) {
       return null;
     }
   }
 
-  public <TResponse> ResponseEntity<TResponse> get(String url, Map<String, ?> urlVariables,
+  public <TResponse> ResponseEntity<TResponse> get(boolean inner, String url,
+      Map<String, ?> urlVariables,
       ParameterizedTypeReference<TResponse> responseType) {
     try {
-      return restTemplate.exchange(url, HttpMethod.GET, null, responseType, urlVariables);
+      RestTemplate template = inner ? restTemplate : outerRestTemplate;
+      return template.exchange(url, HttpMethod.GET, null, responseType, urlVariables);
     } catch (Exception e) {
       return null;
     }
   }
 
-  public <TResponse> ResponseEntity<TResponse> retryGet(String url, Map<String, ?> urlVariables,
+  public <TResponse> ResponseEntity<TResponse> retryGet(boolean inner, String url,
+      Map<String, ?> urlVariables,
       ParameterizedTypeReference<TResponse> responseType) {
     try {
+      RestTemplate template = inner ? restTemplate : outerRestTemplate;
       return retryTemplate.execute(retryCallback -> {
         retryCallback.setAttribute(URL, url);
-        return restTemplate.exchange(url, HttpMethod.GET, null, responseType, urlVariables);
+        return template.exchange(url, HttpMethod.GET, null, responseType, urlVariables);
       });
     } catch (Exception e) {
       return null;
     }
   }
 
-  public <TResponse> TResponse get(String url, Map<String, ?> urlVariables,
+  public <TResponse> TResponse get(boolean inner, String url,
+      Map<String, ?> urlVariables,
       MultiValueMap<String, String> headers, Class<TResponse> responseType) {
     try {
+      RestTemplate template = inner ? restTemplate : outerRestTemplate;
       HttpEntity<?> request = new HttpEntity<>(headers);
-      return restTemplate.exchange(url, HttpMethod.GET, request, responseType, urlVariables)
+      return template.exchange(url, HttpMethod.GET, request, responseType, urlVariables)
           .getBody();
     } catch (Exception e) {
       return null;
     }
   }
 
-  public <TRequest, TResponse> TResponse jsonPost(String url, TRequest request,
+  public <TRequest, TResponse> TResponse jsonPost(boolean inner, String url,
+      TRequest request,
       Class<TResponse> responseType) {
     try {
-      return restTemplate.postForObject(url, wrapJsonContentType(request), responseType);
+      RestTemplate template = inner ? restTemplate : outerRestTemplate;
+      return template.postForObject(url, wrapJsonContentType(request), responseType);
     } catch (Exception e) {
       return null;
     }
   }
 
-  public <TRequest, TResponse> TResponse jsonPost(String url, TRequest request,
+  public <TRequest, TResponse> TResponse jsonPost(boolean inner, String url,
+      TRequest request,
       Class<TResponse> responseType,
       Map<String, String> headers) {
     try {
-
-      return restTemplate.postForObject(url, wrapJsonContentType(request, headers), responseType);
+      RestTemplate template = inner ? restTemplate : outerRestTemplate;
+      return template.postForObject(url, wrapJsonContentType(request, headers), responseType);
     } catch (Exception e) {
       return null;
     }
   }
 
-  public <TRequest, TResponse> TResponse retryJsonPost(String url, TRequest request,
+  public <TRequest, TResponse> TResponse retryJsonPost(boolean inner, String url,
+      TRequest request,
       Class<TResponse> responseType) {
     try {
+      RestTemplate template = inner ? restTemplate : outerRestTemplate;
       return retryTemplate.execute(retryCallback -> {
         retryCallback.setAttribute(URL, url);
-        return restTemplate.postForObject(url, wrapJsonContentType(request), responseType);
+        return template.postForObject(url, wrapJsonContentType(request), responseType);
       });
     } catch (Exception e) {
       return null;
@@ -261,25 +286,31 @@ public final class HttpWepServiceApiClient {
    * When restTemplate sends a replay request, it needs to pass the URI object to avoid the url
    * encode parameter parsing exception.
    */
-  public <TResponse> ResponseEntity<TResponse> exchange(String url, HttpMethod method,
+  public <TResponse> ResponseEntity<TResponse> exchange(boolean inner, String url,
+      HttpMethod method,
       HttpEntity<?> requestEntity,
       Class<TResponse> responseType) throws RestClientException {
-    return restTemplate.exchange(URI.create(url), method, requestEntity, responseType);
+    RestTemplate template = inner ? restTemplate : outerRestTemplate;
+    return template.exchange(URI.create(url), method, requestEntity, responseType);
   }
 
-  public <TRequest, TResponse> ResponseEntity<TResponse> jsonPostWithThrow(String url,
+  public <TRequest, TResponse> ResponseEntity<TResponse> jsonPostWithThrow(
+      boolean inner, String url,
       HttpEntity<TRequest> request,
       Class<TResponse> responseType) throws RestClientException {
-    return restTemplate.postForEntity(url, wrapJsonContentType(request), responseType);
+    RestTemplate template = inner ? restTemplate : outerRestTemplate;
+    return template.postForEntity(url, wrapJsonContentType(request), responseType);
 
   }
 
-  public <TRequest, TResponse> ResponseEntity<TResponse> retryJsonPostWithThrow(String url,
+  public <TRequest, TResponse> ResponseEntity<TResponse> retryJsonPostWithThrow(
+      boolean inner, String url,
       HttpEntity<TRequest> request,
       Class<TResponse> responseType) throws RestClientException {
+    RestTemplate template = inner ? restTemplate : outerRestTemplate;
     return retryTemplate.execute(retryCallback -> {
       retryCallback.setAttribute(URL, url);
-      return restTemplate.postForEntity(url, wrapJsonContentType(request), responseType);
+      return template.postForEntity(url, wrapJsonContentType(request), responseType);
     });
   }
 }

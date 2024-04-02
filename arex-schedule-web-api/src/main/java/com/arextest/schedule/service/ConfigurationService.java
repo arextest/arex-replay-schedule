@@ -28,23 +28,21 @@ public class ConfigurationService {
   private String desensitizationConfigUrl;
 
   public Application application(String appId) {
-    ApplicationResponse applicationResponse = wepApiClientService.get(applicationUrl,
-        appIdUrlVariable(appId),
-        ApplicationResponse.class);
+    ApplicationResponse applicationResponse = wepApiClientService.get(true, applicationUrl,
+        appIdUrlVariable(appId), ApplicationResponse.class);
     return applicationResponse != null ? applicationResponse.body : null;
   }
 
   public ScheduleConfiguration schedule(String appId) {
-    ScheduleResponse scheduleResponse = wepApiClientService.get(scheduleUrl,
-        appIdUrlVariable(appId),
-        ScheduleResponse.class);
+    ScheduleResponse scheduleResponse = wepApiClientService.get(true, scheduleUrl,
+        appIdUrlVariable(appId), ScheduleResponse.class);
     return scheduleResponse != null ? scheduleResponse.body : null;
   }
 
   @Retryable(value = {RetryException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000))
   public List<DesensitizationJar> desensitization() {
-    DesensitizationResponse res = wepApiClientService.jsonPost(desensitizationConfigUrl, null,
-        DesensitizationResponse.class);
+    DesensitizationResponse res = wepApiClientService.jsonPost(true, desensitizationConfigUrl,
+        null, DesensitizationResponse.class);
     if (res == null) {
       throw new RetryException("get desensitization config error");
     } else {

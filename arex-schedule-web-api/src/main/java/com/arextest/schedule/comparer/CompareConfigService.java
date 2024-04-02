@@ -69,18 +69,20 @@ public final class CompareConfigService {
       return systemConfig;
     }
 
-    ResponseEntity<GenericResponseType<SystemConfigWithProperties>> response = RETRY_TEMPLATE.execute(context -> {
-      ResponseEntity<GenericResponseType<SystemConfigWithProperties>> temp = httpWepServiceApiClient.get(
-          systemConfigUrl, Collections.emptyMap(),
-          new ParameterizedTypeReference<GenericResponseType<SystemConfigWithProperties>>() {
-          });
+    ResponseEntity<GenericResponseType<SystemConfigWithProperties>> response = RETRY_TEMPLATE.execute(
+        context -> {
+          ResponseEntity<GenericResponseType<SystemConfigWithProperties>> temp = httpWepServiceApiClient.get(
+              true,
+              systemConfigUrl, Collections.emptyMap(),
+              new ParameterizedTypeReference<GenericResponseType<SystemConfigWithProperties>>() {
+              });
 
-      if (temp == null || temp.getBody() == null || temp.getBody().getBody() == null) {
-        throw new RuntimeException("get compare system config failed");
-      } else {
-        return temp;
-      }
-    }, retryContext -> null);
+          if (temp == null || temp.getBody() == null || temp.getBody().getBody() == null) {
+            throw new RuntimeException("get compare system config failed");
+          } else {
+            return temp;
+          }
+        }, retryContext -> null);
 
     if (response == null || response.getBody() == null || response.getBody().getBody() == null) {
       LOGGER.error("get compare system config failed");
@@ -143,7 +145,8 @@ public final class CompareConfigService {
       if (json == null) {
         return ComparisonInterfaceConfig.empty();
       }
-      ComparisonInterfaceConfig config = JsonUtils.byteToObject(json, ComparisonInterfaceConfig.class);
+      ComparisonInterfaceConfig config = JsonUtils.byteToObject(json,
+          ComparisonInterfaceConfig.class);
       if (config == null) {
         return ComparisonInterfaceConfig.empty();
       }
@@ -159,7 +162,7 @@ public final class CompareConfigService {
     Map<String, String> urlVariables = Collections.singletonMap("appId", plan.getAppId());
 
     ResponseEntity<GenericResponseType<ReplayCompareConfig>> replayComparisonConfigEntity =
-        httpWepServiceApiClient.retryGet(summaryConfigUrl, urlVariables,
+        httpWepServiceApiClient.retryGet(true, summaryConfigUrl, urlVariables,
             new ParameterizedTypeReference<GenericResponseType<ReplayCompareConfig>>() {
             });
 

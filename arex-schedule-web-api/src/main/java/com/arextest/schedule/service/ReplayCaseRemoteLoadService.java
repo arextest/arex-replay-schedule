@@ -23,7 +23,6 @@ import com.arextest.schedule.utils.MapUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -75,7 +74,7 @@ public class ReplayCaseRemoteLoadService {
         PagedRequestType pagedRequestType = buildPagingSearchCaseRequest(replayActionItem,
             caseCountLimit, providerName, operationTypeData.getOperationType());
         QueryCaseCountResponseType responseType =
-            wepApiClientService.jsonPost(countByRangeUrl, pagedRequestType,
+            wepApiClientService.jsonPost(true, countByRangeUrl, pagedRequestType,
                 QueryCaseCountResponseType.class);
         if (responseType == null || responseType.getResponseStatusType().hasError()) {
           continue;
@@ -98,7 +97,7 @@ public class ReplayCaseRemoteLoadService {
       viewReplayCaseRequest.setCategoryType(operationType);
       viewReplayCaseRequest.setSourceProvider(sourceProvider);
 
-      ViewRecordResponseType responseType = wepApiClientService.jsonPost(viewRecordUrl,
+      ViewRecordResponseType responseType = wepApiClientService.jsonPost(true, viewRecordUrl,
           viewReplayCaseRequest,
           ViewRecordResponseType.class);
       if (responseType == null || responseType.getResponseStatusType().hasError()) {
@@ -156,7 +155,8 @@ public class ReplayCaseRemoteLoadService {
   }
 
   public List<ReplayActionCaseItem> pagingLoad(long beginTimeMills, long endTimeMills,
-      ReplayActionItem replayActionItem, int caseCountLimit, String providerName, String operationType) {
+      ReplayActionItem replayActionItem, int caseCountLimit, String providerName,
+      String operationType) {
     PagedRequestType requestType = buildPagingSearchCaseRequest(replayActionItem,
         caseCountLimit, providerName, operationType);
     buildSortOption(requestType);
@@ -166,7 +166,7 @@ public class ReplayCaseRemoteLoadService {
     PagedResponseType responseType;
     StopWatch watch = new StopWatch();
     watch.start(LogType.LOAD_CASE_TIME.getValue());
-    responseType = wepApiClientService.jsonPost(replayCaseUrl, requestType,
+    responseType = wepApiClientService.jsonPost(true, replayCaseUrl, requestType,
         PagedResponseType.class);
     watch.stop();
     LOGGER.info("get replay case app id:{},time used:{} ms, operation:{}",
@@ -234,7 +234,7 @@ public class ReplayCaseRemoteLoadService {
     }
     requestType.setSourceProvider(providerName);
     // add the condition of "caseTag"
-    if (MapUtils.isNotEmpty(parent.getCaseTags())){
+    if (MapUtils.isNotEmpty(parent.getCaseTags())) {
       requestType.setTags(parent.getCaseTags());
     }
     return requestType;
