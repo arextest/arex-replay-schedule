@@ -53,6 +53,7 @@ import org.springframework.web.client.RestTemplate;
  */
 @Component
 @Slf4j
+@SuppressWarnings({"java:S6813","java:S119"})
 public final class HttpWepServiceApiClient {
 
   private RestTemplate restTemplate;
