@@ -53,7 +53,7 @@ import org.springframework.web.client.RestTemplate;
  */
 @Component
 @Slf4j
-@SuppressWarnings({"java:S6813","java:S119"})
+@SuppressWarnings({"java:S6813", "java:S119"})
 public final class HttpWepServiceApiClient {
 
   private RestTemplate restTemplate;
@@ -169,6 +169,125 @@ public final class HttpWepServiceApiClient {
       }
     });
   }
+
+
+  // region: old logic
+  @Deprecated
+  public <TResponse> TResponse get(String url,
+      Map<String, ?> urlVariables,
+      Class<TResponse> responseType) {
+    try {
+      return restTemplate.getForObject(url, responseType, urlVariables);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  @Deprecated
+  public <TResponse> ResponseEntity<TResponse> get(String url,
+      Map<String, ?> urlVariables,
+      ParameterizedTypeReference<TResponse> responseType) {
+    try {
+      return restTemplate.exchange(url, HttpMethod.GET, null, responseType, urlVariables);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  @Deprecated
+  public <TResponse> ResponseEntity<TResponse> retryGet(String url,
+      Map<String, ?> urlVariables,
+      ParameterizedTypeReference<TResponse> responseType) {
+    try {
+      return retryTemplate.execute(retryCallback -> {
+        retryCallback.setAttribute(URL, url);
+        return restTemplate.exchange(url, HttpMethod.GET, null, responseType, urlVariables);
+      });
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  @Deprecated
+  public <TResponse> TResponse get(String url,
+      Map<String, ?> urlVariables,
+      MultiValueMap<String, String> headers, Class<TResponse> responseType) {
+    try {
+      HttpEntity<?> request = new HttpEntity<>(headers);
+      return restTemplate.exchange(url, HttpMethod.GET, request, responseType, urlVariables)
+          .getBody();
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  @Deprecated
+  public <TRequest, TResponse> TResponse jsonPost(String url,
+      TRequest request,
+      Class<TResponse> responseType) {
+    try {
+      return restTemplate.postForObject(url, wrapJsonContentType(request), responseType);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  @Deprecated
+  public <TRequest, TResponse> TResponse jsonPost(String url,
+      TRequest request,
+      Class<TResponse> responseType,
+      Map<String, String> headers) {
+    try {
+      return restTemplate.postForObject(url, wrapJsonContentType(request, headers), responseType);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  @Deprecated
+  public <TRequest, TResponse> TResponse retryJsonPost(String url,
+      TRequest request,
+      Class<TResponse> responseType) {
+    try {
+      return retryTemplate.execute(retryCallback -> {
+        retryCallback.setAttribute(URL, url);
+        return restTemplate.postForObject(url, wrapJsonContentType(request), responseType);
+      });
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  /**
+   * When restTemplate sends a replay request, it needs to pass the URI object to avoid the url
+   * encode parameter parsing exception.
+   */
+  @Deprecated
+  public <TResponse> ResponseEntity<TResponse> exchange(String url,
+      HttpMethod method,
+      HttpEntity<?> requestEntity,
+      Class<TResponse> responseType) throws RestClientException {
+    return restTemplate.exchange(URI.create(url), method, requestEntity, responseType);
+  }
+
+  @Deprecated
+  public <TRequest, TResponse> ResponseEntity<TResponse> jsonPostWithThrow(String url,
+      HttpEntity<TRequest> request,
+      Class<TResponse> responseType) throws RestClientException {
+    return restTemplate.postForEntity(url, wrapJsonContentType(request), responseType);
+
+  }
+
+  @Deprecated
+  public <TRequest, TResponse> ResponseEntity<TResponse> retryJsonPostWithThrow(String url,
+      HttpEntity<TRequest> request,
+      Class<TResponse> responseType) throws RestClientException {
+    return retryTemplate.execute(retryCallback -> {
+      retryCallback.setAttribute(URL, url);
+      return restTemplate.postForEntity(url, wrapJsonContentType(request), responseType);
+    });
+  }
+  // endregion
 
   public <TResponse> TResponse get(boolean inner, String url,
       Map<String, ?> urlVariables,
