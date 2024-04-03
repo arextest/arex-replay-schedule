@@ -1,6 +1,8 @@
 package com.arextest.schedule.service;
 
 import static com.arextest.schedule.common.CommonConstant.DEFAULT_COUNT;
+
+import com.arextest.common.runnable.AbstractContextWithTraceRunnable;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
@@ -19,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Setter
-final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
+final class AsyncSendCaseTaskRunnable extends AbstractContextWithTraceRunnable {
 
   private transient final ReplayCaseTransmitServiceImpl transmitService;
   private transient ReplaySender replaySender;
@@ -34,7 +36,7 @@ final class AsyncSendCaseTaskRunnable extends AbstractTracedRunnable {
   }
 
   @Override
-  protected void doWithTracedRunning() {
+  protected void doWithContextRunning() {
     // TODO: use send time decrease or increase the sendLimiter of replay case
     boolean success = false;
     Throwable t = null;

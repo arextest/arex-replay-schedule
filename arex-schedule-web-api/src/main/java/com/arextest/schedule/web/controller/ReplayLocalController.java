@@ -1,17 +1,17 @@
 package com.arextest.schedule.web.controller;
 
 import com.arextest.schedule.model.CommonResponse;
-import com.arextest.schedule.model.plan.PostSendRequest;
-import com.arextest.schedule.model.plan.PreSendRequest;
 import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.model.plan.BuildReplayPlanResponse;
+import com.arextest.schedule.model.plan.PostSendRequest;
+import com.arextest.schedule.model.plan.PreSendRequest;
 import com.arextest.schedule.model.plan.QueryReplaySenderParametersRequest;
 import com.arextest.schedule.model.plan.QueryReplaySenderParametersResponse;
 import com.arextest.schedule.service.LocalReplayService;
 import com.arextest.schedule.service.PlanProduceService;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +39,9 @@ public class ReplayLocalController {
   @Resource
   private PlanProduceService planProduceService;
 
+  @Resource(name = "custom-fork-join-executor")
+  private ExecutorService customForkJoinExecutor;
+
   @PostMapping(value = "/queryCaseId")
   @ResponseBody
   public CommonResponse queryCaseId(@Valid @RequestBody BuildReplayPlanRequest request) {
@@ -60,7 +63,8 @@ public class ReplayLocalController {
     if (CollectionUtils.isEmpty(request.getCaseIds())) {
       return CommonResponse.badResponse("No caseId!");
     }
-    QueryReplaySenderParametersResponse response = localReplayService.queryReplaySenderParameters(request);
+    QueryReplaySenderParametersResponse response = localReplayService.queryReplaySenderParameters(
+        request);
     return CommonResponse.successResponse(SUCCESS_DESC, response);
   }
 
@@ -78,7 +82,7 @@ public class ReplayLocalController {
   @PostMapping(value = "/postSend")
   @ResponseBody
   public CommonResponse postSend(@Valid @RequestBody PostSendRequest request) {
-    CompletableFuture.runAsync(() -> localReplayService.postSend(request));
+    CompletableFuture.runAsync(() -> localReplayService.postSend(request), customForkJoinExecutor);
     return CommonResponse.successResponse(SUCCESS_DESC, true);
   }
 }

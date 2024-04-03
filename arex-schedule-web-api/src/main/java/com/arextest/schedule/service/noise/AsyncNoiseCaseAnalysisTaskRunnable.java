@@ -1,5 +1,6 @@
 package com.arextest.schedule.service.noise;
 
+import com.arextest.common.runnable.AbstractContextWithTraceRunnable;
 import com.arextest.diff.model.CompareResult;
 import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.model.enumeration.UnmatchedType;
@@ -44,7 +45,7 @@ import org.apache.commons.lang3.tuple.MutablePair;
  */
 @Data
 @Slf4j
-public class AsyncNoiseCaseAnalysisTaskRunnable extends AbstractTracedRunnable {
+public class AsyncNoiseCaseAnalysisTaskRunnable extends AbstractContextWithTraceRunnable {
 
   private ActionItemForNoiseIdentify actionItemForNoiseIdentify;
 
@@ -59,7 +60,7 @@ public class AsyncNoiseCaseAnalysisTaskRunnable extends AbstractTracedRunnable {
   private ReplayPlanActionRepository replayPlanActionRepository;
 
   @Override
-  protected void doWithTracedRunning() {
+  protected void doWithContextRunning() {
     String planId = actionItemForNoiseIdentify.getPlanId();
     String planItemId = actionItemForNoiseIdentify.getPlanItemId();
     String contextName = actionItemForNoiseIdentify.getContextName();

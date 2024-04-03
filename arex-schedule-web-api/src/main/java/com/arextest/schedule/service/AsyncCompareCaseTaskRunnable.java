@@ -1,5 +1,6 @@
 package com.arextest.schedule.service;
 
+import com.arextest.common.runnable.AbstractContextWithTraceRunnable;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.model.ReplayActionCaseItem;
@@ -10,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
  * @create 2023/11/27 19:36
  */
 @Slf4j
-public class AsyncCompareCaseTaskRunnable extends AbstractTracedRunnable {
+public class AsyncCompareCaseTaskRunnable extends AbstractContextWithTraceRunnable {
 
   private final ReplayResultComparer replayResultComparer;
 
@@ -24,7 +25,7 @@ public class AsyncCompareCaseTaskRunnable extends AbstractTracedRunnable {
   }
 
   @Override
-  protected void doWithTracedRunning() {
+  protected void doWithContextRunning() {
     boolean compareSuccess = replayResultComparer.compare(caseItem, true);
     if (!compareSuccess) {
       LOGGER.error("Comparer returned false, retry, case id: {}", caseItem.getId());

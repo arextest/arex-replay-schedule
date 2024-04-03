@@ -10,6 +10,7 @@ import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +29,9 @@ public class ReplayCompareService {
   @Resource
   private CacheProvider redisCacheProvider;
 
+  @Resource
+  private ExecutorService compareExecutorService;
+
   public boolean checkAndCompare(ReplayActionCaseItem caseItem) {
     if (isCancelled(caseItem.getPlanId())) {
       LOGGER.info("[[title=compareCase]]compare cancelled, recordId: {}, planId: {}",
@@ -36,7 +40,7 @@ public class ReplayCompareService {
     }
     LOGGER.info("[[title=compareCase]]compare start, recordId: {}, planId: {}",
         caseItem.getRecordId(), caseItem.getPlanId());
-    CompletableFuture.runAsync(() -> comparer.compare(caseItem, true));
+    CompletableFuture.runAsync(() -> comparer.compare(caseItem, true), compareExecutorService);
     return true;
   }
 
@@ -53,7 +57,8 @@ public class ReplayCompareService {
       }
       return (boolean) response.getData();
     } catch (Exception e) {
-      LOGGER.error("[[title=compareCase]]failed to compareCase {}, {}", caseItem.getPlanId(), caseItem.getRecordId(), e);
+      LOGGER.error("[[title=compareCase]]failed to compareCase {}, {}", caseItem.getPlanId(),
+          caseItem.getRecordId(), e);
       return false;
     } finally {
       MDCTracer.clear();
