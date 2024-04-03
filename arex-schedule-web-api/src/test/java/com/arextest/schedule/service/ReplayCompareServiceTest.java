@@ -9,6 +9,7 @@ import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayCompareRequestType;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutorService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,8 @@ class ReplayCompareServiceTest {
   private ReplayResultComparer comparer;
   @Mock
   private CacheProvider redisCacheProvider;
+  @Mock
+  private ExecutorService compareExecutorService;
 
   private final String COMPARE_CASE_URL = "http://localhost:8080/api/compareCase";
   private final String PLAN_ID = "123";
