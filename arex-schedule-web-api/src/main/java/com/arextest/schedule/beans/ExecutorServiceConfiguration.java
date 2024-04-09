@@ -87,9 +87,9 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
             "replay-compare-schedule-%d")
         .setDaemon(true)
         .setUncaughtExceptionHandler(this).build();
-    ExecutorService executorService = new ScheduledThreadPoolExecutor(CORE_POOL_SIZE,
+    ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(CORE_POOL_SIZE,
         threadFactory);
-    return TtlExecutors.getTtlExecutorService(executorService);
+    return TtlExecutors.getTtlScheduledExecutorService(executorService);
   }
 
   @Bean
