@@ -1,7 +1,6 @@
 package com.arextest.schedule.service.noise;
 
 import com.arextest.schedule.common.CommonConstant;
-import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.CustomComparisonConfigurationHandler;
@@ -121,19 +120,16 @@ public class ReplayNoiseIdentifyService implements ReplayNoiseIdentify {
     }
 
     // sync wait for all cases sending to complete
-    long start = System.currentTimeMillis();
-    SendSemaphoreLimiter limiter = executionContext.getExecutionStatus().getLimiter();
     List<ReplayActionCaseItem> replayActionCaseItems = casesForNoise.stream()
         .map(MutablePair::getRight)
         .flatMap(List::stream).collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
     CreateReplayNoiseSendTaskRequest request = new CreateReplayNoiseSendTaskRequest(
-        replayActionCaseItems, limiter);
+        replayActionCaseItems);
     LOGGER.info("context {} start to send {} cases for noise identify", contextName,
         replayActionCaseItems.size());
     this.doReplayNoiseSendTasks(request);
     LOGGER.info("context {} finish to send {} cases for noise identify", contextName,
         replayActionCaseItems.size());
-    limiter.reset();
 
     // async analysis
     for (MutablePair<ReplayActionItem, List<ReplayActionCaseItem>> itemPair : casesForNoise) {
@@ -203,7 +199,6 @@ public class ReplayNoiseIdentifyService implements ReplayNoiseIdentify {
       return;
     }
 
-    SendSemaphoreLimiter limiter = request.getLimiter();
     int caseSize = cases.size();
     CountDownLatch countDownLatch = new CountDownLatch(caseSize);
     for (int i = 0; i < caseSize; i++) {
@@ -217,14 +212,11 @@ public class ReplayNoiseIdentifyService implements ReplayNoiseIdentify {
           LOGGER.error("replay sender not found,case item id:{}", caseItem.getId());
           continue;
         }
-        // acquire semaphore, control the number of concurrent requests
-        limiter.acquire();
         AsyncNoiseCaseSendTaskRunnable taskRunnable =
-            new AsyncNoiseCaseSendTaskRunnable(replaySender, limiter, countDownLatch, caseItem);
+            new AsyncNoiseCaseSendTaskRunnable(replaySender, countDownLatch, caseItem);
         sendExecutorService.execute(taskRunnable);
       } catch (RuntimeException exception) {
         // when happen runtime exception, we should release the semaphore; back-to-back logic
-        limiter.release(false);
         countDownLatch.countDown();
         LOGGER.error("send case for noise analysis error:{}", exception.getMessage(), exception);
       }
@@ -251,8 +243,6 @@ public class ReplayNoiseIdentifyService implements ReplayNoiseIdentify {
   private static class CreateReplayNoiseSendTaskRequest {
 
     private List<ReplayActionCaseItem> cases;
-
-    private SendSemaphoreLimiter limiter;
 
   }
 
