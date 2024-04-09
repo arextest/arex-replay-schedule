@@ -87,7 +87,8 @@ public class PlanConsumePrepareService {
           replayPlan.getAppId(), replayPlan.getCaseTotalCount(), planSavedCaseSize);
       replayPlan.setCaseTotalCount(planSavedCaseSize);
       replayPlanRepository.updateCaseTotal(replayPlan.getId(), planSavedCaseSize);
-      replayReportService.updateReportCaseCount(replayPlan);
+      replayPlan.setInitReportItem(true);
+      replayReportService.initReportInfo(replayPlan);
     }
     return planSavedCaseSize;
   }

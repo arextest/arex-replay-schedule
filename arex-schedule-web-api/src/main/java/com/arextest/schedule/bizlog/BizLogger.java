@@ -7,6 +7,7 @@ import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.bizlog.BizLog;
 import java.text.MessageFormat;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
@@ -38,18 +39,23 @@ public class BizLogger {
   }
 
   public static void recordPlanStatusChange(ReplayPlan plan, ReplayStatusType status) {
-    String message = null;
-    switch (status) {
-      case FAIL_INTERRUPTED:
-        message =
-            "Plan Interrupted because there are 40+ continuous failure or more than 10% of cases failed. "
-                + "Please check the detail of invalid cases in the report.";
-        break;
-      case CANCELLED:
-        message = "Plan Cancelled by user.";
-        break;
-      default:
-        break;
+    recordPlanStatusChange(plan, status, null);
+  }
+
+  public static void recordPlanStatusChange(ReplayPlan plan, ReplayStatusType status, String message) {
+    if (StringUtils.isEmpty(message)) {
+      switch (status) {
+        case FAIL_INTERRUPTED:
+          message =
+              "Plan Interrupted because there are 40+ continuous failure or more than 10% of cases failed. "
+                  + "Please check the detail of invalid cases in the report.";
+          break;
+        case CANCELLED:
+          message = "Plan Cancelled by user.";
+          break;
+        default:
+          break;
+      }
     }
 
     BizLog log = BizLog.info().logType(BizLogContent.PLAN_STATUS_CHANGE.getType())

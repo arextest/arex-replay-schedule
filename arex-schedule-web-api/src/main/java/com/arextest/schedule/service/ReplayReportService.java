@@ -65,7 +65,6 @@ public final class ReplayReportService implements ComparisonWriter {
   @Value("${arex.api.queryPlanStatistic.url}")
   private String queryPlanStatisticUrl;
 
-
   public boolean initReportInfo(ReplayPlan replayPlan) {
     ReportInitialRequestType requestType = new ReportInitialRequestType();
     requestType.setPlanId(replayPlan.getId());
@@ -110,15 +109,20 @@ public final class ReplayReportService implements ComparisonWriter {
     List<ReplayActionItem> actionItemList = replayPlan.getReplayActionItemList();
     List<ReportInitialRequestType.ReportItem> reportItemList = new ArrayList<>(
         actionItemList.size());
-    ReportInitialRequestType.ReportItem reportItem;
-    for (ReplayActionItem actionItem : actionItemList) {
-      reportItem = new ReportInitialRequestType.ReportItem();
-      reportItem.setOperationId(actionItem.getOperationId());
-      reportItem.setOperationName(actionItem.getOperationName());
-      reportItem.setServiceName(actionItem.getServiceKey());
-      reportItem.setPlanItemId(actionItem.getId());
-      reportItem.setTotalCaseCount(actionItem.getReplayCaseCount());
-      reportItemList.add(reportItem);
+    if (replayPlan.isInitReportItem()) {
+      ReportInitialRequestType.ReportItem reportItem;
+      for (ReplayActionItem actionItem : actionItemList) {
+        if (actionItem.getReplayCaseCount() == 0) {
+          continue;
+        }
+        reportItem = new ReportInitialRequestType.ReportItem();
+        reportItem.setOperationId(actionItem.getOperationId());
+        reportItem.setOperationName(actionItem.getOperationName());
+        reportItem.setServiceName(actionItem.getServiceKey());
+        reportItem.setPlanItemId(actionItem.getId());
+        reportItem.setTotalCaseCount(actionItem.getReplayCaseCount());
+        reportItemList.add(reportItem);
+      }
     }
     requestType.setReportItemList(reportItemList);
     LOGGER.info("initReport request:{}", requestType);
@@ -126,28 +130,6 @@ public final class ReplayReportService implements ComparisonWriter {
         GenericResponseType.class);
     LOGGER.info("initReport request:{}, response:{}", requestType, response);
     return response != null && !response.getResponseStatusType().hasError();
-  }
-
-  public void updateReportCaseCount(ReplayPlan replayPlan) {
-    UpdateReportInfoRequestType requestType = new UpdateReportInfoRequestType();
-    requestType.setPlanId(replayPlan.getId());
-    requestType.setTotalCaseCount(replayPlan.getCaseTotalCount());
-    List<ReplayActionItem> actionItemList = replayPlan.getReplayActionItemList();
-    if (CollectionUtils.isNotEmpty(actionItemList)) {
-      List<UpdateReportInfoRequestType.UpdateReportItem> updateReportInfoList = new ArrayList<>(
-          actionItemList.size());
-      UpdateReportInfoRequestType.UpdateReportItem reportItem;
-      for (ReplayActionItem actionItem : actionItemList) {
-        reportItem = new UpdateReportInfoRequestType.UpdateReportItem();
-        reportItem.setPlanItemId(actionItem.getId());
-        reportItem.setTotalCaseCount(actionItem.getReplayCaseCount());
-        updateReportInfoList.add(reportItem);
-      }
-      requestType.setUpdateReportItems(updateReportInfoList);
-    }
-    Response response = httpWepServiceApiClient.jsonPost(updateReportInfoUrl, requestType,
-        GenericResponseType.class);
-    LOGGER.info("updateReportCaseCount request:{}, response:{}", requestType, response);
   }
 
   public void pushActionStatus(String planId, ReplayStatusType statusType, String actionId,

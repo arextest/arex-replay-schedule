@@ -111,6 +111,7 @@ public class ReplayPlan {
 
   @JsonIgnore
   private Map<String, String> caseTags;
+  private boolean initReportItem;
 
   public void enqueueBizLog(BizLog log) {
     this.bizLogs.add(log);
