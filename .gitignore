@@ -35,4 +35,7 @@ build/
 ### VS Code ###
 .vscode/
 
+### Mac ###
+.DS_Store
+
 arex-schedule-jar/

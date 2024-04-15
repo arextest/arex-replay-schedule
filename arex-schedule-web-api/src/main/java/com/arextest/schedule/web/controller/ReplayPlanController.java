@@ -117,8 +117,8 @@ public class ReplayPlanController {
 
   @GetMapping("/api/stopPlan")
   @ResponseBody
-  public CommonResponse stopPlan(String planId) {
-    planProduceService.stopPlan(planId);
+  public CommonResponse stopPlan(String planId, String operator) {
+    planProduceService.stopPlan(planId, operator);
     return CommonResponse.successResponse("success", null);
   }
 

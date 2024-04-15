@@ -136,14 +136,7 @@ public class PlanProduceService {
     replayPlan.setPlanCreateMillis(planCreateMillis);
     replayPlan.setReplayActionItemList(replayActionItemList);
     ReplayParentBinder.setupReplayActionParent(replayActionItemList, replayPlan);
-    int planCaseCount = planBuilder.buildReplayCaseCount(replayActionItemList);
-    planBuilder.filterValidActionItems(replayPlan);
-    if (planCaseCount == 0) {
-      progressEvent.onReplayPlanCreateException(request);
-      return CommonResponse.badResponse("loaded empty case,try change time range submit again ",
-          new BuildReplayPlanResponse(BuildReplayFailReasonEnum.NO_CASE_IN_RANGE));
-    }
-    replayPlan.setCaseTotalCount(planCaseCount);
+
     // todo: add trans
     progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.SAVE_PLAN,
         StageStatusEnum.ONGOING, System.currentTimeMillis(), null);
@@ -308,14 +301,14 @@ public class PlanProduceService {
     }
   }
 
-  public void stopPlan(String planId) {
+  public void stopPlan(String planId, String operator) {
     try {
       // set key for other instance to stop internal execution
       redisCacheProvider.putIfAbsent(buildStopPlanRedisKey(planId),
           STOP_PLAN_REDIS_EXPIRE, planId.getBytes(StandardCharsets.UTF_8));
 
       // set the canceled status immediately to give quick response to user
-      progressEvent.onReplayPlanTerminate(planId);
+      progressEvent.onReplayPlanTerminate(planId, "Plan Cancelled by " + operator);
     } catch (Exception e) {
       LOGGER.error("stopPlan error, planId: {}, message: {}", planId, e.getMessage());
     }

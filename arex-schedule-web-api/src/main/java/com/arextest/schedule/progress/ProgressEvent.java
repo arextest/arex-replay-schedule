@@ -67,7 +67,7 @@ public interface ProgressEvent {
 
   void onReplayPlanInterrupt(ReplayPlan replayPlan, ReplayStatusType reason);
 
-  void onReplayPlanTerminate(String replayId);
+  void onReplayPlanTerminate(String planId, String reason);
 
   void onReplayPlanStageUpdate(ReplayPlan replayPlan, PlanStageEnum stageType,
       StageStatusEnum stageStatus, Long startTime, Long endTime, String msg);

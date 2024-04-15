@@ -185,44 +185,19 @@ public final class PlanConsumeService {
       this.replayPlan = replayPlan;
     }
 
-    private void init() {
-      compareConfigService.preload(replayPlan);
-
-      // limiter shared for entire plan, max qps = maxQps per instance * min instance count
-      final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(
-          replayPlan.getReplaySendMaxQps(),
-          replayPlan.getMinInstanceCount());
-      qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
-      qpsLimiter.setReplayPlan(replayPlan);
-      replayPlan.setPlanStatus(ExecutionStatus.buildNormal(qpsLimiter));
-      replayPlan.setLimiter(qpsLimiter);
-      replayPlan.getReplayActionItemList()
-          .forEach(replayActionItem -> replayActionItem.setSendRateLimiter(qpsLimiter));
-      replayPlan.buildActionItemMap();
-
-      LOGGER.info("plan {} init with rate {}", replayPlan, qpsLimiter.getPermits());
-    }
-
     @Override
     protected void doWithTracedRunning() {
       try {
-        long start;
-        long end;
-
-        // init limiter, monitor
-        this.init();
-        start = System.currentTimeMillis();
-        progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
-            StageStatusEnum.ONGOING, start, null);
-        int planSavedCaseSize = planConsumePrepareService.prepareRunData(replayPlan);
-        end = System.currentTimeMillis();
-        progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
-            StageStatusEnum.SUCCEEDED, null, end);
+        if (!initCaseCount()) {
+          return;
+        }
+        // init compareConfig,limiter, monitor
+        initReplayPlan();
 
         // build context to send
         progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_CONTEXT,
             StageStatusEnum.ONGOING,
-            start, null);
+            System.currentTimeMillis(), null);
         replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
 
         if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
@@ -230,11 +205,11 @@ public final class PlanConsumeService {
           replayPlan.setErrorMessage("Got empty execution context");
           progressEvent.onReplayPlanInterrupt(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
           progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_CONTEXT,
-              StageStatusEnum.FAILED, null, end);
+              StageStatusEnum.FAILED, null, System.currentTimeMillis());
           return;
         }
         progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.BUILD_CONTEXT,
-            StageStatusEnum.SUCCEEDED, null, end);
+            StageStatusEnum.SUCCEEDED, null, System.currentTimeMillis());
 
         // process plan
         PlanStageEnum planStageEnum =
@@ -252,6 +227,42 @@ public final class PlanConsumeService {
       } finally {
         planExecutionMonitorImpl.deregister(replayPlan);
       }
+    }
+
+    private boolean initCaseCount() {
+      long start = System.currentTimeMillis();
+      progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
+          StageStatusEnum.ONGOING, start, null);
+      int planSavedCaseSize = planConsumePrepareService.prepareRunData(replayPlan);
+      long end = System.currentTimeMillis();
+      progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
+          StageStatusEnum.SUCCEEDED, null, end);
+      if (planSavedCaseSize == 0) {
+        LOGGER.warn("No case found, please change the time range and try again. {}", replayPlan.getId());
+        String message = "No case found, please change the time range and try again.";
+        progressEvent.onReplayPlanTerminate(replayPlan.getId(), message);
+        BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.CANCELLED, message);
+        return false;
+      }
+      return true;
+    }
+
+    private void initReplayPlan() {
+      compareConfigService.preload(replayPlan);
+
+      // limiter shared for entire plan, max qps = maxQps per instance * min instance count
+      final SendSemaphoreLimiter qpsLimiter = new SendSemaphoreLimiter(
+          replayPlan.getReplaySendMaxQps(),
+          replayPlan.getMinInstanceCount());
+      qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
+      qpsLimiter.setReplayPlan(replayPlan);
+      replayPlan.setPlanStatus(ExecutionStatus.buildNormal(qpsLimiter));
+      replayPlan.setLimiter(qpsLimiter);
+      replayPlan.getReplayActionItemList()
+          .forEach(replayActionItem -> replayActionItem.setSendRateLimiter(qpsLimiter));
+      replayPlan.buildActionItemMap();
+
+      LOGGER.info("plan {} init with rate {}", replayPlan, qpsLimiter.getPermits());
     }
   }
 }

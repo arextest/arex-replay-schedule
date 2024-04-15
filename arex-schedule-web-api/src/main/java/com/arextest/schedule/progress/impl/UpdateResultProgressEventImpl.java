@@ -151,9 +151,9 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   }
 
   @Override
-  public void onReplayPlanTerminate(String replayId) {
+  public void onReplayPlanTerminate(String replayId, String reason) {
     replayPlanRepository.finish(replayId);
-    replayReportService.pushPlanStatus(replayId, ReplayStatusType.CANCELLED, null, false);
+    replayReportService.pushPlanStatus(replayId, ReplayStatusType.CANCELLED, reason, false);
     redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayId));
   }
 
