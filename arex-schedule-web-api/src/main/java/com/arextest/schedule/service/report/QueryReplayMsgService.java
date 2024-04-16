@@ -8,11 +8,10 @@ import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.model.log.LogEntity;
 import com.arextest.diff.model.log.NodeEntity;
 import com.arextest.diff.model.log.UnmatchedPairEntity;
-import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.schedule.comparer.CompareConfigService;
+import com.arextest.schedule.comparer.CompareService;
 import com.arextest.schedule.comparer.CustomComparisonConfigurationHandler;
 import com.arextest.schedule.comparer.EncodingUtils;
-import com.arextest.schedule.comparer.impl.DefaultReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
 import com.arextest.schedule.model.ReplayCompareResult;
 import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
@@ -37,7 +36,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class QueryReplayMsgService {
 
-  private static final CompareSDK COMPARE_INSTANCE = DefaultReplayResultComparer.getCompareSDKInstance();
   @Resource
   private ReplayCompareResultRepositoryImpl replayCompareResultRepository;
   @Resource
@@ -46,6 +44,8 @@ public class QueryReplayMsgService {
   private CustomComparisonConfigurationHandler configHandler;
   @Resource
   private ReplayCompareResultConverter replayCompareResultConverter;
+  @Resource
+  private CompareService compareService;
 
   public QueryDiffMsgByIdResponseType queryDiffMsgById(String id) {
     QueryDiffMsgByIdResponseType response = new QueryDiffMsgByIdResponseType();
@@ -66,7 +66,7 @@ public class QueryReplayMsgService {
         && CollectionUtils.isEmpty(compareResultBo.getLogs())) {
       String base = EncodingUtils.tryBase64Decode(compareResultBo.getBaseMsg());
       String test = EncodingUtils.tryBase64Decode(compareResultBo.getTestMsg());
-      CompareResult compareResult = COMPARE_INSTANCE.compare(base, test, compareOptions);
+      CompareResult compareResult = compareService.compare(base, test, compareOptions);
       compareResultBo.setLogs(compareResult.getLogs());
       // save the processed base and test msg into db
       compareResultBo.setBaseMsg(compareResult.getProcessedBaseMsg());

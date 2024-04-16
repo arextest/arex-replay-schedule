@@ -1,12 +1,9 @@
 package com.arextest.schedule.service.noise;
 
 import com.arextest.schedule.common.CommonConstant;
-import com.arextest.schedule.comparer.CompareConfigService;
-import com.arextest.schedule.comparer.ComparisonWriter;
-import com.arextest.schedule.comparer.CustomComparisonConfigurationHandler;
-import com.arextest.schedule.comparer.impl.DefaultReplayResultComparer;
+import com.arextest.schedule.common.SendSemaphoreLimiter;
+import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.comparer.impl.PrepareCompareSourceRemoteLoader;
-import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
 import com.arextest.schedule.dao.mongodb.ReplayNoiseRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
@@ -17,10 +14,8 @@ import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.noiseidentify.ActionItemForNoiseIdentify;
-import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
-import com.arextest.schedule.service.MetricService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,28 +42,40 @@ public class ReplayNoiseIdentifyService implements ReplayNoiseIdentify {
   private static final int CASE_COUNT_FOR_NOISE_IDENTIFY = 2;
   ExecutorService sendExecutorService;
   ExecutorService analysisNoiseExecutorService;
+  /**
+   * to get the replay sender
+   */
   private ReplaySenderFactory replaySenderFactory;
+  /**
+   * to get the source data
+   */
   private PrepareCompareSourceRemoteLoader sourceRemoteLoader;
-  private DefaultReplayResultComparer defaultResultComparer;
+  /**
+   * compare
+   */
+  private ReplayResultComparer replayResultComparer;
+  /**
+   * to save the compare result
+   */
   private ReplayCompareResultRepositoryImpl replayCompareResultRepository;
+  /**
+   * to save the noise
+   */
   private ReplayNoiseRepository replayNoiseRepository;
+  /**
+   * to save the picked case for noise to action
+   */
   private ReplayPlanActionRepository replayPlanActionRepository;
 
-  public ReplayNoiseIdentifyService(CompareConfigService compareConfigService,
-      ProgressTracer progressTracer,
-      ComparisonWriter comparisonOutputWriter, ReplayActionCaseItemRepository caseItemRepository,
-      MetricService metricService,
-      CustomComparisonConfigurationHandler customComparisonConfigurationHandler,
+  public ReplayNoiseIdentifyService(
+      ReplayResultComparer replayResultComparer,
       ReplayCompareResultRepositoryImpl replayCompareResultRepository,
       ReplayNoiseRepository replayNoiseRepository,
       ReplayPlanActionRepository replayPlanActionRepository,
       ReplaySenderFactory replaySenderFactory,
       PrepareCompareSourceRemoteLoader sourceRemoteLoader, ExecutorService sendExecutorService,
       ExecutorService analysisNoiseExecutorService) {
-    this.defaultResultComparer =
-        new DefaultReplayResultComparer(compareConfigService, sourceRemoteLoader, progressTracer,
-            comparisonOutputWriter, caseItemRepository, metricService,
-            customComparisonConfigurationHandler);
+    this.replayResultComparer = replayResultComparer;
     this.replayCompareResultRepository = replayCompareResultRepository;
     this.replayNoiseRepository = replayNoiseRepository;
     this.replayPlanActionRepository = replayPlanActionRepository;
@@ -184,7 +191,7 @@ public class ReplayNoiseIdentifyService implements ReplayNoiseIdentify {
         new AsyncNoiseCaseAnalysisTaskRunnable();
     asyncNoiseCaseAnalysisTaskRunnable.setActionItemForNoiseIdentify(actionItemForNoiseIdentify);
     asyncNoiseCaseAnalysisTaskRunnable.setSourceRemoteLoader(sourceRemoteLoader);
-    asyncNoiseCaseAnalysisTaskRunnable.setDefaultResultComparer(defaultResultComparer);
+    asyncNoiseCaseAnalysisTaskRunnable.setReplayResultComparer(replayResultComparer);
     asyncNoiseCaseAnalysisTaskRunnable.setReplayCompareResultRepository(
         replayCompareResultRepository);
     asyncNoiseCaseAnalysisTaskRunnable.setReplayNoiseRepository(replayNoiseRepository);

@@ -8,6 +8,7 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.comparer.CategoryComparisonHolder;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.comparer.CompareItem;
+import com.arextest.schedule.comparer.CompareService;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.CustomComparisonConfigurationHandler;
 import com.arextest.schedule.comparer.EncodingUtils;
@@ -25,7 +26,6 @@ import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.MetricService;
 import com.arextest.web.model.contract.contracts.compare.CategoryDetail;
-import com.arextest.web.model.contract.contracts.config.SystemConfigWithProperties;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -44,7 +44,6 @@ import org.springframework.util.StopWatch;
 @Builder
 public class DefaultReplayResultComparer implements ReplayResultComparer {
 
-  private static final CompareSDK COMPARE_INSTANCE = new CompareSDK();
   private static final long MAX_TIME = Long.MAX_VALUE;
 
   private final CompareConfigService compareConfigService;
@@ -54,6 +53,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
   private final ReplayActionCaseItemRepository caseItemRepository;
   private final MetricService metricService;
   private final CustomComparisonConfigurationHandler configHandler;
+  private final CompareService compareService;
 
 
   public DefaultReplayResultComparer(CompareConfigService compareConfigService,
@@ -62,7 +62,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
       ComparisonWriter comparisonOutputWriter,
       ReplayActionCaseItemRepository caseItemRepository,
       MetricService metricService,
-      CustomComparisonConfigurationHandler configHandler) {
+      CustomComparisonConfigurationHandler configHandler,
+      CompareService compareService
+  ) {
     this.compareConfigService = compareConfigService;
     this.sourceRemoteLoader = sourceRemoteLoader;
     this.progressTracer = progressTracer;
@@ -70,26 +72,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     this.caseItemRepository = caseItemRepository;
     this.metricService = metricService;
     this.configHandler = configHandler;
-    addGlobalOptionToSDK(compareConfigService);
-  }
-
-  public void addGlobalOptionToSDK(CompareConfigService compareConfigService) {
-    SystemConfigWithProperties comparisonSystemConfig = compareConfigService.getComparisonSystemConfig();
-    COMPARE_INSTANCE.getGlobalOptions()
-        .putPluginJarUrl(comparisonSystemConfig.getComparePluginInfo() == null ? null
-            : comparisonSystemConfig.getComparePluginInfo().getComparePluginUrl())
-        .putNameToLower(comparisonSystemConfig.getCompareNameToLower())
-        .putNullEqualsEmpty(comparisonSystemConfig.getCompareNullEqualsEmpty())
-        .putIgnoredTimePrecision(comparisonSystemConfig.getCompareIgnoreTimePrecisionMillis())
-        .putIgnoreNodeSet(comparisonSystemConfig.getIgnoreNodeSet())
-        .putSelectIgnoreCompare(comparisonSystemConfig.getSelectIgnoreCompare())
-        .putOnlyCompareCoincidentColumn(comparisonSystemConfig.getOnlyCompareCoincidentColumn())
-        .putUuidIgnore(comparisonSystemConfig.getUuidIgnore())
-        .putIpIgnore(comparisonSystemConfig.getIpIgnore());
-  }
-
-  public static CompareSDK getCompareSDKInstance() {
-    return COMPARE_INSTANCE;
+    this.compareService = compareService;
   }
 
   @Override
@@ -162,6 +145,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     }
   }
 
+  @Override
   public List<ReplayCompareResult> doContentCompare(ReplayActionCaseItem caseItem,
       List<CategoryComparisonHolder> waitCompareMap) {
     ComparisonInterfaceConfig operationConfig = compareConfigService.loadInterfaceConfig(
@@ -303,9 +287,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
       String decodedRecord = EncodingUtils.tryBase64Decode(record);
       String decodedResult = EncodingUtils.tryBase64Decode(result);
       if (compareMode == CompareModeType.FULL.getValue()) {
-        return COMPARE_INSTANCE.compare(decodedRecord, decodedResult, options);
+        return compareService.compare(decodedRecord, decodedResult, options);
       }
-      return COMPARE_INSTANCE.quickCompare(decodedRecord, decodedResult, options);
+      return compareService.quickCompare(decodedRecord, decodedResult, options);
 
     } catch (Throwable e) {
       LOGGER.error("run compare sdk process error:{} ,source: {} ,target:{}", e.getMessage(),

@@ -1,9 +1,11 @@
 package com.arextest.schedule.beans;
 
 import com.arextest.schedule.comparer.CompareConfigService;
+import com.arextest.schedule.comparer.CompareService;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.CustomComparisonConfigurationHandler;
 import com.arextest.schedule.comparer.ReplayResultComparer;
+import com.arextest.schedule.comparer.impl.CompareServiceImpl;
 import com.arextest.schedule.comparer.impl.DefaultCustomComparisonConfigurationHandler;
 import com.arextest.schedule.comparer.impl.DefaultReplayResultComparer;
 import com.arextest.schedule.comparer.impl.PrepareCompareSourceRemoteLoader;
@@ -35,7 +37,8 @@ public class ReplayComparerConfiguration {
       ComparisonWriter comparisonOutputWriter,
       ReplayActionCaseItemRepository caseItemRepository,
       MetricService metricService,
-      CustomComparisonConfigurationHandler customComparisonConfigurationHandler
+      CustomComparisonConfigurationHandler customComparisonConfigurationHandler,
+      CompareService compareService
   ) {
     return new DefaultReplayResultComparer(compareConfigService,
         sourceRemoteLoader,
@@ -43,7 +46,16 @@ public class ReplayComparerConfiguration {
         comparisonOutputWriter,
         caseItemRepository,
         metricService,
-        customComparisonConfigurationHandler
+        customComparisonConfigurationHandler,
+        compareService
     );
   }
+
+  @Bean
+  @ConditionalOnMissingBean(CompareService.class)
+  public CompareService compareSDK(CompareConfigService compareConfigService) {
+    return new CompareServiceImpl(compareConfigService);
+  }
+
+
 }
