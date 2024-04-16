@@ -10,12 +10,11 @@ import com.arextest.diff.model.log.UnmatchedPairEntity;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.comparer.CategoryComparisonHolder;
-import com.arextest.schedule.comparer.impl.DefaultReplayResultComparer;
+import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.comparer.impl.PrepareCompareSourceRemoteLoader;
 import com.arextest.schedule.dao.mongodb.ReplayCompareResultRepositoryImpl;
 import com.arextest.schedule.dao.mongodb.ReplayNoiseRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
-import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayCompareResult;
@@ -51,7 +50,7 @@ public class AsyncNoiseCaseAnalysisTaskRunnable extends AbstractContextWithTrace
 
   private PrepareCompareSourceRemoteLoader sourceRemoteLoader;
 
-  private DefaultReplayResultComparer defaultResultComparer;
+  private ReplayResultComparer replayResultComparer;
 
   private ReplayCompareResultRepositoryImpl replayCompareResultRepository;
 
@@ -87,7 +86,7 @@ public class AsyncNoiseCaseAnalysisTaskRunnable extends AbstractContextWithTrace
         List<CategoryComparisonHolder> categoryComparisonHolders =
             sourceRemoteLoader.buildWaitCompareList(caseItem, true);
         List<ReplayCompareResult> replayCompareResults =
-            defaultResultComparer.doContentCompare(caseItem, categoryComparisonHolders);
+            replayResultComparer.doContentCompare(caseItem, categoryComparisonHolders);
         Optional.ofNullable(replayCompareResults).orElse(Collections.emptyList()).forEach(item -> {
           // correct the problem of recordId value in dual environment
           item.setRecordId(caseItem.getSourceResultId());
@@ -276,7 +275,8 @@ public class AsyncNoiseCaseAnalysisTaskRunnable extends AbstractContextWithTrace
       LogEntity logEntity,
       int logIndex) {
     ReplayNoiseItemDto replayNoiseItemDto = singleAggContent.get(upperArrayNodePath);
-    String fuzzyPathStr = ListUtils.getFuzzyPathStrWithBase64(logEntity.getPathPair().getLeftUnmatchedPath());
+    String fuzzyPathStr = ListUtils.getFuzzyPathStrWithBase64(
+        logEntity.getPathPair().getLeftUnmatchedPath());
     if (replayNoiseItemDto == null) {
       replayNoiseItemDto = new ReplayNoiseItemDto();
       replayNoiseItemDto.setCompareResult(replayCompareResult);
