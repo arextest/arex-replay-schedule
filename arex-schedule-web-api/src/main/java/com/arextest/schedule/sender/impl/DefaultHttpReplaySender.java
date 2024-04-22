@@ -13,12 +13,14 @@ import com.arextest.schedule.sender.SenderParameters;
 import com.arextest.schedule.service.MetricService;
 import com.arextest.schedule.utils.DecodeUtils;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -34,6 +36,9 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
   private HttpWepServiceApiClient httpWepServiceApiClient;
   @Resource
   private MetricService metricService;
+
+  @Value("#{'${arex.replay.header.excludes.http}'.split(',')}")
+  List<String> headerExcludes;
 
   @Override
   public boolean isSupported(String category) {
@@ -65,6 +70,8 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
 
   private boolean doSend(ReplayActionItem replayActionItem, ReplayActionCaseItem caseItem,
       Map<String, String> headers) {
+    headerExcludes.forEach(headers::remove);
+
     ServiceInstance instanceRunner = selectLoadBalanceInstance(caseItem.getId(),
         replayActionItem.getTargetInstance());
     if (instanceRunner == null) {
