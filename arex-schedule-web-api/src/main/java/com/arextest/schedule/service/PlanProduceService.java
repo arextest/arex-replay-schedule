@@ -84,6 +84,8 @@ public class PlanProduceService {
   private ReplayActionCaseItemRepository replayActionCaseItemRepository;
   @Resource
   private AsyncEventBus autoRerunAsyncEventBus;
+  @Resource
+  private ConfigProvider configProvider;
 
   @PostConstruct
   public void init() {
@@ -166,11 +168,11 @@ public class PlanProduceService {
   public void fillOptionalValueIfRequestMissed(BuildReplayPlanRequest request) {
     long currentTimeMillis = System.currentTimeMillis();
     Date fromDate = new Date(currentTimeMillis - CommonConstant.ONE_DAY_MILLIS);
-    Date toDate = new Date(currentTimeMillis);
+    Date toDate = new Date(currentTimeMillis - configProvider.getCaseSourceToOffsetMillis());
     if (request.getCaseSourceFrom() == null) {
       request.setCaseSourceFrom(fromDate);
     }
-    if (request.getCaseSourceTo() == null) {
+    if (request.getCaseSourceTo() == null || request.getCaseSourceTo().after(toDate)) {
       request.setCaseSourceTo(toDate);
     }
     if (StringUtils.isBlank(request.getPlanName())) {
