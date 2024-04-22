@@ -14,4 +14,10 @@ public interface ConfigProvider {
    */
   int getCompareDelaySeconds(String appId);
 
+  /**
+   * Get the time of case source to offset millis
+   * @return
+   */
+  long getCaseSourceToOffsetMillis();
+
 }
