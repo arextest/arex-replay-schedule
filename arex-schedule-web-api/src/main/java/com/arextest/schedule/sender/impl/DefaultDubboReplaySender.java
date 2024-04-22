@@ -23,6 +23,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
@@ -38,6 +39,9 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
 
   private static final String VERSION = "version";
   private static final String GROUP = "group";
+
+  @Value("#{'${arex.dubbo.attachment.excludes}'.split(',')}")
+  List<String> attachmentExcludes;
 
   @Autowired
   private List<ReplayExtensionInvoker> replayExtensionInvokers;
@@ -75,6 +79,9 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
 
   DubboInvocation generateDubboInvocation(ReplayActionCaseItem caseItem,
       Map<String, String> headers) {
+
+    // remove attachment excludes
+    attachmentExcludes.forEach(headers::remove);
 
     ImmutablePair<String, String> interfaceNameAndMethod =
         getInterfaceNameAndMethod(caseItem.getParent().getOperationName());
