@@ -40,7 +40,7 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
   private static final String VERSION = "version";
   private static final String GROUP = "group";
 
-  @Value("#{'${arex.header.excludes.dubbo}'.split(',')}")
+  @Value("#{'${arex.replay.header.excludes.dubbo}'.split(',')}")
   List<String> headerExcludes;
 
   @Autowired

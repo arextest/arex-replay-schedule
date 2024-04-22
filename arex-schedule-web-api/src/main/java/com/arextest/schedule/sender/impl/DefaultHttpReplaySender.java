@@ -37,7 +37,7 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
   @Resource
   private MetricService metricService;
 
-  @Value("#{'${arex.header.excludes.http}'.split(',')}")
+  @Value("#{'${arex.replay.header.excludes.http}'.split(',')}")
   List<String> headerExcludes;
 
   @Override
