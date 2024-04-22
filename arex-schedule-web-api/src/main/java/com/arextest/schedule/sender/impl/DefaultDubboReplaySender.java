@@ -40,8 +40,8 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
   private static final String VERSION = "version";
   private static final String GROUP = "group";
 
-  @Value("#{'${arex.dubbo.attachment.excludes}'.split(',')}")
-  List<String> attachmentExcludes;
+  @Value("#{'${arex.header.excludes.dubbo}'.split(',')}")
+  List<String> headerExcludes;
 
   @Autowired
   private List<ReplayExtensionInvoker> replayExtensionInvokers;
@@ -81,7 +81,7 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
       Map<String, String> headers) {
 
     // remove attachment excludes
-    attachmentExcludes.forEach(headers::remove);
+    headerExcludes.forEach(headers::remove);
 
     ImmutablePair<String, String> interfaceNameAndMethod =
         getInterfaceNameAndMethod(caseItem.getParent().getOperationName());

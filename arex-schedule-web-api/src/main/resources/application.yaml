@@ -88,9 +88,10 @@ arex:
       url: ${arex.storage.service.api}/api/storage/replay/query/replayResult
     viewRecord:
       url: ${arex.storage.service.api}/api/storage/replay/query/viewRecord
-  dubbo:
-    attachment:
-      excludes: async
+  header:
+      excludes:
+        dubbo: async
+        http:
 auto:
   rerun:
     threshold: 1.0
