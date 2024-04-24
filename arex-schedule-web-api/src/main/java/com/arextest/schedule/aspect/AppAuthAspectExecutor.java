@@ -83,8 +83,11 @@ public class AppAuthAspectExecutor {
     return authSwitch;
   }
 
-  protected boolean setContext() {
+  protected void setContext() {
     ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+    if (requestAttributes == null) {
+      return;
+    }
     HttpServletRequest request = requestAttributes.getRequest();
     String appId = request.getHeader("appId");
     String accessToken = request.getHeader("access-token");
@@ -92,7 +95,6 @@ public class AppAuthAspectExecutor {
     ArexContext context = ArexContext.getContext();
     context.setAppId(appId);
     context.setOperator(userName);
-    return true;
   }
 
   protected OwnerExistResult getOwnerExistResult() {
@@ -119,6 +121,7 @@ public class AppAuthAspectExecutor {
         return ResponseUtils.errorResponse(remark, ResponseCode.AUTHENTICATION_FAILED);
       case DOWNGRADE:
         ArexContext.getContext().setPassAuth(false);
+        return point.proceed();
       default:
         return point.proceed();
     }
