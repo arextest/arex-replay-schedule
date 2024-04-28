@@ -1,7 +1,7 @@
 FROM maven:3-openjdk-8-slim as builder
 COPY . /usr/src/app/
 WORKDIR /usr/src/app/
-RUN mvn clean package -DskipTests -Pjar
+RUN --mount=type=cache,target=/root/.m2 mvn clean package -DskipTests -Pjar
 
 FROM eclipse-temurin:8-jre
 COPY --from=builder /usr/src/app/arex-schedule-jar/schedule.jar app.jar
