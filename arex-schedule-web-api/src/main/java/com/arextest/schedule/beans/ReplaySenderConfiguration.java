@@ -2,6 +2,9 @@ package com.arextest.schedule.beans;
 
 import com.arextest.schedule.common.ClassLoaderUtils;
 import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
+import com.arextest.schedule.sender.ReplaySender;
+import com.arextest.schedule.sender.ReplaySenderFactory;
+import com.arextest.schedule.sender.impl.DefaultDubboReplaySender;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -25,7 +28,6 @@ import org.springframework.core.io.ClassPathResource;
 @Configuration
 @Slf4j
 public class ReplaySenderConfiguration {
-
   @Value("${replay.sender.extension.jarPath}")
   private String jarFilePath;
 
@@ -57,6 +59,19 @@ public class ReplaySenderConfiguration {
     return invokers;
   }
 
+  @Bean
+  public DefaultDubboReplaySender dubboReplaySender(
+      @Value("#{'${arex.replay.header.excludes.dubbo}'.split(',')}") List<String> excludes,
+      List<ReplayExtensionInvoker> invokers) {
+
+    return new DefaultDubboReplaySender(excludes, invokers);
+  }
+
+  @Bean
+  public ReplaySenderFactory replaySenderFactory(List<ReplaySender> senders) {
+    return new ReplaySenderFactory(senders);
+  }
+
   private void inputStreamToFile(InputStream inputStream, String filePath) throws IOException {
     File file = new File(filePath);
     try (FileOutputStream fos = new FileOutputStream(file)) {
@@ -78,6 +93,4 @@ public class ReplaySenderConfiguration {
     File file = new File(NEW_INVOKER_PATH);
     return file.toURI().toURL();
   }
-
-
 }
