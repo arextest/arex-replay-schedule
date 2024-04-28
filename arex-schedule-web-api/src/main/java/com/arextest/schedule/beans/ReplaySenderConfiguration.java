@@ -2,17 +2,14 @@ package com.arextest.schedule.beans;
 
 import com.arextest.schedule.common.ClassLoaderUtils;
 import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
-import com.arextest.schedule.sender.ReplaySender;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.ServiceLoader;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,14 +31,6 @@ public class ReplaySenderConfiguration {
 
   private static final String LOCAL_INVOKER_PATH = "lib/dubboInvoker.jar";
   private static final String NEW_INVOKER_PATH = "dubboInvoker.jar";
-
-  @Bean
-  public List<ReplaySender> replaySenderList(List<ReplaySender> replaySenders) {
-    // sort by order
-    return replaySenders.stream()
-        .sorted(Comparator.comparing(ReplaySender::getOrder, Comparator.reverseOrder()))
-        .collect(Collectors.toList());
-  }
 
   @Bean("replayExtensionInvoker")
   @ConditionalOnProperty(name = "replay.sender.extension.switch", havingValue = "true")

@@ -1,7 +1,9 @@
 package com.arextest.schedule.sender;
 
+import java.util.Comparator;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
+import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -10,16 +12,24 @@ import org.springframework.stereotype.Component;
  * @create: 2021-12-08
  **/
 @Component
-@RequiredArgsConstructor
+@Slf4j
 public class ReplaySenderFactory {
 
-  private final List<ReplaySender> replaySenderList;
+  private final List<ReplaySender> senders;
+
+  public ReplaySenderFactory(List<ReplaySender> senders) {
+    this.senders = senders.stream()
+        .sorted(Comparator.comparing(ReplaySender::getOrder, Comparator.reverseOrder()))
+        .collect(Collectors.toList());
+
+    LOGGER.info("ReplaySenderFactory init success, senders: {}", this.senders);
+  }
 
   public ReplaySender findReplaySender(String sendType) {
-    if (CollectionUtils.isEmpty(replaySenderList)) {
+    if (CollectionUtils.isEmpty(senders)) {
       return null;
     }
-    for (ReplaySender sender : replaySenderList) {
+    for (ReplaySender sender : senders) {
       if (sender.isSupported(sendType)) {
         return sender;
       }
