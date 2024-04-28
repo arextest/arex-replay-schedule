@@ -30,6 +30,8 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/arex-replay-schedule:${{ vars.AREX_VER }}
             registry.cn-hangzhou.aliyuncs.com/${{ secrets.DOCKERHUB_USERNAME }}/arex-replay-schedule:${{ vars.AREX_VER }}
