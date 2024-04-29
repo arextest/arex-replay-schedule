@@ -17,30 +17,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.http.HttpHeaders;
-import org.springframework.stereotype.Component;
 
 /**
  * @author b_yu
  * @since 2023/4/11
  */
 @Slf4j
-@Component
-@ConditionalOnBean(parameterizedContainer = List.class, value = ReplayExtensionInvoker.class)
+@RequiredArgsConstructor
 public class DefaultDubboReplaySender extends AbstractReplaySender {
 
   private static final String VERSION = "version";
   private static final String GROUP = "group";
 
-  @Autowired
-  private List<ReplayExtensionInvoker> replayExtensionInvokers;
+  private final List<String> headerExcludes;
+  private final List<ReplayExtensionInvoker> replayExtensionInvokers;
 
   @Override
   public boolean isSupported(String categoryType) {
@@ -75,6 +72,9 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
 
   DubboInvocation generateDubboInvocation(ReplayActionCaseItem caseItem,
       Map<String, String> headers) {
+
+    // remove attachment excludes
+    headerExcludes.forEach(headers::remove);
 
     ImmutablePair<String, String> interfaceNameAndMethod =
         getInterfaceNameAndMethod(caseItem.getParent().getOperationName());
