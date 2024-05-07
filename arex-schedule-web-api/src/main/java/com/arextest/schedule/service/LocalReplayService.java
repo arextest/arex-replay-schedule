@@ -391,13 +391,7 @@ public class LocalReplayService {
     replayPlan.setPlanCreateMillis(planCreateMillis);
     replayPlan.setReplayActionItemList(replayActionItemList);
     ReplayParentBinder.setupReplayActionParent(replayActionItemList, replayPlan);
-    int planCaseCount = planBuilder.buildReplayCaseCount(replayActionItemList);
-    if (planCaseCount == 0) {
-      return Pair.of(null,
-          CommonResponse.badResponse("loaded empty case,try change time range submit again ",
-              new BuildReplayPlanResponse(BuildReplayFailReasonEnum.NO_CASE_IN_RANGE)));
-    }
-    replayPlan.setCaseTotalCount(planCaseCount);
+
     if (!replayPlanRepository.save(replayPlan)) {
       return Pair.of(null, CommonResponse.badResponse("save replan plan error, " + replayPlan,
           new BuildReplayPlanResponse(BuildReplayFailReasonEnum.DB_ERROR)));
