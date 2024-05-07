@@ -41,6 +41,8 @@ public class ReplayActionItemPreprocessService {
         schedule.getIncludeServiceOperationSet(),
         schedule.getExcludeServiceOperationSet());
 
+    LOGGER.info("exclude action ids:{}", excludedActionIds);
+
     if (MapUtils.isNotEmpty(schedule.getExcludeOperationMap())) {
       try {
         String exclusionMapString = objectMapper.writeValueAsString(
