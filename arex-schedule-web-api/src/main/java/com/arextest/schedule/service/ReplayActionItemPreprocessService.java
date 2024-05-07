@@ -31,11 +31,11 @@ public class ReplayActionItemPreprocessService {
 
   public List<String> filterActionItem(List<ReplayActionItem> replayActionItemList, String appId) {
     if (CollectionUtils.isEmpty(replayActionItemList) || StringUtils.isEmpty(appId)) {
-      return null;
+      return new ArrayList<>();
     }
     ConfigurationService.ScheduleConfiguration schedule = configurationService.schedule(appId);
     if (schedule == null) {
-      return null;
+      return new ArrayList<>();
     }
     List<String> excludedActionIds = filter(replayActionItemList,
         schedule.getIncludeServiceOperationSet(),
