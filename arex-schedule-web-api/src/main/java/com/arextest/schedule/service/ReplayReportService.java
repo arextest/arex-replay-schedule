@@ -16,6 +16,7 @@ import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.converter.ReplayCompareResultConverter;
 import com.arextest.web.model.contract.contracts.ChangeReplayStatusRequestType;
+import com.arextest.web.model.contract.contracts.DeletePlanItemStatisticsRequestType;
 import com.arextest.web.model.contract.contracts.QueryPlanStatisticRequestType;
 import com.arextest.web.model.contract.contracts.QueryPlanStatisticResponseType;
 import com.arextest.web.model.contract.contracts.RemoveErrorMsgRequest;
@@ -64,6 +65,8 @@ public final class ReplayReportService implements ComparisonWriter {
   private String removeErrorMsgUrl;
   @Value("${arex.api.queryPlanStatistic.url}")
   private String queryPlanStatisticUrl;
+  @Value("${arex.api.delete.planItemStatistics.url}")
+  private String deletePlanItemStatisticsUrl;
 
   public boolean initReportInfo(ReplayPlan replayPlan) {
     ReportInitialRequestType requestType = new ReportInitialRequestType();
@@ -267,6 +270,39 @@ public final class ReplayReportService implements ComparisonWriter {
         return null;
       }
       return response.getBody().getPlanStatistic();
+  }
+
+  public void updateReportInfo(ReplayPlan replayPlan) {
+    UpdateReportInfoRequestType requestType = new UpdateReportInfoRequestType();
+    requestType.setPlanId(replayPlan.getId());
+    requestType.setTotalCaseCount(replayPlan.getCaseTotalCount());
+    List<ReplayActionItem> actionItemList = replayPlan.getReplayActionItemList();
+    if (CollectionUtils.isNotEmpty(actionItemList)) {
+      List<UpdateReportInfoRequestType.UpdateReportItem> updateReportInfoList = new ArrayList<>(actionItemList.size());
+      UpdateReportInfoRequestType.UpdateReportItem reportItem;
+      for (ReplayActionItem actionItem : actionItemList) {
+        reportItem = new UpdateReportInfoRequestType.UpdateReportItem();
+        reportItem.setPlanItemId(actionItem.getId());
+        reportItem.setTotalCaseCount(actionItem.getReplayCaseCount());
+        updateReportInfoList.add(reportItem);
+      }
+      requestType.setUpdateReportItems(updateReportInfoList);
+    }
+    Response response = httpWepServiceApiClient.jsonPost(updateReportInfoUrl, requestType,
+        GenericResponseType.class);
+    LOGGER.info("updateReportCaseCount request:{}, response:{}", requestType, response);
+  }
+
+  public void deletePlanItemStatistics(String planId, List<String> planItemIds) {
+    if (CollectionUtils.isEmpty(planItemIds)) {
+      return;
+    }
+    DeletePlanItemStatisticsRequestType request = new DeletePlanItemStatisticsRequestType();
+    request.setPlanId(planId);
+    request.setPlanItemIds(planItemIds);
+    Response response = httpWepServiceApiClient.jsonPost(deletePlanItemStatisticsUrl, request,
+        GenericResponseType.class);
+    LOGGER.info("deletePlanItemStatistics request:{}, response:{}", request, response);
   }
 
   @Data

@@ -90,6 +90,7 @@ final class RedisProgressTracerImpl implements ProgressTracer {
 
   @Override
   public void finishOne(ReplayActionCaseItem caseItem) {
+    LOGGER.info("finishOne caseItem: {}", caseItem.getId());
     ReplayActionItem replayActionItem = caseItem.getParent();
     finishCaseByAction(replayActionItem);
     replayStorageService.postProcessCompareResult(caseItem);

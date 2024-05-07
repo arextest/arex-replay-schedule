@@ -5,8 +5,10 @@ import com.arextest.schedule.dao.mongodb.util.MongoHelper;
 import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.CompareProcessStatusType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionCaseItem.Fields;
 import com.arextest.schedule.model.converter.ReplayRunDetailsConverter;
 import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
+import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -255,6 +257,15 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         .collect(Collectors.toList());
   }
 
+  public boolean deleteExcludedCases(String planId, List<String> planItemIds) {
+    if (CollectionUtils.isEmpty(planItemIds)) {
+      return false;
+    }
+    Query query = Query.query(Criteria.where(ReplayActionCaseItem.Fields.PLAN_ID).is(planId));
+    query.addCriteria(Criteria.where(Fields.PLAN_ITEM_ID).in(planItemIds));
+    DeleteResult deleteResult = mongoTemplate.remove(query, ReplayRunDetailsCollection.class);
+    return deleteResult.getDeletedCount() > 0;
+  }
 
   @Data
   public static class GroupCountRes {

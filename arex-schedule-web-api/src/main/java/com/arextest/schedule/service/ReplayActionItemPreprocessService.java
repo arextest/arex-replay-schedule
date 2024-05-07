@@ -3,6 +3,7 @@ package com.arextest.schedule.service;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -28,54 +29,65 @@ public class ReplayActionItemPreprocessService {
   @Resource
   private ObjectMapper objectMapper;
 
-  public void filterActionItem(List<ReplayActionItem> replayActionItemList, String appId) {
+  public List<String> filterActionItem(List<ReplayActionItem> replayActionItemList, String appId) {
     if (CollectionUtils.isEmpty(replayActionItemList) || StringUtils.isEmpty(appId)) {
-      return;
+      return new ArrayList<>();
     }
     ConfigurationService.ScheduleConfiguration schedule = configurationService.schedule(appId);
     if (schedule == null) {
-      return;
+      return new ArrayList<>();
     }
-    filter(replayActionItemList,
+    List<String> excludedActionIds = filter(replayActionItemList,
         schedule.getIncludeServiceOperationSet(),
         schedule.getExcludeServiceOperationSet());
 
-    if (MapUtils.isEmpty(schedule.getExcludeOperationMap())) {
-      return;
-    }
-    try {
-      String exclusionMapString = objectMapper.writeValueAsString(
-          schedule.getExcludeOperationMap());
-      for (ReplayActionItem replayActionItem : replayActionItemList) {
-        replayActionItem.setExclusionOperationConfig(exclusionMapString);
+    if (MapUtils.isNotEmpty(schedule.getExcludeOperationMap())) {
+      try {
+        String exclusionMapString = objectMapper.writeValueAsString(
+            schedule.getExcludeOperationMap());
+        for (ReplayActionItem replayActionItem : replayActionItemList) {
+          replayActionItem.setExclusionOperationConfig(exclusionMapString);
+        }
+      } catch (JsonProcessingException e) {
+        LOGGER.warn("ReplayActionItemPreprocessService.addHeaders failed,message:{}",
+            e.getMessage());
       }
-    } catch (JsonProcessingException e) {
-      LOGGER.warn("ReplayActionItemPreprocessService.addHeaders failed,message:{}", e.getMessage());
     }
+    return excludedActionIds;
   }
 
-  private void filter(List<ReplayActionItem> replayActionItemList,
+  private List<String> filter(List<ReplayActionItem> replayActionItemList,
       Set<String> includeOperations,
       Set<String> excludeOperations) {
+
+    List<String> excludedActionIds = new ArrayList<>();
+    List<String> excludedActions = new ArrayList<>();
+
     if (CollectionUtils.isEmpty(replayActionItemList)) {
-      return;
+      return excludedActionIds;
     }
     Iterator<ReplayActionItem> iterator = replayActionItemList.iterator();
     if (CollectionUtils.isNotEmpty(includeOperations)) {
       while (iterator.hasNext()) {
-        if (!isMatch(iterator.next().getOperationName(), includeOperations)) {
+        ReplayActionItem replayActionItem = iterator.next();
+        if (!isMatch(replayActionItem.getOperationName(), includeOperations)) {
           iterator.remove();
+          excludedActionIds.add(replayActionItem.getId());
+          excludedActions.add(replayActionItem.getOperationName());
         }
       }
-      return;
-    }
-    if (CollectionUtils.isNotEmpty(excludeOperations)) {
+    } else if (CollectionUtils.isNotEmpty(excludeOperations)) {
       while (iterator.hasNext()) {
-        if (isMatch(iterator.next().getOperationName(), excludeOperations)) {
+        ReplayActionItem replayActionItem = iterator.next();
+        if (isMatch(replayActionItem.getOperationName(), excludeOperations)) {
           iterator.remove();
+          excludedActionIds.add(replayActionItem.getId());
+          excludedActions.add(replayActionItem.getOperationName());
         }
       }
     }
+    LOGGER.info("excluded actions:{}", excludedActions);
+    return excludedActionIds;
   }
 
   private boolean isMatch(String targetName, Set<String> operations) {

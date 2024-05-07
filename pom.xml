@@ -309,7 +309,7 @@
       **/mapping/**
     </sonar.exclusions>
     <arex-storage-config.version>1.1.17</arex-storage-config.version>
-    <web-contract.version>0.6.2.8</web-contract.version>
+    <web-contract.version>0.6.4.9</web-contract.version>
     <arex-common.version>0.1.26</arex-common.version>
   </properties>
 
@@ -320,5 +320,5 @@
     <url>https://github.com/arextest/arex-replay-schedule</url>
   </scm>
   <url>https://github.com/arextest/arex-replay-schedule</url>
-  <version>1.1.19</version>
+  <version>1.1.20</version>
 </project>
