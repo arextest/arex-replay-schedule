@@ -41,8 +41,6 @@ public class ReplayActionItemPreprocessService {
         schedule.getIncludeServiceOperationSet(),
         schedule.getExcludeServiceOperationSet());
 
-    LOGGER.info("exclude action ids:{}", excludedActionIds);
-
     if (MapUtils.isNotEmpty(schedule.getExcludeOperationMap())) {
       try {
         String exclusionMapString = objectMapper.writeValueAsString(
@@ -63,6 +61,7 @@ public class ReplayActionItemPreprocessService {
       Set<String> excludeOperations) {
 
     List<String> excludedActionIds = new ArrayList<>();
+    List<String> excludedActions = new ArrayList<>();
 
     if (CollectionUtils.isEmpty(replayActionItemList)) {
       return excludedActionIds;
@@ -74,19 +73,20 @@ public class ReplayActionItemPreprocessService {
         if (!isMatch(replayActionItem.getOperationName(), includeOperations)) {
           iterator.remove();
           excludedActionIds.add(replayActionItem.getId());
+          excludedActions.add(replayActionItem.getOperationName());
         }
       }
-      return excludedActionIds;
-    }
-    if (CollectionUtils.isNotEmpty(excludeOperations)) {
+    } else if (CollectionUtils.isNotEmpty(excludeOperations)) {
       while (iterator.hasNext()) {
         ReplayActionItem replayActionItem = iterator.next();
         if (isMatch(replayActionItem.getOperationName(), excludeOperations)) {
           iterator.remove();
           excludedActionIds.add(replayActionItem.getId());
+          excludedActions.add(replayActionItem.getOperationName());
         }
       }
     }
+    LOGGER.info("excluded actions:{}", excludedActions);
     return excludedActionIds;
   }
 
