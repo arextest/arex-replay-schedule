@@ -126,6 +126,7 @@
           <autoReleaseAfterClose>true</autoReleaseAfterClose>
           <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
           <serverId>ossrh</serverId>
+          <stagingProgressTimeoutMinutes>20</stagingProgressTimeoutMinutes>
         </configuration>
         <extensions>true</extensions>
         <groupId>org.sonatype.plugins</groupId>
