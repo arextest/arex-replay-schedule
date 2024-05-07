@@ -236,7 +236,6 @@ public class PlanConsumePrepareService {
   // region rerun plan
   public void updateFailedActionAndCase(ReplayPlan replayPlan,
       List<ReplayActionCaseItem> failedCaseList) {
-    replayPlan.setCaseRerunCount(failedCaseList.size());
     List<ReplayActionItem> replayActionItems = replayPlanActionRepository.queryPlanActionList(
         replayPlan.getId());
 
@@ -259,8 +258,17 @@ public class PlanConsumePrepareService {
 
     doResumeOperationDescriptor(replayPlan);
     // filter actionItem by appId and fill exclusionOperationConfig
-    replayActionItemPreprocessService.filterActionItem(replayPlan.getReplayActionItemList(),
-        replayPlan.getAppId());
+    List<String> excludedActionIds = replayActionItemPreprocessService.filterActionItem(
+        replayPlan.getReplayActionItemList(), replayPlan.getAppId());
+    List<String> excludedCaseIds = failedCaseMap.entrySet().stream()
+        .filter(entry -> excludedActionIds.contains(entry.getKey()))
+        .flatMap(entry -> entry.getValue().stream()).map(ReplayActionCaseItem::getId)
+        .collect(Collectors.toList());
+
+    int caseRerunCount = replayPlan.getReplayActionItemList().stream()
+        .mapToInt(ReplayActionItem::getRerunCaseCount).sum();
+    replayPlan.setCaseRerunCount(caseRerunCount);
+    replayPlan.setCaseTotalCount(replayPlan.getCaseTotalCount() - excludedCaseIds.size());
 
     Set<String> availableActionIds =
         replayPlan.getReplayActionItemList().stream().map(ReplayActionItem::getId)
@@ -292,8 +300,16 @@ public class PlanConsumePrepareService {
         () -> replayNoiseIdentify.rerunNoiseAnalysisRecovery(replayPlan.getReplayActionItemList()),
         rerunPrepareExecutorService);
 
+    // remove excluded action and case
+    CompletableFuture<Void> updateReportTask = CompletableFuture.runAsync(
+        () -> replayReportService.updateReportInfo(replayPlan));
+    CompletableFuture<Void> deletePlanItemStatisticsTask = CompletableFuture.runAsync(
+        () -> replayReportService.deletePlanItemStatistics(replayPlan.getId(), excludedActionIds));
+    CompletableFuture<Void> deleteRunDetailsTask = CompletableFuture.runAsync(
+        () -> replayActionCaseItemRepository.deleteExcludedCases(replayPlan.getId(), excludedActionIds));
+
     CompletableFuture.allOf(removeRecordsAndScenesTask, batchUpdateStatusTask, noiseAnalysisRecover,
-        removeErrorMsgTask).join();
+        removeErrorMsgTask, updateReportTask, deletePlanItemStatisticsTask, deleteRunDetailsTask).join();
   }
 
   public void doResumeOperationDescriptor(ReplayPlan replayPlan) {

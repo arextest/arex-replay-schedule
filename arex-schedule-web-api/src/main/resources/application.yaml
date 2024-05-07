@@ -43,6 +43,9 @@ arex:
       report:
         info:
           url: ${arex.api.service.api}/api/report/updateReportInfo
+    delete:
+      planItemStatistics:
+        url: ${arex.api.service.api}/api/report/deletePlanItemStatistics
   client:
     https:
       cert:

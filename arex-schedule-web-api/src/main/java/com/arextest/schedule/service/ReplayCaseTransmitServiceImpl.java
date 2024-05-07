@@ -85,8 +85,9 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
   }
 
   private void prepareActionItems(List<ReplayActionCaseItem> caseItems) {
-    Map<ReplayActionItem, List<ReplayActionCaseItem>> actionsOfBatch =
-        caseItems.stream().collect(Collectors.groupingBy(ReplayActionCaseItem::getParent));
+    Map<ReplayActionItem, List<ReplayActionCaseItem>> actionsOfBatch = caseItems.stream()
+        .filter(caseItem -> caseItem.getParent() != null)
+        .collect(Collectors.groupingBy(ReplayActionCaseItem::getParent));
 
     actionsOfBatch.forEach((actionItem, casesOfAction) -> {
       // warmUp should be done once for each endpoint
