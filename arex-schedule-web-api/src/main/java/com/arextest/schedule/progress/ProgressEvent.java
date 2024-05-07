@@ -1,6 +1,7 @@
 package com.arextest.schedule.progress;
 
 import com.arextest.schedule.exceptions.PlanRunningException;
+import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
@@ -84,4 +85,12 @@ public interface ProgressEvent {
   void onActionAfterSend(ReplayActionItem actionItem);
 
   void onActionCaseLoaded(ReplayActionItem actionItem);
+
+  /**
+   * After the replay of a single case ends
+   * @param actionItem
+   */
+  default void onReplayCaseFinish(ReplayActionCaseItem actionItem){
+  }
+
 }
