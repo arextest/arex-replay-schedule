@@ -62,6 +62,12 @@ public class ReplayPlan {
   private String caseRecordVersion;
   private int caseTotalCount;
   private int caseRerunCount;
+
+  /**
+   * see {@link CaseProvider}
+   */
+  private Integer caseProviderCode;
+
   /**
    * see {@link CaseSourceEnvType}
    */

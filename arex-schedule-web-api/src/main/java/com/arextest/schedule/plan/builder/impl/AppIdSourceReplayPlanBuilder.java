@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
  * @since 2021/9/18
  */
 @Component
-final class AppIdSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
+class AppIdSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
 
   @Override
   public BuildPlanValidateResult validate(BuildReplayPlanRequest request, PlanContext planContext) {
@@ -49,8 +49,7 @@ final class AppIdSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
 
   @Override
   public boolean isSupported(BuildReplayPlanRequest request) {
-    return request.getReplayPlanType() == BuildReplayPlanType.BY_APP_ID.getValue() ||
-        request.getReplayPlanType() == BuildReplayPlanType.MIXED.getValue();
+    return request.getReplayPlanType() == BuildReplayPlanType.BY_APP_ID.getValue();
   }
 
   @Override

@@ -77,9 +77,4 @@ final class RollingCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder
     }
     return replayActionItemList;
   }
-
-  @Override
-  int queryCaseCount(ReplayActionItem actionItem) {
-    return actionItem.getCaseItemList().size();
-  }
 }

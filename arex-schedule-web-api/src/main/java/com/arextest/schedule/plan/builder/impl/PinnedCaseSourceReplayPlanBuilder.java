@@ -75,9 +75,4 @@ final class PinnedCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder 
     }
     return replayActionItemList;
   }
-
-  @Override
-  int queryCaseCount(ReplayActionItem actionItem) {
-    return actionItem.getCaseItemList().size();
-  }
 }

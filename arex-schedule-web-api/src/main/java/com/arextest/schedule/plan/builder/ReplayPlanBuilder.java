@@ -1,7 +1,6 @@
 package com.arextest.schedule.plan.builder;
 
 import com.arextest.schedule.model.ReplayActionItem;
-import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.plan.PlanContext;
 import java.util.List;
@@ -18,10 +17,6 @@ public interface ReplayPlanBuilder {
 
   List<ReplayActionItem> buildReplayActionList(BuildReplayPlanRequest request,
       PlanContext planContext);
-
-  int buildReplayCaseCount(List<ReplayActionItem> actionItemList);
-
-  void filterValidActionItems(ReplayPlan plan);
 
   void filterAppServiceDescriptors(BuildReplayPlanRequest request, PlanContext planContext);
 }
