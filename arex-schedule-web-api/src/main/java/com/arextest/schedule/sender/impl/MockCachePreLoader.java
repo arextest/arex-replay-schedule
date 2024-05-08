@@ -1,11 +1,10 @@
 package com.arextest.schedule.sender.impl;
 
-import static com.arextest.schedule.common.CommonConstant.PINNED;
 import com.arextest.model.replay.QueryMockCacheRequestType;
 import com.arextest.model.replay.QueryMockCacheResponseType;
 import com.arextest.model.response.ResponseStatusType;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
-import com.arextest.schedule.common.CommonConstant;
+import com.arextest.schedule.model.CaseProvider;
 import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import java.util.Optional;
 import javax.annotation.Resource;
@@ -32,12 +31,12 @@ public final class MockCachePreLoader {
     QueryMockCacheRequestType mockCacheRequestType = new QueryMockCacheRequestType();
     mockCacheRequestType.setRecordId(replayId);
     if (replayPlanType == BuildReplayPlanType.BY_PINNED_CASE.getValue()) {
-      mockCacheRequestType.setSourceProvider(PINNED);
+      mockCacheRequestType.setSourceProvider(CaseProvider.PINNED.getName());
       return httpWepServiceApiClient.jsonPost(cachePreloadUrl, mockCacheRequestType,
           QueryMockCacheResponseType.class);
     } else if (replayPlanType == BuildReplayPlanType.MIXED.getValue()) {
       // todo: remove this code after the new version of arex-agent is released
-      mockCacheRequestType.setSourceProvider(CommonConstant.AUTO_PINED);
+      mockCacheRequestType.setSourceProvider(CaseProvider.AUTO_PINED.getName());
       QueryMockCacheResponseType res = httpWepServiceApiClient.jsonPost(cachePreloadUrl,
           mockCacheRequestType, QueryMockCacheResponseType.class);
       if (!Optional.ofNullable(res)
@@ -45,7 +44,7 @@ public final class MockCachePreLoader {
           .map(ResponseStatusType::getResponseCode)
           .map(code -> code.equals(0))
           .orElse(false)) {
-        mockCacheRequestType.setSourceProvider(CommonConstant.ROLLING);
+        mockCacheRequestType.setSourceProvider(CaseProvider.ROLLING.getName());
         return httpWepServiceApiClient.retryJsonPost(cachePreloadUrl, mockCacheRequestType,
             QueryMockCacheResponseType.class);
       } else {

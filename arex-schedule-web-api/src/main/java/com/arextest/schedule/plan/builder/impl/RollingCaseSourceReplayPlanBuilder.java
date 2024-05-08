@@ -1,7 +1,7 @@
 package com.arextest.schedule.plan.builder.impl;
 
-import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.AppServiceOperationDescriptor;
+import com.arextest.schedule.model.CaseProvider;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
@@ -9,10 +9,8 @@ import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.schedule.model.plan.OperationCaseInfo;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.builder.BuildPlanValidateResult;
-import com.arextest.schedule.service.ReplayActionItemPreprocessService;
 import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -22,9 +20,6 @@ import org.springframework.stereotype.Component;
  */
 @Component
 final class RollingCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
-
-  @Resource
-  private ReplayActionItemPreprocessService replayActionItemPreprocessService;
 
   @Override
   public boolean isSupported(BuildReplayPlanRequest request) {
@@ -72,7 +67,7 @@ final class RollingCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder
         caseItem = new ReplayActionCaseItem();
         caseItem.setRecordId(replayId);
         caseItem.setCaseType(replayActionItem.getActionType());
-        caseItem.setSourceProvider(CommonConstant.ROLLING);
+        caseItem.setSourceProvider(CaseProvider.ROLLING.getName());
         caseItem.setParent(replayActionItem);
         caseItemList.add(caseItem);
       }

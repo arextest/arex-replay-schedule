@@ -1,7 +1,7 @@
 package com.arextest.schedule.plan.builder.impl;
 
-import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.AppServiceDescriptor;
+import com.arextest.schedule.model.CaseProvider;
 import com.arextest.schedule.model.CaseSourceEnvType;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
@@ -143,9 +143,11 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
       PlanContext planContext);
 
   int queryCaseCount(ReplayActionItem actionItem) {
-    int count = replayCaseRemoteLoadService.queryCaseCount(actionItem, CommonConstant.ROLLING);
+    int count = replayCaseRemoteLoadService.queryCaseCount(actionItem,
+        CaseProvider.ROLLING.getName());
     if (actionItem.getParent().getReplayPlanType() == BuildReplayPlanType.MIXED.getValue()) {
-      count += replayCaseRemoteLoadService.queryCaseCount(actionItem, CommonConstant.AUTO_PINED);
+      count += replayCaseRemoteLoadService.queryCaseCount(actionItem,
+          CaseProvider.AUTO_PINED.getName());
     }
     return count;
   }

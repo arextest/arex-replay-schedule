@@ -6,6 +6,7 @@ import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.model.AppServiceDescriptor;
 import com.arextest.schedule.model.AppServiceOperationDescriptor;
+import com.arextest.schedule.model.CaseProvider;
 import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.CompareProcessStatusType;
 import com.arextest.schedule.model.LogType;
@@ -123,10 +124,10 @@ public class PlanConsumePrepareService {
     } else {
       if (replayActionItem.getParent().getReplayPlanType()
           == BuildReplayPlanType.MIXED.getValue()) {
-        size = doPagingLoadCaseSave(replayActionItem, CommonConstant.AUTO_PINED) +
-            doPagingLoadCaseSave(replayActionItem, CommonConstant.ROLLING);
+        size = doPagingLoadCaseSave(replayActionItem, CaseProvider.AUTO_PINED.getName()) +
+            doPagingLoadCaseSave(replayActionItem, CaseProvider.ROLLING.getName());
       } else {
-        size = doPagingLoadCaseSave(replayActionItem, CommonConstant.ROLLING);
+        size = doPagingLoadCaseSave(replayActionItem, CaseProvider.ROLLING.getName());
       }
     }
     return size;
@@ -167,7 +168,7 @@ public class PlanConsumePrepareService {
     final ReplayPlan replayPlan = replayActionItem.getParent();
     long beginTimeMills = replayPlan.getCaseSourceFrom().getTime();
     // need all auto pined cases
-    if (providerName.equals(CommonConstant.AUTO_PINED)) {
+    if (providerName.equals(CaseProvider.AUTO_PINED.getName())) {
       beginTimeMills = 0;
     }
 

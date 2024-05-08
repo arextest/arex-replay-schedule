@@ -12,6 +12,7 @@ import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.ViewRecordResponseType;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.common.CommonConstant;
+import com.arextest.schedule.model.CaseProvider;
 import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.CompareProcessStatusType;
 import com.arextest.schedule.model.LogType;
@@ -23,7 +24,6 @@ import com.arextest.schedule.utils.MapUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -63,7 +63,7 @@ public class ReplayCaseRemoteLoadService {
     int queryTotalCount = EMPTY_SIZE;
     try {
       int caseCountLimit =
-          CommonConstant.AUTO_PINED.equals(providerName) ? AUTO_PINED_CASE_LIMIT :
+          CaseProvider.AUTO_PINED.getName().equals(providerName) ? AUTO_PINED_CASE_LIMIT :
               replayActionItem.getParent().getCaseCountLimit();
 
       List<OperationTypeData> operationTypes = replayActionItem.getOperationTypes();
