@@ -203,7 +203,7 @@ public class LocalReplayService {
       }
     }
     QueryMockCacheResponseType queryMockCacheResponseType = mockCachePreLoader.fillMockSource(
-        request.getRecordId(), request.getReplayPlanType());
+        caseItem, request.getReplayPlanType());
     return queryMockCacheResponseType != null;
   }
 

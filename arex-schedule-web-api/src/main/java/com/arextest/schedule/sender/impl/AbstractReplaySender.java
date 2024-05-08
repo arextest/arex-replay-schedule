@@ -32,10 +32,8 @@ abstract class AbstractReplaySender implements ReplaySender {
     caseItem.setSendStatus(sendResult.getStatusType().getValue());
   }
 
-  protected void before(String recordId, int replayPlanType) {
-    if (StringUtils.isNotEmpty(recordId)) {
-      mockCachePreLoader.fillMockSource(recordId, replayPlanType);
-    }
+  protected void before(ReplayActionCaseItem caseItem, int replayPlanType) {
+    mockCachePreLoader.fillMockSource(caseItem, replayPlanType);
   }
 
   protected Map<String, String> createHeaders(ReplayActionCaseItem caseItem) {

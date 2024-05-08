@@ -5,6 +5,7 @@ import com.arextest.model.replay.QueryMockCacheResponseType;
 import com.arextest.model.response.ResponseStatusType;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.model.CaseProvider;
+import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import java.util.Optional;
 import javax.annotation.Resource;
@@ -27,9 +28,12 @@ public final class MockCachePreLoader {
         QueryMockCacheResponseType.class);
   }
 
-  public QueryMockCacheResponseType fillMockSource(String replayId, int replayPlanType) {
+  public QueryMockCacheResponseType fillMockSource(ReplayActionCaseItem caseItem,
+      int replayPlanType) {
+    String recordId = caseItem.getRecordId();
     QueryMockCacheRequestType mockCacheRequestType = new QueryMockCacheRequestType();
-    mockCacheRequestType.setRecordId(replayId);
+    mockCacheRequestType.setRecordId(recordId);
+
     if (replayPlanType == BuildReplayPlanType.BY_PINNED_CASE.getValue()) {
       mockCacheRequestType.setSourceProvider(CaseProvider.PINNED.getName());
       return httpWepServiceApiClient.jsonPost(cachePreloadUrl, mockCacheRequestType,

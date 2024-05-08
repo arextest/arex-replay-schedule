@@ -12,10 +12,8 @@ import com.arextest.schedule.sender.ReplaySenderParameters;
 import com.arextest.schedule.sender.SenderParameters;
 import com.arextest.schedule.service.MetricService;
 import com.arextest.schedule.utils.DecodeUtils;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
@@ -49,23 +47,6 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
   @Override
   public int getOrder() {
     return -1;
-  }
-
-  @Override
-  public boolean activeRemoteService(ReplayActionCaseItem caseItem) {
-    Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
-    headers.put(CommonConstant.AREX_REPLAY_WARM_UP, Boolean.TRUE.toString());
-    headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
-    return doSend(caseItem.getParent(), caseItem, headers);
-  }
-
-  @Override
-  public ReplaySendResult send(SenderParameters senderParameters) {
-    if (StringUtils.isBlank(senderParameters.getUrl())) {
-      return ReplaySendResult.failed("url is null or empty");
-    }
-    before(senderParameters.getRecordId(), senderParameters.getReplayPlanType().getValue());
-    return doInvoke(senderParameters);
   }
 
   private boolean doSend(ReplayActionItem replayActionItem, ReplayActionCaseItem caseItem,
@@ -124,7 +105,7 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
   public boolean send(ReplayActionCaseItem caseItem) {
     Map<String, String> headers = createHeaders(caseItem);
     ReplayActionItem replayActionItem = caseItem.getParent();
-    before(caseItem.getRecordId(), replayActionItem.getParent().getReplayPlanType());
+    before(caseItem, replayActionItem.getParent().getReplayPlanType());
     return doSend(replayActionItem, caseItem, headers);
   }
 
@@ -133,7 +114,7 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
     Map<String, String> headers = createHeaders(caseItem);
     headers.putAll(extraHeaders);
     ReplayActionItem replayActionItem = caseItem.getParent();
-    before(caseItem.getRecordId(), replayActionItem.getParent().getReplayPlanType());
+    before(caseItem, replayActionItem.getParent().getReplayPlanType());
     return doSend(replayActionItem, caseItem, headers);
   }
 
