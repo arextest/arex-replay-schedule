@@ -33,7 +33,7 @@ abstract class AbstractReplaySender implements ReplaySender {
   }
 
   protected void before(ReplayActionCaseItem caseItem, int replayPlanType) {
-    mockCachePreLoader.fillMockSource(caseItem, replayPlanType);
+    mockCachePreLoader.prepareCache(caseItem, replayPlanType);
   }
 
   protected Map<String, String> createHeaders(ReplayActionCaseItem caseItem) {
@@ -48,9 +48,12 @@ abstract class AbstractReplaySender implements ReplaySender {
     return headers;
   }
 
-
+  /**
+   * Please DO NOT use Removing cache might cause unexpected behavior on rerunning the case
+   */
+  @Deprecated
   protected void after(ReplayActionCaseItem caseItem) {
-    mockCachePreLoader.removeMockSource(caseItem.getRecordId());
+    mockCachePreLoader.removeCache(caseItem.getRecordId());
   }
 
   protected Map<String, String> newHeadersIfEmpty(Map<String, String> source) {

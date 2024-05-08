@@ -12,4 +12,13 @@ public enum CaseProvider {
 
   private final int code;
   private final String name;
+
+  public static CaseProvider fromCode(int code) {
+    for (CaseProvider provider : values()) {
+      if (provider.code == code) {
+        return provider;
+      }
+    }
+    return null;
+  }
 }

@@ -20,7 +20,7 @@ public class ReplayRunDetailsCollection extends ModelBase {
   private String planId;
   private String planItemId;
   private String operationId;
-  private int caseProviderCode;
+  private Integer caseProviderCode;
   @NonNull
   private String recordId;
   @NonNull

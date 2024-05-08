@@ -3,7 +3,6 @@ package com.arextest.schedule.service;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.utils.CompressionUtils;
 import com.arextest.model.constants.MockAttributeNames;
-import com.arextest.model.replay.QueryMockCacheResponseType;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.JsonUtils;
 import com.arextest.schedule.common.SendLimiter;
@@ -202,9 +201,7 @@ public class LocalReplayService {
         return false;
       }
     }
-    QueryMockCacheResponseType queryMockCacheResponseType = mockCachePreLoader.fillMockSource(
-        caseItem, request.getReplayPlanType());
-    return queryMockCacheResponseType != null;
+    return mockCachePreLoader.prepareCache(caseItem, request.getReplayPlanType());
   }
 
 

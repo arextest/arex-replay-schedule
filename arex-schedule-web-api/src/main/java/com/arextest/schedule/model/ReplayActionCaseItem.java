@@ -31,7 +31,8 @@ public class ReplayActionCaseItem {
   private String targetResultId;
   private String sourceResultId;
   private String contextIdentifier;
-  private int caseProviderCode;
+  // use boxed type to avoid default value, to identify old data
+  private Integer caseProviderCode;
 
   private ReplayActionItem parent;
   /**
