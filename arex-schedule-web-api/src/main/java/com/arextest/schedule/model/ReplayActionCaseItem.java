@@ -31,6 +31,7 @@ public class ReplayActionCaseItem {
   private String targetResultId;
   private String sourceResultId;
   private String contextIdentifier;
+  private int caseProviderCode;
 
   private ReplayActionItem parent;
   /**

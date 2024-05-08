@@ -124,18 +124,24 @@ public class PlanConsumePrepareService {
     } else {
       if (replayActionItem.getParent().getReplayPlanType()
           == BuildReplayPlanType.MIXED.getValue()) {
-        size = doPagingLoadCaseSave(replayActionItem, CaseProvider.AUTO_PINED.getName()) +
-            doPagingLoadCaseSave(replayActionItem, CaseProvider.ROLLING.getName());
+        size = doPagingLoadCaseSave(replayActionItem, CaseProvider.AUTO_PINED) +
+            doPagingLoadCaseSave(replayActionItem, CaseProvider.ROLLING);
       } else {
-        size = doPagingLoadCaseSave(replayActionItem, CaseProvider.ROLLING.getName());
+        size = doPagingLoadCaseSave(replayActionItem, CaseProvider.ROLLING);
       }
     }
     return size;
   }
 
-  private void caseItemPostProcess(List<ReplayActionCaseItem> caseItemList) {
+  private void caseItemPostProcess(List<ReplayActionCaseItem> cases, CaseProvider provider) {
+    if (CollectionUtils.isEmpty(cases)) {
+      return;
+    }
+    cases.forEach(caseItem -> {
+      caseItem.setCaseProviderCode(provider.getCode());
+    });
     // to provide necessary fields into case item for context to consume when sending
-    planExecutionContextProvider.injectContextIntoCase(caseItemList);
+    planExecutionContextProvider.injectContextIntoCase(cases);
   }
 
   /**
@@ -145,7 +151,7 @@ public class PlanConsumePrepareService {
    * else if caseCountLimit < CommonConstant.MAX_PAGE_SIZE or recording data size < request page
    * size, Only need to query once by page
    */
-  public int doPagingLoadCaseSave(ReplayActionItem replayActionItem, String providerName) {
+  public int doPagingLoadCaseSave(ReplayActionItem replayActionItem, CaseProvider provider) {
     List<OperationTypeData> operationTypes = replayActionItem.getOperationTypes();
     int totalCount = 0;
 
@@ -154,7 +160,7 @@ public class PlanConsumePrepareService {
     }
 
     for (OperationTypeData operationTypeData : operationTypes) {
-      totalCount += loadCaseWithOperationType(replayActionItem, providerName, operationTypeData);
+      totalCount += loadCaseWithOperationType(replayActionItem, provider, operationTypeData);
     }
     return totalCount;
   }
@@ -163,12 +169,12 @@ public class PlanConsumePrepareService {
    * Find data by paging according to operationType
    * ps: providerName: Rolling, operationType: DubboProvider
    */
-  private int loadCaseWithOperationType(ReplayActionItem replayActionItem, String providerName,
+  private int loadCaseWithOperationType(ReplayActionItem replayActionItem, CaseProvider provider,
       OperationTypeData operationTypeData) {
     final ReplayPlan replayPlan = replayActionItem.getParent();
     long beginTimeMills = replayPlan.getCaseSourceFrom().getTime();
     // need all auto pined cases
-    if (providerName.equals(CaseProvider.AUTO_PINED.getName())) {
+    if (provider.equals(CaseProvider.AUTO_PINED)) {
       beginTimeMills = 0;
     }
 
@@ -189,11 +195,11 @@ public class PlanConsumePrepareService {
     while (beginTimeMills < endTimeMills) {
       List<ReplayActionCaseItem> caseItemList = caseRemoteLoadService.pagingLoad(beginTimeMills,
           endTimeMills, replayActionItem, caseCountLimit - count,
-          providerName, operationTypeData.getOperationType());
+          provider.getName(), operationTypeData.getOperationType());
       if (CollectionUtils.isEmpty(caseItemList)) {
         break;
       }
-      caseItemPostProcess(caseItemList);
+      caseItemPostProcess(caseItemList, provider);
       ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
       count += caseItemList.size();
       endTimeMills = caseItemList.get(caseItemList.size() - 1).getRecordTime();
@@ -227,7 +233,7 @@ public class PlanConsumePrepareService {
       }
     }
     ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
-    caseItemPostProcess(caseItemList);
+    caseItemPostProcess(caseItemList, CaseProvider.PINNED);
     if (!replayActionItem.getParent().isReRun()) {
       replayActionCaseItemRepository.save(caseItemList);
     }
