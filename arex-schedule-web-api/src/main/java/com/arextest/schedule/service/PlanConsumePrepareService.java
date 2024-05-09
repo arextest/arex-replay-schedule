@@ -94,25 +94,30 @@ public class PlanConsumePrepareService {
     BuildReplayPlanType planType = BuildReplayPlanType.findByValue(
         replayActionItems.get(0).getParent().getReplayPlanType());
 
-    int planSavedCaseSize = 0;
+    int planLoadSize = 0;
     for (ReplayActionItem action : replayActionItems) {
+      int actionLoadSize = 0;
+
       if (action.getReplayStatus() != ReplayStatusType.INIT.getValue()) {
-        planSavedCaseSize += action.getReplayCaseCount();
+        planLoadSize += action.getReplayCaseCount();
         continue;
       }
+
       if (!CollectionUtils.isEmpty(action.getCaseItemList())) {
-        planSavedCaseSize += loadPinnedCases(action);
+        actionLoadSize += loadPinnedCases(action);
       } else if (planType == BuildReplayPlanType.MIXED) {
-        planSavedCaseSize += loadCasesByProvider(action, CaseProvider.AUTO_PINED);
-        planSavedCaseSize += loadCasesByProvider(action, CaseProvider.ROLLING);
+        actionLoadSize += loadCasesByProvider(action, CaseProvider.AUTO_PINED);
+        actionLoadSize += loadCasesByProvider(action, CaseProvider.ROLLING);
       } else {
-        planSavedCaseSize += loadCasesByProvider(action, CaseProvider.AUTO_PINED);
+        actionLoadSize += loadCasesByProvider(action, CaseProvider.AUTO_PINED);
       }
+      planLoadSize += actionLoadSize;
+      action.setReplayCaseCount(actionLoadSize);
       progressEvent.onActionCaseLoaded(action);
     }
     // if no case saved, fallback to rolling source
-    return planSavedCaseSize == 0 ? prepareAllActionsRollingFallback(replayActionItems)
-        : planSavedCaseSize;
+    return planLoadSize == 0 ? prepareAllActionsRollingFallback(replayActionItems)
+        : planLoadSize;
   }
 
   private int prepareAllActionsRollingFallback(List<ReplayActionItem> replayActionItems) {
@@ -143,8 +148,7 @@ public class PlanConsumePrepareService {
    */
   public int loadCasesByProvider(ReplayActionItem replayActionItem, CaseProvider provider) {
     List<OperationTypeData> operationTypes = replayActionItem.getOperationTypes();
-    // might have been loaded before from other provider
-    int totalCount = replayActionItem.getReplayCaseCount();
+    int totalCount = 0;
 
     if (CollectionUtils.isEmpty(operationTypes)) {
       return totalCount;
@@ -153,7 +157,6 @@ public class PlanConsumePrepareService {
     for (OperationTypeData operationTypeData : operationTypes) {
       totalCount += loadCaseWithOperationType(replayActionItem, provider, operationTypeData);
     }
-    replayActionItem.setReplayCaseCount(totalCount);
     return totalCount;
   }
 
