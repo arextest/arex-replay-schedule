@@ -123,8 +123,12 @@ public class PlanConsumePrepareService {
   private int prepareAllActionsRollingFallback(List<ReplayActionItem> replayActionItems) {
     int planSavedCaseSize = 0;
     for (ReplayActionItem action : replayActionItems) {
-      planSavedCaseSize += loadCasesByProvider(action, CaseProvider.ROLLING);
+      int actionLoadSize = loadCasesByProvider(action, CaseProvider.ROLLING);
+
+      action.setReplayCaseCount(actionLoadSize);
       progressEvent.onActionCaseLoaded(action);
+
+      planSavedCaseSize += actionLoadSize;
     }
     return planSavedCaseSize;
   }
