@@ -400,7 +400,7 @@ public class LocalReplayService {
     }
     progressEvent.onReplayPlanCreated(replayPlan);
 
-    planConsumePrepareService.prepareRunData(replayPlan);
+    planConsumePrepareService.preparePlan(replayPlan);
     replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
     if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
       replayPlan.setErrorMessage("Got empty execution context");

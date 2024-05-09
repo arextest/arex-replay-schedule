@@ -233,7 +233,7 @@ public final class PlanConsumeService {
       long start = System.currentTimeMillis();
       progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
           StageStatusEnum.ONGOING, start, null);
-      int planSavedCaseSize = planConsumePrepareService.prepareRunData(replayPlan);
+      int planSavedCaseSize = planConsumePrepareService.preparePlan(replayPlan);
       long end = System.currentTimeMillis();
       progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
           StageStatusEnum.SUCCEEDED, null, end);

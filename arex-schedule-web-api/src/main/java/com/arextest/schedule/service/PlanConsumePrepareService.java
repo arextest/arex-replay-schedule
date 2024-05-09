@@ -16,7 +16,6 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.deploy.ServiceInstance;
-import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
@@ -44,7 +43,6 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class PlanConsumePrepareService {
-
   @Resource
   private MetricService metricService;
   @Resource
@@ -72,7 +70,7 @@ public class PlanConsumePrepareService {
   @Resource
   private ReplayNoiseIdentify replayNoiseIdentify;
 
-  public int prepareRunData(ReplayPlan replayPlan) {
+  public int preparePlan(ReplayPlan replayPlan) {
     if (replayPlan.getPlanCreateMillis() == 0) {
       LOGGER.warn("The plan create time is null, planId:{}, appId:{}", replayPlan.getId(),
           replayPlan.getAppId());
@@ -81,11 +79,8 @@ public class PlanConsumePrepareService {
           replayPlan.getAppId(), null,
           System.currentTimeMillis() - replayPlan.getPlanCreateMillis());
     }
-    int planSavedCaseSize = saveAllActionCase(replayPlan.getReplayActionItemList());
-    if (!replayPlan.isReRun() && planSavedCaseSize != replayPlan.getCaseTotalCount()) {
-      LOGGER.info("update the plan TotalCount, plan id:{} ,appId: {} , size: {} -> {}",
-          replayPlan.getId(),
-          replayPlan.getAppId(), replayPlan.getCaseTotalCount(), planSavedCaseSize);
+    int planSavedCaseSize = prepareAllActions(replayPlan.getReplayActionItemList());
+    if (!replayPlan.isReRun()) {
       replayPlan.setCaseTotalCount(planSavedCaseSize);
       replayPlanRepository.updateCaseTotal(replayPlan.getId(), planSavedCaseSize);
       replayPlan.setInitReportItem(true);
@@ -94,43 +89,33 @@ public class PlanConsumePrepareService {
     return planSavedCaseSize;
   }
 
-  private int saveAllActionCase(List<ReplayActionItem> replayActionItemList) {
+  private int prepareAllActions(List<ReplayActionItem> replayActionItems) {
     int planSavedCaseSize = 0;
-    for (ReplayActionItem replayActionItem : replayActionItemList) {
-      if (replayActionItem.getReplayStatus() != ReplayStatusType.INIT.getValue()) {
-        planSavedCaseSize += replayActionItem.getReplayCaseCount();
+    for (ReplayActionItem action : replayActionItems) {
+      if (action.getReplayStatus() != ReplayStatusType.INIT.getValue()) {
+        planSavedCaseSize += action.getReplayCaseCount();
         continue;
       }
-      int preloaded = replayActionItem.getReplayCaseCount();
-      int actionSavedCount = streamingCaseItemSave(replayActionItem);
-
-      planSavedCaseSize += actionSavedCount;
-      if (!replayActionItem.getParent().isReRun() && preloaded != actionSavedCount) {
-        replayActionItem.setReplayCaseCount(actionSavedCount);
-        LOGGER.warn("The saved case size of actionItem not equals, preloaded size:{},saved size:{}",
-            preloaded,
-            actionSavedCount);
+      if (CollectionUtils.isEmpty(action.getCaseItemList())) {
+        planSavedCaseSize += loadPinnedCases(action);
+        ;
+      } else {
+        planSavedCaseSize += loadCasesByProvider(action, CaseProvider.AUTO_PINED);
       }
-      progressEvent.onActionCaseLoaded(replayActionItem);
+      progressEvent.onActionCaseLoaded(action);
     }
-    return planSavedCaseSize;
+    // if no case saved, fallback to rolling source
+    return planSavedCaseSize == 0 ? prepareAllActionsRollingFallback(replayActionItems)
+        : planSavedCaseSize;
   }
 
-  private int streamingCaseItemSave(ReplayActionItem replayActionItem) {
-    List<ReplayActionCaseItem> caseItemList = replayActionItem.getCaseItemList();
-    int size;
-    if (CollectionUtils.isNotEmpty(caseItemList)) {
-      size = doFixedCaseSave(replayActionItem);
-    } else {
-      if (replayActionItem.getParent().getReplayPlanType()
-          == BuildReplayPlanType.MIXED.getValue()) {
-        size = doPagingLoadCaseSave(replayActionItem, CaseProvider.AUTO_PINED) +
-            doPagingLoadCaseSave(replayActionItem, CaseProvider.ROLLING);
-      } else {
-        size = doPagingLoadCaseSave(replayActionItem, CaseProvider.ROLLING);
-      }
+  private int prepareAllActionsRollingFallback(List<ReplayActionItem> replayActionItems) {
+    int planSavedCaseSize = 0;
+    for (ReplayActionItem action : replayActionItems) {
+      planSavedCaseSize += loadCasesByProvider(action, CaseProvider.ROLLING);
+      progressEvent.onActionCaseLoaded(action);
     }
-    return size;
+    return planSavedCaseSize;
   }
 
   private void caseItemPostProcess(List<ReplayActionCaseItem> cases, CaseProvider provider) {
@@ -151,7 +136,7 @@ public class PlanConsumePrepareService {
    * else if caseCountLimit < CommonConstant.MAX_PAGE_SIZE or recording data size < request page
    * size, Only need to query once by page
    */
-  public int doPagingLoadCaseSave(ReplayActionItem replayActionItem, CaseProvider provider) {
+  public int loadCasesByProvider(ReplayActionItem replayActionItem, CaseProvider provider) {
     List<OperationTypeData> operationTypes = replayActionItem.getOperationTypes();
     int totalCount = 0;
 
@@ -162,6 +147,7 @@ public class PlanConsumePrepareService {
     for (OperationTypeData operationTypeData : operationTypes) {
       totalCount += loadCaseWithOperationType(replayActionItem, provider, operationTypeData);
     }
+    replayActionItem.setReplayCaseCount(totalCount);
     return totalCount;
   }
 
@@ -211,7 +197,7 @@ public class PlanConsumePrepareService {
     return count;
   }
 
-  private int doFixedCaseSave(ReplayActionItem replayActionItem) {
+  private int loadPinnedCases(ReplayActionItem replayActionItem) {
     List<ReplayActionCaseItem> caseItemList = replayActionItem.getCaseItemList();
     int size = 0;
     for (int i = 0; i < caseItemList.size(); i++) {
@@ -237,6 +223,7 @@ public class PlanConsumePrepareService {
     if (!replayActionItem.getParent().isReRun()) {
       replayActionCaseItemRepository.save(caseItemList);
     }
+    replayActionItem.setReplayCaseCount(size);
     return size;
   }
 
@@ -309,11 +296,14 @@ public class PlanConsumePrepareService {
 
     // remove excluded action and case
     CompletableFuture<Void> updateReportTask = CompletableFuture.runAsync(
-        () -> replayReportService.updateReportInfo(replayPlan));
+        () -> replayReportService.updateReportInfo(replayPlan), rerunPrepareExecutorService);
     CompletableFuture<Void> deletePlanItemStatisticsTask = CompletableFuture.runAsync(
-        () -> replayReportService.deletePlanItemStatistics(replayPlan.getId(), excludedActionIds));
+        () -> replayReportService.deletePlanItemStatistics(replayPlan.getId(), excludedActionIds),
+        rerunPrepareExecutorService);
     CompletableFuture<Void> deleteRunDetailsTask = CompletableFuture.runAsync(
-        () -> replayActionCaseItemRepository.deleteExcludedCases(replayPlan.getId(), excludedActionIds));
+        () -> replayActionCaseItemRepository.deleteExcludedCases(replayPlan.getId(),
+            excludedActionIds),
+        rerunPrepareExecutorService);
 
     CompletableFuture.allOf(removeRecordsAndScenesTask, batchUpdateStatusTask, noiseAnalysisRecover,
         removeErrorMsgTask, updateReportTask, deletePlanItemStatisticsTask, deleteRunDetailsTask).join();

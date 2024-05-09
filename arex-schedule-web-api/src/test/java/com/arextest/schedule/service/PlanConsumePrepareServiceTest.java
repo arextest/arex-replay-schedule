@@ -58,7 +58,7 @@ class PlanConsumePrepareServiceTest {
         any(Long.class), any(Long.class), any(ReplayActionItem.class),
         any(Integer.class), any(String.class), any(String.class)))
         .thenReturn(new ArrayList<>());
-    int result = planConsumePrepareService.doPagingLoadCaseSave(replayActionItem,
+    int result = planConsumePrepareService.loadCasesByProvider(replayActionItem,
         CaseProvider.ROLLING);
     assertEquals(0, result);
   }
@@ -76,7 +76,7 @@ class PlanConsumePrepareServiceTest {
         any(Integer.class), any(String.class), any(String.class)))
         .thenReturn(list);
 
-    int result = planConsumePrepareService.doPagingLoadCaseSave(replayActionItem,
+    int result = planConsumePrepareService.loadCasesByProvider(replayActionItem,
         CaseProvider.ROLLING);
     assertEquals(10, result);
   }

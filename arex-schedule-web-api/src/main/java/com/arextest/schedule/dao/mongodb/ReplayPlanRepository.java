@@ -1,7 +1,6 @@
 package com.arextest.schedule.dao.mongodb;
 
 import com.arextest.schedule.dao.mongodb.util.MongoHelper;
-import com.arextest.schedule.model.CaseProvider;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.converter.ReplayPlanConverter;
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
@@ -33,15 +32,6 @@ public class ReplayPlanRepository implements RepositoryField {
       replayPlan.setId(insert.getId());
     }
     return insert.getId() != null;
-  }
-
-  public boolean updateCaseProvider(String planId, CaseProvider provider) {
-    Query query = Query.query(Criteria.where(DASH_ID).is(planId));
-    Update update = MongoHelper.getUpdate();
-    update.set(ReplayPlanCollection.Fields.CASE_PROVIDER_CODE, provider.getCode());
-    UpdateResult updateResult = mongoTemplate.updateFirst(query, update,
-        ReplayPlanCollection.class);
-    return updateResult.getModifiedCount() > 0;
   }
 
   public boolean updateCaseTotal(String planId, int caseTotal) {
