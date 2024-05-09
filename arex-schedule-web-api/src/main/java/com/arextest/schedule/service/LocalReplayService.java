@@ -201,7 +201,7 @@ public class LocalReplayService {
         return false;
       }
     }
-    return mockCachePreLoader.prepareCache(caseItem, request.getReplayPlanType());
+    return mockCachePreLoader.prepareCache(caseItem);
   }
 
 

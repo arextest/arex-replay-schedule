@@ -105,7 +105,7 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
   public boolean send(ReplayActionCaseItem caseItem) {
     Map<String, String> headers = createHeaders(caseItem);
     ReplayActionItem replayActionItem = caseItem.getParent();
-    before(caseItem, replayActionItem.getParent().getReplayPlanType());
+    before(caseItem);
     return doSend(replayActionItem, caseItem, headers);
   }
 
@@ -114,7 +114,7 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
     Map<String, String> headers = createHeaders(caseItem);
     headers.putAll(extraHeaders);
     ReplayActionItem replayActionItem = caseItem.getParent();
-    before(caseItem, replayActionItem.getParent().getReplayPlanType());
+    before(caseItem);
     return doSend(replayActionItem, caseItem, headers);
   }
 
