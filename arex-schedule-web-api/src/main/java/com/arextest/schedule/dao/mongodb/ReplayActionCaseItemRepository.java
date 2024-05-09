@@ -90,7 +90,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
   }
 
   public List<ReplayActionCaseItem> waitingSendList(String planId, int pageSize,
-      List<Criteria> baseCriteria, Long minRecordTime) {
+      List<Criteria> baseCriteria, Long maxRecordTime) {
     Query query = new Query();
 
     Optional.ofNullable(baseCriteria).ifPresent(criteria -> criteria.forEach(query::addCriteria));
@@ -102,12 +102,12 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         Criteria.where(ReplayActionCaseItem.Fields.COMPARE_STATUS)
             .is(CompareProcessStatusType.WAIT_HANDLING.getValue())
     ));
-    if (minRecordTime != null) {
+    if (maxRecordTime != null) {
       query.addCriteria(
-          Criteria.where(ReplayRunDetailsCollection.Fields.RECORD_TIME).gt(minRecordTime));
+          Criteria.where(ReplayRunDetailsCollection.Fields.RECORD_TIME).lt(maxRecordTime));
     }
     query.limit(pageSize);
-    query.with(Sort.by(Sort.Order.asc(ReplayRunDetailsCollection.Fields.RECORD_TIME)));
+    query.with(Sort.by(Sort.Order.desc(ReplayRunDetailsCollection.Fields.RECORD_TIME)));
 
     List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query,
         ReplayRunDetailsCollection.class);
