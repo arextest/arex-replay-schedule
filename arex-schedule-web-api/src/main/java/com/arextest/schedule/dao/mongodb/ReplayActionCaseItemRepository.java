@@ -91,7 +91,9 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
   /**
    * @return case list that need to be sent Case order is hard-coded to be ascending by record time.
-   * The case order is to control the please DO NOT change the behavior
+   *
+   * The case order is to control the order of extra mockers yields during the replay phase, please
+   * make sure you discuss with agent team before changing the order.
    * todo make order configurable
    */
   public List<ReplayActionCaseItem> waitingSendList(String planId, int pageSize,
@@ -109,7 +111,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     ));
     if (minRecordTime != null) {
       query.addCriteria(
-          Criteria.where(ReplayRunDetailsCollection.Fields.RECORD_TIME).gt(minRecordTime));
+          Criteria.where(ReplayRunDetailsCollection.Fields.RECORD_TIME).gte(minRecordTime));
     }
     query.limit(pageSize);
     query.with(Sort.by(Sort.Order.asc(ReplayRunDetailsCollection.Fields.RECORD_TIME)));
