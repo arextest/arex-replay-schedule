@@ -89,6 +89,11 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     return true;
   }
 
+  /**
+   * @return case list that need to be sent Case order is hard-coded to be ascending by record time.
+   * The case order is to control the please DO NOT change the behavior
+   * todo make order configurable
+   */
   public List<ReplayActionCaseItem> waitingSendList(String planId, int pageSize,
       List<Criteria> baseCriteria, Long minRecordTime) {
     Query query = new Query();

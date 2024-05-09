@@ -16,6 +16,7 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.deploy.ServiceInstance;
+import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
@@ -90,6 +91,9 @@ public class PlanConsumePrepareService {
   }
 
   private int prepareAllActions(List<ReplayActionItem> replayActionItems) {
+    BuildReplayPlanType planType = BuildReplayPlanType.findByValue(
+        replayActionItems.get(0).getParent().getReplayPlanType());
+
     int planSavedCaseSize = 0;
     for (ReplayActionItem action : replayActionItems) {
       if (action.getReplayStatus() != ReplayStatusType.INIT.getValue()) {
@@ -98,6 +102,9 @@ public class PlanConsumePrepareService {
       }
       if (!CollectionUtils.isEmpty(action.getCaseItemList())) {
         planSavedCaseSize += loadPinnedCases(action);
+      } else if (planType == BuildReplayPlanType.MIXED) {
+        planSavedCaseSize += loadCasesByProvider(action, CaseProvider.AUTO_PINED);
+        planSavedCaseSize += loadCasesByProvider(action, CaseProvider.ROLLING);
       } else {
         planSavedCaseSize += loadCasesByProvider(action, CaseProvider.AUTO_PINED);
       }
