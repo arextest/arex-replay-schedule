@@ -96,9 +96,8 @@ public class PlanConsumePrepareService {
         planSavedCaseSize += action.getReplayCaseCount();
         continue;
       }
-      if (CollectionUtils.isEmpty(action.getCaseItemList())) {
+      if (!CollectionUtils.isEmpty(action.getCaseItemList())) {
         planSavedCaseSize += loadPinnedCases(action);
-        ;
       } else {
         planSavedCaseSize += loadCasesByProvider(action, CaseProvider.AUTO_PINED);
       }
