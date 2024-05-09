@@ -138,7 +138,7 @@ public class LocalReplayService {
         caseItems = replayActionCaseItemRepository.waitingSendList(replayPlan.getId(),
             CommonConstant.MAX_PAGE_SIZE,
             executionContext.getContextCaseQuery(),
-            Optional.ofNullable(lastItem).map(ReplayActionCaseItem::getId).orElse(null));
+            Optional.ofNullable(lastItem).map(ReplayActionCaseItem::getRecordTime).orElse(null));
 
         if (CollectionUtils.isEmpty(caseItems)) {
           break;

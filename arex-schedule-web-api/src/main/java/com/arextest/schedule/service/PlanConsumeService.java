@@ -58,7 +58,6 @@ public final class PlanConsumeService {
 
   public void runAsyncConsume(ReplayPlan replayPlan) {
     BizLogger.recordPlanAsyncStart(replayPlan);
-    // TODO: remove block thread use async to load & send for all
     preloadExecutorService.execute(new ReplayActionLoadingRunnableImpl(replayPlan));
   }
 
@@ -131,9 +130,8 @@ public final class PlanConsumeService {
 
   private void consumeContextPaged(ReplayPlan replayPlan, PlanExecutionContext executionContext) {
     ExecutionStatus executionStatus = executionContext.getExecutionStatus();
-
-    int contextCount = 0;
     List<ReplayActionCaseItem> caseItems = Collections.emptyList();
+
     while (true) {
       // checkpoint: before sending page of cases
       if (executionStatus.isAbnormal()) {
@@ -141,15 +139,15 @@ public final class PlanConsumeService {
       }
       ReplayActionCaseItem lastItem =
           CollectionUtils.isNotEmpty(caseItems) ? caseItems.get(caseItems.size() - 1) : null;
+
       caseItems = replayActionCaseItemRepository.waitingSendList(replayPlan.getId(),
           CommonConstant.MAX_PAGE_SIZE,
           executionContext.getContextCaseQuery(),
-          Optional.ofNullable(lastItem).map(ReplayActionCaseItem::getId).orElse(null));
+          Optional.ofNullable(lastItem).map(ReplayActionCaseItem::getRecordTime).orElse(null));
 
       if (CollectionUtils.isEmpty(caseItems)) {
         break;
       }
-      contextCount += caseItems.size();
       ReplayParentBinder.setupCaseItemParent(caseItems, replayPlan);
       replayCaseTransmitServiceRemoteImpl.send(caseItems, executionContext);
     }
