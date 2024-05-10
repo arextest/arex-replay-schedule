@@ -83,8 +83,8 @@ arex:
       url: ${arex.storage.service.api}/api/storage/replay/query/cacheRemove
     countByRange:
       url: ${arex.storage.service.api}/api/storage/replay/query/countByRange
-    postProcess:
-      url: ${arex.storage.service.api}/api/storage/replay/postprocessResult
+    clearScene:
+      url: ${arex.storage.service.api}/api/scene/clearReplayPool/
     replayCase:
       url: ${arex.storage.service.api}/api/storage/replay/query/replayCase
     replayResult:

@@ -70,6 +70,8 @@ public class PlanConsumePrepareService {
   private ExecutorService rerunPrepareExecutorService;
   @Resource
   private ReplayNoiseIdentify replayNoiseIdentify;
+  @Resource
+  private ReplayStorageService replayStorageService;
 
   public int preparePlan(ReplayPlan replayPlan) {
     if (replayPlan.getPlanCreateMillis() == 0) {
@@ -80,6 +82,7 @@ public class PlanConsumePrepareService {
           replayPlan.getAppId(), null,
           System.currentTimeMillis() - replayPlan.getPlanCreateMillis());
     }
+    replayStorageService.clearReplayScenes(replayPlan.getAppId());
     int planSavedCaseSize = prepareAllActions(replayPlan.getReplayActionItemList());
     if (!replayPlan.isReRun()) {
       replayPlan.setCaseTotalCount(planSavedCaseSize);

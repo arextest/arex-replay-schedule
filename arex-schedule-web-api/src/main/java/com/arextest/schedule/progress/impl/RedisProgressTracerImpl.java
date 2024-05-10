@@ -6,7 +6,6 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
-import com.arextest.schedule.service.ReplayStorageService;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
@@ -36,8 +35,6 @@ final class RedisProgressTracerImpl implements ProgressTracer {
   private ProgressEvent progressEvent;
   @Resource
   private CacheProvider redisCacheProvider;
-  @Resource
-  private ReplayStorageService replayStorageService;
 
   @Override
   public void initTotal(ReplayPlan replayPlan) {
@@ -93,7 +90,6 @@ final class RedisProgressTracerImpl implements ProgressTracer {
     LOGGER.info("finishOne caseItem: {}", caseItem.getId());
     ReplayActionItem replayActionItem = caseItem.getParent();
     finishCaseByAction(replayActionItem);
-    replayStorageService.postProcessCompareResult(caseItem);
     progressEvent.onReplayCaseFinish(caseItem);
   }
 
