@@ -27,13 +27,22 @@ public final class SendSemaphoreLimiter implements SendLimiter {
   public static final double[] QPS_STEP_RATIO = {0.3, 0.5, 0.7, 1};
   public static final int DEFAULT_MAX_RATE = 20;
   public final static int SUCCESS_COUNT_TO_BALANCE_NO_ERROR = 20;
-  public final static int CONTINUOUS_FAIL_TOTAL = 2 * SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
   public final static int SUCCESS_COUNT_TO_BALANCE_WITH_ERROR =
       5 * SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
-  public final static double ERROR_BREAK_RATE = 0.1;
   private static final int QPS_MAX_STEP = QPS_STEP_RATIO.length - 1;
   private static final int QPS_INITIAL_STEP = 0;
   private static final int ABSOLUTE_MIN_GUARD = 1;
+
+  // threshold to break the entire plan when continuous fail
+  public final static int DEFAULT_CONTINUOUS_FAIL_THRESHOLD = 2 * SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
+  // threshold to break the entire plan when reaching error ratio
+  public final static double DEFAULT_ERROR_BREAK_RATIO = 0.1;
+
+  @Setter
+  private double errorBreakRatio;
+  @Setter
+  private int continuousFailThreshold;
+
   private final int sendMaxRate;
   private final int sendInitialRate;
   private final ReplayHealthy checker = new ReplayHealthy();
@@ -56,6 +65,8 @@ public final class SendSemaphoreLimiter implements SendLimiter {
     this.sendInitialRate = actualInitialMinQps;
     this.rateLimiter = RateLimiter.create(actualInitialMinQps);
     this.permits = actualInitialMinQps;
+    this.errorBreakRatio = DEFAULT_ERROR_BREAK_RATIO;
+    this.continuousFailThreshold = DEFAULT_CONTINUOUS_FAIL_THRESHOLD;
   }
 
   @Override
@@ -155,7 +166,7 @@ public final class SendSemaphoreLimiter implements SendLimiter {
     private void statistic(boolean success) {
       if (success) {
         continuousSuccessCounter.incrementAndGet();
-        if (continuousFailCounter.get() < CONTINUOUS_FAIL_TOTAL) {
+        if (continuousFailCounter.get() < continuousFailThreshold) {
           // reset to zero else pin down
           continuousFailCounter.set(0);
         }
@@ -177,15 +188,15 @@ public final class SendSemaphoreLimiter implements SendLimiter {
 
     private void batchSuccess(int size) {
       continuousSuccessCounter.addAndGet(size);
-      if (continuousFailCounter.get() < CONTINUOUS_FAIL_TOTAL) {
+      if (continuousFailCounter.get() < continuousFailThreshold) {
         // reset to zero else pin down
         continuousFailCounter.set(0);
       }
     }
 
     private boolean failBreak() {
-      return continuousFailCounter.get() > CONTINUOUS_FAIL_TOTAL
-          || (totalTasks > 0 && (failCounter.doubleValue() / totalTasks) > ERROR_BREAK_RATE);
+      return continuousFailCounter.get() > continuousFailThreshold
+          || (totalTasks > 0 && (failCounter.doubleValue() / totalTasks) > errorBreakRatio);
     }
 
     private void reset() {
