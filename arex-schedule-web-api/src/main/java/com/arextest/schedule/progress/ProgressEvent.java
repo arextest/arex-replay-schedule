@@ -9,6 +9,8 @@ import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.model.plan.PlanStageEnum;
 import com.arextest.schedule.model.plan.StageStatusEnum;
 
+import java.util.List;
+
 /**
  * @author jmo
  * @since 2021/10/11
@@ -91,6 +93,10 @@ public interface ProgressEvent {
    * @param actionItem
    */
   default void onReplayCaseFinish(ReplayActionCaseItem actionItem){
+  }
+
+  default void onUpdateFailedCases(ReplayPlan replayPlan, List<ReplayActionCaseItem> caseItemList) {
+
   }
 
 }
