@@ -71,8 +71,6 @@ public class PlanProduceService {
   @Resource
   private PlanConsumeService planConsumeService;
   @Resource
-  private PlanConsumePrepareService planConsumePrepareService;
-  @Resource
   private ProgressEvent progressEvent;
   @Resource
   private ConfigurationService configurationService;
@@ -378,7 +376,7 @@ public class PlanProduceService {
       progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
           StageStatusEnum.ONGOING, System.currentTimeMillis(), null);
 
-      planConsumePrepareService.updateFailedActionAndCase(replayPlan, failedCaseList);
+      progressEvent.onRerunFailedCaseUpdate(replayPlan, failedCaseList);
       if (CollectionUtils.isEmpty(replayPlan.getReplayActionItemList())) {
         throw new RuntimeException("no replayActionItem!");
       }

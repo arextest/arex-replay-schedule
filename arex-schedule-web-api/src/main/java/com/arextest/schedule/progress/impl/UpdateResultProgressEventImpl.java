@@ -3,29 +3,50 @@ package com.arextest.schedule.progress.impl;
 import com.alibaba.fastjson2.util.DateUtils;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.bizlog.BizLogger;
+import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.eventBus.PlanAutoRerunEvent;
+import com.arextest.schedule.model.AppServiceDescriptor;
+import com.arextest.schedule.model.AppServiceOperationDescriptor;
+import com.arextest.schedule.model.CaseSendStatusType;
+import com.arextest.schedule.model.CompareProcessStatusType;
 import com.arextest.schedule.model.LogType;
+import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
+import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.plan.PlanStageEnum;
 import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
 import com.arextest.schedule.model.plan.StageBaseInfo;
 import com.arextest.schedule.model.plan.StageStatusEnum;
+import com.arextest.schedule.plan.PlanContext;
+import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.progress.ProgressEvent;
+import com.arextest.schedule.service.DeployedEnvironmentService;
 import com.arextest.schedule.service.MetricService;
 import com.arextest.schedule.service.PlanProduceService;
+import com.arextest.schedule.service.ReplayActionItemPreprocessService;
 import com.arextest.schedule.service.ReplayReportService;
+import com.arextest.schedule.service.noise.ReplayNoiseIdentify;
+import com.arextest.schedule.utils.ReplayParentBinder;
 import com.arextest.schedule.utils.StageUtils;
 import com.arextest.web.model.contract.contracts.common.PlanStatistic;
 import com.google.common.eventbus.AsyncEventBus;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.beans.factory.annotation.Value;
+
+import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import javax.annotation.Resource;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 /**
  * @author jmo
@@ -47,6 +68,19 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   private CacheProvider redisCacheProvider;
   @Resource
   private AsyncEventBus autoRerunAsyncEventBus;
+
+  @Resource
+  private ReplayActionItemPreprocessService replayActionItemPreprocessService;
+  @Resource
+  private ReplayActionCaseItemRepository replayActionCaseItemRepository;
+  @Resource
+  private PlanContextCreator planContextCreator;
+  @Resource
+  private DeployedEnvironmentService deployedEnvironmentService;
+  @Resource
+  private ExecutorService rerunPrepareExecutorService;
+  @Resource
+  private ReplayNoiseIdentify replayNoiseIdentify;
 
   @Value("${auto.rerun.threshold}")
   private double autoRerunThreshold;
@@ -319,5 +353,111 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     replayPlanActionRepository.update(actionItem);
     LOGGER.info("update the replay action case count, action id:{} , size: {}", actionItem.getId(),
         actionItem.getReplayCaseCount());
+  }
+
+  @Override
+  public void onRerunFailedCaseUpdate(ReplayPlan replayPlan, List<ReplayActionCaseItem> caseList) {
+    updateFailedActionAndCase(replayPlan, caseList);
+  }
+
+  // region rerun plan
+  private void updateFailedActionAndCase(ReplayPlan replayPlan,
+                                         List<ReplayActionCaseItem> failedCaseList) {
+    List<ReplayActionItem> replayActionItems = replayPlanActionRepository.queryPlanActionList(
+        replayPlan.getId());
+
+    Map<String, List<ReplayActionCaseItem>> failedCaseMap = failedCaseList.stream()
+        .peek(caseItem -> {
+          caseItem.setSendStatus(CaseSendStatusType.WAIT_HANDLING.getValue());
+          caseItem.setCompareStatus(CompareProcessStatusType.WAIT_HANDLING.getValue());
+        }).collect(Collectors.groupingBy(ReplayActionCaseItem::getPlanItemId));
+
+    List<ReplayActionItem> failedActionList = replayActionItems.stream()
+        .filter(actionItem -> CollectionUtils.isNotEmpty(failedCaseMap.get(actionItem.getId())))
+        .peek(actionItem -> {
+          actionItem.setParent(replayPlan);
+          actionItem.setCaseItemList(failedCaseMap.get(actionItem.getId()));
+          actionItem.setReplayStatus(ReplayStatusType.INIT.getValue());
+          actionItem.setRerunCaseCount(actionItem.getCaseItemList().size());
+          ReplayParentBinder.setupCaseItemParent(actionItem.getCaseItemList(), actionItem);
+        }).collect(Collectors.toList());
+    replayPlan.setReplayActionItemList(failedActionList);
+
+    doResumeOperationDescriptor(replayPlan);
+    // filter actionItem by appId and fill exclusionOperationConfig
+    List<String> excludedActionIds = replayActionItemPreprocessService.filterActionItem(
+        replayPlan.getReplayActionItemList(), replayPlan.getAppId());
+    List<String> excludedCaseIds = failedCaseMap.entrySet().stream()
+        .filter(entry -> excludedActionIds.contains(entry.getKey()))
+        .flatMap(entry -> entry.getValue().stream()).map(ReplayActionCaseItem::getId)
+        .collect(Collectors.toList());
+
+    int caseRerunCount = replayPlan.getReplayActionItemList().stream()
+        .mapToInt(ReplayActionItem::getRerunCaseCount).sum();
+    replayPlan.setCaseRerunCount(caseRerunCount);
+    replayPlan.setCaseTotalCount(replayPlan.getCaseTotalCount() - excludedCaseIds.size());
+
+    Set<String> availableActionIds =
+        replayPlan.getReplayActionItemList().stream().map(ReplayActionItem::getId)
+            .collect(Collectors.toSet());
+    // After filter actionItem, update related ReplayActionCaseItems
+    Map<String, List<String>> actionIdAndRecordIdsMap =
+        failedCaseMap.entrySet().stream()
+            .filter(entry -> availableActionIds.contains(entry.getKey()))
+            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream()
+                .map(ReplayActionCaseItem::getRecordId).collect(Collectors.toList())));
+    List<ReplayActionCaseItem> newFailedCaseList = failedCaseList.stream()
+        .filter(replayActionCaseItem -> availableActionIds.contains(
+            replayActionCaseItem.getPlanItemId()))
+        .collect(Collectors.toList());
+
+    CompletableFuture removeRecordsAndScenesTask = CompletableFuture.runAsync(
+        () -> replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap),
+        rerunPrepareExecutorService);
+    CompletableFuture removeErrorMsgTask = CompletableFuture.runAsync(
+        () -> replayReportService.removeErrorMsg(replayPlan.getId(),
+            new ArrayList<>(actionIdAndRecordIdsMap.keySet())),
+        rerunPrepareExecutorService);
+    // XXX: Whether batch update actionCaseItem status is redundant, rerun in doFixedCaseSave has already
+    // implemented this processing
+    CompletableFuture batchUpdateStatusTask = CompletableFuture.runAsync(
+        () -> replayActionCaseItemRepository.batchUpdateStatus(newFailedCaseList),
+        rerunPrepareExecutorService);
+    CompletableFuture<Void> noiseAnalysisRecover = CompletableFuture.runAsync(
+        () -> replayNoiseIdentify.rerunNoiseAnalysisRecovery(replayPlan.getReplayActionItemList()),
+        rerunPrepareExecutorService);
+
+    // remove excluded action and case
+    CompletableFuture<Void> updateReportTask = CompletableFuture.runAsync(
+        () -> replayReportService.updateReportInfo(replayPlan));
+    CompletableFuture<Void> deletePlanItemStatisticsTask = CompletableFuture.runAsync(
+        () -> replayReportService.deletePlanItemStatistics(replayPlan.getId(), excludedActionIds));
+    CompletableFuture<Void> deleteRunDetailsTask = CompletableFuture.runAsync(
+        () -> replayActionCaseItemRepository.deleteExcludedCases(replayPlan.getId(), excludedActionIds));
+
+    CompletableFuture.allOf(removeRecordsAndScenesTask, batchUpdateStatusTask, noiseAnalysisRecover,
+        removeErrorMsgTask, updateReportTask, deletePlanItemStatisticsTask, deleteRunDetailsTask).join();
+  }
+
+  private void doResumeOperationDescriptor(ReplayPlan replayPlan) {
+    PlanContext planContext = planContextCreator.createByAppId(replayPlan.getAppId());
+    AppServiceOperationDescriptor operationDescriptor;
+    for (ReplayActionItem actionItem : replayPlan.getReplayActionItemList()) {
+      operationDescriptor = planContext.findAppServiceOperationDescriptor(
+          actionItem.getOperationId());
+      if (operationDescriptor == null) {
+        LOGGER.warn("skip resume when the plan operationDescriptor not found, action id: {} ,",
+            actionItem.getId());
+        continue;
+      }
+      AppServiceDescriptor appServiceDescriptor = operationDescriptor.getParent();
+      List<ServiceInstance> activeInstanceList =
+          deployedEnvironmentService.getActiveInstanceList(appServiceDescriptor,
+              replayPlan.getTargetEnv());
+      appServiceDescriptor.setTargetActiveInstanceList(activeInstanceList);
+
+      planContext.fillReplayAction(actionItem, operationDescriptor);
+      replayPlan.setMinInstanceCount(planContext.determineMinInstanceCount());
+    }
   }
 }
