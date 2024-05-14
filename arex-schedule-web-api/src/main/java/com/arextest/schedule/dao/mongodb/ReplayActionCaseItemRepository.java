@@ -220,6 +220,13 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
   // region <context>
   public Set<String> getAllContextIdentifiers(String planId) {
     Query query = Query.query(Criteria.where(ReplayActionCaseItem.Fields.PLAN_ID).is(planId));
+    // exclude success case, no affection on the first replay
+    query.addCriteria(new Criteria().orOperator(
+        Criteria.where(ReplayActionCaseItem.Fields.SEND_STATUS)
+            .ne(CaseSendStatusType.SUCCESS.getValue()),
+        Criteria.where(ReplayActionCaseItem.Fields.COMPARE_STATUS)
+            .ne(CompareProcessStatusType.PASS.getValue())
+    ));
     return new HashSet<>(
         mongoTemplate.findDistinct(query, ReplayActionCaseItem.Fields.CONTEXT_IDENTIFIER,
             ReplayRunDetailsCollection.class, String.class));
@@ -227,6 +234,13 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
   public boolean hasNullIdentifier(String planId) {
     Query query = Query.query(Criteria.where(ReplayActionCaseItem.Fields.PLAN_ID).is(planId));
+    // exclude success case, no affection on the first replay
+    query.addCriteria(new Criteria().orOperator(
+        Criteria.where(ReplayActionCaseItem.Fields.SEND_STATUS)
+            .ne(CaseSendStatusType.SUCCESS.getValue()),
+        Criteria.where(ReplayActionCaseItem.Fields.COMPARE_STATUS)
+            .ne(CompareProcessStatusType.PASS.getValue())
+    ));
     query.addCriteria(Criteria.where(ReplayActionCaseItem.Fields.CONTEXT_IDENTIFIER).isNull());
     return mongoTemplate.exists(query, ReplayRunDetailsCollection.class);
   }
