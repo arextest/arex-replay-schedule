@@ -61,11 +61,8 @@ public class ReplaySenderConfiguration {
 
   @Bean
   @ConditionalOnProperty(name = "replay.sender.extension.switch", havingValue = "true")
-  public DefaultDubboReplaySender dubboReplaySender(
-      @Value("#{'${arex.replay.header.excludes.dubbo}'.split(',')}") List<String> excludes,
-      List<ReplayExtensionInvoker> invokers) {
-
-    return new DefaultDubboReplaySender(excludes, invokers);
+  public DefaultDubboReplaySender dubboReplaySender(List<ReplayExtensionInvoker> invokers) {
+    return new DefaultDubboReplaySender(invokers);
   }
 
   @Bean

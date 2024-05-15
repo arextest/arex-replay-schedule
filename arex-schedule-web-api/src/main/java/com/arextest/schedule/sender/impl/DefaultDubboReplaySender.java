@@ -36,7 +36,6 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
   private static final String VERSION = "version";
   private static final String GROUP = "group";
 
-  private final List<String> headerExcludes;
   private final List<ReplayExtensionInvoker> replayExtensionInvokers;
 
   @Override
@@ -72,9 +71,6 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
 
   DubboInvocation generateDubboInvocation(ReplayActionCaseItem caseItem,
       Map<String, String> headers) {
-
-    // remove attachment excludes
-    headerExcludes.forEach(headers::remove);
 
     ImmutablePair<String, String> interfaceNameAndMethod =
         getInterfaceNameAndMethod(caseItem.getParent().getOperationName());
