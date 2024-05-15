@@ -256,10 +256,11 @@ public class PlanConsumePrepareService {
         }).collect(Collectors.toList());
     replayPlan.setReplayActionItemList(failedActionList);
 
-    doResumeOperationDescriptor(replayPlan);
     // filter actionItem by appId and fill exclusionOperationConfig
     List<String> excludedActionIds = replayActionItemPreprocessService.filterActionItem(
         replayPlan.getReplayActionItemList(), replayPlan.getAppId());
+    doResumeOperationDescriptor(replayPlan);
+
     List<String> excludedCaseIds = failedCaseMap.entrySet().stream()
         .filter(entry -> excludedActionIds.contains(entry.getKey()))
         .flatMap(entry -> entry.getValue().stream()).map(ReplayActionCaseItem::getId)
@@ -283,6 +284,8 @@ public class PlanConsumePrepareService {
         .filter(replayActionCaseItem -> availableActionIds.contains(
             replayActionCaseItem.getPlanItemId()))
         .collect(Collectors.toList());
+
+    LOGGER.info("failed actionIdList:{}", availableActionIds);
 
     CompletableFuture removeRecordsAndScenesTask = CompletableFuture.runAsync(
         () -> replayReportService.removeRecordsAndScenes(actionIdAndRecordIdsMap),

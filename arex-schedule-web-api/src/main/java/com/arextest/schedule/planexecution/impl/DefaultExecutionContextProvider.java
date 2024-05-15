@@ -113,6 +113,9 @@ public class DefaultExecutionContextProvider
       ReplayActionCaseItem warmupCase =
           replayActionCaseItemRepository.getOneOfContext(plan.getId(),
               dependencyHolder.getContextIdentifier());
+      if (!plan.getActionItemMap().containsKey(warmupCase.getPlanItemId())) {
+        LOGGER.error("warmup failed! caseId:{}, actionId:{}", warmupCase.getId(), warmupCase.getPlanItemId());
+      }
       ReplayParentBinder.setupCaseItemParent(warmupCase,
           plan.getActionItemMap().get(warmupCase.getPlanItemId()));
       ReplaySender sender = replaySenderFactory.findReplaySender(warmupCase.getCaseType());
