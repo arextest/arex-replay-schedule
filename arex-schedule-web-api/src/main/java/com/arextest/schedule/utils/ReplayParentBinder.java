@@ -5,12 +5,15 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import java.util.List;
 import java.util.Map;
+
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 
 /**
  * @author jmo
  * @since 2021/10/12
  */
+@Slf4j
 public final class ReplayParentBinder {
 
   private ReplayParentBinder() {
@@ -51,7 +54,12 @@ public final class ReplayParentBinder {
     }
     Map<String, ReplayActionItem> actionItems = replayPlan.getActionItemMap();
     for (ReplayActionCaseItem caseItem : sourceItemList) {
-      caseItem.setParent(actionItems.get(caseItem.getPlanItemId()));
+      ReplayActionItem parent = actionItems.get(caseItem.getPlanItemId());
+      if (parent == null) {
+        LOGGER.error("setupCaseItemParent failed, planItemId:{}, available actionIds:{}", caseItem.getPlanItemId(),
+            actionItems.keySet());
+      }
+      caseItem.setParent(parent);
       caseItem.setPlanId(replayPlan.getId());
     }
   }
