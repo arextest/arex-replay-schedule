@@ -122,6 +122,6 @@ public class ReplayPlan {
   public void buildActionItemMap() {
     this.getReplayActionItemList().forEach(
         replayActionItem -> this.actionItemMap.put(replayActionItem.getId(), replayActionItem));
-    LOGGER.info("buildActionItemMap keySet:{}, planId:{}", actionItemMap.keySet(), getId());
+    LOGGER.info("buildActionItemMap, planId:{}, keySet:{}", getId(), actionItemMap.keySet());
   }
 }
