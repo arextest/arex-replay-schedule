@@ -2,6 +2,7 @@ package com.arextest.schedule.progress;
 
 import com.arextest.schedule.exceptions.PlanRunningException;
 import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionCaseItem.Fields;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
@@ -10,6 +11,8 @@ import com.arextest.schedule.model.plan.PlanStageEnum;
 import com.arextest.schedule.model.plan.StageStatusEnum;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 /**
  * @author jmo
@@ -87,6 +90,18 @@ public interface ProgressEvent {
   void onActionAfterSend(ReplayActionItem actionItem);
 
   void onActionCaseLoaded(ReplayActionItem actionItem);
+
+  default void onContextBuilt(ReplayPlan replayPlan) {
+    if (replayPlan.isReRun()) {
+      List<String> planItemIds = replayPlan.getReplayActionItemList().stream()
+          .map(ReplayActionItem::getId)
+          .collect(Collectors.toList());
+      Criteria criteria = Criteria.where(Fields.PLAN_ITEM_ID).in(planItemIds);
+      replayPlan.getExecutionContexts().forEach(context -> {
+        context.getContextCaseQuery().add(criteria);
+      });
+    }
+  }
 
   /**
    * After the replay of a single case ends
