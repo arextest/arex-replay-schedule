@@ -8,6 +8,7 @@ import com.arextest.schedule.model.plan.PostSendRequest;
 import com.arextest.schedule.model.plan.PreSendRequest;
 import com.arextest.schedule.model.plan.QueryReplaySenderParametersRequest;
 import com.arextest.schedule.model.plan.QueryReplaySenderParametersResponse;
+import com.arextest.schedule.model.plan.ReRunReplayPlanRequest;
 import com.arextest.schedule.service.LocalReplayService;
 import com.arextest.schedule.service.PlanProduceService;
 import java.util.concurrent.CompletableFuture;
@@ -84,5 +85,16 @@ public class ReplayLocalController {
   public CommonResponse postSend(@Valid @RequestBody PostSendRequest request) {
     CompletableFuture.runAsync(() -> localReplayService.postSend(request), customForkJoinExecutor);
     return CommonResponse.successResponse(SUCCESS_DESC, true);
+  }
+
+  @PostMapping(value = "/queryReRunCaseId")
+  public CommonResponse queryReRunCaseId(@Valid @RequestBody ReRunReplayPlanRequest request) {
+    try {
+      return localReplayService.queryReRunCaseId(request);
+    } catch (Exception e) {
+      LOGGER.error("queryReRunCaseId error: {} , request: {}", e.getMessage(), request, e);
+      return CommonResponse.badResponse("queryReRunCaseId error！" + e.getMessage(),
+          new BuildReplayPlanResponse(BuildReplayFailReasonEnum.UNKNOWN));
+    }
   }
 }
