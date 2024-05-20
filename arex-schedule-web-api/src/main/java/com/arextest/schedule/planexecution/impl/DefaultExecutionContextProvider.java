@@ -6,7 +6,6 @@ import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.ExecutionContextActionType;
 import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionCaseItem.Fields;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
@@ -87,7 +86,7 @@ public class DefaultExecutionContextProvider
       List<String> planItemIds = plan.getReplayActionItemList().stream()
           .map(ReplayActionItem::getId)
           .collect(Collectors.toList());
-      Criteria criteria = Criteria.where(Fields.PLAN_ITEM_ID).in(planItemIds);
+      Criteria criteria = Criteria.where(ReplayActionCaseItem.Fields.PLAN_ITEM_ID).in(planItemIds);
       contexts.forEach(context -> context.getContextCaseQuery().add(criteria));
     }
     return contexts;
