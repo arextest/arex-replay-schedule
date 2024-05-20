@@ -9,7 +9,7 @@ import com.arextest.schedule.service.ConfigurationService;
 import java.util.List;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.CollectionUtils;
@@ -23,6 +23,7 @@ public class DataDesensitizationConfiguration {
   ConfigurationService configurationService;
 
   @Bean
+  @ConditionalOnMissingBean(DataDesensitization.class)
   DataDesensitization desensitizationService() {
     List<DesensitizationJar> uploaded = configurationService.desensitization();
     if (CollectionUtils.isEmpty(uploaded)) {
