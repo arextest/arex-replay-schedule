@@ -6,6 +6,7 @@ import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.ExecutionContextActionType;
 import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.sender.ReplaySender;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -80,6 +82,13 @@ public class DefaultExecutionContextProvider
       contexts.add(context);
     });
 
+    if (plan.isReRun()) {
+      List<String> planItemIds = plan.getReplayActionItemList().stream()
+          .map(ReplayActionItem::getId)
+          .collect(Collectors.toList());
+      Criteria criteria = Criteria.where(ReplayActionCaseItem.Fields.PLAN_ITEM_ID).in(planItemIds);
+      contexts.forEach(context -> context.getContextCaseQuery().add(criteria));
+    }
     return contexts;
   }
 
