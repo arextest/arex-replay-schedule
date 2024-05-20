@@ -204,7 +204,6 @@ public final class PlanConsumeService {
             StageStatusEnum.ONGOING,
             System.currentTimeMillis(), null);
         replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
-        progressEvent.onContextBuilt(replayPlan);
 
         if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
           LOGGER.error("Invalid context built for plan {}", replayPlan);
