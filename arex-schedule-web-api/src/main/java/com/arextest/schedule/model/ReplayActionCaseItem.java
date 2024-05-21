@@ -49,6 +49,9 @@ public class ReplayActionCaseItem {
    * @see CompareProcessStatusType
    */
   private int compareStatus;
+
+  private CaseSendScene caseSendScene;
+
   private String caseType;
   @JsonIgnore
   private long recordTime;

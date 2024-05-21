@@ -3,6 +3,7 @@ package com.arextest.schedule.planexecution.impl;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
+import com.arextest.schedule.model.CaseSendScene;
 import com.arextest.schedule.model.ExecutionContextActionType;
 import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionCaseItem;
@@ -125,6 +126,8 @@ public class DefaultExecutionContextProvider
       if (!plan.getActionItemMap().containsKey(warmupCase.getPlanItemId())) {
         LOGGER.error("warmup failed! caseId:{}, actionId:{}", warmupCase.getId(), warmupCase.getPlanItemId());
       }
+      warmupCase.setCaseSendScene(CaseSendScene.EXTRA);
+
       ReplayParentBinder.setupCaseItemParent(warmupCase,
           plan.getActionItemMap().get(warmupCase.getPlanItemId()));
       ReplaySender sender = replaySenderFactory.findReplaySender(warmupCase.getCaseType());

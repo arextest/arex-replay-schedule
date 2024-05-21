@@ -7,6 +7,7 @@ import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.model.AppServiceDescriptor;
 import com.arextest.schedule.model.AppServiceOperationDescriptor;
 import com.arextest.schedule.model.CaseProvider;
+import com.arextest.schedule.model.CaseSendScene;
 import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.CompareProcessStatusType;
 import com.arextest.schedule.model.LogType;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -140,8 +142,16 @@ public class PlanConsumePrepareService {
     if (CollectionUtils.isEmpty(cases)) {
       return;
     }
+
+    boolean isMixedMode = Optional.ofNullable(cases.get(0).getParent())
+        .map(ReplayActionItem::getParent)
+        .map(ReplayPlan::getReplayPlanType)
+        .map(planType -> planType == BuildReplayPlanType.MIXED.getValue())
+        .orElse(false);
+
     cases.forEach(caseItem -> {
       caseItem.setCaseProviderCode(provider.getCode());
+      caseItem.setCaseSendScene(isMixedMode ? CaseSendScene.MIXED_NORMAL : CaseSendScene.NORMAL);
     });
     // to provide necessary fields into case item for context to consume when sending
     planExecutionContextProvider.injectContextIntoCase(cases);
@@ -201,8 +211,8 @@ public class PlanConsumePrepareService {
       if (CollectionUtils.isEmpty(caseItemList)) {
         break;
       }
-      caseItemPostProcess(caseItemList, provider);
       ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
+      caseItemPostProcess(caseItemList, provider);
       count += caseItemList.size();
       endTimeMills = caseItemList.get(caseItemList.size() - 1).getRecordTime();
       replayActionCaseItemRepository.save(caseItemList);

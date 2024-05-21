@@ -12,6 +12,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -41,6 +42,16 @@ abstract class AbstractReplaySender implements ReplaySender {
     Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
     headers.remove(CommonConstant.AREX_REPLAY_WARM_UP);
     headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
+
+    /**
+     * this header will be transparently passed to the storage service
+     * and storage may use it to perform extra operations
+     */
+    headers.put(CommonConstant.AREX_SCHEDULE_REPLAY,
+        Optional.ofNullable(caseItem.getCaseSendScene())
+            .map(Enum::name)
+            .orElse(Boolean.TRUE.toString()));
+
     String exclusionOperationConfig = replayActionItem.getExclusionOperationConfig();
     if (StringUtils.isNotEmpty(exclusionOperationConfig)) {
       headers.put(CommonConstant.X_AREX_EXCLUSION_OPERATIONS, exclusionOperationConfig);

@@ -1,6 +1,7 @@
 package com.arextest.schedule.service.noise;
 
 import com.arextest.common.runnable.AbstractContextWithTraceRunnable;
+import com.arextest.schedule.model.CaseSendScene;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.sender.ReplaySender;
 import java.util.concurrent.CountDownLatch;
@@ -29,6 +30,7 @@ public class AsyncNoiseCaseSendTaskRunnable extends AbstractContextWithTraceRunn
   protected void doWithContextRunning() {
     boolean success = false;
     try {
+      caseItem.setCaseSendScene(CaseSendScene.EXTRA);
       success = replaySender.send(caseItem);
       LOGGER.info("async run sender Id: {} , result:{}", caseItem.getId(), success);
     } catch (RuntimeException exception) {

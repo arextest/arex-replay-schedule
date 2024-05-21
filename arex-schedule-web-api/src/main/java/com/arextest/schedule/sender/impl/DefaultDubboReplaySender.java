@@ -51,7 +51,6 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
   public boolean send(ReplayActionCaseItem caseItem) {
     before(caseItem);
     Map<String, String> headers = createHeaders(caseItem);
-    headers.put(CommonConstant.AREX_SCHEDULE_REPLAY, Boolean.TRUE.toString());
     return doSend(caseItem, headers);
   }
 

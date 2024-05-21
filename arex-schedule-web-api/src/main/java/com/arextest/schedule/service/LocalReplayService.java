@@ -3,7 +3,6 @@ package com.arextest.schedule.service;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.utils.CompressionUtils;
 import com.arextest.model.constants.MockAttributeNames;
-import com.arextest.model.replay.QueryMockCacheResponseType;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.JsonUtils;
 import com.arextest.schedule.common.SendLimiter;
@@ -162,9 +161,7 @@ public class LocalReplayService {
         return false;
       }
     }
-    QueryMockCacheResponseType queryMockCacheResponseType = mockCachePreLoader.fillMockSource(
-        request.getRecordId(), request.getReplayPlanType());
-    return queryMockCacheResponseType != null;
+    return mockCachePreLoader.prepareCache(caseItem);
   }
 
 
@@ -443,7 +440,7 @@ public class LocalReplayService {
     }
     progressEvent.onReplayPlanCreated(replayPlan);
 
-    planConsumePrepareService.prepareRunData(replayPlan);
+    planConsumePrepareService.preparePlan(replayPlan);
     replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
     if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
       replayPlan.setErrorMessage("Got empty execution context");
@@ -492,7 +489,7 @@ public class LocalReplayService {
         caseItems = replayActionCaseItemRepository.waitingSendList(replayPlan.getId(),
             CommonConstant.MAX_PAGE_SIZE,
             executionContext.getContextCaseQuery(),
-            Optional.ofNullable(lastItem).map(ReplayActionCaseItem::getId).orElse(null));
+            Optional.ofNullable(lastItem).map(ReplayActionCaseItem::getRecordTime).orElse(null));
 
         if (CollectionUtils.isEmpty(caseItems)) {
           break;
