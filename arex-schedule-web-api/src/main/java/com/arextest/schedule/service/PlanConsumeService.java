@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /**
@@ -36,7 +37,6 @@ import org.springframework.stereotype.Service;
 @Service
 @SuppressWarnings({"rawtypes", "unchecked"})
 public final class PlanConsumeService {
-
   @Resource
   private PlanConsumePrepareService planConsumePrepareService;
   @Resource
@@ -55,6 +55,11 @@ public final class PlanConsumeService {
   private PlanExecutionMonitor planExecutionMonitorImpl;
   @Resource
   private CompareConfigService compareConfigService;
+
+  @Value("${arex.replay.threshold.errorBreakRatio:0.1}")
+  private double errorBreakRatio;
+  @Value("${arex.replay.threshold.continuousFail:40}")
+  private int continuousFailThreshold;
 
   public void runAsyncConsume(ReplayPlan replayPlan) {
     BizLogger.recordPlanAsyncStart(replayPlan);
@@ -254,6 +259,8 @@ public final class PlanConsumeService {
           replayPlan.getMinInstanceCount());
       qpsLimiter.setTotalTasks(replayPlan.getCaseTotalCount());
       qpsLimiter.setReplayPlan(replayPlan);
+      qpsLimiter.setErrorBreakRatio(errorBreakRatio);
+      qpsLimiter.setContinuousFailThreshold(continuousFailThreshold);
       replayPlan.setPlanStatus(ExecutionStatus.buildNormal(qpsLimiter));
       replayPlan.setLimiter(qpsLimiter);
       replayPlan.getReplayActionItemList()

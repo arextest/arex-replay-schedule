@@ -3,6 +3,7 @@ package com.arextest.schedule.service;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.utils.CompressionUtils;
 import com.arextest.model.constants.MockAttributeNames;
+import com.arextest.model.replay.QueryMockCacheResponseType;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.JsonUtils;
 import com.arextest.schedule.common.SendLimiter;
@@ -18,6 +19,7 @@ import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayActionItemForCache;
 import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.model.ReplayPlanForCache;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
@@ -28,12 +30,14 @@ import com.arextest.schedule.model.plan.PreSendRequest;
 import com.arextest.schedule.model.plan.QueryReplayCaseIdResponse;
 import com.arextest.schedule.model.plan.QueryReplaySenderParametersRequest;
 import com.arextest.schedule.model.plan.QueryReplaySenderParametersResponse;
+import com.arextest.schedule.model.plan.ReRunReplayPlanRequest;
 import com.arextest.schedule.model.plan.ReplayCaseBatchInfo;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.plan.builder.BuildPlanValidateResult;
 import com.arextest.schedule.plan.builder.ReplayPlanBuilder;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
+import com.arextest.schedule.planexecution.PlanExecutionMonitor;
 import com.arextest.schedule.planexecution.impl.DefaultExecutionContextProvider.ContextDependenciesHolder;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
@@ -66,9 +70,11 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @Slf4j
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class LocalReplayService {
 
   private static final String REPLAY_ACTION_ITEM_KEY_FORMAT = "replay_action_item_%s";
+  private static final String REPLAY_PLAN_RERUN_KEY_FORMAT = "replay_plan_rerun_%s";
 
   @Resource
   private PlanProduceService planProduceService;
@@ -98,65 +104,18 @@ public class LocalReplayService {
   private CompareConfigService compareConfigService;
   @Resource
   private ExecutorService postSendExecutorService;
+  @Resource
+  private PlanExecutionMonitor planExecutionMonitorImpl;
 
   public CommonResponse queryReplayCaseId(BuildReplayPlanRequest request) {
     final QueryReplayCaseIdResponse response = new QueryReplayCaseIdResponse();
-    final List<ReplayCaseBatchInfo> replayCaseBatchInfos = new ArrayList<>();
-    response.setReplayCaseBatchInfos(replayCaseBatchInfos);
-
     Pair<ReplayPlan, CommonResponse> pair = buildReplayPlan(request);
     if (pair.getLeft() == null) {
       return pair.getRight();
     }
     ReplayPlan replayPlan = pair.getLeft();
-    Set<String> planItemIds = new HashSet<>();
-    for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
-      ReplayCaseBatchInfo replayCaseBatchInfo = new ReplayCaseBatchInfo();
-      replayCaseBatchInfo.setCaseIds(new ArrayList<>());
-      ReplayCaseBatchInfo replayCaseBatchInfoForWarmUp = new ReplayCaseBatchInfo();
-
-      ContextDependenciesHolder dependencyHolder = (ContextDependenciesHolder) executionContext.getDependencies();
-      String contextIdentifier = dependencyHolder.getContextIdentifier();
-      if (StringUtils.isNotEmpty(contextIdentifier)) {
-        // warmUp case
-        ReplayActionCaseItem warmupCase = replayActionCaseItemRepository.getOneOfContext(
-            replayPlan.getId(),
-            dependencyHolder.getContextIdentifier());
-        if (warmupCase != null) {
-          replayCaseBatchInfoForWarmUp.setWarmUpId(contextIdentifier);
-          replayCaseBatchInfoForWarmUp.setCaseIds(Collections.singletonList(warmupCase.getId()));
-          replayCaseBatchInfos.add(replayCaseBatchInfoForWarmUp);
-        }
-      }
-
-      // other cases
-      List<ReplayActionCaseItem> caseItems = Collections.emptyList();
-      while (true) {
-        // checkpoint: before sending page of cases
-        ReplayActionCaseItem lastItem =
-            CollectionUtils.isNotEmpty(caseItems) ? caseItems.get(caseItems.size() - 1) : null;
-        caseItems = replayActionCaseItemRepository.waitingSendList(replayPlan.getId(),
-            CommonConstant.MAX_PAGE_SIZE,
-            executionContext.getContextCaseQuery(),
-            Optional.ofNullable(lastItem).map(ReplayActionCaseItem::getRecordTime).orElse(null));
-
-        if (CollectionUtils.isEmpty(caseItems)) {
-          break;
-        }
-        List<String> caseIdList = replayCaseBatchInfo.getCaseIds();
-        caseItems.forEach(replayActionCaseItem -> {
-          planItemIds.add(replayActionCaseItem.getPlanItemId());
-          caseIdList.add(replayActionCaseItem.getId());
-        });
-      }
-      if (StringUtils.isEmpty(contextIdentifier)) {
-        replayCaseBatchInfos.add(0, replayCaseBatchInfo);
-      } else {
-        replayCaseBatchInfos.add(replayCaseBatchInfo);
-      }
-    }
     response.setPlanId(replayPlan.getId());
-    cacheReplayActionItem(replayPlan.getReplayActionItemList(), planItemIds);
+    response.setReplayCaseBatchInfos(buildBatchInfoList(replayPlan));
     return CommonResponse.successResponse("queryReplayCaseId success!", response);
   }
 
@@ -189,6 +148,8 @@ public class LocalReplayService {
 
   public boolean preSend(PreSendRequest request) {
     ReplayPlan replayPlan = replayPlanRepository.query(request.getPlanId());
+    restorePlanCache(replayPlan);
+
     SendLimiter sendLimiter = new SendRedisLimiter(replayPlan, redisCacheProvider);
     ReplayActionCaseItem caseItem = restoreCase(request.getCaseId(), null);
     if (caseItem != null) {
@@ -201,7 +162,9 @@ public class LocalReplayService {
         return false;
       }
     }
-    return mockCachePreLoader.prepareCache(caseItem);
+    QueryMockCacheResponseType queryMockCacheResponseType = mockCachePreLoader.fillMockSource(
+        request.getRecordId(), request.getReplayPlanType());
+    return queryMockCacheResponseType != null;
   }
 
 
@@ -210,8 +173,46 @@ public class LocalReplayService {
     return true;
   }
 
+  public CommonResponse queryReRunCaseId(ReRunReplayPlanRequest request) {
+    final String planId = request.getPlanId();
+    final QueryReplayCaseIdResponse response = new QueryReplayCaseIdResponse();
+
+    ReplayPlan replayPlan = replayPlanRepository.query(planId);
+
+
+    List<ReplayActionCaseItem> failedCaseList = replayActionCaseItemRepository.failedCaseList(
+        planId, request.getPlanItemId());
+
+    if (CollectionUtils.isEmpty(failedCaseList)) {
+      progressEvent.onReplayPlanReRunException(replayPlan);
+      return CommonResponse.badResponse("No failed case found");
+    }
+
+    if (planProduceService.isRunning(planId)) {
+      progressEvent.onReplayPlanReRunException(replayPlan);
+      return CommonResponse.badResponse("This plan is Running");
+    }
+    replayPlan.setReRun(Boolean.TRUE);
+    cacheReplayPlan(replayPlan);
+
+    planExecutionMonitorImpl.register(replayPlan);
+    progressEvent.onReplayPlanReRun(replayPlan);
+    progressEvent.onUpdateFailedCases(replayPlan, failedCaseList);
+    planConsumePrepareService.updateFailedActionAndCase(replayPlan, failedCaseList);
+    if (CollectionUtils.isEmpty(replayPlan.getReplayActionItemList())) {
+      throw new RuntimeException("no replayActionItem!");
+    }
+    replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
+
+    response.setReplayCaseBatchInfos(buildBatchInfoList(replayPlan));
+
+    return CommonResponse.successResponse("queryReRunCaseIds success!", response);
+  }
+
   private void postSend0(PostSendRequest request) {
     ReplayPlan replayPlan = replayPlanRepository.query(request.getPlanId());
+    restorePlanCache(replayPlan);
+
     SendLimiter sendLimiter = new SendRedisLimiter(replayPlan, redisCacheProvider);
     sendLimiter.release(request.getSendStatusType() == CaseSendStatusType.SUCCESS.getValue());
 
@@ -247,6 +248,27 @@ public class LocalReplayService {
       redisCacheProvider.put(buildReplayActionItemRedisKey(replayActionItemForCache.getId()),
           CommonConstant.ONE_HOUR_MILLIS,
           JsonUtils.objectToJsonString(replayActionItemForCache).getBytes(StandardCharsets.UTF_8));
+    }
+  }
+
+  private void cacheReplayPlan(ReplayPlan replayPlan) {
+    ReplayPlanForCache replayPlanForCache = transformForCache(replayPlan);
+    redisCacheProvider.put(buildReplayPlanRerunRedisKey(replayPlan.getId()),
+        CommonConstant.ONE_HOUR_MILLIS,
+        JsonUtils.objectToJsonString(replayPlanForCache).getBytes(StandardCharsets.UTF_8));
+  }
+
+  private ReplayPlanForCache loadReplayPlanCache(String planId) {
+    try {
+      byte[] json = doWithRetry(
+          () -> redisCacheProvider.get(buildReplayPlanRerunRedisKey(planId)));
+      if (json == null) {
+        return null;
+      }
+      return JsonUtils.byteToObject(json, ReplayPlanForCache.class);
+    } catch (Throwable e) {
+      LOGGER.error("loadReplayPlanCache failed, planId:{}", planId, e);
+      return null;
     }
   }
 
@@ -299,9 +321,30 @@ public class LocalReplayService {
     return result;
   }
 
+  private ReplayPlanForCache transformForCache(ReplayPlan replayPlan) {
+    ReplayPlanForCache result = new ReplayPlanForCache();
+    result.setId(replayPlan.getId());
+    result.setRerun(replayPlan.isReRun());
+    return result;
+  }
+
   private byte[] buildReplayActionItemRedisKey(String planItemId) {
     return (String.format(REPLAY_ACTION_ITEM_KEY_FORMAT, planItemId)).getBytes(
         StandardCharsets.UTF_8);
+  }
+
+  private byte[] buildReplayPlanRerunRedisKey(String planId) {
+    return (String.format(REPLAY_PLAN_RERUN_KEY_FORMAT, planId)).getBytes(
+        StandardCharsets.UTF_8);
+  }
+
+  private void restorePlanCache(ReplayPlan replayPlan) {
+    ReplayPlanForCache replayPlanForCache = loadReplayPlanCache(replayPlan.getId());
+    if (replayPlanForCache == null) {
+      return;
+    }
+    replayPlan.setReRun(replayPlanForCache.isRerun());
+    replayPlan.setCaseRerunCount(replayPlanForCache.getCaseRerunCount());
   }
 
   private String compress(ReplaySenderParameters senderParameter) {
@@ -400,7 +443,7 @@ public class LocalReplayService {
     }
     progressEvent.onReplayPlanCreated(replayPlan);
 
-    planConsumePrepareService.preparePlan(replayPlan);
+    planConsumePrepareService.prepareRunData(replayPlan);
     replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
     if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
       replayPlan.setErrorMessage("Got empty execution context");
@@ -416,5 +459,57 @@ public class LocalReplayService {
 
   private boolean isStop(String planId) {
     return redisCacheProvider.get(PlanProduceService.buildStopPlanRedisKey(planId)) != null;
+  }
+
+  private List<ReplayCaseBatchInfo> buildBatchInfoList(ReplayPlan replayPlan) {
+    Set<String> planItemIds = new HashSet<>();
+    List<ReplayCaseBatchInfo> replayCaseBatchInfos = new ArrayList<>();
+    for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
+      ReplayCaseBatchInfo replayCaseBatchInfo = new ReplayCaseBatchInfo();
+      replayCaseBatchInfo.setCaseIds(new ArrayList<>());
+      ReplayCaseBatchInfo replayCaseBatchInfoForWarmUp = new ReplayCaseBatchInfo();
+
+      ContextDependenciesHolder dependencyHolder = (ContextDependenciesHolder) executionContext.getDependencies();
+      String contextIdentifier = dependencyHolder.getContextIdentifier();
+      if (StringUtils.isNotEmpty(contextIdentifier)) {
+        // warmUp case
+        ReplayActionCaseItem warmupCase = replayActionCaseItemRepository.getOneOfContext(
+            replayPlan.getId(),
+            dependencyHolder.getContextIdentifier());
+        if (warmupCase != null) {
+          replayCaseBatchInfoForWarmUp.setWarmUpId(contextIdentifier);
+          replayCaseBatchInfoForWarmUp.setCaseIds(Collections.singletonList(warmupCase.getId()));
+          replayCaseBatchInfos.add(replayCaseBatchInfoForWarmUp);
+        }
+      }
+
+      // other cases
+      List<ReplayActionCaseItem> caseItems = Collections.emptyList();
+      while (true) {
+        // checkpoint: before sending page of cases
+        ReplayActionCaseItem lastItem =
+            CollectionUtils.isNotEmpty(caseItems) ? caseItems.get(caseItems.size() - 1) : null;
+        caseItems = replayActionCaseItemRepository.waitingSendList(replayPlan.getId(),
+            CommonConstant.MAX_PAGE_SIZE,
+            executionContext.getContextCaseQuery(),
+            Optional.ofNullable(lastItem).map(ReplayActionCaseItem::getId).orElse(null));
+
+        if (CollectionUtils.isEmpty(caseItems)) {
+          break;
+        }
+        List<String> caseIdList = replayCaseBatchInfo.getCaseIds();
+        caseItems.forEach(replayActionCaseItem -> {
+          planItemIds.add(replayActionCaseItem.getPlanItemId());
+          caseIdList.add(replayActionCaseItem.getId());
+        });
+      }
+      if (StringUtils.isEmpty(contextIdentifier)) {
+        replayCaseBatchInfos.add(0, replayCaseBatchInfo);
+      } else {
+        replayCaseBatchInfos.add(replayCaseBatchInfo);
+      }
+    }
+    cacheReplayActionItem(replayPlan.getReplayActionItemList(), planItemIds);
+    return replayCaseBatchInfos;
   }
 }

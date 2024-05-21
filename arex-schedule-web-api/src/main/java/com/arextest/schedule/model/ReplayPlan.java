@@ -16,6 +16,7 @@ import java.util.concurrent.ScheduledFuture;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author jmo
@@ -25,6 +26,7 @@ import lombok.ToString;
 @Data
 @ToString(of = {"id", "appId", "sourceEnv", "sourceHost", "targetEnv", "targetHost"})
 @EqualsAndHashCode(of = {"id"})
+@Slf4j
 public class ReplayPlan {
 
   private String id;
@@ -126,5 +128,6 @@ public class ReplayPlan {
   public void buildActionItemMap() {
     this.getReplayActionItemList().forEach(
         replayActionItem -> this.actionItemMap.put(replayActionItem.getId(), replayActionItem));
+    LOGGER.info("buildActionItemMap, planId:{}, keySet:{}", getId(), actionItemMap.keySet());
   }
 }

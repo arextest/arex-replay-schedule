@@ -61,7 +61,7 @@ public class SendSemaphoreLimiterTest {
   public void breakByLimit() {
     SendSemaphoreLimiter test = new SendSemaphoreLimiter(null, 1);
     test.setTotalTasks(1000);
-    test.batchRelease(false, (int) (1000 * SendSemaphoreLimiter.ERROR_BREAK_RATE));
+    test.batchRelease(false, (int) (1000 * SendSemaphoreLimiter.DEFAULT_ERROR_BREAK_RATIO));
     assertTrue(test.failBreak());
   }
 
@@ -69,7 +69,7 @@ public class SendSemaphoreLimiterTest {
   public void breakByContinuousFail() {
     SendSemaphoreLimiter test = new SendSemaphoreLimiter(null, 1);
     test.setTotalTasks(1000);
-    test.batchRelease(false, SendSemaphoreLimiter.CONTINUOUS_FAIL_TOTAL + 1);
+    test.batchRelease(false, SendSemaphoreLimiter.DEFAULT_CONTINUOUS_FAIL_THRESHOLD + 1);
     assertTrue(test.failBreak());
   }
 

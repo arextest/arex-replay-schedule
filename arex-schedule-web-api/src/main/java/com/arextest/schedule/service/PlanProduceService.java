@@ -295,14 +295,6 @@ public class PlanProduceService {
     }
   }
 
-  public void endRunning(String planId) {
-    try {
-      redisCacheProvider.remove(buildPlanRunningRedisKey(planId));
-    } catch (Exception e) {
-      LOGGER.error("endRunning error : {}", e.getMessage(), e);
-    }
-  }
-
   public void stopPlan(String planId, String operator) {
     try {
       // set key for other instance to stop internal execution
@@ -378,6 +370,7 @@ public class PlanProduceService {
       progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
           StageStatusEnum.ONGOING, System.currentTimeMillis(), null);
 
+      progressEvent.onUpdateFailedCases(replayPlan, failedCaseList);
       planConsumePrepareService.updateFailedActionAndCase(replayPlan, failedCaseList);
       if (CollectionUtils.isEmpty(replayPlan.getReplayActionItemList())) {
         throw new RuntimeException("no replayActionItem!");
