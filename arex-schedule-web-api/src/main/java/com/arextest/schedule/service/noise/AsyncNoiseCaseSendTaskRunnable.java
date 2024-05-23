@@ -1,7 +1,7 @@
 package com.arextest.schedule.service.noise;
 
 import com.arextest.common.runnable.AbstractContextWithTraceRunnable;
-import com.arextest.schedule.model.CaseSendScene;
+import com.arextest.model.replay.CaseSendScene;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.sender.ReplaySender;
 import java.util.concurrent.CountDownLatch;

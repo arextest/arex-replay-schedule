@@ -1,9 +1,9 @@
 package com.arextest.schedule.planexecution.impl;
 
+import com.arextest.model.replay.CaseSendScene;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.mdc.MDCTracer;
-import com.arextest.schedule.model.CaseSendScene;
 import com.arextest.schedule.model.ExecutionContextActionType;
 import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionCaseItem;

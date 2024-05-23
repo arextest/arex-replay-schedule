@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.TypeReference;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.Mocker.Target;
+import com.arextest.model.replay.CaseSendScene;
 import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Map;

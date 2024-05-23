@@ -1,5 +1,6 @@
 package com.arextest.schedule.service;
 
+import com.arextest.model.replay.CaseSendScene;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
@@ -7,7 +8,6 @@ import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.model.AppServiceDescriptor;
 import com.arextest.schedule.model.AppServiceOperationDescriptor;
 import com.arextest.schedule.model.CaseProvider;
-import com.arextest.schedule.model.CaseSendScene;
 import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.CompareProcessStatusType;
 import com.arextest.schedule.model.LogType;
