@@ -2,6 +2,8 @@ package com.arextest.schedule.web.controller;
 
 import com.arextest.common.model.response.Response;
 import com.arextest.common.utils.ResponseUtils;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -23,4 +25,14 @@ public class CheckHealthController {
   public Response checkHealth() {
     return ResponseUtils.successResponse(VERSION);
   }
+
+  @GetMapping(value = "/oom", produces = "application/json")
+  @ResponseBody
+  public Response oom() {
+    List<byte[]> list = new ArrayList<>();
+    while (true) {
+      list.add(new byte[1024 * 1024]);
+    }
+  }
+
 }
