@@ -1,6 +1,5 @@
 package com.arextest.schedule.service;
 
-import com.arextest.model.replay.CaseSendScene;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
@@ -28,7 +27,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -143,15 +141,8 @@ public class PlanConsumePrepareService {
       return;
     }
 
-    boolean isMixedMode = Optional.ofNullable(cases.get(0).getParent())
-        .map(ReplayActionItem::getParent)
-        .map(ReplayPlan::getReplayPlanType)
-        .map(planType -> planType == BuildReplayPlanType.MIXED.getValue())
-        .orElse(false);
-
     cases.forEach(caseItem -> {
       caseItem.setCaseProviderCode(provider.getCode());
-      caseItem.setCaseSendScene(isMixedMode ? CaseSendScene.MIXED_NORMAL : CaseSendScene.NORMAL);
     });
     // to provide necessary fields into case item for context to consume when sending
     planExecutionContextProvider.injectContextIntoCase(cases);

@@ -1,5 +1,6 @@
 package com.arextest.schedule.service;
 
+import com.arextest.model.replay.CaseSendScene;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
@@ -9,8 +10,10 @@ import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.model.ExecutionStatus;
 import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
+import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.schedule.model.plan.PlanStageEnum;
 import com.arextest.schedule.model.plan.StageStatusEnum;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
@@ -154,8 +157,25 @@ public final class PlanConsumeService {
         break;
       }
       ReplayParentBinder.setupCaseItemParent(caseItems, replayPlan);
+      caseItemPostProcess(caseItems);
       replayCaseTransmitServiceRemoteImpl.send(caseItems, executionContext);
     }
+  }
+
+  private void caseItemPostProcess(List<ReplayActionCaseItem> cases) {
+    if (CollectionUtils.isEmpty(cases)) {
+      return;
+    }
+
+    boolean isMixedMode = Optional.ofNullable(cases.get(0).getParent())
+        .map(ReplayActionItem::getParent)
+        .map(ReplayPlan::getReplayPlanType)
+        .map(planType -> planType == BuildReplayPlanType.MIXED.getValue())
+        .orElse(false);
+
+    cases.forEach(caseItem -> {
+      caseItem.setCaseSendScene(isMixedMode ? CaseSendScene.MIXED_NORMAL : CaseSendScene.NORMAL);
+    });
   }
 
   private void finalizePlanStatus(ReplayPlan replayPlan) {
