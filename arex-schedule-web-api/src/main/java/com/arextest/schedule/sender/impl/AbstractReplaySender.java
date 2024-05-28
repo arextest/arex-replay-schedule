@@ -21,7 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 
 
 @Slf4j
-abstract class AbstractReplaySender implements ReplaySender {
+public abstract class AbstractReplaySender implements ReplaySender {
 
   @Resource
   private MockCachePreLoader mockCachePreLoader;
