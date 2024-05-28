@@ -1,6 +1,5 @@
 package com.arextest.schedule.plan.builder.impl;
 
-import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.model.AppServiceOperationDescriptor;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
@@ -9,10 +8,8 @@ import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.schedule.model.plan.OperationCaseInfo;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.builder.BuildPlanValidateResult;
-import com.arextest.schedule.service.ReplayActionItemPreprocessService;
 import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -22,10 +19,6 @@ import org.springframework.stereotype.Component;
  */
 @Component
 final class PinnedCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
-
-  @Resource
-  private ReplayActionItemPreprocessService replayActionItemPreprocessService;
-
   @Override
   public boolean isSupported(BuildReplayPlanRequest request) {
     return request.getReplayPlanType() == BuildReplayPlanType.BY_PINNED_CASE.getValue();
@@ -71,7 +64,6 @@ final class PinnedCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder 
       for (String replayId : replayIdList) {
         caseItem = new ReplayActionCaseItem();
         caseItem.setRecordId(replayId);
-        caseItem.setSourceProvider(CommonConstant.PINNED);
         caseItem.setParent(replayActionItem);
         caseItemList.add(caseItem);
       }
@@ -80,10 +72,5 @@ final class PinnedCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder 
       replayActionItemList.add(replayActionItem);
     }
     return replayActionItemList;
-  }
-
-  @Override
-  int queryCaseCount(ReplayActionItem actionItem) {
-    return actionItem.getCaseItemList().size();
   }
 }

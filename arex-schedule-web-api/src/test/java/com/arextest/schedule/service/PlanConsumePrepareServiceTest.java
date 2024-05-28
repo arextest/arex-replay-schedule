@@ -3,7 +3,9 @@ package com.arextest.schedule.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
+import com.arextest.schedule.model.CaseProvider;
 import com.arextest.schedule.model.OperationTypeData;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
@@ -56,7 +58,8 @@ class PlanConsumePrepareServiceTest {
         any(Long.class), any(Long.class), any(ReplayActionItem.class),
         any(Integer.class), any(String.class), any(String.class)))
         .thenReturn(new ArrayList<>());
-    int result = planConsumePrepareService.doPagingLoadCaseSave(replayActionItem, "Rolling");
+    int result = planConsumePrepareService.loadCasesByProvider(replayActionItem,
+        CaseProvider.ROLLING);
     assertEquals(0, result);
   }
 
@@ -73,7 +76,8 @@ class PlanConsumePrepareServiceTest {
         any(Integer.class), any(String.class), any(String.class)))
         .thenReturn(list);
 
-    int result = planConsumePrepareService.doPagingLoadCaseSave(replayActionItem, "Rolling");
+    int result = planConsumePrepareService.loadCasesByProvider(replayActionItem,
+        CaseProvider.ROLLING);
     assertEquals(10, result);
   }
 //

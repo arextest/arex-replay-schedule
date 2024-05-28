@@ -312,7 +312,6 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   @Override
   public void onActionCaseLoaded(ReplayActionItem actionItem) {
     if (actionItem.isEmpty()) {
-      LOGGER.info("loaded empty case , action id:{} , should skip it all", actionItem.getId());
       return;
     }
     actionItem.setReplayStatus(ReplayStatusType.CASE_LOADED.getValue());

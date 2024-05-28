@@ -22,7 +22,6 @@ import javax.annotation.Resource;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.domain.Sort;
@@ -54,6 +53,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
   private static final String RECORD_TIME = "recordTime";
   private static final String LAST_RECORD_TIME_FIELD = "lastRecordTime";
   private static final String ID_FIELD = "_id";
+
   @Autowired
   MongoTemplate mongoTemplate;
   @Resource
@@ -89,8 +89,15 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     return true;
   }
 
+  /**
+   * @return case list that need to be sent Case order is hard-coded to be ascending by record time.
+   *
+   * The case order is to control the order of extra mockers yields during the replay phase, please
+   * make sure you discuss with agent team before changing the order.
+   * todo make order configurable
+   */
   public List<ReplayActionCaseItem> waitingSendList(String planId, int pageSize,
-      List<Criteria> baseCriteria, String minId) {
+      List<Criteria> baseCriteria, Long minRecordTime) {
     Query query = new Query();
 
     Optional.ofNullable(baseCriteria).ifPresent(criteria -> criteria.forEach(query::addCriteria));
@@ -102,11 +109,13 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         Criteria.where(ReplayActionCaseItem.Fields.COMPARE_STATUS)
             .is(CompareProcessStatusType.WAIT_HANDLING.getValue())
     ));
-    if (StringUtils.hasText(minId)) {
-      query.addCriteria(Criteria.where(DASH_ID).gt(new ObjectId(minId)));
+    if (minRecordTime != null) {
+      query.addCriteria(
+          Criteria.where(ReplayRunDetailsCollection.Fields.RECORD_TIME).gte(minRecordTime));
     }
     query.limit(pageSize);
-    query.with(Sort.by(Sort.Order.asc(DASH_ID)));
+    query.with(Sort.by(Sort.Order.asc(ReplayRunDetailsCollection.Fields.RECORD_TIME)));
+
     List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query,
         ReplayRunDetailsCollection.class);
     return replayRunDetailsCollections.stream().map(converter::dtoFromDao)
@@ -283,7 +292,6 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
   @Data
   public static class GroupCountRes {
-
     @Id
     private String planItemId;
     private Long count;

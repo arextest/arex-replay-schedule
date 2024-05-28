@@ -4,7 +4,6 @@ import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.exceptions.PlanRunningException;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CommonResponse;
-import com.arextest.schedule.model.DebugRequestItem;
 import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.model.plan.BuildReplayPlanResponse;
@@ -13,8 +12,6 @@ import com.arextest.schedule.model.plan.OperationCaseInfo;
 import com.arextest.schedule.model.plan.ReRunReplayPlanRequest;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
-import com.arextest.schedule.sender.ReplaySendResult;
-import com.arextest.schedule.service.DebugRequestService;
 import com.arextest.schedule.service.PlanProduceService;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.util.Date;
@@ -24,7 +21,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.CollectionUtils;
@@ -50,8 +46,6 @@ public class ReplayPlanController {
   private ProgressTracer progressTracer;
   @Resource
   private ProgressEvent progressEvent;
-  @Resource
-  private DebugRequestService debugRequestService;
   @PostMapping(value = "/api/createPlan")
   @ResponseBody
   public CommonResponse createPlanPost(@RequestBody BuildReplayPlanRequest request) {
@@ -132,22 +126,6 @@ public class ReplayPlanController {
     progressStatus.setLastUpdateTime(new Date(updateTime));
     return CommonResponse.successResponse("ok", progressStatus);
   }
-
-  @PostMapping("/api/debugRequest")
-  @ResponseBody
-  public ReplaySendResult debugRequest(@RequestBody DebugRequestItem requestItem) {
-    if (requestItem == null) {
-      return ReplaySendResult.failed("param is null");
-    }
-    if (StringUtils.isBlank(requestItem.getOperation())) {
-      return ReplaySendResult.failed("operation is null or empty");
-    }
-    if (StringUtils.isBlank(requestItem.getMessage())) {
-      return ReplaySendResult.failed("message is null or empty");
-    }
-    return debugRequestService.debugRequest(requestItem);
-  }
-
 
   private CommonResponse createPlan(BuildReplayPlanRequest request) {
     if (request == null) {

@@ -8,11 +8,9 @@ import com.arextest.schedule.common.UrlUtil;
 import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
 import com.arextest.schedule.extension.model.ReplayInvokeResult;
 import com.arextest.schedule.model.ReplayActionCaseItem;
-import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.invocation.DubboInvocation;
 import com.arextest.schedule.sender.ReplaySendResult;
-import com.arextest.schedule.sender.SenderParameters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,16 +49,9 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
 
   @Override
   public boolean send(ReplayActionCaseItem caseItem) {
-    ReplayActionItem replayActionItem = caseItem.getParent();
-    before(caseItem.getRecordId(), replayActionItem.getParent().getReplayPlanType());
+    before(caseItem);
     Map<String, String> headers = createHeaders(caseItem);
-    headers.put(CommonConstant.AREX_SCHEDULE_REPLAY, Boolean.TRUE.toString());
     return doSend(caseItem, headers);
-  }
-
-  @Override
-  public ReplaySendResult send(SenderParameters senderParameters) {
-    return null;
   }
 
   @Override

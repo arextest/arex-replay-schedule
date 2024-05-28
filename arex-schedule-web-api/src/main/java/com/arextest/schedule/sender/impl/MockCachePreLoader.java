@@ -1,12 +1,11 @@
 package com.arextest.schedule.sender.impl;
 
-import static com.arextest.schedule.common.CommonConstant.PINNED;
 import com.arextest.model.replay.QueryMockCacheRequestType;
 import com.arextest.model.replay.QueryMockCacheResponseType;
 import com.arextest.model.response.ResponseStatusType;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
-import com.arextest.schedule.common.CommonConstant;
-import com.arextest.schedule.model.plan.BuildReplayPlanType;
+import com.arextest.schedule.model.CaseProvider;
+import com.arextest.schedule.model.ReplayActionCaseItem;
 import java.util.Optional;
 import javax.annotation.Resource;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,39 +20,34 @@ public final class MockCachePreLoader {
   @Resource
   private HttpWepServiceApiClient httpWepServiceApiClient;
 
-  public QueryMockCacheResponseType removeMockSource(String replayId) {
+  public void removeCache(String replayId) {
     QueryMockCacheRequestType mockCacheRequestType = new QueryMockCacheRequestType();
     mockCacheRequestType.setRecordId(replayId);
-    return httpWepServiceApiClient.jsonPost(cacheRemoveUrl, mockCacheRequestType,
+    httpWepServiceApiClient.jsonPost(cacheRemoveUrl, mockCacheRequestType,
         QueryMockCacheResponseType.class);
   }
 
-  public QueryMockCacheResponseType fillMockSource(String replayId, int replayPlanType) {
-    QueryMockCacheRequestType mockCacheRequestType = new QueryMockCacheRequestType();
-    mockCacheRequestType.setRecordId(replayId);
-    if (replayPlanType == BuildReplayPlanType.BY_PINNED_CASE.getValue()) {
-      mockCacheRequestType.setSourceProvider(PINNED);
-      return httpWepServiceApiClient.jsonPost(cachePreloadUrl, mockCacheRequestType,
-          QueryMockCacheResponseType.class);
-    } else if (replayPlanType == BuildReplayPlanType.MIXED.getValue()) {
-      // todo: remove this code after the new version of arex-agent is released
-      mockCacheRequestType.setSourceProvider(CommonConstant.AUTO_PINED);
-      QueryMockCacheResponseType res = httpWepServiceApiClient.jsonPost(cachePreloadUrl,
-          mockCacheRequestType, QueryMockCacheResponseType.class);
-      if (!Optional.ofNullable(res)
-          .map(QueryMockCacheResponseType::getResponseStatusType)
-          .map(ResponseStatusType::getResponseCode)
-          .map(code -> code.equals(0))
-          .orElse(false)) {
-        mockCacheRequestType.setSourceProvider(CommonConstant.ROLLING);
-        return httpWepServiceApiClient.retryJsonPost(cachePreloadUrl, mockCacheRequestType,
-            QueryMockCacheResponseType.class);
-      } else {
-        return res;
-      }
-    } else {
-      return httpWepServiceApiClient.retryJsonPost(cachePreloadUrl, mockCacheRequestType,
-          QueryMockCacheResponseType.class);
-    }
+  public boolean prepareCache(ReplayActionCaseItem caseItem) {
+    String recordId = caseItem.getRecordId();
+    QueryMockCacheRequestType request = new QueryMockCacheRequestType();
+    request.setRecordId(recordId);
+    QueryMockCacheResponseType response;
+
+    String provider = Optional.ofNullable(CaseProvider.fromCode(caseItem.getCaseProviderCode()))
+        .orElse(CaseProvider.ROLLING)
+        .getName();
+    request.setSourceProvider(provider);
+
+    response = httpWepServiceApiClient.retryJsonPost(cachePreloadUrl, request,
+        QueryMockCacheResponseType.class);
+    return isLoadingSuccess(response);
+  }
+
+  private static Boolean isLoadingSuccess(QueryMockCacheResponseType res) {
+    return Optional.ofNullable(res)
+        .map(QueryMockCacheResponseType::getResponseStatusType)
+        .map(ResponseStatusType::getResponseCode)
+        .map(code -> code.equals(0))
+        .orElse(false);
   }
 }

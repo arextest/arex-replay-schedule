@@ -12,6 +12,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -20,7 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 
 
 @Slf4j
-abstract class AbstractReplaySender implements ReplaySender {
+public abstract class AbstractReplaySender implements ReplaySender {
 
   @Resource
   private MockCachePreLoader mockCachePreLoader;
@@ -32,10 +33,8 @@ abstract class AbstractReplaySender implements ReplaySender {
     caseItem.setSendStatus(sendResult.getStatusType().getValue());
   }
 
-  protected void before(String recordId, int replayPlanType) {
-    if (StringUtils.isNotEmpty(recordId)) {
-      mockCachePreLoader.fillMockSource(recordId, replayPlanType);
-    }
+  protected void before(ReplayActionCaseItem caseItem) {
+    mockCachePreLoader.prepareCache(caseItem);
   }
 
   protected Map<String, String> createHeaders(ReplayActionCaseItem caseItem) {
@@ -43,6 +42,16 @@ abstract class AbstractReplaySender implements ReplaySender {
     Map<String, String> headers = newHeadersIfEmpty(caseItem.requestHeaders());
     headers.remove(CommonConstant.AREX_REPLAY_WARM_UP);
     headers.put(CommonConstant.AREX_RECORD_ID, caseItem.getRecordId());
+
+    /**
+     * this header will be transparently passed to the storage service
+     * and storage may use it to perform extra operations
+     */
+    headers.put(CommonConstant.AREX_SCHEDULE_REPLAY,
+        Optional.ofNullable(caseItem.getCaseSendScene())
+            .map(Enum::name)
+            .orElse(Boolean.TRUE.toString()));
+
     String exclusionOperationConfig = replayActionItem.getExclusionOperationConfig();
     if (StringUtils.isNotEmpty(exclusionOperationConfig)) {
       headers.put(CommonConstant.X_AREX_EXCLUSION_OPERATIONS, exclusionOperationConfig);
@@ -50,9 +59,12 @@ abstract class AbstractReplaySender implements ReplaySender {
     return headers;
   }
 
-
+  /**
+   * Please DO NOT use Removing cache might cause unexpected behavior on rerunning the case
+   */
+  @Deprecated
   protected void after(ReplayActionCaseItem caseItem) {
-    mockCachePreLoader.removeMockSource(caseItem.getRecordId());
+    mockCachePreLoader.removeCache(caseItem.getRecordId());
   }
 
   protected Map<String, String> newHeadersIfEmpty(Map<String, String> source) {

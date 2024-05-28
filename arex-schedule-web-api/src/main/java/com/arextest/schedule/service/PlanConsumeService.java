@@ -1,5 +1,6 @@
 package com.arextest.schedule.service;
 
+import com.arextest.model.replay.CaseSendScene;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
@@ -9,8 +10,10 @@ import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.model.ExecutionStatus;
 import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionCaseItem;
+import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
+import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.schedule.model.plan.PlanStageEnum;
 import com.arextest.schedule.model.plan.StageStatusEnum;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
@@ -20,9 +23,12 @@ import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import com.arextest.schedule.utils.StageUtils;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -63,7 +69,6 @@ public final class PlanConsumeService {
 
   public void runAsyncConsume(ReplayPlan replayPlan) {
     BizLogger.recordPlanAsyncStart(replayPlan);
-    // TODO: remove block thread use async to load & send for all
     preloadExecutorService.execute(new ReplayActionLoadingRunnableImpl(replayPlan));
   }
 
@@ -136,9 +141,8 @@ public final class PlanConsumeService {
 
   private void consumeContextPaged(ReplayPlan replayPlan, PlanExecutionContext executionContext) {
     ExecutionStatus executionStatus = executionContext.getExecutionStatus();
-
-    int contextCount = 0;
     List<ReplayActionCaseItem> caseItems = Collections.emptyList();
+    final Set<String> lastBatchIds = new HashSet<>();
     while (true) {
       // checkpoint: before sending page of cases
       if (executionStatus.isAbnormal()) {
@@ -146,18 +150,41 @@ public final class PlanConsumeService {
       }
       ReplayActionCaseItem lastItem =
           CollectionUtils.isNotEmpty(caseItems) ? caseItems.get(caseItems.size() - 1) : null;
+
       caseItems = replayActionCaseItemRepository.waitingSendList(replayPlan.getId(),
           CommonConstant.MAX_PAGE_SIZE,
           executionContext.getContextCaseQuery(),
-          Optional.ofNullable(lastItem).map(ReplayActionCaseItem::getId).orElse(null));
+          Optional.ofNullable(lastItem).map(ReplayActionCaseItem::getRecordTime).orElse(null));
 
+      caseItems.removeIf(caseItem -> lastBatchIds.contains(caseItem.getId()));
       if (CollectionUtils.isEmpty(caseItems)) {
         break;
       }
-      contextCount += caseItems.size();
+
+      lastBatchIds.clear();
+      lastBatchIds.addAll(
+          caseItems.stream().map(ReplayActionCaseItem::getId).collect(Collectors.toSet()));
+
       ReplayParentBinder.setupCaseItemParent(caseItems, replayPlan);
+      caseItemPostProcess(caseItems);
       replayCaseTransmitServiceRemoteImpl.send(caseItems, executionContext);
     }
+  }
+
+  private void caseItemPostProcess(List<ReplayActionCaseItem> cases) {
+    if (CollectionUtils.isEmpty(cases)) {
+      return;
+    }
+
+    boolean isMixedMode = Optional.ofNullable(cases.get(0).getParent())
+        .map(ReplayActionItem::getParent)
+        .map(ReplayPlan::getReplayPlanType)
+        .map(planType -> planType == BuildReplayPlanType.MIXED.getValue())
+        .orElse(false);
+
+    cases.forEach(caseItem -> {
+      caseItem.setCaseSendScene(isMixedMode ? CaseSendScene.MIXED_NORMAL : CaseSendScene.NORMAL);
+    });
   }
 
   private void finalizePlanStatus(ReplayPlan replayPlan) {
@@ -238,7 +265,7 @@ public final class PlanConsumeService {
       long start = System.currentTimeMillis();
       progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
           StageStatusEnum.ONGOING, start, null);
-      int planSavedCaseSize = planConsumePrepareService.prepareRunData(replayPlan);
+      int planSavedCaseSize = planConsumePrepareService.preparePlan(replayPlan);
       long end = System.currentTimeMillis();
       progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
           StageStatusEnum.SUCCEEDED, null, end);

@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.TypeReference;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.Mocker.Target;
+import com.arextest.model.replay.CaseSendScene;
 import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Map;
@@ -32,6 +33,13 @@ public class ReplayActionCaseItem {
   private String sourceResultId;
   private String contextIdentifier;
 
+  /**
+   * old data fallback to default value
+   *
+   * @see CaseProvider
+   */
+  private int caseProviderCode;
+
   private ReplayActionItem parent;
   /**
    * @see CaseSendStatusType
@@ -42,6 +50,9 @@ public class ReplayActionCaseItem {
    * @see CompareProcessStatusType
    */
   private int compareStatus;
+
+  private CaseSendScene caseSendScene;
+
   private String caseType;
   @JsonIgnore
   private long recordTime;
@@ -49,8 +60,6 @@ public class ReplayActionCaseItem {
   private Target targetRequest;
   @JsonIgnore
   private String messageId;
-  @JsonIgnore
-  private String sourceProvider;
   /**
    * the time the case actually starts executing
    */

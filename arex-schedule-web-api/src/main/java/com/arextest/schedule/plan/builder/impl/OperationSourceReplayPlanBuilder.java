@@ -7,10 +7,8 @@ import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.schedule.model.plan.OperationCaseInfo;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.builder.BuildPlanValidateResult;
-import com.arextest.schedule.service.ReplayActionItemPreprocessService;
 import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -20,10 +18,6 @@ import org.springframework.stereotype.Component;
  */
 @Component
 final class OperationSourceReplayPlanBuilder extends AbstractReplayPlanBuilder {
-
-  @Resource
-  private ReplayActionItemPreprocessService replayActionItemPreprocessService;
-
   @Override
   public boolean isSupported(BuildReplayPlanRequest request) {
     return request.getReplayPlanType() == BuildReplayPlanType.BY_OPERATION_OF_APP_ID.getValue();
