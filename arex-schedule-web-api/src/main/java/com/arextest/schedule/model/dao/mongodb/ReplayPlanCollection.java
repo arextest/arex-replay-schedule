@@ -48,7 +48,6 @@ public class ReplayPlanCollection extends ModelBase {
   private int caseSourceType;
   private int replayPlanType;
   private int caseCountLimit;
-  private Integer caseProviderCode;
 
   private List<ReplayPlanStageInfo> replayPlanStageList;
 }
