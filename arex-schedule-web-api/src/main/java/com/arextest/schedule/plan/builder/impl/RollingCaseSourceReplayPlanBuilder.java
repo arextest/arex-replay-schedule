@@ -1,7 +1,6 @@
 package com.arextest.schedule.plan.builder.impl;
 
 import com.arextest.schedule.model.AppServiceOperationDescriptor;
-import com.arextest.schedule.model.CaseProvider;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
@@ -67,7 +66,6 @@ final class RollingCaseSourceReplayPlanBuilder extends AbstractReplayPlanBuilder
         caseItem = new ReplayActionCaseItem();
         caseItem.setRecordId(replayId);
         caseItem.setCaseType(replayActionItem.getActionType());
-        caseItem.setSourceProvider(CaseProvider.ROLLING.getName());
         caseItem.setParent(replayActionItem);
         caseItemList.add(caseItem);
       }

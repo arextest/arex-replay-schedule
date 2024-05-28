@@ -124,11 +124,11 @@ public class ReplayCaseRemoteLoadService {
       Set<String> operationTypes) {
     ReplayActionCaseItem viewReplay = null;
     if (CollectionUtils.isEmpty(operationTypes)) {
-      viewReplay = viewReplayLoad(caseItem, caseItem.getSourceProvider(),
+      viewReplay = viewReplayLoad(caseItem, CaseProvider.PINNED.getName(),
           caseItem.getParent().getActionType());
     } else {
       for (String operationType : operationTypes) {
-        viewReplay = viewReplayLoad(caseItem, caseItem.getSourceProvider(), operationType);
+        viewReplay = viewReplayLoad(caseItem, CaseProvider.PINNED.getName(), operationType);
         if (viewReplay != null) {
           break;
         }
