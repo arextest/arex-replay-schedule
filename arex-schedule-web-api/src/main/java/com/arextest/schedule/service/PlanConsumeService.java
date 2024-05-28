@@ -23,9 +23,12 @@ import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import com.arextest.schedule.utils.StageUtils;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -139,7 +142,7 @@ public final class PlanConsumeService {
   private void consumeContextPaged(ReplayPlan replayPlan, PlanExecutionContext executionContext) {
     ExecutionStatus executionStatus = executionContext.getExecutionStatus();
     List<ReplayActionCaseItem> caseItems = Collections.emptyList();
-
+    final Set<String> lastBatchIds = new HashSet<>();
     while (true) {
       // checkpoint: before sending page of cases
       if (executionStatus.isAbnormal()) {
@@ -153,9 +156,15 @@ public final class PlanConsumeService {
           executionContext.getContextCaseQuery(),
           Optional.ofNullable(lastItem).map(ReplayActionCaseItem::getRecordTime).orElse(null));
 
+      caseItems.removeIf(caseItem -> lastBatchIds.contains(caseItem.getId()));
       if (CollectionUtils.isEmpty(caseItems)) {
         break;
       }
+
+      lastBatchIds.clear();
+      lastBatchIds.addAll(
+          caseItems.stream().map(ReplayActionCaseItem::getId).collect(Collectors.toSet()));
+
       ReplayParentBinder.setupCaseItemParent(caseItems, replayPlan);
       caseItemPostProcess(caseItems);
       replayCaseTransmitServiceRemoteImpl.send(caseItems, executionContext);
