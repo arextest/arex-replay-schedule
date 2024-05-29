@@ -104,8 +104,7 @@ public class ReplayPlanController {
         LOGGER.error("parse caseTags error", e);
       }
     }
-    return null;
-//    return createPlan(req);
+    return createPlan(req);
   }
 
   @PostMapping("/api/reRunPlan")
