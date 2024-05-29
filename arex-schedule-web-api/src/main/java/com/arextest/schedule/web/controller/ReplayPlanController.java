@@ -14,13 +14,17 @@ import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.PlanProduceService;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.CollectionUtils;
@@ -39,13 +43,17 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 @RequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE})
 public class ReplayPlanController {
-
   @Resource
   private PlanProduceService planProduceService;
   @Resource
   private ProgressTracer progressTracer;
   @Resource
   private ProgressEvent progressEvent;
+  @Resource
+  private ObjectMapper objectMapper;
+  private static final TypeReference<Map<String, String>> TAGS_TYPE = new TypeReference<Map<String, String>>() {
+  };
+
   @PostMapping(value = "/api/createPlan")
   @ResponseBody
   public CommonResponse createPlanPost(@RequestBody BuildReplayPlanRequest request) {
@@ -60,7 +68,8 @@ public class ReplayPlanController {
       @RequestParam(name = "caseSourceTo", required = false) Long caseSourceTo,
       @RequestParam(name = "caseCountLimit", required = false) Integer caseCountLimit,
       @RequestParam(name = "planName", required = false) String planName,
-      @RequestParam(name = "operationIds", required = false) List<String> operationIds
+      @RequestParam(name = "operationIds", required = false) List<String> operationIds,
+      @RequestParam(name = "caseTags", required = false) String caseTags
   ) {
     BuildReplayPlanRequest req = new BuildReplayPlanRequest();
     req.setAppId(appId);
@@ -88,7 +97,15 @@ public class ReplayPlanController {
       req.setReplayPlanType(BuildReplayPlanType.BY_OPERATION_OF_APP_ID.getValue());
     }
 
-    return createPlan(req);
+    if (StringUtils.isNotEmpty(caseTags)) {
+      try {
+        req.setCaseTags(objectMapper.readValue(caseTags, TAGS_TYPE));
+      } catch (Exception e) {
+        LOGGER.error("parse caseTags error", e);
+      }
+    }
+    return null;
+//    return createPlan(req);
   }
 
   @PostMapping("/api/reRunPlan")
