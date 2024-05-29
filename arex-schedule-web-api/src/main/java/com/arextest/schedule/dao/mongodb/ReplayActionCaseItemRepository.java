@@ -146,12 +146,10 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
 
   public Map<String, Long> countWaitHandlingByAction(String planId, List<Criteria> baseCriteria) {
     // combine baseCriteria into one
-    Criteria criteria = new Criteria();
-    Optional.ofNullable(baseCriteria)
-        .ifPresent(criterias -> criterias.forEach(criteria::andOperator));
+    Criteria combinedCriteria = new Criteria().andOperator(baseCriteria.toArray(new Criteria[0]));
 
     Aggregation aggregation = Aggregation.newAggregation(
-        Aggregation.match(criteria),
+        Aggregation.match(combinedCriteria),
         Aggregation.match(Criteria.where(ReplayActionCaseItem.Fields.PLAN_ID).is(planId)),
         Aggregation.match(Criteria.where(ReplayActionCaseItem.Fields.SEND_STATUS)
             .is(CaseSendStatusType.WAIT_HANDLING.getValue())),
