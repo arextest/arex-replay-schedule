@@ -22,7 +22,7 @@ final class PrepareCompareItemBuilder {
 
   CompareItem build(AREXMocker instance) {
     MockCategoryType categoryType = instance.getCategoryType();
-    String operationKey = operationName(categoryType, instance.getTargetRequest());
+    String operationKey = operationName(categoryType, instance.getTargetRequest(), instance.getOperationName());
     if (StringUtils.isEmpty(operationKey)) {
       operationKey = instance.getOperationName();
     }
@@ -44,14 +44,15 @@ final class PrepareCompareItemBuilder {
     return new CompareItemImpl(operationKey, body, compareKey, createTime, entryPointCategory);
   }
 
-  private String operationName(MockCategoryType categoryType, Target target) {
+  private String operationName(MockCategoryType categoryType, Target target, String operationName) {
     if (Objects.equals(categoryType, MockCategoryType.DATABASE)) {
-      return target.attributeAsString(MockAttributeNames.DB_NAME);
+      // The "@" in the operationName of DATABASE indicates that the SQL statement has been parsed and returned directly.
+      return operationName.contains("@") ? operationName : target.attributeAsString(MockAttributeNames.DB_NAME);
     }
     if (Objects.equals(categoryType, MockCategoryType.REDIS)) {
       return target.attributeAsString(MockAttributeNames.CLUSTER_NAME);
     }
-    return null;
+    return operationName;
   }
 
   private ObjectNode buildAttributes(Target target) {
