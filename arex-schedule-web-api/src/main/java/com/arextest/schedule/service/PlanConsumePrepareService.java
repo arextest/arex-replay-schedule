@@ -238,6 +238,7 @@ public class PlanConsumePrepareService {
     }
     ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
     caseItemPostProcess(caseItemList, CaseProvider.PINNED);
+    replayActionCaseItemRepository.save(caseItemList);
     replayActionItem.setReplayCaseCount(size);
     return size;
   }
