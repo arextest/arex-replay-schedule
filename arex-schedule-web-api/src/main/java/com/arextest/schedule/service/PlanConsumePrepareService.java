@@ -35,6 +35,7 @@ import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Service;
 
 /**
@@ -237,9 +238,6 @@ public class PlanConsumePrepareService {
     }
     ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
     caseItemPostProcess(caseItemList, CaseProvider.PINNED);
-    if (!replayActionItem.getParent().isReRun()) {
-      replayActionCaseItemRepository.save(caseItemList);
-    }
     replayActionItem.setReplayCaseCount(size);
     return size;
   }
@@ -254,6 +252,8 @@ public class PlanConsumePrepareService {
         .peek(caseItem -> {
           caseItem.setSendStatus(CaseSendStatusType.WAIT_HANDLING.getValue());
           caseItem.setCompareStatus(CompareProcessStatusType.WAIT_HANDLING.getValue());
+          caseItem.setTargetResultId(Strings.EMPTY);
+          caseItem.setSourceResultId(Strings.EMPTY);
         }).collect(Collectors.groupingBy(ReplayActionCaseItem::getPlanItemId));
 
     List<ReplayActionItem> failedActionList = replayActionItems.stream()
