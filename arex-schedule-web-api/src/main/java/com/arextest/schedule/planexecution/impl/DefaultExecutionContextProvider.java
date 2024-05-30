@@ -13,8 +13,8 @@ import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
 import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
 import com.arextest.schedule.utils.ReplayParentBinder;
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,9 +60,8 @@ public class DefaultExecutionContextProvider
       dependenciesHolder.setContextIdentifier(null);
       context.setDependencies(dependenciesHolder);
 
-      context.setContextCaseQuery(
-          Collections.singletonList(
-              Criteria.where(ReplayActionCaseItem.Fields.CONTEXT_IDENTIFIER).isNull()));
+      context.setContextCaseQuery(Lists.newArrayList(
+          Criteria.where(ReplayActionCaseItem.Fields.CONTEXT_IDENTIFIER).isNull()));
       contexts.add(context);
     }
 
@@ -77,9 +76,8 @@ public class DefaultExecutionContextProvider
       context.setDependencies(dependenciesHolder);
 
       // set up query for cases of this context
-      context.setContextCaseQuery(Collections
-          .singletonList(
-              Criteria.where(ReplayActionCaseItem.Fields.CONTEXT_IDENTIFIER).is(identifier)));
+      context.setContextCaseQuery(Lists.newArrayList(
+          Criteria.where(ReplayActionCaseItem.Fields.CONTEXT_IDENTIFIER).is(identifier)));
       contexts.add(context);
     });
 
