@@ -176,7 +176,6 @@ public class LocalReplayService {
 
     ReplayPlan replayPlan = replayPlanRepository.query(planId);
 
-
     List<ReplayActionCaseItem> failedCaseList = replayActionCaseItemRepository.failedCaseList(
         planId, request.getPlanItemId());
 
@@ -463,7 +462,7 @@ public class LocalReplayService {
     List<ReplayCaseBatchInfo> replayCaseBatchInfos = new ArrayList<>();
     for (PlanExecutionContext executionContext : replayPlan.getExecutionContexts()) {
       ReplayCaseBatchInfo replayCaseBatchInfo = new ReplayCaseBatchInfo();
-      replayCaseBatchInfo.setCaseIds(new ArrayList<>());
+      replayCaseBatchInfo.setCaseIds(new HashSet<>());
       ReplayCaseBatchInfo replayCaseBatchInfoForWarmUp = new ReplayCaseBatchInfo();
 
       ContextDependenciesHolder dependencyHolder = (ContextDependenciesHolder) executionContext.getDependencies();
@@ -475,13 +474,15 @@ public class LocalReplayService {
             dependencyHolder.getContextIdentifier());
         if (warmupCase != null) {
           replayCaseBatchInfoForWarmUp.setWarmUpId(contextIdentifier);
-          replayCaseBatchInfoForWarmUp.setCaseIds(Collections.singletonList(warmupCase.getId()));
+          replayCaseBatchInfoForWarmUp.setCaseIds(Collections.singleton(warmupCase.getId()));
           replayCaseBatchInfos.add(replayCaseBatchInfoForWarmUp);
         }
       }
 
       // other cases
       List<ReplayActionCaseItem> caseItems = Collections.emptyList();
+      Set<String> caseIdList = replayCaseBatchInfo.getCaseIds();
+
       while (true) {
         // checkpoint: before sending page of cases
         ReplayActionCaseItem lastItem =
@@ -491,10 +492,10 @@ public class LocalReplayService {
             executionContext.getContextCaseQuery(),
             Optional.ofNullable(lastItem).map(ReplayActionCaseItem::getRecordTime).orElse(null));
 
+        caseItems.removeIf(item -> caseIdList.contains(item.getId()));
         if (CollectionUtils.isEmpty(caseItems)) {
           break;
         }
-        List<String> caseIdList = replayCaseBatchInfo.getCaseIds();
         caseItems.forEach(replayActionCaseItem -> {
           planItemIds.add(replayActionCaseItem.getPlanItemId());
           caseIdList.add(replayActionCaseItem.getId());
