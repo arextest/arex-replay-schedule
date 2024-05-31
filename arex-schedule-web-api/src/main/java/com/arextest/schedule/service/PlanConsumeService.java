@@ -262,6 +262,10 @@ public final class PlanConsumeService {
     }
 
     private boolean initCaseCount() {
+      if (replayPlan.isReRun()) {
+        return true;
+      }
+
       long start = System.currentTimeMillis();
       progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
           StageStatusEnum.ONGOING, start, null);

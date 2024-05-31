@@ -172,13 +172,6 @@
         <version>${guava.version}</version>
       </dependency>
       <dependency>
-        <artifactId>jackson-bom</artifactId>
-        <groupId>com.fasterxml.jackson</groupId>
-        <scope>import</scope>
-        <type>pom</type>
-        <version>2.10.3</version>
-      </dependency>
-      <dependency>
         <artifactId>log4j-bom</artifactId>
         <groupId>org.apache.logging.log4j</groupId>
         <scope>import</scope>
@@ -321,5 +314,5 @@
     <url>https://github.com/arextest/arex-replay-schedule</url>
   </scm>
   <url>https://github.com/arextest/arex-replay-schedule</url>
-  <version>1.1.28</version>
+  <version>1.1.29</version>
 </project>
