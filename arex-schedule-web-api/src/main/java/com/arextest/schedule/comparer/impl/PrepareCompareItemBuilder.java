@@ -47,7 +47,7 @@ final class PrepareCompareItemBuilder {
   private String operationName(MockCategoryType categoryType, Target target, String operationName) {
     if (Objects.equals(categoryType, MockCategoryType.DATABASE)) {
       // The "@" in the operationName of DATABASE indicates that the SQL statement has been parsed and returned directly.
-      return operationName.contains("@") ? operationName : target.attributeAsString(MockAttributeNames.DB_NAME);
+      return StringUtils.contains(operationName, "@") ? operationName : target.attributeAsString(MockAttributeNames.DB_NAME);
     }
     if (Objects.equals(categoryType, MockCategoryType.REDIS)) {
       return target.attributeAsString(MockAttributeNames.CLUSTER_NAME);
