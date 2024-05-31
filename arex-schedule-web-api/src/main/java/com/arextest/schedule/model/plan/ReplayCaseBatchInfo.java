@@ -1,6 +1,6 @@
 package com.arextest.schedule.model.plan;
 
-import java.util.List;
+import java.util.Set;
 import lombok.Data;
 
 /**
@@ -9,6 +9,7 @@ import lombok.Data;
  */
 @Data
 public class ReplayCaseBatchInfo {
-  private List<String> caseIds;
+
+  private Set<String> caseIds;
   private String warmUpId;
 }
