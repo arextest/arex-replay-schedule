@@ -88,6 +88,7 @@ public class ReplayLocalController {
   }
 
   @PostMapping(value = "/queryReRunCaseId")
+  @ResponseBody
   public CommonResponse queryReRunCaseId(@Valid @RequestBody ReRunReplayPlanRequest request) {
     try {
       return localReplayService.queryReRunCaseId(request);
