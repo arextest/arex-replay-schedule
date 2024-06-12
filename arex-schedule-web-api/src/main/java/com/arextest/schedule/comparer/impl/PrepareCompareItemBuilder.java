@@ -4,6 +4,7 @@ import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker.Target;
+import com.arextest.model.replay.CompareRelationResult;
 import com.arextest.schedule.comparer.CompareItem;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -18,7 +19,7 @@ import org.springframework.stereotype.Component;
  * @since 2021/11/23
  */
 @Component
-final class PrepareCompareItemBuilder {
+public class PrepareCompareItemBuilder {
 
   CompareItem build(AREXMocker instance) {
     MockCategoryType categoryType = instance.getCategoryType();
@@ -42,6 +43,10 @@ final class PrepareCompareItemBuilder {
           : instance.getTargetRequest().getBody();
     }
     return new CompareItemImpl(operationKey, body, compareKey, createTime, entryPointCategory);
+  }
+
+  public CompareItem build(CompareRelationResult result, boolean recordCompareItem) {
+    return new CompareItemImpl(result, recordCompareItem);
   }
 
   private String operationName(MockCategoryType categoryType, Target target, String operationName) {
@@ -89,6 +94,21 @@ final class PrepareCompareItemBuilder {
     private CompareItemImpl(String compareOperation, String compareMessage, String compareKey,
         long createTime, boolean entryPointCategory) {
       this(compareOperation, compareMessage, null, compareKey, createTime, entryPointCategory);
+    }
+
+    public CompareItemImpl(CompareRelationResult result, boolean recordCompareItem) {
+      this.compareOperation = result.getOperationName();
+      this.compareService = null;
+      this.compareKey = null;
+      this.entryPointCategory = result.getCategoryType().isEntryPoint();
+
+      if (recordCompareItem) {
+        this.compareMessage = result.getRecordMessage();
+        this.createTime = result.getRecordTime();
+      } else {
+        this.compareMessage = result.isSameMessage() ? result.getRecordMessage() : result.getReplayMessage();
+        this.createTime = result.getReplayTime();
+      }
     }
 
     private CompareItemImpl(String compareOperation, String compareMessage, String compareService,
