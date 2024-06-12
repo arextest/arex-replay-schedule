@@ -236,6 +236,11 @@
         <groupId>com.alibaba.fastjson2</groupId>
         <version>${fastjson2.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.redisson</groupId>
+        <artifactId>redisson</artifactId>
+        <version>${redisson.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
   <description>AREX schedule is used for replay.</description>
@@ -304,7 +309,8 @@
     </sonar.exclusions>
     <arex-storage-config.version>1.1.36</arex-storage-config.version>
     <web-contract.version>0.6.4.9</web-contract.version>
-    <arex-common.version>0.1.26</arex-common.version>
+    <arex-common.version>0.1.28</arex-common.version>
+    <redisson.version>3.20.1</redisson.version>
   </properties>
 
   <scm>
@@ -314,5 +320,5 @@
     <url>https://github.com/arextest/arex-replay-schedule</url>
   </scm>
   <url>https://github.com/arextest/arex-replay-schedule</url>
-  <version>1.1.32</version>
+  <version>1.2.0</version>
 </project>
