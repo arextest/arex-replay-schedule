@@ -5,6 +5,8 @@ import com.arextest.common.serialization.SerializationProvider;
 import com.arextest.common.serialization.SerializationProviders;
 import com.arextest.common.utils.SerializationUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Base64;
@@ -25,10 +27,24 @@ public final class ZstdJacksonSerializer {
   @Resource
   private ObjectMapper objectMapper;
   private SerializationProvider serializationProvider;
+  public static final byte[] EMPTY_BYTE = new byte[]{};
 
   @PostConstruct
   void initSerializationProvider() {
     this.serializationProvider = SerializationProviders.jacksonProvider(this.objectMapper);
+  }
+
+  public <T> byte[] serialize(T value) {
+    if (value == null) {
+      return EMPTY_BYTE;
+    }
+    try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+      serializeTo(value, out);
+      return out.toByteArray();
+    } catch (IOException e) {
+      LOGGER.error("serialize error:{}", e.getMessage(), e);
+    }
+    return EMPTY_BYTE;
   }
 
   public <T> void serializeTo(T value, OutputStream outputStream) {

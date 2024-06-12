@@ -13,11 +13,20 @@ import org.apache.commons.lang3.StringUtils;
 public class JsonUtils {
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
-  public static  <T> T byteToObject(byte[] bytes, Class<T> tClass) {
+  public static  <T> T byteToObject(byte[] bytes, Class<T> tClazz) {
     try {
-      return objectMapper.readValue(bytes, tClass);
+      return objectMapper.readValue(bytes, tClazz);
     } catch (IOException e) {
       LOGGER.error("byteToObject error:{}", e.getMessage(), e);
+    }
+    return null;
+  }
+
+  public static  <T> T jsonStringToObject(String string, Class<T> tClazz) {
+    try {
+      return objectMapper.readValue(string, tClazz);
+    } catch (IOException e) {
+      LOGGER.error("jsonStringToObject error:{}", e.getMessage(), e);
     }
     return null;
   }
@@ -26,7 +35,7 @@ public class JsonUtils {
     try {
       return objectMapper.writeValueAsString(value);
     } catch (IOException e) {
-      LOGGER.error("byteToObject error:{}", e.getMessage(), e);
+      LOGGER.error("objectToJsonString error:{}", e.getMessage(), e);
     }
     return StringUtils.EMPTY;
   }
