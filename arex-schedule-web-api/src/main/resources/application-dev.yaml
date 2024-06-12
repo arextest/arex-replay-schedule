@@ -5,14 +5,17 @@ logging:
 arex:
   api:
     service:
-      api: http://10.144.62.53:8090
+      api: http://10.118.1.217:18090
   mongo:
-    uri: mongodb://arex:password@10.144.62.53:27017/arex_storage_db
-  redis:
-    uri: redis://10.144.62.53:6379
+    uri: mongodb://arex:password@10.118.1.217:37017/arex_storage_db
   storage:
     service:
-      api: http://10.144.62.53:8093
+      api: http://10.118.1.217:18093
   schedule:
     service:
-      api: http://10.144.62.53:8092
+      api: http://10.118.1.217:18092
+
+spring:
+  redis:
+    host: 10.118.1.217
+    port: 16379
