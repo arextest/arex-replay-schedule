@@ -189,12 +189,11 @@ public class LocalReplayService {
       return CommonResponse.badResponse("This plan is Running");
     }
     replayPlan.setReRun(Boolean.TRUE);
-    cacheReplayPlan(replayPlan);
-
     planExecutionMonitorImpl.register(replayPlan);
     progressEvent.onReplayPlanReRun(replayPlan);
     progressEvent.onUpdateFailedCases(replayPlan, failedCaseList);
     planConsumePrepareService.updateFailedActionAndCase(replayPlan, failedCaseList);
+    cacheReplayPlan(replayPlan);
     if (CollectionUtils.isEmpty(replayPlan.getReplayActionItemList())) {
       throw new RuntimeException("no replayActionItem!");
     }
