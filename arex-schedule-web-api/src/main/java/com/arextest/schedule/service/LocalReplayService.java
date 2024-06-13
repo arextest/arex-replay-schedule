@@ -201,6 +201,7 @@ public class LocalReplayService {
     replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
 
     response.setReplayCaseBatchInfos(buildBatchInfoList(replayPlan));
+    response.setPlanId(planId);
 
     return CommonResponse.successResponse("queryReRunCaseIds success!", response);
   }
