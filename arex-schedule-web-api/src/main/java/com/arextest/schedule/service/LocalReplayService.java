@@ -322,6 +322,7 @@ public class LocalReplayService {
     ReplayPlanForCache result = new ReplayPlanForCache();
     result.setId(replayPlan.getId());
     result.setRerun(replayPlan.isReRun());
+    result.setCaseRerunCount(replayPlan.getCaseRerunCount());
     return result;
   }
 
