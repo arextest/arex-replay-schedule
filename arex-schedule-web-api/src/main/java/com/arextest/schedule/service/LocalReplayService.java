@@ -229,7 +229,9 @@ public class LocalReplayService {
       return null;
     }
     ReplayActionItem replayActionItem = transformFromCache(replayActionItemForCache);
-    replayActionItem.setParent(replayPlanRepository.query(caseItem.getPlanId()));
+    ReplayPlan replayPlan = replayPlanRepository.query(caseItem.getPlanId());
+    restorePlanCache(replayPlan);
+    replayActionItem.setParent(replayPlan);
     caseItem.setParent(replayActionItem);
     return caseItem;
   }
