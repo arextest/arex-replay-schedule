@@ -201,7 +201,8 @@ public class LocalReplayService {
 
     response.setReplayCaseBatchInfos(buildBatchInfoList(replayPlan));
     response.setPlanId(planId);
-
+    // reset finish count in redis
+    progressTracer.reRunPlan(replayPlan);
     return CommonResponse.successResponse("queryReRunCaseIds success!", response);
   }
 
