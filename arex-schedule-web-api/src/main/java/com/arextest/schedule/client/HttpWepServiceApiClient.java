@@ -103,7 +103,7 @@ public final class HttpWepServiceApiClient {
     httpMessageConverterList.add(converter);
     this.restTemplate = new RestTemplate(httpMessageConverterList);
     this.restTemplate.setRequestFactory(requestFactory);
-    if (CollectionUtils.isNotEmpty(clientHttpRequestInterceptors)){
+    if (CollectionUtils.isNotEmpty(clientHttpRequestInterceptors)) {
       restTemplate.setInterceptors(clientHttpRequestInterceptors);
     }
   }
@@ -231,6 +231,19 @@ public final class HttpWepServiceApiClient {
       return retryTemplate.execute(retryCallback -> {
         retryCallback.setAttribute(URL, url);
         return restTemplate.postForObject(url, wrapJsonContentType(request), responseType);
+      });
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  public <TRequest, TResponse> ResponseEntity<TResponse> retryJsonPost(String url, TRequest request,
+      ParameterizedTypeReference<TResponse> responseType) {
+    try {
+      return retryTemplate.execute(retryCallback -> {
+        retryCallback.setAttribute(URL, url);
+        return restTemplate.exchange(url, HttpMethod.POST, wrapJsonContentType(request),
+            responseType);
       });
     } catch (Exception e) {
       return null;

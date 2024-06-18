@@ -19,6 +19,8 @@ arex:
       comparison:
         summary:
           url: ${arex.api.service.api}/api/config/comparison/summary/queryByAppId/{appId}
+        queryCompareConfig:
+          url: ${arex.api.service.api}/api/config/comparison/queryCompareConfig
       desensitization:
         url: ${arex.api.service.api}/api/desensitization/listJar
       schedule:
@@ -93,9 +95,9 @@ arex:
       url: ${arex.storage.service.api}/api/storage/replay/query/viewRecord
   replay:
     header:
-        excludes:
-          dubbo: async
-          http:
+      excludes:
+        dubbo: async
+        http:
 auto:
   rerun:
     threshold: 1.0
