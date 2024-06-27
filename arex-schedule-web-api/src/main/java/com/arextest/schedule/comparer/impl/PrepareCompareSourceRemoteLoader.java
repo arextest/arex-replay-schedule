@@ -1,20 +1,24 @@
 package com.arextest.schedule.comparer.impl;
 
+import org.springframework.http.HttpHeaders;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
+import com.arextest.model.replay.CompareReplayResult;
 import com.arextest.model.replay.QueryReplayResultRequestType;
 import com.arextest.model.replay.QueryReplayResultResponseType;
 import com.arextest.model.replay.holder.ListResultHolder;
-import com.arextest.model.response.ResponseStatusType;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.comparer.CategoryComparisonHolder;
+import com.arextest.schedule.comparer.CategoryComparisonHolder.CompareResultItem;
 import com.arextest.schedule.comparer.CompareItem;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.serialization.ZstdJacksonSerializer;
 import com.arextest.schedule.service.MetricService;
+import com.google.common.collect.Maps;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -27,6 +31,7 @@ import org.springframework.stereotype.Component;
 public final class PrepareCompareSourceRemoteLoader {
 
   private static final int INDEX_NOT_FOUND = -1;
+  private static final String ZSTD_JSON_CONTENT_TYPE = "application/zstd-json;charset=UTF-8";
   @Resource
   MetricService metricService;
   @Value("${arex.storage.replayResult.url}")
@@ -78,38 +83,47 @@ public final class PrepareCompareSourceRemoteLoader {
     QueryReplayResultRequestType resultRequest = new QueryReplayResultRequestType();
     resultRequest.setRecordId(replayId);
     resultRequest.setReplayResultId(resultId);
-    return httpWepServiceApiClient.retryJsonPost(replayResultUrl, resultRequest,
-        QueryReplayResultResponseType.class);
+    Map<String, String> headers = Maps.newHashMapWithExpectedSize(1);
+    headers.put(HttpHeaders.CONTENT_TYPE, ZSTD_JSON_CONTENT_TYPE);
+    return httpWepServiceApiClient.retryJsonPost(replayResultUrl,
+        resultRequest, QueryReplayResultResponseType.class, headers);
   }
 
+  /**
+   * Compatible logic.
+   * The subsequent agent will match the packets and does not need to be processed in the schedule.
+   * @param replayResultResponseType
+   * @return
+   */
   private List<CategoryComparisonHolder> decodeResult(
       QueryReplayResultResponseType replayResultResponseType) {
-    if (replayResultResponseType == null) {
+    if (replayResultResponseType == null ||
+        replayResultResponseType.getResponseStatusType() == null ||
+        replayResultResponseType.getResponseStatusType().hasError() ||
+        Boolean.TRUE.equals(replayResultResponseType.getInvalidResult())) {
+      LOGGER.warn("failed to get replay result because of invalid case");
       return Collections.emptyList();
     }
-    ResponseStatusType responseStatusType = replayResultResponseType.getResponseStatusType();
-    if (responseStatusType == null) {
-      return Collections.emptyList();
-    }
-    if (responseStatusType.hasError()) {
-      LOGGER.warn("query replay result has error response : {}", responseStatusType);
-      return Collections.emptyList();
-    }
-    if (Boolean.TRUE.equals(replayResultResponseType.getInvalidResult())) {
-        LOGGER.warn("query replay result has invalid result: get data failed from storage");
-        return Collections.emptyList();
-    }
+
+    // Use needMatch to determine whether to adopt new logic
+    return replayResultResponseType.getNeedMatch() ? processMatchNeeded(replayResultResponseType) : processMatchNotNeeded(replayResultResponseType);
+  }
+
+  /**
+   * Processing of messages that require matching relationships that need to be compared
+   * @param replayResultResponseType
+   * @return
+   */
+  private List<CategoryComparisonHolder> processMatchNeeded(QueryReplayResultResponseType replayResultResponseType) {
     List<ListResultHolder> resultHolderList = replayResultResponseType.getResultHolderList();
     if (CollectionUtils.isEmpty(resultHolderList)) {
       LOGGER.warn("query replay result has empty size");
       return Collections.emptyList();
     }
-    List<CategoryComparisonHolder> decodedListResult = new ArrayList<>(resultHolderList.size());
-    MockCategoryType categoryType;
 
-    for (int i = 0; i < resultHolderList.size(); i++) {
-      ListResultHolder stringListResultHolder = resultHolderList.get(i);
-      categoryType = stringListResultHolder.getCategoryType();
+    List<CategoryComparisonHolder> decodedListResult = new ArrayList<>(resultHolderList.size());
+    for (ListResultHolder stringListResultHolder : resultHolderList) {
+      MockCategoryType categoryType = stringListResultHolder.getCategoryType();
       if (categoryType == null || categoryType.isSkipComparison()) {
         continue;
       }
@@ -117,19 +131,56 @@ public final class PrepareCompareSourceRemoteLoader {
       CategoryComparisonHolder resultHolder = new CategoryComparisonHolder();
       resultHolder.setCategoryName(categoryType.getName());
       decodedListResult.add(resultHolder);
+
       List<CompareItem> recordList = zstdDeserialize(stringListResultHolder.getRecord());
-      List<CompareItem> replayResultList = zstdDeserialize(
-          stringListResultHolder.getReplayResult());
-      if (categoryType.isEntryPoint()) {
-        boolean recordEmpty = CollectionUtils.isEmpty(recordList);
-        boolean replayResultEmpty = CollectionUtils.isEmpty(replayResultList);
+      List<CompareItem> replayResultList = zstdDeserialize(stringListResultHolder.getReplayResult());
+
+      if (categoryType.isEntryPoint() && (CollectionUtils.isEmpty(recordList) || CollectionUtils.isEmpty(replayResultList))) {
         // call missing or new call
-        if (recordEmpty || replayResultEmpty) {
-          return Collections.emptyList();
-        }
+        return Collections.emptyList();
       }
+
       resultHolder.setRecord(recordList);
       resultHolder.setReplayResult(replayResultList);
+      resultHolder.setNeedMatch(true);
+    }
+    return decodedListResult;
+  }
+
+  /**
+   * Processing of packets that do not require matching
+   * @param replayResultResponseType
+   * @return
+   */
+  private List<CategoryComparisonHolder> processMatchNotNeeded(QueryReplayResultResponseType replayResultResponseType) {
+    List<CompareReplayResult> replayResults = replayResultResponseType.getReplayResults();
+    if (CollectionUtils.isEmpty(replayResults)) {
+      LOGGER.warn("query replay result has empty size");
+      return Collections.emptyList();
+    }
+
+    List<CategoryComparisonHolder> decodedListResult = new ArrayList<>(replayResults.size());
+    for (CompareReplayResult result : replayResults) {
+      MockCategoryType categoryType = result.getCategoryType();
+      if (categoryType == null || categoryType.isSkipComparison()) {
+        continue;
+      }
+
+      if (categoryType.isEntryPoint() && !result.isSameMsg() &&
+          (StringUtils.isEmpty(result.getBaseMsg()) || StringUtils.isEmpty(result.getTestMsg()))) {
+        // call missing or new call
+        return Collections.emptyList();
+      }
+
+      CategoryComparisonHolder resultHolder = new CategoryComparisonHolder();
+      resultHolder.setCategoryName(categoryType.getName());
+
+      CompareItem recordCompareItem = prepareCompareItemBuilder.build(result, true);
+      CompareItem replayCompareItem = prepareCompareItemBuilder.build(result, false);
+
+      resultHolder.setCompareResultItem(new CompareResultItem(recordCompareItem, replayCompareItem));
+      resultHolder.setNeedMatch(false);
+      decodedListResult.add(resultHolder);
     }
     return decodedListResult;
   }

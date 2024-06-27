@@ -1,6 +1,7 @@
 package com.arextest.schedule.client;
 
 import static com.arextest.schedule.common.CommonConstant.URL;
+import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 
 import com.arextest.schedule.utils.SSLUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -237,6 +238,18 @@ public final class HttpWepServiceApiClient {
     }
   }
 
+  public <TRequest, TResponse> TResponse retryJsonPost(String url, TRequest request,
+      Class<TResponse> responseType, Map<String, String> headers) {
+    try {
+      return retryTemplate.execute(retryCallback -> {
+        retryCallback.setAttribute(URL, url);
+        return restTemplate.postForObject(url, wrapJsonContentType(request, headers), responseType);
+      });
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
   @SuppressWarnings("unchecked")
   private <TRequest> HttpEntity<TRequest> wrapJsonContentType(TRequest request) {
     HttpEntity<TRequest> httpJsonEntity;
@@ -258,7 +271,9 @@ public final class HttpWepServiceApiClient {
       httpJsonEntity = (HttpEntity<TRequest>) request;
     } else {
       HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.APPLICATION_JSON);
+      if (!extraHeaders.containsKey(CONTENT_TYPE)) {
+        headers.setContentType(MediaType.APPLICATION_JSON);
+      }
       headers.setAll(extraHeaders);
       httpJsonEntity = new HttpEntity<>(request, headers);
     }
