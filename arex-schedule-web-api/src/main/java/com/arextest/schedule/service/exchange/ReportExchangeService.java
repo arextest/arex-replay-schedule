@@ -8,10 +8,9 @@ import com.arextest.web.model.contract.contracts.config.replay.QueryCompareConfi
 import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig;
 import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig.ReplayComparisonItem;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -48,28 +47,13 @@ public class ReportExchangeService {
       return Collections.emptyMap();
     }
 
-    List<ReplayComparisonItem> operationConfigs = Optional.ofNullable(
-            replayComparisonConfigEntity.getBody()).map(GenericResponseType::getBody)
-        .map(ReplayCompareConfig::getReplayComparisonItems).orElse(Collections.emptyList());
+    List<ReplayComparisonItem> operationConfigs = replayComparisonConfigEntity.getBody()
+        .getBody().getReplayComparisonItems();
 
-    return convertOperationConfig(operationConfigs);
+    return operationConfigs.stream()
+        .filter(source -> StringUtils.isNotBlank(source.getOperationId()))
+        .collect(Collectors.toMap(
+            ReplayCompareConfig.ReplayComparisonItem::getOperationId,
+            ReplayConfigConverter.INSTANCE::interfaceDaoFromDto));
   }
-
-  private static Map<String, ComparisonInterfaceConfig> convertOperationConfig(
-      List<ReplayCompareConfig.ReplayComparisonItem> operationConfigs) {
-    Map<String, ComparisonInterfaceConfig> res = new HashMap<>();
-
-    for (ReplayCompareConfig.ReplayComparisonItem source : operationConfigs) {
-      String operationId = source.getOperationId();
-      if (StringUtils.isBlank(operationId)) {
-        LOGGER.warn("operation id is blank, operationId: {}", operationId);
-        continue;
-      }
-      ComparisonInterfaceConfig converted = ReplayConfigConverter.INSTANCE.interfaceDaoFromDto(
-          source);
-      res.put(operationId, converted);
-    }
-    return res;
-  }
-
 }

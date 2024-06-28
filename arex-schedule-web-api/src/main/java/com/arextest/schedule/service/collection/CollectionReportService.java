@@ -45,7 +45,7 @@ public class CollectionReportService {
     CompareMsgResponseType result = new CompareMsgResponseType();
     String baseMsg = request.getBaseMsg();
     String testMsg = request.getTestMsg();
-    CompareOptions compareOptions = buildSkdOption(request.getAppId(), request.getOperationName());
+    CompareOptions compareOptions = buildCompareOption(request.getAppId(), request.getOperationName());
     CompareResult compareResult = null;
     try {
       compareResult = compareService.compare(baseMsg, testMsg, compareOptions);
@@ -62,7 +62,7 @@ public class CollectionReportService {
     return result;
   }
 
-  private CompareOptions buildSkdOption(String appId, String operationName) {
+  private CompareOptions buildCompareOption(String appId, String operationName) {
     Map<String, ComparisonInterfaceConfig> replayCompareConfig =
         reportExchangeService.getReplayCompareConfig(appId, operationName);
     if (MapUtils.isNotEmpty(replayCompareConfig)) {
