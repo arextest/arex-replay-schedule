@@ -174,10 +174,6 @@ public final class CompareConfigService {
         .map(GenericResponseType::getBody)
         .map(ReplayCompareConfig::getReplayComparisonItems)
         .orElse(Collections.emptyList());
-
-    // converts
-    //    this.setContractChangeFlag(opConverted,
-//        replayComparisonConfigEntity.getBody().getBody().getSkipAssemble());
     return convertOperationConfig(operationConfigs);
   }
 
@@ -194,48 +190,10 @@ public final class CompareConfigService {
 
       ComparisonInterfaceConfig converted = ReplayConfigConverter.INSTANCE.interfaceDaoFromDto(
           source);
-//      List<ReplayCompareConfig.DependencyComparisonItem> sourceDependencyConfigs = source.getDependencyComparisonItems();
-//      converted.setDependencyConfigMap(convertDependencyConfig(sourceDependencyConfigs));
-//      DependencyComparisonItem defaultDependencyComparisonItem = source.getDefaultDependencyComparisonItem();
-//      converted.setDefaultDependencyConfig(
-//          ReplayConfigConverter.INSTANCE.dependencyDaoFromDto(defaultDependencyComparisonItem));
       res.put(operationId, converted);
     }
 
     return res;
   }
-
-//  private static Map<String, ComparisonDependencyConfig> convertDependencyConfig(
-//      List<ReplayCompareConfig.DependencyComparisonItem> dependencyConfigs) {
-//    Map<String, ComparisonDependencyConfig> res = new HashMap<>();
-//
-//    for (ReplayCompareConfig.DependencyComparisonItem source : dependencyConfigs) {
-//      if (CollectionUtils.isEmpty(source.getOperationTypes()) || StringUtils.isBlank(
-//          source.getOperationName())) {
-//        LOGGER.warn("dependency type or name is blank, dependencyId: {}", source.getDependencyId());
-//        continue;
-//      }
-//
-//      String dependencyKey = ComparisonDependencyConfig.dependencyKey(source);
-//      ComparisonDependencyConfig converted = ReplayConfigConverter.INSTANCE.dependencyDaoFromDto(
-//          source);
-//      res.put(dependencyKey, converted);
-//    }
-//
-//    return res;
-//  }
-
-//  @Data
-//  private final static class GenericResponseType<T> {
-//
-//    private T body;
-//  }
-
-//  private void setContractChangeFlag(Map<String, ComparisonInterfaceConfig> opConverted,
-//      boolean skipAssemble) {
-//    if (MapUtils.isNotEmpty(opConverted)) {
-//      opConverted.forEach((k, v) -> v.setSkipAssemble(skipAssemble));
-//    }
-//  }
 
 }
