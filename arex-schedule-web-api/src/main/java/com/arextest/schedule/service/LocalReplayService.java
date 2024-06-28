@@ -189,19 +189,20 @@ public class LocalReplayService {
       return CommonResponse.badResponse("This plan is Running");
     }
     replayPlan.setReRun(Boolean.TRUE);
-    cacheReplayPlan(replayPlan);
-
     planExecutionMonitorImpl.register(replayPlan);
     progressEvent.onReplayPlanReRun(replayPlan);
     progressEvent.onUpdateFailedCases(replayPlan, failedCaseList);
     planConsumePrepareService.updateFailedActionAndCase(replayPlan, failedCaseList);
+    cacheReplayPlan(replayPlan);
     if (CollectionUtils.isEmpty(replayPlan.getReplayActionItemList())) {
       throw new RuntimeException("no replayActionItem!");
     }
     replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
 
     response.setReplayCaseBatchInfos(buildBatchInfoList(replayPlan));
-
+    response.setPlanId(planId);
+    // reset finish count in redis
+    progressTracer.reRunPlan(replayPlan);
     return CommonResponse.successResponse("queryReRunCaseIds success!", response);
   }
 
@@ -229,7 +230,9 @@ public class LocalReplayService {
       return null;
     }
     ReplayActionItem replayActionItem = transformFromCache(replayActionItemForCache);
-    replayActionItem.setParent(replayPlanRepository.query(caseItem.getPlanId()));
+    ReplayPlan replayPlan = replayPlanRepository.query(caseItem.getPlanId());
+    restorePlanCache(replayPlan);
+    replayActionItem.setParent(replayPlan);
     caseItem.setParent(replayActionItem);
     return caseItem;
   }
@@ -321,6 +324,7 @@ public class LocalReplayService {
     ReplayPlanForCache result = new ReplayPlanForCache();
     result.setId(replayPlan.getId());
     result.setRerun(replayPlan.isReRun());
+    result.setCaseRerunCount(replayPlan.getCaseRerunCount());
     return result;
   }
 
