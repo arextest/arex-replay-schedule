@@ -52,8 +52,10 @@ public class ReportExchangeService {
 
     return operationConfigs.stream()
         .filter(source -> StringUtils.isNotBlank(source.getOperationId()))
-        .collect(Collectors.toMap(
-            ReplayCompareConfig.ReplayComparisonItem::getOperationId,
-            ReplayConfigConverter.INSTANCE::interfaceDaoFromDto));
+        .collect(
+            Collectors.toMap(
+                ReplayCompareConfig.ReplayComparisonItem::getOperationId,
+                ReplayConfigConverter.INSTANCE::interfaceDaoFromDto, (a, b) -> a)
+        );
   }
 }
