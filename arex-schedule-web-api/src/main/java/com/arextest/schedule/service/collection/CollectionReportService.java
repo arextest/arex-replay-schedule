@@ -103,11 +103,15 @@ public class CollectionReportService {
     logEntities.forEach(logEntity -> {
       UnmatchedPairEntity pathPair = logEntity.getPathPair();
 
+      // build the key of logDetailMap,
+      // the key is the fuzzy path of "longest node path" and the unmatched type
       int unmatchedType = pathPair.getUnmatchedType();
       List<NodeEntity> longestNodePath = getLongestNodePath(pathPair);
       MutablePair<String, Integer> tempPair =
           new MutablePair<>(ListUtils.getFuzzyPathStr(longestNodePath), unmatchedType);
 
+      // compute the logDetailMap, if the key is not exist, create a new LogDetail
+      // and increase the count of the LogDetail which has the same key
       logDetailMap.compute(tempPair, (key, logDetail) -> {
         if (logDetail == null) {
           logDetail = new LogDetail();
@@ -117,7 +121,6 @@ public class CollectionReportService {
         logDetail.setCount(logDetail.getCount() + 1);
         return logDetail;
       });
-
     });
     compareResultDetail.setLogDetails(new ArrayList<>(logDetailMap.values()));
   }
