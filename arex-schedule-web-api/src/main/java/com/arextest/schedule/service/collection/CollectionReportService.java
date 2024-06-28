@@ -45,7 +45,8 @@ public class CollectionReportService {
     CompareMsgResponseType result = new CompareMsgResponseType();
     String baseMsg = request.getBaseMsg();
     String testMsg = request.getTestMsg();
-    CompareOptions compareOptions = buildCompareOption(request.getAppId(), request.getOperationName());
+    CompareOptions compareOptions = buildCompareOption(request.getAppId(),
+        request.getOperationName());
     CompareResult compareResult = null;
     try {
       compareResult = compareService.compare(baseMsg, testMsg, compareOptions);
@@ -96,34 +97,39 @@ public class CollectionReportService {
       logDetail.setLogEntity(logEntity);
       compareResultDetail.setLogDetails(Collections.singletonList(logDetail));
       compareResultDetail.setExceptionMsg(logEntity.getLogInfo());
-    } else {
-      Map<MutablePair<String, Integer>, LogDetail> logDetailMap = new HashMap<>();
-
-      logEntities.forEach(logEntity -> {
-        UnmatchedPairEntity pathPair = logEntity.getPathPair();
-        int unmatchedType = pathPair.getUnmatchedType();
-        List<NodeEntity> leftUnmatchedPath = pathPair.getLeftUnmatchedPath();
-        List<NodeEntity> rightUnmatchedPath = pathPair.getRightUnmatchedPath();
-        int leftUnmatchedPathSize = leftUnmatchedPath == null ? 0 : leftUnmatchedPath.size();
-        int rightUnmatchedPathSize = rightUnmatchedPath == null ? 0 : rightUnmatchedPath.size();
-        List<NodeEntity> nodePath =
-            leftUnmatchedPathSize >= rightUnmatchedPathSize ? leftUnmatchedPath
-                : rightUnmatchedPath;
-        MutablePair<String, Integer> tempPair =
-            new MutablePair<>(ListUtils.getFuzzyPathStr(nodePath), unmatchedType);
-
-        logDetailMap.compute(tempPair, (key, logDetail) -> {
-          if (logDetail == null) {
-            logDetail = new LogDetail();
-            logDetail.setNodePath(nodePath);
-            logDetail.setLogEntity(logEntity);
-          }
-          logDetail.setCount(logDetail.getCount() + 1);
-          return logDetail;
-        });
-      });
-      compareResultDetail.setLogDetails(new ArrayList<>(logDetailMap.values()));
+      return;
     }
+
+    Map<MutablePair<String, Integer>, LogDetail> logDetailMap = new HashMap<>();
+
+    logEntities.forEach(logEntity -> {
+      UnmatchedPairEntity pathPair = logEntity.getPathPair();
+
+      int unmatchedType = pathPair.getUnmatchedType();
+      List<NodeEntity> longestNodePath = getLongestNodePath(pathPair);
+      MutablePair<String, Integer> tempPair =
+          new MutablePair<>(ListUtils.getFuzzyPathStr(longestNodePath), unmatchedType);
+
+      logDetailMap.compute(tempPair, (key, logDetail) -> {
+        if (logDetail == null) {
+          logDetail = new LogDetail();
+          logDetail.setNodePath(longestNodePath);
+          logDetail.setLogEntity(logEntity);
+        }
+        logDetail.setCount(logDetail.getCount() + 1);
+        return logDetail;
+      });
+
+    });
+    compareResultDetail.setLogDetails(new ArrayList<>(logDetailMap.values()));
+  }
+
+  private List<NodeEntity> getLongestNodePath(UnmatchedPairEntity pathPair) {
+    List<NodeEntity> leftUnmatchedPath = pathPair.getLeftUnmatchedPath();
+    List<NodeEntity> rightUnmatchedPath = pathPair.getRightUnmatchedPath();
+    int leftUnmatchedPathSize = leftUnmatchedPath == null ? 0 : leftUnmatchedPath.size();
+    int rightUnmatchedPathSize = rightUnmatchedPath == null ? 0 : rightUnmatchedPath.size();
+    return leftUnmatchedPathSize >= rightUnmatchedPathSize ? leftUnmatchedPath : rightUnmatchedPath;
   }
 
 
