@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -67,9 +66,8 @@ public class CollectionReportService {
     Map<String, ComparisonInterfaceConfig> replayCompareConfig =
         reportExchangeService.getReplayCompareConfig(appId, operationName);
     if (MapUtils.isNotEmpty(replayCompareConfig)) {
-      List<Entry<String, ComparisonInterfaceConfig>> entries = new ArrayList<>(
-          replayCompareConfig.entrySet());
-      ComparisonInterfaceConfig comparisonInterfaceConfig = entries.get(0).getValue();
+      ComparisonInterfaceConfig comparisonInterfaceConfig = replayCompareConfig.values().iterator()
+          .next();
       List<String> operationTypes = comparisonInterfaceConfig.getOperationTypes();
       String operationType =
           CollectionUtils.isEmpty(operationTypes) ? StringUtils.EMPTY : operationTypes.get(0);

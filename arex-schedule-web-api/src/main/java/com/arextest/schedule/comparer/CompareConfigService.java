@@ -6,15 +6,12 @@ import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.common.JsonUtils;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
-import com.arextest.schedule.model.config.ComparisonDependencyConfig;
 import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.model.converter.ReplayConfigConverter;
 import com.arextest.schedule.progress.ProgressEvent;
-import com.arextest.schedule.utils.MapUtils;
 import com.arextest.web.model.contract.contracts.config.SystemConfigWithProperties;
 import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig;
-import com.arextest.web.model.contract.contracts.config.replay.ReplayCompareConfig.DependencyComparisonItem;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
@@ -22,9 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Resource;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -70,18 +65,19 @@ public final class CompareConfigService {
       return systemConfig;
     }
 
-    ResponseEntity<GenericResponseType<SystemConfigWithProperties>> response = RETRY_TEMPLATE.execute(context -> {
-      ResponseEntity<GenericResponseType<SystemConfigWithProperties>> temp = httpWepServiceApiClient.get(
-          systemConfigUrl, Collections.emptyMap(),
-          new ParameterizedTypeReference<GenericResponseType<SystemConfigWithProperties>>() {
-          });
+    ResponseEntity<GenericResponseType<SystemConfigWithProperties>> response = RETRY_TEMPLATE.execute(
+        context -> {
+          ResponseEntity<GenericResponseType<SystemConfigWithProperties>> temp = httpWepServiceApiClient.get(
+              systemConfigUrl, Collections.emptyMap(),
+              new ParameterizedTypeReference<GenericResponseType<SystemConfigWithProperties>>() {
+              });
 
-      if (temp == null || temp.getBody() == null || temp.getBody().getBody() == null) {
-        throw new RuntimeException("get compare system config failed");
-      } else {
-        return temp;
-      }
-    }, retryContext -> null);
+          if (temp == null || temp.getBody() == null || temp.getBody().getBody() == null) {
+            throw new RuntimeException("get compare system config failed");
+          } else {
+            return temp;
+          }
+        }, retryContext -> null);
 
     if (response == null || response.getBody() == null || response.getBody().getBody() == null) {
       LOGGER.error("get compare system config failed");
@@ -144,7 +140,8 @@ public final class CompareConfigService {
       if (json == null) {
         return ComparisonInterfaceConfig.empty();
       }
-      ComparisonInterfaceConfig config = JsonUtils.byteToObject(json, ComparisonInterfaceConfig.class);
+      ComparisonInterfaceConfig config = JsonUtils.byteToObject(json,
+          ComparisonInterfaceConfig.class);
       if (config == null) {
         return ComparisonInterfaceConfig.empty();
       }
@@ -166,14 +163,14 @@ public final class CompareConfigService {
 
     if (replayComparisonConfigEntity == null || replayComparisonConfigEntity.getBody() == null
         || replayComparisonConfigEntity.getBody().getBody() == null) {
-      return new HashMap<>();
+      return Collections.emptyMap();
     }
 
     List<ReplayCompareConfig.ReplayComparisonItem> operationConfigs =
         Optional.ofNullable(replayComparisonConfigEntity.getBody())
-        .map(GenericResponseType::getBody)
-        .map(ReplayCompareConfig::getReplayComparisonItems)
-        .orElse(Collections.emptyList());
+            .map(GenericResponseType::getBody)
+            .map(ReplayCompareConfig::getReplayComparisonItems)
+            .orElse(Collections.emptyList());
     return convertOperationConfig(operationConfigs);
   }
 
