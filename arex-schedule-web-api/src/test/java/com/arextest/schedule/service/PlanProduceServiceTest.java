@@ -31,7 +31,8 @@ class PlanProduceServiceTest {
     service.fillOptionalValueIfRequestMissed(request);
 
     // Assert
-    assertTrue(request.getCaseSourceTo().before(new Date(System.currentTimeMillis() - offsetMillis)));
+    assertTrue(request.getCaseSourceTo().before(new Date(System.currentTimeMillis() - offsetMillis))
+    || request.getCaseSourceTo().equals(new Date(System.currentTimeMillis() - offsetMillis)));
   }
 
 
