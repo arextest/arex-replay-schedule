@@ -7,11 +7,13 @@ import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.deploy.ServiceInstance;
+import com.arextest.schedule.model.sender.HttpSenderContent;
 import com.arextest.schedule.sender.ReplaySendResult;
 import com.arextest.schedule.sender.ReplaySenderParameters;
 import com.arextest.schedule.sender.SenderParameters;
+import com.arextest.schedule.sender.httprequest.AbstractHttpRequestBuilder;
+import com.arextest.schedule.sender.httprequest.HttpRequestBuilderFactory;
 import com.arextest.schedule.service.MetricService;
-import com.arextest.schedule.utils.DecodeUtils;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
@@ -22,7 +24,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
@@ -30,10 +31,13 @@ import org.springframework.util.StopWatch;
 @Slf4j
 @Component
 public final class DefaultHttpReplaySender extends AbstractReplaySender {
+
   @Resource
   private HttpWepServiceApiClient httpWepServiceApiClient;
   @Resource
   private MetricService metricService;
+  @Resource
+  HttpRequestBuilderFactory httpRequestBuilderFactory;
 
   @Value("#{'${arex.replay.header.excludes.http}'.split(',')}")
   List<String> headerExcludes;
@@ -118,97 +122,42 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
     return doSend(replayActionItem, caseItem, headers);
   }
 
-  private String contactUrl(String baseUrl, String operation) {
-    String result = null;
-    if (StringUtils.endsWith(baseUrl, "/") || StringUtils.startsWith(operation, "/")) {
-      result = baseUrl + operation;
-    } else {
-      result = baseUrl + "/" + operation;
-    }
-    return result;
-  }
-
   private ReplaySendResult doInvoke(SenderParameters senderParameters) {
-    String method = senderParameters.getMethod();
-    HttpMethod httpMethod = HttpMethod.resolve(method);
-
-    if (httpMethod == null) {
-      return ReplaySendResult.failed("not found request method:" + method);
+    AbstractHttpRequestBuilder httpRequestBuilder = httpRequestBuilderFactory.getHttpRequestBuilder(
+        senderParameters);
+    if (httpRequestBuilder == null) {
+      LOGGER.error("not found request content builder, senderParameters:{}", senderParameters);
+      return ReplaySendResult.failed("not found request content builder");
     }
 
-    HttpHeaders httpHeaders = createRequestHeaders(senderParameters.getHeaders(),
-        senderParameters.getFormat());
-    String requestMessage = senderParameters.getMessage();
-    String fullUrl =
-        contactUrl(senderParameters.getUrl(), senderParameters.getOperation());
-    Class<?> responseType = String.class;
-    final HttpEntity<?> httpEntity;
-    if (shouldApplyHttpBody(httpMethod)) {
-      Object decodeMessage = DecodeUtils.decode(requestMessage);
-      if (byte[].class == decodeMessage.getClass()) {
-        responseType = byte[].class;
-      }
-      httpEntity = new HttpEntity<>(decodeMessage, httpHeaders);
-    } else {
-      httpEntity = new HttpEntity<>(httpHeaders);
+    HttpSenderContent httpSenderContent = httpRequestBuilder.buildRequestContent(senderParameters);
+    if (httpSenderContent == null) {
+      LOGGER.error("build request content failed, senderParameters:{}", senderParameters);
+      return ReplaySendResult.failed("build request content failed");
     }
+
+    if (httpSenderContent.getHttpMethod() == null) {
+      return ReplaySendResult.failed("not found request method:" + senderParameters.getMethod());
+    }
+
+    String fullUrl = httpSenderContent.getRequestUrl();
+    HttpMethod httpMethod = httpSenderContent.getHttpMethod();
+    HttpEntity<?> httpEntity = httpSenderContent.getHttpEntity();
+    Class<?> responseType = httpSenderContent.getResponseType();
+
     final ResponseEntity<?> responseEntity;
     try {
       responseEntity = httpWepServiceApiClient.exchange(fullUrl, httpMethod, httpEntity,
           responseType);
     } catch (Throwable throwable) {
-      LOGGER.error("http {} , url: {} ,error: {} ,request: {}", method, fullUrl,
+      LOGGER.error("http {} , url: {} ,error: {} ,request: {}", senderParameters.getMethod(),
+          fullUrl,
           throwable.getMessage(),
           httpEntity,
           throwable);
       return ReplaySendResult.failed(throwable.getMessage(), fullUrl);
     }
-    return fromHttpResult(httpHeaders, fullUrl, responseEntity);
-  }
-
-  private HttpHeaders createRequestHeaders(Map<String, String> sourceHeaders, String format) {
-    MediaType contentType = null;
-    HttpHeaders httpHeaders = new HttpHeaders();
-    if (MapUtils.isNotEmpty(sourceHeaders)) {
-      for (Map.Entry<String, String> entry : sourceHeaders.entrySet()) {
-        String key = entry.getKey();
-        if (contentType == null) {
-          contentType = contentType(key, entry.getValue());
-          if (contentType != null) {
-            continue;
-          }
-        }
-        httpHeaders.add(key, entry.getValue());
-      }
-    }
-    if (contentType == null) {
-      contentType = contentType(format);
-    }
-    httpHeaders.setContentType(contentType);
-    return httpHeaders;
-  }
-
-  private boolean shouldApplyHttpBody(HttpMethod httpMethod) {
-    return httpMethod == HttpMethod.POST || httpMethod == HttpMethod.PUT
-        || httpMethod == HttpMethod.PATCH ||
-        httpMethod == HttpMethod.DELETE;
-  }
-
-  private MediaType contentType(String key, String value) {
-    if (StringUtils.isEmpty(value)) {
-      return null;
-    }
-    if (!StringUtils.equalsIgnoreCase(HttpHeaders.CONTENT_TYPE, key)) {
-      return null;
-    }
-    return MediaType.parseMediaType(value);
-  }
-
-  private MediaType contentType(String format) {
-    if (StringUtils.isEmpty(format)) {
-      return MediaType.APPLICATION_JSON;
-    }
-    return MediaType.parseMediaType(format);
+    return fromHttpResult(httpEntity.getHeaders(), fullUrl, responseEntity);
   }
 
 
