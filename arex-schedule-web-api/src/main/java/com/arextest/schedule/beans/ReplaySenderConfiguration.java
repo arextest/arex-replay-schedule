@@ -30,6 +30,8 @@ import org.springframework.core.io.ClassPathResource;
 public class ReplaySenderConfiguration {
   @Value("${replay.sender.extension.jarPath}")
   private String jarFilePath;
+  @Value("${replay.sender.extension.remote.jarPath:}")
+  private String remoteJarFilePath;
 
   private static final String LOCAL_INVOKER_PATH = "lib/dubboInvoker.jar";
   private static final String NEW_INVOKER_PATH = "dubboInvoker.jar";
@@ -41,10 +43,12 @@ public class ReplaySenderConfiguration {
 
     try {
       URL classPathResource;
-      if (StringUtils.isEmpty(jarFilePath)) {
-        classPathResource = loadLocalInvokerJar();
-      } else {
+      if (StringUtils.isNotBlank(remoteJarFilePath)) {
+        classPathResource = new URL(jarFilePath);
+      } else if (StringUtils.isNotBlank(jarFilePath)) {
         classPathResource = new File(jarFilePath).toURI().toURL();
+      } else {
+        classPathResource = loadLocalInvokerJar();
       }
       ClassLoaderUtils.loadJar(classPathResource);
       ServiceLoader.load(ReplayExtensionInvoker.class).forEach(invokers::add);
