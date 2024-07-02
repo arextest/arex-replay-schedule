@@ -30,7 +30,7 @@ import org.springframework.core.io.ClassPathResource;
 public class ReplaySenderConfiguration {
   @Value("${replay.sender.extension.jarPath}")
   private String jarFilePath;
-  @Value("${replay.sender.extension.jarPath.remote:}")
+  @Value("${replay.sender.extension.remote.jarPath:}")
   private String remoteJarFilePath;
 
   private static final String LOCAL_INVOKER_PATH = "lib/dubboInvoker.jar";

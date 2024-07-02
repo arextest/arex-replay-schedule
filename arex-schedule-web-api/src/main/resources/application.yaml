@@ -106,6 +106,7 @@ pom:
 replay:
   sender:
     extension:
+      remote:
+        jarPath:
       jarPath:
-        remote:
       switch: true
