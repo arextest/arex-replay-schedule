@@ -107,4 +107,5 @@ replay:
   sender:
     extension:
       jarPath:
+        remote:
       switch: true
