@@ -43,9 +43,9 @@ public class ReplaySenderConfiguration {
 
     try {
       URL classPathResource;
-      if (StringUtils.isNotEmpty(remoteJarFilePath)) {
+      if (StringUtils.isNotBlank(remoteJarFilePath)) {
         classPathResource = new URL(jarFilePath);
-      } else if (StringUtils.isNotEmpty(jarFilePath)) {
+      } else if (StringUtils.isNotBlank(jarFilePath)) {
         classPathResource = new File(jarFilePath).toURI().toURL();
       } else {
         classPathResource = loadLocalInvokerJar();
