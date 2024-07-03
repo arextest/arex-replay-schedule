@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ServiceLoader;
 import lombok.extern.slf4j.Slf4j;
@@ -30,11 +31,10 @@ import org.springframework.core.io.ClassPathResource;
 public class ReplaySenderConfiguration {
   @Value("${replay.sender.extension.jarPath}")
   private String jarFilePath;
-  @Value("${replay.sender.extension.remote.jarPath:}")
-  private String remoteJarFilePath;
 
   private static final String LOCAL_INVOKER_PATH = "lib/dubboInvoker.jar";
   private static final String NEW_INVOKER_PATH = "dubboInvoker.jar";
+  private static final List<String> remoteProtocol = Arrays.asList("http", "https", "ftp", "sftp", "nfs");
 
   @Bean("replayExtensionInvoker")
   @ConditionalOnProperty(name = "replay.sender.extension.switch", havingValue = "true")
@@ -43,10 +43,12 @@ public class ReplaySenderConfiguration {
 
     try {
       URL classPathResource;
-      if (StringUtils.isNotBlank(remoteJarFilePath)) {
-        classPathResource = new URL(jarFilePath);
-      } else if (StringUtils.isNotBlank(jarFilePath)) {
-        classPathResource = new File(jarFilePath).toURI().toURL();
+      if (StringUtils.isNotBlank(jarFilePath)) {
+        if (isRemote(jarFilePath)) {
+          classPathResource = new URL(jarFilePath);
+        } else {
+          classPathResource = new File(jarFilePath).toURI().toURL();
+        }
       } else {
         classPathResource = loadLocalInvokerJar();
       }
@@ -75,6 +77,15 @@ public class ReplaySenderConfiguration {
   @Bean
   public ReplaySenderFactory replaySenderFactory(List<ReplaySender> senders) {
     return new ReplaySenderFactory(senders);
+  }
+
+  private boolean isRemote(String path) {
+    for (String protocol : remoteProtocol) {
+      if (path.startsWith(protocol)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private void inputStreamToFile(InputStream inputStream, String filePath) throws IOException {
