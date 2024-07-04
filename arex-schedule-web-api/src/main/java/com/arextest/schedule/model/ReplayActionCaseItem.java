@@ -56,6 +56,7 @@ public class ReplayActionCaseItem {
   private String caseType;
   @JsonIgnore
   private long recordTime;
+  private long expirationTime;
   @JsonIgnore
   private Target targetRequest;
   @JsonIgnore
