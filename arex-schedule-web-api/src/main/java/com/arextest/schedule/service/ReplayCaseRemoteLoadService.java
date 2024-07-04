@@ -151,6 +151,7 @@ public class ReplayCaseRemoteLoadService {
     caseItem.setCompareStatus(CompareProcessStatusType.WAIT_HANDLING.getValue());
     caseItem.setSourceResultId(StringUtils.EMPTY);
     caseItem.setTargetResultId(StringUtils.EMPTY);
+    caseItem.setExpirationTime(mainEntry.getExpirationTime());
 
     return caseItem;
   }
