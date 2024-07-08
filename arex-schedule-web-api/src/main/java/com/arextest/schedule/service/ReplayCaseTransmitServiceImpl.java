@@ -1,5 +1,6 @@
 package com.arextest.schedule.service;
 
+import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
@@ -38,6 +39,8 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService {
 
+  private static final String COMPARE_DELAY_SECONDS = "compare.delay.seconds";
+  private static final int DEFAULT_COMPARE_DELAY_SECONDS = 60;
   @Resource
   private ExecutorService sendExecutorService;
   @Resource
@@ -63,7 +66,7 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
   @Resource
   private ReplayNoiseIdentify replayNoiseIdentify;
   @Resource
-  private ConfigProvider configProvider;
+  private DefaultApplicationConfig defaultConfig;
 
   public void send(List<ReplayActionCaseItem> caseItems, PlanExecutionContext<?> executionContext) {
     ExecutionStatus executionStatus = executionContext.getExecutionStatus();
@@ -200,8 +203,8 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
     if (sendStatusType == CaseSendStatusType.SUCCESS) {
       replayActionCaseItemRepository.updateSendResult(caseItem);
       // async compare task
-      int compareDelaySeconds = configProvider.getCompareDelaySeconds(
-          caseItem.getParent().getAppId());
+      int compareDelaySeconds = defaultConfig.getConfigAsInt(
+          COMPARE_DELAY_SECONDS, DEFAULT_COMPARE_DELAY_SECONDS);
       if (compareDelaySeconds == 0) {
         AsyncCompareCaseTaskRunnable compareTask = new AsyncCompareCaseTaskRunnable(
             replayResultComparer, caseItem);

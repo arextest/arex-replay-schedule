@@ -3,6 +3,7 @@ package com.arextest.schedule.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.model.CaseSendStatusType;
@@ -27,7 +28,7 @@ class ReplayCaseTransmitServiceImplTest {
   @Mock
   private ExecutorService compareExecutorService;
   @Mock
-  private DefaultConfigProviderImpl defaultConfigProviderImpl;
+  private DefaultApplicationConfig defaultConfig;
   @Mock
   private ReplayCompareService replayCompareService;
   @Mock
@@ -48,7 +49,7 @@ class ReplayCaseTransmitServiceImplTest {
     ReplayActionItem parent = new ReplayActionItem();
     parent.setAppId("appId");
     caseItem.setParent(parent);
-    when(defaultConfigProviderImpl.getCompareDelaySeconds(parent.getAppId())).thenReturn(60);
+    when(defaultConfig.getConfigAsInt(parent.getAppId())).thenReturn(60);
     when(replayCompareService.compareCaseDistributable(caseItem)).thenReturn(true);
     replayCaseTransmitServiceImpl.updateSendResult(caseItem, CaseSendStatusType.SUCCESS);
     verify(replayActionCaseItemRepository).updateSendResult(caseItem);
@@ -66,7 +67,7 @@ class ReplayCaseTransmitServiceImplTest {
     ReplayActionItem parent = new ReplayActionItem();
     parent.setAppId("appId");
     caseItem.setParent(parent);
-    when(defaultConfigProviderImpl.getCompareDelaySeconds(parent.getAppId())).thenReturn(0);
+    when(defaultConfig.getConfigAsInt(parent.getAppId())).thenReturn(0);
     replayCaseTransmitServiceImpl.updateSendResult(caseItem, CaseSendStatusType.SUCCESS);
     assertEquals(CaseSendStatusType.SUCCESS.getValue(), caseItem.getSendStatus());
   }

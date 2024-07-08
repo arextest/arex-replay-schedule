@@ -4,7 +4,7 @@ import com.arextest.model.replay.QueryMockCacheRequestType;
 import com.arextest.model.replay.QueryMockCacheResponseType;
 import com.arextest.model.response.ResponseStatusType;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
-import com.arextest.schedule.model.CaseProvider;
+import com.arextest.schedule.model.CaseProviderEnum;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import java.util.Optional;
 import javax.annotation.Resource;
@@ -33,8 +33,8 @@ public final class MockCachePreLoader {
     request.setRecordId(recordId);
     QueryMockCacheResponseType response;
 
-    String provider = Optional.ofNullable(CaseProvider.fromCode(caseItem.getCaseProviderCode()))
-        .orElse(CaseProvider.ROLLING)
+    String provider = Optional.ofNullable(CaseProviderEnum.fromCode(caseItem.getCaseProviderCode()))
+        .orElse(CaseProviderEnum.ROLLING)
         .getName();
     request.setSourceProvider(provider);
 

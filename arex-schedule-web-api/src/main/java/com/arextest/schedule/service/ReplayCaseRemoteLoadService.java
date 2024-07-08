@@ -12,7 +12,7 @@ import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.ViewRecordResponseType;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.common.CommonConstant;
-import com.arextest.schedule.model.CaseProvider;
+import com.arextest.schedule.model.CaseProviderEnum;
 import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.CompareProcessStatusType;
 import com.arextest.schedule.model.LogType;
@@ -63,7 +63,7 @@ public class ReplayCaseRemoteLoadService {
     int queryTotalCount = EMPTY_SIZE;
     try {
       int caseCountLimit =
-          CaseProvider.AUTO_PINED.getName().equals(providerName) ? AUTO_PINED_CASE_LIMIT :
+          CaseProviderEnum.AUTO_PINNED.getName().equals(providerName) ? AUTO_PINED_CASE_LIMIT :
               replayActionItem.getParent().getCaseCountLimit();
 
       List<OperationTypeData> operationTypes = replayActionItem.getOperationTypes();
@@ -124,11 +124,11 @@ public class ReplayCaseRemoteLoadService {
       Set<String> operationTypes) {
     ReplayActionCaseItem viewReplay = null;
     if (CollectionUtils.isEmpty(operationTypes)) {
-      viewReplay = viewReplayLoad(caseItem, CaseProvider.PINNED.getName(),
+      viewReplay = viewReplayLoad(caseItem, CaseProviderEnum.PINNED.getName(),
           caseItem.getParent().getActionType());
     } else {
       for (String operationType : operationTypes) {
-        viewReplay = viewReplayLoad(caseItem, CaseProvider.PINNED.getName(), operationType);
+        viewReplay = viewReplayLoad(caseItem, CaseProviderEnum.PINNED.getName(), operationType);
         if (viewReplay != null) {
           break;
         }
