@@ -1,7 +1,7 @@
 package com.arextest.schedule.plan.builder.impl;
 
 import com.arextest.schedule.model.AppServiceDescriptor;
-import com.arextest.schedule.model.CaseProvider;
+import com.arextest.schedule.model.CaseProviderEnum;
 import com.arextest.schedule.model.CaseSourceEnvType;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.deploy.DeploymentVersion;
@@ -122,7 +122,7 @@ abstract class AbstractReplayPlanBuilder implements ReplayPlanBuilder {
   abstract List<ReplayActionItem> getReplayActionList(BuildReplayPlanRequest request,
       PlanContext planContext);
 
-  protected int queryCaseCountByAction(ReplayActionItem actionItem, CaseProvider provider) {
+  protected int queryCaseCountByAction(ReplayActionItem actionItem, CaseProviderEnum provider) {
     return replayCaseRemoteLoadService.queryCaseCount(actionItem, provider.getName());
   }
 

@@ -1,12 +1,13 @@
 package com.arextest.schedule.service;
 
+import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
 import com.arextest.schedule.model.AppServiceDescriptor;
 import com.arextest.schedule.model.AppServiceOperationDescriptor;
-import com.arextest.schedule.model.CaseProvider;
+import com.arextest.schedule.model.CaseProviderEnum;
 import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.CompareProcessStatusType;
 import com.arextest.schedule.model.LogType;
@@ -16,7 +17,6 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.deploy.ServiceInstance;
-import com.arextest.schedule.model.plan.BuildReplayPlanType;
 import com.arextest.schedule.plan.PlanContext;
 import com.arextest.schedule.plan.PlanContextCreator;
 import com.arextest.schedule.planexecution.PlanExecutionContextProvider;
@@ -35,6 +35,7 @@ import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Service;
 
@@ -45,6 +46,11 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class PlanConsumePrepareService {
+  private static final String CASE_COUNT_LIMIT_KEY = ".case.count.limit.";
+  private static final String CASE_COUNT_LIMIT_APPS_KEY = "use.case.count.limit.apps";
+  private static final String NO_TIME_LIMIT_KEY = "no.time.limit.";
+  private static final String ALL = "ALL";
+  private static final int ZERO_CASE_COUNT_LIMIT = 0;
   @Resource
   private MetricService metricService;
   @Resource
@@ -73,6 +79,8 @@ public class PlanConsumePrepareService {
   private ReplayNoiseIdentify replayNoiseIdentify;
   @Resource
   private ReplayStorageService replayStorageService;
+  @Resource
+  private DefaultApplicationConfig defaultConfig;
 
   public int preparePlan(ReplayPlan replayPlan) {
     if (replayPlan.getPlanCreateMillis() == 0) {
@@ -95,9 +103,6 @@ public class PlanConsumePrepareService {
   }
 
   private int prepareAllActions(List<ReplayActionItem> replayActionItems) {
-    BuildReplayPlanType planType = BuildReplayPlanType.findByValue(
-        replayActionItems.get(0).getParent().getReplayPlanType());
-
     int planLoadSize = 0;
     for (ReplayActionItem action : replayActionItems) {
       int actionLoadSize = 0;
@@ -109,35 +114,18 @@ public class PlanConsumePrepareService {
 
       if (!CollectionUtils.isEmpty(action.getCaseItemList())) {
         actionLoadSize += loadPinnedCases(action);
-      } else if (planType == BuildReplayPlanType.MIXED) {
-        actionLoadSize += loadCasesByProvider(action, CaseProvider.AUTO_PINED);
-        actionLoadSize += loadCasesByProvider(action, CaseProvider.ROLLING);
       } else {
-        actionLoadSize += loadCasesByProvider(action, CaseProvider.AUTO_PINED);
+        actionLoadSize += loadCasesByProvider(action, CaseProviderEnum.AUTO_PINNED);
+        actionLoadSize += loadCasesByProvider(action, CaseProviderEnum.ROLLING);
       }
       planLoadSize += actionLoadSize;
       action.setReplayCaseCount(actionLoadSize);
       progressEvent.onActionCaseLoaded(action);
     }
-    // if no case saved, fallback to rolling source
-    return planLoadSize == 0 ? prepareAllActionsRollingFallback(replayActionItems)
-        : planLoadSize;
+    return planLoadSize;
   }
 
-  private int prepareAllActionsRollingFallback(List<ReplayActionItem> replayActionItems) {
-    int planSavedCaseSize = 0;
-    for (ReplayActionItem action : replayActionItems) {
-      int actionLoadSize = loadCasesByProvider(action, CaseProvider.ROLLING);
-
-      action.setReplayCaseCount(actionLoadSize);
-      progressEvent.onActionCaseLoaded(action);
-
-      planSavedCaseSize += actionLoadSize;
-    }
-    return planSavedCaseSize;
-  }
-
-  private void caseItemPostProcess(List<ReplayActionCaseItem> cases, CaseProvider provider) {
+  private void caseItemPostProcess(List<ReplayActionCaseItem> cases, CaseProviderEnum provider) {
     if (CollectionUtils.isEmpty(cases)) {
       return;
     }
@@ -155,7 +143,7 @@ public class PlanConsumePrepareService {
    * else if caseCountLimit < CommonConstant.MAX_PAGE_SIZE or recording data size < request page
    * size, Only need to query once by page
    */
-  public int loadCasesByProvider(ReplayActionItem replayActionItem, CaseProvider provider) {
+  public int loadCasesByProvider(ReplayActionItem replayActionItem, CaseProviderEnum provider) {
     List<OperationTypeData> operationTypes = replayActionItem.getOperationTypes();
     int totalCount = 0;
 
@@ -173,20 +161,23 @@ public class PlanConsumePrepareService {
    * Find data by paging according to operationType
    * ps: providerName: Rolling, operationType: DubboProvider
    */
-  private int loadCaseWithOperationType(ReplayActionItem replayActionItem, CaseProvider provider,
+  private int loadCaseWithOperationType(ReplayActionItem replayActionItem, CaseProviderEnum provider,
       OperationTypeData operationTypeData) {
     final ReplayPlan replayPlan = replayActionItem.getParent();
-    long beginTimeMills = replayPlan.getCaseSourceFrom().getTime();
-    // need all auto pined cases
-    if (provider.equals(CaseProvider.AUTO_PINED)) {
-      beginTimeMills = 0;
+
+    // Get the limit on the number of replay cases
+    int caseCountLimit = getCaseCountLimit(replayPlan.getAppId(),
+        replayPlan.getReplayPlanType(), provider.getName(), replayPlan.getCaseCountLimit());
+    if (caseCountLimit == ZERO_CASE_COUNT_LIMIT) {
+      return ZERO_CASE_COUNT_LIMIT;
     }
 
-    long endTimeMills = operationTypeData.getLastRecordTime();
-    if (endTimeMills == 0) {
-      endTimeMills = replayPlan.getCaseSourceTo().getTime();
-    }
-    int caseCountLimit = replayPlan.getCaseCountLimit();
+    // Rolling data needs to be judged whether to pull all
+    long beginTimeMills = getBeginTimeMills(replayPlan.getReplayPlanType(),
+        replayPlan.getCaseSourceFrom().getTime(), provider);
+    long endTimeMills = getEndTimeMills(replayPlan.getCaseSourceTo().getTime(),
+        operationTypeData.getLastRecordTime());
+
     int pageSize = Math.min(caseCountLimit, CommonConstant.MAX_PAGE_SIZE);
 
     // The task is pulled up to obtain the recorded case
@@ -215,6 +206,71 @@ public class PlanConsumePrepareService {
     return count;
   }
 
+  /**
+   * Get the limit on the number of replay cases
+   * @param appId
+   * @param replayPlanType
+   * @param providerName
+   * @param caseCountLimit
+   * @return
+   */
+  private int getCaseCountLimit(String appId, int replayPlanType,
+       String providerName, int caseCountLimit) {
+    String configApps = defaultConfig.getConfigAsString(CASE_COUNT_LIMIT_APPS_KEY, ALL);
+    // If the app list in the configuration contains all apps or contains currently scheduled apps
+    if (StringUtils.equalsIgnoreCase(configApps, ALL)
+        || StringUtils.contains(configApps, appId)) {
+      // Get the use case number limit from configuration
+      String limitValue = defaultConfig.getConfigAsString(
+          buildLimitKey(replayPlanType, providerName));
+      // If no use case limit is set in the configuration, the use case limit in the plan is used
+      if (StringUtils.isBlank(limitValue)) {
+        return caseCountLimit;
+      }
+
+      return NumberUtils.toInt(limitValue);
+    }
+
+    return caseCountLimit;
+  }
+
+  private String buildLimitKey(int replayPlanType, String providerName) {
+    return providerName + CASE_COUNT_LIMIT_KEY + replayPlanType;
+  }
+
+  /**
+   * Determine the replay start time of rolling cases through configuration
+   * @param replayPlanType
+   * @param caseSourceFrom
+   * @param provider
+   * @return
+   */
+  private long getBeginTimeMills(int replayPlanType, long caseSourceFrom, CaseProviderEnum provider) {
+    // need all auto pined or rolling cases
+    if (provider.equals(CaseProviderEnum.AUTO_PINNED) ||
+        (provider.equals(CaseProviderEnum.ROLLING) &&
+            defaultConfig.getConfigAsBoolean(NO_TIME_LIMIT_KEY + replayPlanType,
+                false))) {
+      return 0;
+    }
+    return caseSourceFrom;
+  }
+
+  /**
+   * Determine the replay end time of rolling cases through configuration
+   * @param caseSourceTo
+   * @param lastRecordTime
+   * @return
+   */
+  private long getEndTimeMills(long caseSourceTo, long lastRecordTime) {
+    // Job wake-up time
+    long endTimeMills = lastRecordTime;
+    if (endTimeMills == 0) {
+      endTimeMills = caseSourceTo;
+    }
+    return endTimeMills;
+  }
+
   private int loadPinnedCases(ReplayActionItem replayActionItem) {
     List<ReplayActionCaseItem> caseItemList = replayActionItem.getCaseItemList();
     int size = 0;
@@ -237,7 +293,7 @@ public class PlanConsumePrepareService {
       }
     }
     ReplayParentBinder.setupCaseItemParent(caseItemList, replayActionItem);
-    caseItemPostProcess(caseItemList, CaseProvider.PINNED);
+    caseItemPostProcess(caseItemList, CaseProviderEnum.PINNED);
     replayActionCaseItemRepository.save(caseItemList);
     replayActionItem.setReplayCaseCount(size);
     return size;

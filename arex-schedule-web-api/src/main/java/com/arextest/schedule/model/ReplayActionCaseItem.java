@@ -36,7 +36,7 @@ public class ReplayActionCaseItem {
   /**
    * old data fallback to default value
    *
-   * @see CaseProvider
+   * @see CaseProviderEnum
    */
   private int caseProviderCode;
 

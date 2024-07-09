@@ -7,6 +7,7 @@ import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_EXPIRE
 import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_KEY;
 
 import com.arextest.common.cache.CacheProvider;
+import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
@@ -59,6 +60,7 @@ import org.springframework.stereotype.Service;
 public class PlanProduceService {
 
   private static final String PLAN_RUNNING_KEY_FORMAT = "plan_running_%s";
+  private static final String CASE_SOURCE_TO_OFFSET_MILLIS = "case.source.to.offset.millis";
   private static final String AUTO_OPERATOR = "Auto";
   @Resource
   private List<ReplayPlanBuilder> replayPlanBuilderList;
@@ -85,7 +87,7 @@ public class PlanProduceService {
   @Resource
   private AsyncEventBus autoRerunAsyncEventBus;
   @Resource
-  private ConfigProvider configProvider;
+  private DefaultApplicationConfig defaultConfig;
 
   @PostConstruct
   public void init() {
@@ -168,7 +170,8 @@ public class PlanProduceService {
   public void fillOptionalValueIfRequestMissed(BuildReplayPlanRequest request) {
     long currentTimeMillis = System.currentTimeMillis();
     Date fromDate = new Date(currentTimeMillis - CommonConstant.ONE_DAY_MILLIS);
-    Date toDate = new Date(currentTimeMillis - configProvider.getCaseSourceToOffsetMillis());
+    Date toDate = new Date(currentTimeMillis -
+        defaultConfig.getConfigAsLong(CASE_SOURCE_TO_OFFSET_MILLIS, 0L));
     if (request.getCaseSourceFrom() == null) {
       request.setCaseSourceFrom(fromDate);
     }
