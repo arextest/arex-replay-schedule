@@ -34,6 +34,7 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
   private static final int NOISE_ANALYSIS_QUEUE_MAX_CAPACITY_SIZE = 100;
   private static final int AUTO_RERUN_QUEUE_MAX_CAPACITY_SIZE = 100;
   private static final int POST_SEND_QUEUE_MAX_CAPACITY_SIZE = 100;
+  private static final int DISTRIBUTE_QUEUE_MAX_CAPACITY_SIZE = 100;
 
 
   @Value("${arex.schedule.pool.io.cpuratio}")
@@ -49,6 +50,22 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
         TimeUnit.MILLISECONDS,
         new LinkedBlockingQueue<>(PRELOAD_QUEUE_MAX_CAPACITY_SIZE), threadFactory,
         new ThreadPoolExecutor.CallerRunsPolicy());
+    return TtlExecutors.getTtlExecutorService(executorService);
+  }
+
+  /**
+   * This bean should be overridden according to the actual implementation of distribute service
+   */
+  @Bean
+  public ExecutorService distributeExecutorService() {
+    ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("replay-distribute-%d")
+            .setDaemon(true)
+            .setUncaughtExceptionHandler(this).build();
+    ExecutorService executorService = new ThreadPoolExecutor(calculateIOPoolSize(),
+            calculateIOPoolSize(), KEEP_ALIVE_TIME,
+            TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(DISTRIBUTE_QUEUE_MAX_CAPACITY_SIZE),
+            threadFactory,
+            new ThreadPoolExecutor.CallerRunsPolicy());
     return TtlExecutors.getTtlExecutorService(executorService);
   }
 
