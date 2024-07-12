@@ -219,8 +219,6 @@ public class PlanProduceService {
       replayPlan.setCaseCountLimit(request.getCaseCountLimit());
     }
 
-    replayPlan.setMinInstanceCount(planContext.determineMinInstanceCount());
-
     // add the condition of "caseTag"
     replayPlan.setCaseTags(request.getCaseTags());
 
