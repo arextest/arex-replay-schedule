@@ -1,9 +1,14 @@
 package com.arextest.schedule.model;
 
+import com.arextest.schedule.common.RateLimiterFactory;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
+
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.Builder;
 import lombok.Getter;
+import org.apache.commons.collections4.CollectionUtils;
 
 /**
  * Created by Qzmo on 2023/5/15
@@ -13,12 +18,12 @@ public class ExecutionStatus {
 
   private AtomicReference<Boolean> canceled;
   @Getter
-  private SendSemaphoreLimiter limiter;
+  private Collection<SendSemaphoreLimiter> sendSemaphoreLimiterList;
 
-  public static ExecutionStatus buildNormal(SendSemaphoreLimiter limiter) {
+  public static ExecutionStatus buildNormal(Collection<SendSemaphoreLimiter> sendSemaphoreLimiterList) {
     return ExecutionStatus.builder()
         .canceled(new AtomicReference<>(false))
-        .limiter(limiter)
+        .sendSemaphoreLimiterList(sendSemaphoreLimiterList)
         .build();
   }
 
@@ -31,7 +36,10 @@ public class ExecutionStatus {
   }
 
   public boolean isInterrupted() {
-    return this.limiter.failBreak();
+    if (CollectionUtils.isEmpty(sendSemaphoreLimiterList)) {
+      return false;
+    }
+    return sendSemaphoreLimiterList.stream().allMatch(SendSemaphoreLimiter::failBreak);
   }
 
   public boolean isCanceled() {

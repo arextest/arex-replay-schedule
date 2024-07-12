@@ -6,6 +6,7 @@ import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.Mocker.Target;
 import com.arextest.model.replay.CaseSendScene;
 import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
+import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Map;
 import lombok.Data;
@@ -76,6 +77,10 @@ public class ReplayActionCaseItem {
   private CompareModeType compareMode = CompareModeType.QUiCK;
   @JsonIgnore
   private String sendErrorMessage;
+
+  private ServiceInstance targetInstance;
+
+  private ServiceInstance sourceInstance;
 
   public String replayDependency() {
     return requestAttribute(MockAttributeNames.CONFIG_BATCH_NO);

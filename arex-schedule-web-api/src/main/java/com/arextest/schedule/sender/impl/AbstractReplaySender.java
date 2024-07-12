@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Objects;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -97,12 +98,18 @@ public abstract class AbstractReplaySender implements ReplaySender {
     return null;
   }
 
-  protected ServiceInstance selectLoadBalanceInstance(String caseItemId,
-      List<ServiceInstance> serviceInstances) {
+  protected ServiceInstance selectLoadBalanceInstance(ReplayActionCaseItem caseItem,
+      List<ServiceInstance> serviceInstances, boolean isTargetInstance) {
     if (CollectionUtils.isEmpty(serviceInstances)) {
       return null;
     }
-    int index = Math.abs(caseItemId.hashCode() % serviceInstances.size());
+    if (isTargetInstance && Objects.nonNull(caseItem.getTargetInstance())){
+      return caseItem.getTargetInstance();
+    }
+    if (!isTargetInstance && Objects.nonNull(caseItem.getSourceInstance())){
+      return caseItem.getSourceInstance();
+    }
+    int index = Math.abs(caseItem.getId().hashCode() % serviceInstances.size());
     return serviceInstances.get(index);
   }
 }

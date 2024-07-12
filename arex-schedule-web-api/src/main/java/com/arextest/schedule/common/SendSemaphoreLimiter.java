@@ -54,6 +54,9 @@ public final class SendSemaphoreLimiter implements SendLimiter {
   private volatile int currentStep = 0;
   @Setter
   private int totalTasks;
+  @Setter
+  @Getter
+  private String host;
 
   public SendSemaphoreLimiter(Integer maxQpsPerInstance, Integer instanceCount) {
     this.sendMaxRate =
@@ -220,5 +223,19 @@ public final class SendSemaphoreLimiter implements SendLimiter {
         checkCount = SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
       }
     }
+  }
+
+  @Override
+  public String toString() {
+    return "SendSemaphoreLimiter{" +
+            "host=" + host +
+            "errorBreakRatio=" + errorBreakRatio +
+            ", continuousFailThreshold=" + continuousFailThreshold +
+            ", sendMaxRate=" + sendMaxRate +
+            ", sendInitialRate=" + sendInitialRate +
+            ", permits=" + permits +
+            ", currentStep=" + currentStep +
+            ", totalTasks=" + totalTasks +
+            '}';
   }
 }

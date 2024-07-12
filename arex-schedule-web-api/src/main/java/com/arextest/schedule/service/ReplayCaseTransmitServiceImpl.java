@@ -7,6 +7,7 @@ import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
+import com.arextest.schedule.exceptions.DistributeRunningException;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.ExecutionStatus;
@@ -14,20 +15,27 @@ import com.arextest.schedule.model.PlanExecutionContext;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
+import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
 import com.arextest.schedule.service.noise.ReplayNoiseIdentify;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import com.arextest.schedule.utils.ServiceUrlUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -68,6 +76,9 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
   @Resource
   private DefaultApplicationConfig defaultConfig;
 
+  @Resource
+  private ExecutorService distributeExecutorService;
+
   public void send(List<ReplayActionCaseItem> caseItems, PlanExecutionContext<?> executionContext) {
     ExecutionStatus executionStatus = executionContext.getExecutionStatus();
 
@@ -80,7 +91,7 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
     replayNoiseIdentify.noiseIdentify(caseItems, executionContext);
 
     try {
-      doSendValuesToRemoteHost(caseItems, executionStatus);
+      doSendValuesToRemoteHost(caseItems, executionContext);
     } catch (Throwable throwable) {
       LOGGER.error("do send error:{}", throwable.getMessage(), throwable);
       markAllSendStatus(caseItems, CaseSendStatusType.EXCEPTION_FAILED);
@@ -117,8 +128,6 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
       ReplayActionItem replayActionItem = actionItemMap.get(actionIdToCaseCount.getKey());
       int contextCasesCount = actionIdToCaseCount.getValue().intValue();
       replayActionItem.recordProcessCaseCount(contextCasesCount);
-      replayActionItem.getSendRateLimiter().batchRelease(false, contextCasesCount);
-
       // if we skip the rest of cases remaining in the action item, set its status
       if (replayActionItem.getReplayCaseCount() == replayActionItem.getCaseProcessCount()
           .intValue()) {
@@ -132,54 +141,47 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
   }
 
   private void doSendValuesToRemoteHost(List<ReplayActionCaseItem> values,
-      ExecutionStatus executionStatus) {
+                                        PlanExecutionContext<?> planExecutionContext) {
+
+    List<ServiceInstance> targetServiceInstances = planExecutionContext.getCurrentTargetInstances();
+    if (CollectionUtils.isEmpty(targetServiceInstances)) {
+      LOGGER.warn("The target instance list is empty,skip send.");
+      markAllSendStatus(values, CaseSendStatusType.READY_DEPENDENCY_FAILED);
+      return;
+    }
+
     final int valueSize = values.size();
-    final SendSemaphoreLimiter semaphore = executionStatus.getLimiter();
     final CountDownLatch groupSentLatch = new CountDownLatch(valueSize);
+    ArrayBlockingQueue<ReplayActionCaseItem> arrayBlockingQueue = new ArrayBlockingQueue<>(valueSize, false, values);
 
-    for (int i = 0; i < valueSize; i++) {
-      ReplayActionCaseItem replayActionCaseItem = values.get(i);
-      ReplayActionItem actionItem = replayActionCaseItem.getParent();
-      MDCTracer.addDetailId(replayActionCaseItem.getId());
-      // checkpoint: before init case runnable
-      if (executionStatus.isAbnormal()) {
-        LOGGER.info("replay interrupted,case item id:{}", replayActionCaseItem.getId());
-        MDCTracer.removeDetailId();
-        return;
-      }
+    // calculate the number of distribution tasks
+    int distributeTaskNum = Math.min(valueSize, targetServiceInstances.size());
+    CompletableFuture<?>[] distributeCompletableFutures = new CompletableFuture<?>[distributeTaskNum];
+    for (int i = 0; i < distributeTaskNum; i++) {
+      ServiceInstance serviceInstance = targetServiceInstances.get(i);
+      distributeCompletableFutures[i] = CompletableFuture.runAsync(()
+                      -> doDistribute(arrayBlockingQueue, serviceInstance, groupSentLatch, planExecutionContext),
+              distributeExecutorService);
+    }
+    CompletableFuture.allOf(distributeCompletableFutures).exceptionally(throwable -> {
+      LOGGER.error("An unknown distribution exception has occurred.{}", throwable.getMessage(), throwable);
+      throw new DistributeRunningException(throwable);
+    }).join();
 
-      try {
-        ReplaySender replaySender = findReplaySender(replayActionCaseItem);
-        if (replaySender == null) {
-          groupSentLatch.countDown();
-          doSendFailedAsFinish(replayActionCaseItem, CaseSendStatusType.READY_DEPENDENCY_FAILED);
-          continue;
-        }
-        semaphore.acquire();
-        AsyncSendCaseTaskRunnable taskRunnable = new AsyncSendCaseTaskRunnable(this);
-        taskRunnable.setExecutionStatus(executionStatus);
-        taskRunnable.setCaseItem(replayActionCaseItem);
-        taskRunnable.setReplaySender(replaySender);
-        taskRunnable.setGroupSentLatch(groupSentLatch);
-        taskRunnable.setLimiter(semaphore);
-        taskRunnable.setMetricService(metricService);
-        sendExecutorService.execute(taskRunnable);
-        LOGGER.info("submit replay sending success");
-      } catch (Throwable throwable) {
-        groupSentLatch.countDown();
-        semaphore.release(false);
-        replayActionCaseItem.buildParentErrorMessage(throwable.getMessage());
-        LOGGER.error("send group to remote host error:{} ,case item id:{}", throwable.getMessage(),
-            replayActionCaseItem.getId(), throwable);
-        doSendFailedAsFinish(replayActionCaseItem, CaseSendStatusType.EXCEPTION_FAILED);
-      } finally {
-        actionItem.recordProcessOne();
-      }
+    if (planExecutionContext.getExecutionStatus().isAbnormal()) {
+      LOGGER.warn("The execution status is abnormal.");
+      return;
+    }
+    // if existed not send cases, mark them as failed
+    if (!arrayBlockingQueue.isEmpty()) {
+      List<ReplayActionCaseItem> notSendCases = new ArrayList<>(arrayBlockingQueue);
+      markAllSendStatus(notSendCases, CaseSendStatusType.READY_DEPENDENCY_FAILED);
+      LOGGER.warn("exist not send cases, mark them as failed, case size:{}", notSendCases.size());
     }
 
     try {
       boolean clear = groupSentLatch.await(CommonConstant.GROUP_SENT_WAIT_TIMEOUT_SECONDS,
-          TimeUnit.SECONDS);
+              TimeUnit.SECONDS);
       if (!clear) {
         LOGGER.error("Send group failed to await all request of batch");
       }
@@ -188,6 +190,100 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
       Thread.currentThread().interrupt();
     }
     MDCTracer.removeDetailId();
+  }
+
+  private void doDistribute(ArrayBlockingQueue<ReplayActionCaseItem> caseItemArrayBlockingQueue,
+                            ServiceInstance targetServiceInstance,
+                            CountDownLatch groupSentLatch,
+                            PlanExecutionContext<?> planExecutionContext) {
+
+    String host = StringUtils.isBlank(targetServiceInstance.getIp()) ?
+            ServiceUrlUtils.getHost(targetServiceInstance.getUrl()) : targetServiceInstance.getIp();
+    if (StringUtils.isBlank(host)) {
+      LOGGER.warn("The distribution task failed to start due to an empty ip being provided.");
+      return;
+    }
+    LOGGER.info("start doDistribute to remote host:{}", host);
+    SendSemaphoreLimiter currentLimiter = planExecutionContext.getPlan().getRateLimiterFactory().get(host);
+    if (currentLimiter == null) {
+      LOGGER.warn("The current service instance - [{}],has no rate limiter,skip send.", host);
+      return;
+    }
+
+    List<ReplayActionCaseItem> caseItems = new ArrayList<>(currentLimiter.getPermits());
+
+    while (!caseItemArrayBlockingQueue.isEmpty()) {
+      if (currentLimiter.failBreak()) {
+        // remove interrupted target instance
+        planExecutionContext.removeTargetInstance(targetServiceInstance);
+        LOGGER.warn("The current service instance - [{}],has reached the interruption threshold and the task has been stoped.",
+                host);
+        break;
+      }
+      caseItemArrayBlockingQueue.drainTo(caseItems, currentLimiter.getPermits());
+
+      caseItems.forEach(caseItem->
+              this.doExecute(caseItem, targetServiceInstance, groupSentLatch, planExecutionContext, currentLimiter));
+      caseItems.clear();
+    }
+  }
+
+  private void setServiceInstance(ReplayActionCaseItem replayActionCaseItem,
+                                  ServiceInstance targetServiceInstance,
+                                  PlanExecutionContext<?> planExecutionContext) {
+    replayActionCaseItem.setTargetInstance(targetServiceInstance);
+
+    Map<ServiceInstance, List<ServiceInstance>> bindMap = planExecutionContext.getBindInstanceMap();
+    if (bindMap == null || bindMap.isEmpty()) {
+      return;
+    }
+    List<ServiceInstance> sourceInstances = bindMap.get(targetServiceInstance);
+    if (CollectionUtils.isNotEmpty(sourceInstances)) {
+      int index = Math.abs(replayActionCaseItem.getId().hashCode() % sourceInstances.size());
+      replayActionCaseItem.setSourceInstance(sourceInstances.get(index));
+      LOGGER.info("The source instance is set to [{}], the target instance is set to [{}].",
+              replayActionCaseItem.getSourceInstance().getIp(), replayActionCaseItem.getTargetInstance().getIp());
+    }
+  }
+
+  private void doExecute(ReplayActionCaseItem replayActionCaseItem,
+                         ServiceInstance targetServiceInstance,
+                         CountDownLatch groupSentLatch,
+                         PlanExecutionContext<?> executionContext,
+                         SendSemaphoreLimiter sendSemaphoreLimiter) {
+
+    ReplayActionItem actionItem = replayActionCaseItem.getParent();
+    MDCTracer.addDetailId(replayActionCaseItem.getId());
+
+    try {
+      ReplaySender replaySender = findReplaySender(replayActionCaseItem);
+      if (replaySender == null) {
+        groupSentLatch.countDown();
+        doSendFailedAsFinish(replayActionCaseItem, CaseSendStatusType.READY_DEPENDENCY_FAILED);
+        return;
+      }
+      this.setServiceInstance(replayActionCaseItem, targetServiceInstance, executionContext);
+      sendSemaphoreLimiter.acquire();
+
+      AsyncSendCaseTaskRunnable taskRunnable = new AsyncSendCaseTaskRunnable(this);
+      taskRunnable.setExecutionStatus(executionContext.getExecutionStatus());
+      taskRunnable.setCaseItem(replayActionCaseItem);
+      taskRunnable.setReplaySender(replaySender);
+      taskRunnable.setGroupSentLatch(groupSentLatch);
+      taskRunnable.setLimiter(sendSemaphoreLimiter);
+      taskRunnable.setMetricService(metricService);
+      sendExecutorService.execute(taskRunnable);
+      LOGGER.info("submit replay sending success");
+    } catch (Throwable throwable) {
+      groupSentLatch.countDown();
+      sendSemaphoreLimiter.release(false);
+      replayActionCaseItem.buildParentErrorMessage(throwable.getMessage());
+      LOGGER.error("send group to remote host error:{} ,case item id:{}", throwable.getMessage(),
+              replayActionCaseItem.getId(), throwable);
+      doSendFailedAsFinish(replayActionCaseItem, CaseSendStatusType.EXCEPTION_FAILED);
+    } finally {
+      actionItem.recordProcessOne();
+    }
   }
 
   @Override

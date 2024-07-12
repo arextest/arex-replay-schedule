@@ -14,11 +14,8 @@ import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import com.google.common.collect.Lists;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -125,7 +122,6 @@ public class DefaultExecutionContextProvider
         LOGGER.error("warmup failed! caseId:{}, actionId:{}", warmupCase.getId(), warmupCase.getPlanItemId());
       }
       warmupCase.setCaseSendScene(CaseSendScene.EXTRA);
-
       ReplayParentBinder.setupCaseItemParent(warmupCase,
           plan.getActionItemMap().get(warmupCase.getPlanItemId()));
       ReplaySender sender = replaySenderFactory.findReplaySender(warmupCase.getCaseType());
@@ -138,6 +134,7 @@ public class DefaultExecutionContextProvider
           if (StringUtils.isEmpty(plan.getErrorMessage())) {
             plan.setErrorMessage(warmupCase.getSendErrorMessage());
           }
+          currentContext.setWarmupFailedServerUrls(Collections.singletonList(warmupCase.getTargetInstance().getUrl()));
           String errorMsg =
               "Failed to warmup context: " + currentContext + " with case:" + warmupCase;
           LOGGER.error(errorMsg);

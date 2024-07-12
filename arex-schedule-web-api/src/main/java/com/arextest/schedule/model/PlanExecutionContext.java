@@ -1,8 +1,12 @@
 package com.arextest.schedule.model;
 
+import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
+import java.util.Map;
+
 import lombok.Data;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 /**
@@ -31,8 +35,27 @@ public class PlanExecutionContext<T> {
   @JsonIgnore
   private T dependencies;
 
+  private List<String> warmupFailedServerUrls;
+
+  private Map<ServiceInstance,List<ServiceInstance>> bindInstanceMap;
+
+  private Map<String, ReplayActionItem> currentCachedActionItemsMap;
+
+  private List<ServiceInstance> currentTargetInstances;
+
+  private List<ServiceInstance> currentSourceInstances;
+
   public static String buildContextName(String identifier) {
     String suffix = identifier == null ? NO_CONTEXT_SUFFIX : identifier;
     return CONTEXT_PREFIX + suffix;
+  }
+
+  public void removeTargetInstance(ServiceInstance instance) {
+    if (instance == null || CollectionUtils.isEmpty(currentTargetInstances)) {
+      return;
+    }
+    synchronized (this) {
+      currentTargetInstances.remove(instance);
+    }
   }
 }

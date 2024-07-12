@@ -105,6 +105,22 @@ public class BizLogger {
   }
   // endregion
 
+  public static void recordServerFailBreak(ReplayPlan replayPlan,String url) {
+    BizLog log = BizLog.warn().logType(BizLogContent.SERVER_FAIL_BREAK.getType())
+            .message(BizLogContent.SERVER_FAIL_BREAK.format(url))
+            .build();
+
+    log.postProcessAndEnqueue(replayPlan);
+  }
+
+  public static void recordCurrentServerInstances(ReplayPlan replayPlan,String targetHosts,String sourceHosts) {
+    BizLog log = BizLog.warn().logType(BizLogContent.SERVER_INSTANCES.getType())
+            .message(BizLogContent.SERVER_INSTANCES.format(targetHosts,sourceHosts))
+            .build();
+
+    log.postProcessAndEnqueue(replayPlan);
+  }
+
 
   @Getter
   public enum BizLogContent {
@@ -161,7 +177,9 @@ public class BizLogger {
     @Deprecated
     NOISE_IDENTIFY_CASE_SEND_FINISH(501,
         "Context: {0}, {1} case finish sending to identify noise, took {2} ms."),
+    SERVER_FAIL_BREAK(503,"Sever instance [{0}] fail break."),
 
+    SERVER_INSTANCES(504,"The currently executing target instances [{0}],source instances [{1}]."),
     ;
 
     private final String template;

@@ -405,7 +405,6 @@ public class PlanConsumePrepareService {
       appServiceDescriptor.setTargetActiveInstanceList(activeInstanceList);
 
       planContext.fillReplayAction(actionItem, operationDescriptor);
-      replayPlan.setMinInstanceCount(planContext.determineMinInstanceCount());
     }
   }
   // endregion
