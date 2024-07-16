@@ -43,7 +43,7 @@ public class DefaultHttpRequestBuilder extends AbstractHttpRequestBuilder {
     final HttpEntity<?> httpEntity;
     if (shouldApplyHttpBody(httpMethod)) {
       Object decodeMessage = DecodeUtils.decode(requestMessage);
-      if (byte[].class == decodeMessage.getClass()) {
+      if (decodeMessage instanceof byte[]) {
         responseType = byte[].class;
       }
       httpEntity = new HttpEntity<>(decodeMessage, httpHeaders);
