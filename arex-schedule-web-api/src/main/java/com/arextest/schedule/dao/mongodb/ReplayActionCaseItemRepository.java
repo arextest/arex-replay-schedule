@@ -1,5 +1,6 @@
 package com.arextest.schedule.dao.mongodb;
 
+import com.arextest.model.replay.CaseStatusEnum;
 import com.arextest.schedule.dao.RepositoryWriter;
 import com.arextest.schedule.dao.mongodb.util.MongoHelper;
 import com.arextest.schedule.model.CaseSendStatusType;
@@ -137,6 +138,8 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
         Criteria.where(ReplayActionCaseItem.Fields.COMPARE_STATUS)
             .ne(CompareProcessStatusType.PASS.getValue())
     ));
+    query.addCriteria(Criteria.where(ReplayActionCaseItem.Fields.CASE_STATUS)
+        .is(CaseStatusEnum.NORMAL.getCode()));
 
     List<ReplayRunDetailsCollection> replayRunDetailsCollections = mongoTemplate.find(query,
         ReplayRunDetailsCollection.class);
@@ -286,6 +289,14 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     query.addCriteria(Criteria.where(Fields.PLAN_ITEM_ID).in(planItemIds));
     DeleteResult deleteResult = mongoTemplate.remove(query, ReplayRunDetailsCollection.class);
     return deleteResult.getDeletedCount() > 0;
+  }
+
+  public long updateCaseStatus(String recordId, Integer caseStatus) {
+    Query query = Query.query(Criteria.where(ReplayRunDetailsCollection.Fields.RECORD_ID).is(recordId));
+    Update update = MongoHelper.getUpdate();
+    update.set(ReplayRunDetailsCollection.Fields.CASE_STATUS, caseStatus);
+    return mongoTemplate.updateMulti(query,
+        update, ReplayRunDetailsCollection.class).getModifiedCount();
   }
 
   @Data

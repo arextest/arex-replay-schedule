@@ -15,6 +15,7 @@ public final class MDCTracer {
   private static final String DETAIL_ID = "detailId";
   private static final String PLAN_ITEM_ID = "planItemId";
   private static final String EXECUTION_CONTEXT_NAME = "executionContextName";
+  private static final String RECORD_ID = "recordId";
 
   private static final String FOR_NOISE_ACTION_ID = "noiseActionId";
   private static final String FOR_NOISE_DETAIL_ID = "noiseDetailId";
@@ -73,6 +74,11 @@ public final class MDCTracer {
   public static void addDetailId(long detailId) {
     addAppType();
     add(DETAIL_ID, detailId);
+  }
+
+  public static void addRecordId(String recordId) {
+    addAppType();
+    MDC.put(RECORD_ID, recordId);
   }
 
   public static void removeDetailId() {
