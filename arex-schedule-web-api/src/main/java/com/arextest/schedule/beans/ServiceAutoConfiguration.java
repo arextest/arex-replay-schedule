@@ -1,5 +1,8 @@
 package com.arextest.schedule.beans;
 
+import com.arextest.common.config.ConfigProvider;
+import com.arextest.common.config.DefaultApplicationConfig;
+import com.arextest.common.config.DefaultConfigProvider;
 import com.arextest.common.jwt.JWTService;
 import com.arextest.common.jwt.JWTServiceImpl;
 import com.arextest.schedule.aspect.AppAuthAspectExecutor;
@@ -17,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
 @Configuration
@@ -57,5 +61,17 @@ public class ServiceAutoConfiguration {
   public JWTService jwtService() {
     return new JWTServiceImpl(ACCESS_EXPIRE_TIME, REFRESH_EXPIRE_TIME, tokenSecret);
   }
+
+  @Bean
+  @ConditionalOnMissingBean(ConfigProvider.class)
+  public ConfigProvider defaultConfigProvider(Environment environment) {
+    return new DefaultConfigProvider(environment);
+  }
+
+  @Bean
+  public DefaultApplicationConfig defaultApplicationConfig(ConfigProvider configProvider) {
+    return new DefaultApplicationConfig(configProvider);
+  }
+
 
 }

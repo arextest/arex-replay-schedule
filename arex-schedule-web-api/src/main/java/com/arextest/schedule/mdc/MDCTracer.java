@@ -56,19 +56,13 @@ public final class MDCTracer {
     MDC.put(PLAN_ITEM_ID, planItemId);
   }
 
+  public static void removePlanItemId() {
+    MDC.remove(PLAN_ITEM_ID);
+  }
+
   public static void addPlanId(long planId) {
     addAppType();
     add(PLAN_ID, planId);
-  }
-
-  public static void addActionId(String actionId) {
-    addAppType();
-    MDC.put(PLAN_ID, actionId);
-  }
-
-  public static void addActionId(long actionId) {
-    addAppType();
-    add(ACTION_ID, actionId);
   }
 
   public static void addDetailId(String detailId) {

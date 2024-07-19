@@ -4,6 +4,7 @@ import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.model.response.GenericResponseType;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.common.JsonUtils;
+import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
@@ -110,6 +111,8 @@ public final class CompareConfigService {
       if (actionItem.getReplayCaseCount() == 0) {
         continue;
       }
+
+      MDCTracer.addPlanItemId(actionItem.getId());
       String operationId = actionItem.getOperationId();
 
       ReplayComparisonConfig config = operationCompareConfig.getOrDefault(operationId,
@@ -125,6 +128,7 @@ public final class CompareConfigService {
 
       LOGGER.info("prepare load compare config, action id:{}, config:{}", actionItem.getId(),
           configValue);
+      MDCTracer.removePlanItemId();
     }
     progressEvent.onCompareConfigLoaded(plan);
   }
