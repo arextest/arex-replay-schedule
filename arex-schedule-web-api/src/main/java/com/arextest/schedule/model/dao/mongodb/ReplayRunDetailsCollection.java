@@ -34,4 +34,8 @@ public class ReplayRunDetailsCollection extends ModelBase {
   private long recordTime;
   private long expirationTime;
   private String targetRequest;
+  /**
+   * @see com.arextest.model.replay.CaseStatusEnum
+   */
+  private int caseStatus;
 }

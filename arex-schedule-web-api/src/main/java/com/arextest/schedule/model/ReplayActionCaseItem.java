@@ -50,6 +50,10 @@ public class ReplayActionCaseItem {
    * @see CompareProcessStatusType
    */
   private int compareStatus;
+  /**
+   * @see com.arextest.model.replay.CaseStatusEnum
+   */
+  private int caseStatus;
 
   private CaseSendScene caseSendScene;
 
