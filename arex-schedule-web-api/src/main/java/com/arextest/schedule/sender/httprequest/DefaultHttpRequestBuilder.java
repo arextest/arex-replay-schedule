@@ -41,7 +41,7 @@ public class DefaultHttpRequestBuilder extends AbstractHttpRequestBuilder {
     Class<?> responseType = String.class;
     String requestMessage = senderParameters.getMessage();
     final HttpEntity<?> httpEntity;
-    if (shouldApplyHttpBody(httpMethod)) {
+    if (shouldApplyHttpBody(httpMethod) && requestMessage != null) {
       Object decodeMessage = DecodeUtils.decode(requestMessage);
       if (byte[].class == decodeMessage.getClass()) {
         responseType = byte[].class;
