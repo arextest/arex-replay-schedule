@@ -444,6 +444,10 @@ public class LocalReplayService {
     progressEvent.onReplayPlanCreated(replayPlan);
 
     planConsumePrepareService.preparePlan(replayPlan);
+    if (replayPlan.getCaseTotalCount() == 0) {
+      return Pair.of(null, CommonResponse.badResponse("No case found in selected range"));
+    }
+
     replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
     if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
       replayPlan.setErrorMessage("Got empty execution context");
