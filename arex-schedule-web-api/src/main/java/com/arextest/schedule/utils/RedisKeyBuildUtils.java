@@ -5,6 +5,8 @@ import java.nio.charset.StandardCharsets;
 
 public class RedisKeyBuildUtils {
 
+  private RedisKeyBuildUtils() {
+  }
 
   // region Plan Status
   public static byte[] buildStopPlanRedisKey(String planId) {
