@@ -22,6 +22,7 @@ public final class CommonConstant {
   public static final int OPERATION_MAX_CASE_COUNT = 1000;
 
   public static final int GROUP_SENT_WAIT_TIMEOUT_SECONDS = 500;
+  public static final int DISTRIBUTE_WAIT_TIMEOUT_SECONDS = 1000;
 
   // region redis
   public static final String COMPARE_CONFIG_REDIS_KEY = "compare.config.";

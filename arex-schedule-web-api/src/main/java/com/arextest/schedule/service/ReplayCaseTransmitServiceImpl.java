@@ -7,7 +7,6 @@ import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
-import com.arextest.schedule.exceptions.DistributeRunningException;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.ExecutionStatus;
@@ -21,18 +20,12 @@ import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
 import com.arextest.schedule.service.noise.ReplayNoiseIdentify;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
+
 import com.arextest.schedule.utils.ServiceUrlUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -149,10 +142,9 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
       markAllSendStatus(values, CaseSendStatusType.READY_DEPENDENCY_FAILED);
       return;
     }
-
     final int valueSize = values.size();
     final CountDownLatch groupSentLatch = new CountDownLatch(valueSize);
-    ArrayBlockingQueue<ReplayActionCaseItem> arrayBlockingQueue = new ArrayBlockingQueue<>(valueSize, false, values);
+    ArrayBlockingQueue<ReplayActionCaseItem> caseItemArrayBlockingQueue = new ArrayBlockingQueue<>(valueSize, false, values);
 
     // calculate the number of distribution tasks
     int distributeTaskNum = Math.min(valueSize, targetServiceInstances.size());
@@ -160,22 +152,31 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
     for (int i = 0; i < distributeTaskNum; i++) {
       ServiceInstance serviceInstance = targetServiceInstances.get(i);
       distributeCompletableFutures[i] = CompletableFuture.runAsync(()
-                      -> doDistribute(arrayBlockingQueue, serviceInstance, groupSentLatch, planExecutionContext),
+                      -> doDistribute(caseItemArrayBlockingQueue, serviceInstance, groupSentLatch, planExecutionContext),
               distributeExecutorService);
     }
-    CompletableFuture.allOf(distributeCompletableFutures).exceptionally(throwable -> {
-      LOGGER.error("An unknown distribution exception has occurred.{}", throwable.getMessage(), throwable);
-      throw new DistributeRunningException(throwable);
-    }).join();
+    try {
+      CompletableFuture
+              .allOf(distributeCompletableFutures)
+              .exceptionally(throwable -> {
+                LOGGER.error("An unknown distribution exception has occurred.{}", throwable.getMessage(), throwable);
+                return null;
+              })
+              .get(CommonConstant.DISTRIBUTE_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+    } catch (TimeoutException | InterruptedException | ExecutionException exception) {
+      LOGGER.error("do distribute exception:{}", exception.getMessage(), exception);
+      Thread.currentThread().interrupt();
+    }
 
     if (planExecutionContext.getExecutionStatus().isAbnormal()) {
       LOGGER.warn("The execution status is abnormal.");
       return;
     }
     // if existed not send cases, mark them as failed
-    if (!arrayBlockingQueue.isEmpty()) {
-      List<ReplayActionCaseItem> notSendCases = new ArrayList<>(arrayBlockingQueue);
-      markAllSendStatus(notSendCases, CaseSendStatusType.READY_DEPENDENCY_FAILED);
+    if (!caseItemArrayBlockingQueue.isEmpty()) {
+      List<ReplayActionCaseItem> notSendCases = new ArrayList<>(caseItemArrayBlockingQueue);
+      markAllSendStatus(notSendCases, CaseSendStatusType.EXCEPTION_FAILED);
+      notSendCases.forEach(caseItem -> groupSentLatch.countDown());
       LOGGER.warn("exist not send cases, mark them as failed, case size:{}", notSendCases.size());
     }
 
