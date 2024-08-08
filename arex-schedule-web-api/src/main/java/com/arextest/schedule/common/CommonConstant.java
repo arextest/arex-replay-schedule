@@ -30,6 +30,7 @@ public final class CommonConstant {
   public static final long CREATE_PLAN_REDIS_EXPIRE = TimeUnit.MINUTES.toSeconds(5);
   public static final long STOP_PLAN_REDIS_EXPIRE = TimeUnit.DAYS.toSeconds(1);
   public static final String STOP_PLAN_REDIS_KEY = "arex.stop.plan.";
+  public static final String PLAN_RUNNING_KEY_FORMAT = "plan_running_%s";
   // endregion
 
   public static final String DOT = ".";
