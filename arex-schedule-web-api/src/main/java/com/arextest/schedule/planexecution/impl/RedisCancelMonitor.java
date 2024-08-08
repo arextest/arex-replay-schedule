@@ -2,7 +2,7 @@ package com.arextest.schedule.planexecution.impl;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.model.ReplayPlan;
-import com.arextest.schedule.service.PlanProduceService;
+import com.arextest.schedule.utils.RedisKeyBuildUtils;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -23,7 +23,7 @@ public class RedisCancelMonitor {
   }
 
   private boolean isPlanCanceled(String planId) {
-    return isCancelled(PlanProduceService.buildStopPlanRedisKey(planId));
+    return isCancelled(RedisKeyBuildUtils.buildStopPlanRedisKey(planId));
   }
 
   private boolean isCancelled(byte[] redisKey) {

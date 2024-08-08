@@ -43,6 +43,7 @@ import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.sender.ReplaySenderParameters;
 import com.arextest.schedule.sender.impl.MockCachePreLoader;
 import com.arextest.schedule.utils.DecodeUtils;
+import com.arextest.schedule.utils.RedisKeyBuildUtils;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -462,7 +463,7 @@ public class LocalReplayService {
   }
 
   private boolean isStop(String planId) {
-    return redisCacheProvider.get(PlanProduceService.buildStopPlanRedisKey(planId)) != null;
+    return redisCacheProvider.get(RedisKeyBuildUtils.buildStopPlanRedisKey(planId)) != null;
   }
 
   private List<ReplayCaseBatchInfo> buildBatchInfoList(ReplayPlan replayPlan) {

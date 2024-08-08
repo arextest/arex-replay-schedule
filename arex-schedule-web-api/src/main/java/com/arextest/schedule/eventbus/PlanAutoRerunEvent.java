@@ -1,4 +1,4 @@
-package com.arextest.schedule.eventBus;
+package com.arextest.schedule.eventbus;
 
 import lombok.Data;
 
