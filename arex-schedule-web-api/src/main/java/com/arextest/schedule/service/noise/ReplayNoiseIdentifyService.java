@@ -108,6 +108,7 @@ public class ReplayNoiseIdentifyService implements ReplayNoiseIdentify {
 
       ReplayActionItem targetAction = new ReplayActionItem();
       BeanUtils.copyProperties(action, targetAction);
+      targetAction.setTargetInstance(executionContext.getCurrentTargetInstances());
       targetAction.setSourceInstance(targetAction.getTargetInstance());
 
       for (ReplayActionCaseItem sourceCase : cases) {

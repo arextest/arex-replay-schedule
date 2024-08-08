@@ -73,8 +73,7 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
       LOGGER.error("getInterfaceNameAndMethod failed, caseItem:{}", caseItem);
       return null;
     }
-    ServiceInstance instanceRunner = selectLoadBalanceInstance(caseItem.getId(),
-        caseItem.getParent().getTargetInstance());
+    ServiceInstance instanceRunner = selectLoadBalanceInstance(caseItem,caseItem.getParent().getTargetInstance(),true);
     if (instanceRunner == null) {
       LOGGER.error("selectLoadBalanceInstance failed, caseItem:{}", caseItem);
       return null;
