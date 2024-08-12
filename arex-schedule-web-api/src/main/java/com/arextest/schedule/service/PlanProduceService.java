@@ -205,7 +205,7 @@ public class PlanProduceService {
       replayPlan.setCaseRecordVersion(replayApp.getAgentExtVersion());
       replayPlan.setAppName(replayApp.getAppName());
     }
-    replayPlan.setPlanName(getReplayName(replayApp));
+    replayPlan.setPlanName(getReplayName(request, replayApp));
 
     ConfigurationService.ScheduleConfiguration schedule = configurationService.schedule(appId);
     replayPlan.setReplaySendMaxQps(
@@ -233,7 +233,11 @@ public class PlanProduceService {
     return serviceInstances.stream().map(ServiceInstance::getIp).collect(Collectors.joining(","));
   }
 
-  private String getReplayName(ConfigurationService.Application appInfo) {
+  private String getReplayName(BuildReplayPlanRequest request,
+      ConfigurationService.Application appInfo) {
+    if (StringUtils.isNotBlank(request.getPlanName())) {
+      return request.getPlanName();
+    }
     StringBuilder stringBuilder = new StringBuilder();
     if (appInfo != null) {
       stringBuilder.append(appInfo.getAppName()).append("_");
