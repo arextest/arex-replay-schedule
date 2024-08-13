@@ -5,7 +5,8 @@ import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
-import com.arextest.schedule.eventBus.PlanAutoRerunEvent;
+import com.arextest.schedule.eventbus.PlanAutoRerunEvent;
+import com.arextest.schedule.eventbus.PlanAutoReturnEventService;
 import com.arextest.schedule.model.LogType;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
@@ -16,11 +17,10 @@ import com.arextest.schedule.model.plan.StageBaseInfo;
 import com.arextest.schedule.model.plan.StageStatusEnum;
 import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.service.MetricService;
-import com.arextest.schedule.service.PlanProduceService;
 import com.arextest.schedule.service.ReplayReportService;
+import com.arextest.schedule.utils.RedisKeyBuildUtils;
 import com.arextest.schedule.utils.StageUtils;
 import com.arextest.web.model.contract.contracts.common.PlanStatistic;
-import com.google.common.eventbus.AsyncEventBus;
 import java.util.Date;
 import java.util.List;
 import javax.annotation.Resource;
@@ -46,7 +46,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   @Resource
   private CacheProvider redisCacheProvider;
   @Resource
-  private AsyncEventBus autoRerunAsyncEventBus;
+  private PlanAutoReturnEventService planAutoReturnEventService;
 
   @Value("${auto.rerun.threshold}")
   private double autoRerunThreshold;
@@ -55,7 +55,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   public void onReplayPlanReRunException(ReplayPlan plan, Throwable t) {
     replayReportService.pushPlanStatus(plan.getId(), ReplayStatusType.FAIL_INTERRUPTED,
         t.getMessage(), true);
-    redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(plan.getId()));
+    redisCacheProvider.remove(RedisKeyBuildUtils.buildPlanRunningRedisKey(plan.getId()));
   }
 
   @Override
@@ -87,7 +87,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
 
   @Override
   public boolean onBeforeReplayPlanFinish(ReplayPlan replayPlan) {
-    redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayPlan.getId()));
+    redisCacheProvider.remove(RedisKeyBuildUtils.buildPlanRunningRedisKey(replayPlan.getId()));
     // only auto rerun once
     if (replayPlan.isReRun()) {
       return true;
@@ -121,7 +121,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   public void onReplayPlanAutoRerun(ReplayPlan replayPlan) {
     PlanAutoRerunEvent event = new PlanAutoRerunEvent();
     event.setPlanId(replayPlan.getId());
-    autoRerunAsyncEventBus.post(event);
+    planAutoReturnEventService.postRerunAsyncEvent(event);
   }
 
   @Override
@@ -146,7 +146,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     replayReportService.pushPlanStatus(planId, reason, replayPlan.getErrorMessage(),
         replayPlan.isReRun());
     recordPlanExecutionTime(replayPlan);
-    redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayPlan.getId()));
+    redisCacheProvider.remove(RedisKeyBuildUtils.buildPlanRunningRedisKey(replayPlan.getId()));
     BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.FAIL_INTERRUPTED);
   }
 
@@ -154,7 +154,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   public void onReplayPlanTerminate(String replayId, String reason) {
     replayPlanRepository.finish(replayId);
     replayReportService.pushPlanStatus(replayId, ReplayStatusType.CANCELLED, reason, false);
-    redisCacheProvider.remove(PlanProduceService.buildPlanRunningRedisKey(replayId));
+    redisCacheProvider.remove(RedisKeyBuildUtils.buildPlanRunningRedisKey(replayId));
   }
 
   @Override
@@ -185,7 +185,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   public void onReplayPlanReRun(ReplayPlan replayPlan) {
     replayReportService.pushPlanStatus(replayPlan.getId(), ReplayStatusType.RERUNNING, null,
         replayPlan.isReRun());
-    redisCacheProvider.remove(PlanProduceService.buildStopPlanRedisKey(replayPlan.getId()));
+    redisCacheProvider.remove(RedisKeyBuildUtils.buildStopPlanRedisKey(replayPlan.getId()));
     addReRunStage(replayPlan.getReplayPlanStageList());
     replayPlanRepository.updateStage(replayPlan);
   }

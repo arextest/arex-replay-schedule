@@ -4,7 +4,6 @@ import static com.arextest.schedule.common.CommonConstant.CREATE_PLAN_REDIS_EXPI
 import static com.arextest.schedule.common.CommonConstant.ONE_DAY_MILLIS;
 import static com.arextest.schedule.common.CommonConstant.OPERATION_MAX_CASE_COUNT;
 import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_EXPIRE;
-import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_KEY;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.config.DefaultApplicationConfig;
@@ -13,7 +12,6 @@ import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
-import com.arextest.schedule.eventBus.PlanAutoRerunEvent;
 import com.arextest.schedule.exceptions.PlanRunningException;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSourceEnvType;
@@ -21,7 +19,6 @@ import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.ReplayPlan;
-import com.arextest.schedule.model.ReplayStatusType;
 import com.arextest.schedule.model.deploy.DeploymentVersion;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
@@ -36,16 +33,14 @@ import com.arextest.schedule.plan.builder.BuildPlanValidateResult;
 import com.arextest.schedule.plan.builder.ReplayPlanBuilder;
 import com.arextest.schedule.planexecution.PlanExecutionMonitor;
 import com.arextest.schedule.progress.ProgressEvent;
+import com.arextest.schedule.utils.RedisKeyBuildUtils;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import com.arextest.schedule.utils.StageUtils;
-import com.google.common.eventbus.AsyncEventBus;
-import com.google.common.eventbus.Subscribe;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -59,9 +54,9 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class PlanProduceService {
 
-  private static final String PLAN_RUNNING_KEY_FORMAT = "plan_running_%s";
+
   private static final String CASE_SOURCE_TO_OFFSET_MILLIS = "case.source.to.offset.millis";
-  private static final String AUTO_OPERATOR = "Auto";
+
   @Resource
   private List<ReplayPlanBuilder> replayPlanBuilderList;
   @Resource
@@ -85,22 +80,7 @@ public class PlanProduceService {
   @Resource
   private ReplayActionCaseItemRepository replayActionCaseItemRepository;
   @Resource
-  private AsyncEventBus autoRerunAsyncEventBus;
-  @Resource
   private DefaultApplicationConfig defaultConfig;
-
-  @PostConstruct
-  public void init() {
-    autoRerunAsyncEventBus.register(this);
-  }
-
-  public static byte[] buildStopPlanRedisKey(String planId) {
-    return (STOP_PLAN_REDIS_KEY + planId).getBytes(StandardCharsets.UTF_8);
-  }
-
-  public static byte[] buildPlanRunningRedisKey(String planId) {
-    return (String.format(PLAN_RUNNING_KEY_FORMAT, planId)).getBytes(StandardCharsets.UTF_8);
-  }
 
   public CommonResponse createPlan(BuildReplayPlanRequest request) throws PlanRunningException {
     fillOptionalValueIfRequestMissed(request);
@@ -178,10 +158,6 @@ public class PlanProduceService {
     if (request.getCaseSourceTo() == null || request.getCaseSourceTo().after(toDate)) {
       request.setCaseSourceTo(toDate);
     }
-    if (StringUtils.isBlank(request.getPlanName())) {
-      request.setPlanName(
-          request.getAppId() + "_" + new SimpleDateFormat("MMdd_HH:mm").format(toDate));
-    }
     if (request.getCaseSourceType() == null) {
       request.setCaseSourceType(CaseSourceEnvType.TEST.getValue());
     }
@@ -197,12 +173,12 @@ public class PlanProduceService {
         StageStatusEnum.ONGOING, System.currentTimeMillis(), null);
 
     replayPlan.setAppId(appId);
-    replayPlan.setPlanName(request.getPlanName());
     DeploymentVersion deploymentVersion = planContext.getTargetVersion();
     if (deploymentVersion != null) {
       replayPlan.setTargetImageId(deploymentVersion.getImageId());
       replayPlan.setTargetImageName(deploymentVersion.getImage().getName());
     }
+
     List<ServiceInstance> serviceInstances = planContext.targetActiveInstance();
     replayPlan.setTargetHost(getIpAddress(serviceInstances));
     replayPlan.setTargetEnv(request.getTargetEnv());
@@ -214,12 +190,14 @@ public class PlanProduceService {
       replayPlan.setSourceEnv(request.getSourceEnv());
       replayPlan.setSourceHost(getIpAddress(serviceInstances));
     }
+
     replayPlan.setPlanCreateTime(new Date());
     replayPlan.setOperator(request.getOperator());
     replayPlan.setCaseSourceFrom(request.getCaseSourceFrom());
     replayPlan.setCaseSourceTo(request.getCaseSourceTo());
     replayPlan.setCaseSourceType(request.getCaseSourceType());
     replayPlan.setReplayPlanType(request.getReplayPlanType());
+
     ConfigurationService.Application replayApp = configurationService.application(appId);
     if (replayApp != null) {
       replayPlan.setArexCordVersion(replayApp.getAgentVersion());
@@ -227,10 +205,14 @@ public class PlanProduceService {
       replayPlan.setCaseRecordVersion(replayApp.getAgentExtVersion());
       replayPlan.setAppName(replayApp.getAppName());
     }
+    replayPlan.setPlanName(getReplayName(request, replayApp));
+
     ConfigurationService.ScheduleConfiguration schedule = configurationService.schedule(appId);
-    if (schedule != null) {
-      replayPlan.setReplaySendMaxQps(schedule.getSendMaxQps());
-    }
+    replayPlan.setReplaySendMaxQps(
+        Optional.ofNullable(schedule).map(ConfigurationService.ScheduleConfiguration::getSendMaxQps)
+            .orElse(null)
+    );
+
     if (request.getCaseCountLimit() == null || request.getCaseCountLimit() <= 0) {
       replayPlan.setCaseCountLimit(OPERATION_MAX_CASE_COUNT);
     } else {
@@ -249,6 +231,23 @@ public class PlanProduceService {
 
   private String getIpAddress(List<ServiceInstance> serviceInstances) {
     return serviceInstances.stream().map(ServiceInstance::getIp).collect(Collectors.joining(","));
+  }
+
+  private String getReplayName(BuildReplayPlanRequest request,
+      ConfigurationService.Application appInfo) {
+    if (StringUtils.isNotBlank(request.getPlanName())) {
+      return request.getPlanName();
+    }
+    StringBuilder stringBuilder = new StringBuilder();
+    if (appInfo != null) {
+      stringBuilder.append(appInfo.getAppName()).append("_");
+    } else {
+      stringBuilder.append("unknown-appName").append("_");
+    }
+    String currentTimeMillis = String.valueOf(System.currentTimeMillis());
+    String lastSixDigits = currentTimeMillis.substring(currentTimeMillis.length() - 6);
+    stringBuilder.append(lastSixDigits);
+    return stringBuilder.toString();
   }
 
   public ReplayPlanBuilder select(BuildReplayPlanRequest request) {
@@ -285,7 +284,7 @@ public class PlanProduceService {
 
   public Boolean isRunning(String planId) {
     try {
-      byte[] key = buildPlanRunningRedisKey(planId);
+      byte[] key = RedisKeyBuildUtils.buildPlanRunningRedisKey(planId);
       byte[] value = planId.getBytes(StandardCharsets.UTF_8);
       if (redisCacheProvider.get(key) != null) {
         return true;
@@ -301,7 +300,7 @@ public class PlanProduceService {
   public void stopPlan(String planId, String operator) {
     try {
       // set key for other instance to stop internal execution
-      redisCacheProvider.putIfAbsent(buildStopPlanRedisKey(planId),
+      redisCacheProvider.putIfAbsent(RedisKeyBuildUtils.buildStopPlanRedisKey(planId),
           STOP_PLAN_REDIS_EXPIRE, planId.getBytes(StandardCharsets.UTF_8));
 
       // set the canceled status immediately to give quick response to user
@@ -337,12 +336,12 @@ public class PlanProduceService {
     final String planId = request.getPlanId();
     final String planItemId = request.getPlanItemId();
     ReplayPlan replayPlan = replayPlanRepository.query(planId);
-    replayPlan.setPlanCreateMillis(System.currentTimeMillis());
-    progressEvent.onBeforePlanReRun(replayPlan);
     if (replayPlan == null) {
       progressEvent.onReplayPlanReRunException(replayPlan);
       return CommonResponse.badResponse("target plan not found");
     }
+    replayPlan.setPlanCreateMillis(System.currentTimeMillis());
+    progressEvent.onBeforePlanReRun(replayPlan);
     if (replayPlan.getReplayPlanStageList() == null) {
       progressEvent.onReplayPlanReRunException(replayPlan);
       return CommonResponse.badResponse("The plan's version is too old");
@@ -393,28 +392,5 @@ public class PlanProduceService {
     planConsumeService.runAsyncConsume(replayPlan);
     return CommonResponse.successResponse("ReRun plan success！",
         new BuildReplayPlanResponse(replayPlan.getId()));
-  }
-
-  @Subscribe
-  public void planAutoRerun(PlanAutoRerunEvent event) {
-    ReRunReplayPlanRequest request = new ReRunReplayPlanRequest();
-    request.setPlanId(event.getPlanId());
-    request.setOperator(AUTO_OPERATOR);
-    try {
-      CommonResponse response = this.reRunPlan(request);
-      if (response.getResult() != 1) {
-        LOGGER.error("Auto rerun plan fail, planId: {}", event.getPlanId());
-        finishPlan(event.getPlanId());
-      }
-    } catch (PlanRunningException e) {
-      LOGGER.error("Auto rerun plan fail, planId: {}", event.getPlanId(), e);
-      finishPlan(event.getPlanId());
-    }
-  }
-
-  private void finishPlan(String planId) {
-    ReplayPlan replayPlan = new ReplayPlan();
-    replayPlan.setId(planId);
-    progressEvent.onReplayPlanFinish(replayPlan, ReplayStatusType.FINISHED);
   }
 }

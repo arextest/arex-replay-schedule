@@ -1,14 +1,12 @@
 package com.arextest.schedule.service;
 
-import static com.arextest.schedule.common.CommonConstant.STOP_PLAN_REDIS_KEY;
-
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.comparer.ReplayResultComparer;
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.ReplayActionCaseItem;
-import java.nio.charset.StandardCharsets;
+import com.arextest.schedule.utils.RedisKeyBuildUtils;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import javax.annotation.Resource;
@@ -67,7 +65,7 @@ public class ReplayCompareService {
 
   private boolean isCancelled(String planId) {
     try {
-      byte[] stopKey = (STOP_PLAN_REDIS_KEY + planId).getBytes(StandardCharsets.UTF_8);
+      byte[] stopKey = RedisKeyBuildUtils.buildStopPlanRedisKey(planId);
       byte[] bytes = redisCacheProvider.get(stopKey);
       return bytes != null;
     } catch (Exception e) {
