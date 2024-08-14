@@ -132,18 +132,22 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     if (StringUtils.hasText(planItemId)) {
       query.addCriteria(Criteria.where(ReplayActionCaseItem.Fields.PLAN_ITEM_ID).is(planItemId));
     }
-    query.addCriteria(new Criteria().orOperator(
-        Criteria.where(ReplayActionCaseItem.Fields.SEND_STATUS)
-            .ne(CaseSendStatusType.SUCCESS.getValue()),
-        Criteria.where(ReplayActionCaseItem.Fields.COMPARE_STATUS)
-            .ne(CompareProcessStatusType.PASS.getValue())
+
+    query.addCriteria(new Criteria().andOperator(
+        new Criteria().orOperator(
+            Criteria.where(ReplayActionCaseItem.Fields.SEND_STATUS)
+                .ne(CaseSendStatusType.SUCCESS.getValue()),
+            Criteria.where(ReplayActionCaseItem.Fields.COMPARE_STATUS)
+                .ne(CompareProcessStatusType.PASS.getValue()
+                ),
+            // exclude expired cases
+            new Criteria().orOperator(
+                Criteria.where(ReplayActionCaseItem.Fields.EXPIRATION_TIME).isNull(),
+                Criteria.where(ReplayActionCaseItem.Fields.EXPIRATION_TIME)
+                    .gt(System.currentTimeMillis())
+            ))
     ));
 
-    // exclude expired cases
-    query.addCriteria(new Criteria().orOperator(
-        Criteria.where(ReplayActionCaseItem.Fields.EXPIRATION_TIME).isNull(),
-        Criteria.where(ReplayActionCaseItem.Fields.EXPIRATION_TIME).gt(System.currentTimeMillis())
-    ));
 
     query.addCriteria(Criteria.where(ReplayActionCaseItem.Fields.CASE_STATUS)
         .is(CaseStatusEnum.NORMAL.getCode()));
