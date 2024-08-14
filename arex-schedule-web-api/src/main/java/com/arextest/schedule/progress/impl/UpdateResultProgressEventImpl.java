@@ -171,12 +171,14 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
     } else {
       ReplayPlanStageInfo parentStage = findParentStage(replayPlan.getReplayPlanStageList(),
           stageType);
-      updateParentStage(parentStage, stageType, stageStatus, startTime, endTime);
+      updateParentStage(parentStage, stageType, stageStatus, startTime, endTime,
+          replayPlan.getOperator());
 
       stageBaseInfo = findStage(parentStage.getSubStageInfoList(), stageType);
     }
     if (stageBaseInfo != null) {
-      updateStage(stageBaseInfo, stageType, stageStatus, startTime, endTime, msg);
+      updateStage(stageBaseInfo, stageType, stageStatus, startTime, endTime, msg,
+          replayPlan.getOperator());
     }
     replayPlan.setLastUpdateTime(System.currentTimeMillis());
   }
@@ -219,7 +221,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
 
   private void updateStage(StageBaseInfo stageBaseInfo, PlanStageEnum stageType,
       StageStatusEnum stageStatus,
-      Long startTime, Long endTime, String msg) {
+      Long startTime, Long endTime, String msg, String operator) {
     if (stageBaseInfo != null) {
       if (msg == null) {
         msg = String.format(StageUtils.MSG_FORMAT, stageType.name(), stageStatus);
@@ -244,14 +246,14 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
         String endTimeStr =
             stageBaseInfo.getEndTime() == null ? ""
                 : DateUtils.format(new Date(stageBaseInfo.getEndTime()));
-        stageBaseInfo.setMsg(String.format(StageUtils.RUNNING_FORMAT, startTimeStr, endTimeStr));
+        stageBaseInfo.setMsg(String.format(StageUtils.RUNNING_FORMAT, startTimeStr, endTimeStr, operator));
       }
     }
   }
 
   private void updateParentStage(StageBaseInfo parentStage, PlanStageEnum stageType,
       StageStatusEnum stageStatus,
-      Long startTime, Long endTime) {
+      Long startTime, Long endTime, String operator) {
     PlanStageEnum parentStageEnum = PlanStageEnum.of(parentStage.getStageType());
     // when first subStage starts, start its parent stage
     boolean firstSubStageOnGoing =
@@ -263,7 +265,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
             == stageType.getCode();
     // when any subStage fails, fail its parent stage
     if (firstSubStageOnGoing || lastSubStageSucceeded || stageStatus == StageStatusEnum.FAILED) {
-      updateStage(parentStage, parentStageEnum, stageStatus, startTime, endTime, null);
+      updateStage(parentStage, parentStageEnum, stageStatus, startTime, endTime, null, operator);
     }
   }
 

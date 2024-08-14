@@ -358,6 +358,7 @@ public class PlanProduceService {
       return CommonResponse.badResponse("This plan is Running");
     }
     replayPlan.setReRun(Boolean.TRUE);
+    replayPlan.setOperator(request.getOperator());
 
     try {
       ConfigurationService.ScheduleConfiguration schedule = configurationService.schedule(
