@@ -9,7 +9,6 @@ import lombok.Data;
  */
 @Data
 public class ReplayCaseBatchInfo {
-
   private Set<String> caseIds;
   private String warmUpId;
 }

@@ -182,12 +182,12 @@ public class LocalReplayService {
 
     if (CollectionUtils.isEmpty(failedCaseList)) {
       progressEvent.onReplayPlanReRunException(replayPlan);
-      return CommonResponse.badResponse("No failed case found");
+      return CommonResponse.badResponse("No failed case or cases are expired!");
     }
 
     if (planProduceService.isRunning(planId)) {
       progressEvent.onReplayPlanReRunException(replayPlan);
-      return CommonResponse.badResponse("This plan is Running");
+      return CommonResponse.badResponse("This plan is Running!");
     }
     replayPlan.setReRun(Boolean.TRUE);
     planExecutionMonitorImpl.register(replayPlan);
