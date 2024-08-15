@@ -350,7 +350,7 @@ public class PlanProduceService {
         planId, planItemId);
     if (CollectionUtils.isEmpty(failedCaseList)) {
       progressEvent.onReplayPlanReRunException(replayPlan);
-      return CommonResponse.badResponse("No failed case found");
+      return CommonResponse.badResponse("No failed case or cases are expired!");
     }
 
     if (isRunning(planId)) {
