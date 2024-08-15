@@ -138,15 +138,13 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
             Criteria.where(ReplayActionCaseItem.Fields.SEND_STATUS)
                 .ne(CaseSendStatusType.SUCCESS.getValue()),
             Criteria.where(ReplayActionCaseItem.Fields.COMPARE_STATUS)
-                .ne(CompareProcessStatusType.PASS.getValue()
-                ),
-            // exclude expired cases
-            new Criteria().orOperator(
-                Criteria.where(ReplayActionCaseItem.Fields.EXPIRATION_TIME).isNull(),
-                Criteria.where(ReplayActionCaseItem.Fields.EXPIRATION_TIME)
-                    .gt(System.currentTimeMillis())
-            ))
-    ));
+                .ne(CompareProcessStatusType.PASS.getValue())),
+        // exclude expired cases
+        new Criteria().orOperator(
+            Criteria.where(ReplayActionCaseItem.Fields.EXPIRATION_TIME).isNull(),
+            Criteria.where(ReplayActionCaseItem.Fields.EXPIRATION_TIME)
+                .gt(System.currentTimeMillis())))
+    );
 
 
     query.addCriteria(Criteria.where(ReplayActionCaseItem.Fields.CASE_STATUS)
