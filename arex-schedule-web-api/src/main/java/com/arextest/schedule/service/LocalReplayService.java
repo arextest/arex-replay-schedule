@@ -361,9 +361,7 @@ public class LocalReplayService {
     ReplaySenderParameters senderParameter = new ReplaySenderParameters();
     senderParameter.setAppId(replayActionItem.getAppId());
     senderParameter.setConsumeGroup(caseItem.consumeGroup());
-    byte[] decodeMessage = (byte[]) DecodeUtils.decode(caseItem.requestMessage());
-    String stringMessage = new String(decodeMessage, StandardCharsets.UTF_8);
-    senderParameter.setMessage(stringMessage);
+    senderParameter.setMessage(getSenderParameterMessage(caseItem));
     String operationName = caseItem.requestPath();
     if (StringUtils.isEmpty(operationName)) {
       operationName = replayActionItem.getOperationName();
@@ -388,6 +386,21 @@ public class LocalReplayService {
     senderParameter.setMethod(caseItem.requestMethod());
     senderParameter.setRecordId(caseItem.getRecordId());
     return senderParameter;
+  }
+
+  /**
+   * todo support the content-type of "form-data" and "x-www-form-urlencoded
+   *
+   * @param caseItem
+   * @return
+   */
+  private String getSenderParameterMessage(ReplayActionCaseItem caseItem) {
+    String requestMessage = caseItem.requestMessage();
+    Object decode = DecodeUtils.decode(requestMessage);
+    if (decode instanceof byte[]) {
+      return new String((byte[]) decode, StandardCharsets.UTF_8);
+    }
+    return requestMessage;
   }
 
   private ServiceInstance selectLoadBalanceInstance(String caseItemId,
