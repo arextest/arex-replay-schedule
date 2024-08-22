@@ -11,6 +11,7 @@ import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanActionRepository;
 import com.arextest.schedule.dao.mongodb.ReplayPlanRepository;
+import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CaseSendStatusType;
 import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.PlanExecutionContext;
@@ -114,6 +115,7 @@ public class LocalReplayService {
       return pair.getRight();
     }
     ReplayPlan replayPlan = pair.getLeft();
+    MDCTracer.addPlanId(replayPlan.getId());
     response.setPlanId(replayPlan.getId());
     response.setReplayCaseBatchInfos(buildBatchInfoList(replayPlan));
     return CommonResponse.successResponse("queryReplayCaseId success!", response);
@@ -128,6 +130,7 @@ public class LocalReplayService {
     Map<String, ReplayActionItemForCache> planItemMap = new HashMap<>();
     Map<String, String> replaySenderParametersMap = new HashMap<>();
     for (ReplayActionCaseItem caseItem : caseItemList) {
+      MDCTracer.addDetailId(caseItem.getId());
       String planItemId = caseItem.getPlanItemId();
       ReplayActionItemForCache replayActionItemForCache = planItemMap.getOrDefault(planItemId,
           loadReplayActionItemCache(planItemId));
@@ -141,6 +144,8 @@ public class LocalReplayService {
       ReplaySenderParameters senderParameters = buildReplaySenderParameters(caseItem,
           replayActionItemForCache);
       replaySenderParametersMap.put(caseItem.getId(), compress(senderParameters));
+      LOGGER.info("queryReplaySenderParameters success, caseId:{}, recordId: {}", caseItem.getId(),
+          caseItem.getRecordId());
     }
     response.setReplaySenderParametersMap(replaySenderParametersMap);
     return response;
@@ -166,9 +171,8 @@ public class LocalReplayService {
   }
 
 
-  public boolean postSend(PostSendRequest request) {
+  public void postSend(PostSendRequest request) {
     CompletableFuture.runAsync(() -> postSend0(request), postSendExecutorService);
-    return true;
   }
 
   public CommonResponse queryReRunCaseId(ReRunReplayPlanRequest request) {
@@ -530,6 +534,9 @@ public class LocalReplayService {
       }
     }
     cacheReplayActionItem(replayPlan.getReplayActionItemList(), planItemIds);
+
+    LOGGER.info("buildBatchInfoList success, planId:{}, infos: {}", replayPlan.getId(),
+        replayCaseBatchInfos);
     return replayCaseBatchInfos;
   }
 }
