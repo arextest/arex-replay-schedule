@@ -42,7 +42,8 @@ public class BizLogger {
     recordPlanStatusChange(plan, status, null);
   }
 
-  public static void recordPlanStatusChange(ReplayPlan plan, ReplayStatusType status, String message) {
+  public static void recordPlanStatusChange(ReplayPlan plan, ReplayStatusType status,
+      String message) {
     if (StringUtils.isEmpty(message)) {
       switch (status) {
         case FAIL_INTERRUPTED:
@@ -72,7 +73,6 @@ public class BizLogger {
     log.postProcessAndEnqueue(plan);
   }
   // endregion
-
 
   // region <Context Level Log>
 
@@ -105,22 +105,29 @@ public class BizLogger {
   }
   // endregion
 
-  public static void recordServerFailBreak(ReplayPlan replayPlan,String url) {
+  public static void recordServerFailBreak(ReplayPlan replayPlan, String url) {
     BizLog log = BizLog.warn().logType(BizLogContent.SERVER_FAIL_BREAK.getType())
-            .message(BizLogContent.SERVER_FAIL_BREAK.format(url))
-            .build();
+        .message(BizLogContent.SERVER_FAIL_BREAK.format(url))
+        .build();
 
     log.postProcessAndEnqueue(replayPlan);
   }
 
-  public static void recordCurrentServerInstances(ReplayPlan replayPlan,String targetHosts,String sourceHosts) {
+  public static void recordCurrentServerInstances(ReplayPlan replayPlan, String targetHosts,
+      String sourceHosts) {
+    StringBuilder content = new StringBuilder(String.format("target instance [%s]", targetHosts));
+    if (StringUtils.isNotBlank(sourceHosts)) {
+      content
+          .append(", ")
+          .append(String.format("source instance [%s]", sourceHosts));
+    }
+
     BizLog log = BizLog.warn().logType(BizLogContent.SERVER_INSTANCES.getType())
-            .message(BizLogContent.SERVER_INSTANCES.format(targetHosts,sourceHosts))
-            .build();
+        .message(BizLogContent.SERVER_INSTANCES.format(content.toString()))
+        .build();
 
     log.postProcessAndEnqueue(replayPlan);
   }
-
 
   @Getter
   public enum BizLogContent {
@@ -177,9 +184,9 @@ public class BizLogger {
     @Deprecated
     NOISE_IDENTIFY_CASE_SEND_FINISH(501,
         "Context: {0}, {1} case finish sending to identify noise, took {2} ms."),
-    SERVER_FAIL_BREAK(503,"Sever instance [{0}] fail break."),
+    SERVER_FAIL_BREAK(503, "Sever instance [{0}] fail break."),
 
-    SERVER_INSTANCES(504,"The currently executing target instances [{0}],source instances [{1}]."),
+    SERVER_INSTANCES(504, "The currently executing {0}."),
     ;
 
     private final String template;

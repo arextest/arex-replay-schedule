@@ -13,19 +13,19 @@ import java.net.URI;
  */
 public class ServiceUrlUtils {
 
-    private ServiceUrlUtils() {
-    }
+  private ServiceUrlUtils() {
+  }
 
-    /**
-     * get the host from the url
-     *
-     * @param url e.g. http://test:8080, dubbo://dubbo:20700...
-     * @return the host
-     */
-    public static String getHost(String url) {
-        if (StringUtils.isBlank(url)) {
-            return null;
-        }
-        return URI.create(url).getHost();
+  /**
+   * get the host from the url
+   *
+   * @param url e.g. http://test:8080, dubbo://dubbo:20700...
+   * @return the host
+   */
+  public static String getHost(String url) {
+    if (StringUtils.isBlank(url)) {
+      return null;
     }
+    return URI.create(url).getHost();
+  }
 }

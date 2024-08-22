@@ -59,13 +59,13 @@ class ExecutorServiceConfiguration implements Thread.UncaughtExceptionHandler {
   @Bean
   public ExecutorService distributeExecutorService() {
     ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("replay-distribute-%d")
-            .setDaemon(true)
-            .setUncaughtExceptionHandler(this).build();
+        .setDaemon(true)
+        .setUncaughtExceptionHandler(this).build();
     ExecutorService executorService = new ThreadPoolExecutor(calculateIOPoolSize(),
-            calculateIOPoolSize(), KEEP_ALIVE_TIME,
-            TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(DISTRIBUTE_QUEUE_MAX_CAPACITY_SIZE),
-            threadFactory,
-            new ThreadPoolExecutor.CallerRunsPolicy());
+        calculateIOPoolSize(), KEEP_ALIVE_TIME,
+        TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(DISTRIBUTE_QUEUE_MAX_CAPACITY_SIZE),
+        threadFactory,
+        new ThreadPoolExecutor.CallerRunsPolicy());
     return TtlExecutors.getTtlExecutorService(executorService);
   }
 

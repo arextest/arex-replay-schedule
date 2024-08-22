@@ -119,7 +119,8 @@ public class DefaultExecutionContextProvider
           replayActionCaseItemRepository.getOneOfContext(plan.getId(),
               dependencyHolder.getContextIdentifier());
       if (!plan.getActionItemMap().containsKey(warmupCase.getPlanItemId())) {
-        LOGGER.error("warmup failed! caseId:{}, actionId:{}", warmupCase.getId(), warmupCase.getPlanItemId());
+        LOGGER.error("warmup failed! caseId:{}, actionId:{}", warmupCase.getId(),
+            warmupCase.getPlanItemId());
       }
       warmupCase.setCaseSendScene(CaseSendScene.EXTRA);
       ReplayParentBinder.setupCaseItemParent(warmupCase,
@@ -134,7 +135,8 @@ public class DefaultExecutionContextProvider
           if (StringUtils.isEmpty(plan.getErrorMessage())) {
             plan.setErrorMessage(warmupCase.getSendErrorMessage());
           }
-          currentContext.setWarmupFailedServerUrls(Collections.singletonList(warmupCase.getTargetInstance().getUrl()));
+          currentContext.setWarmupFailedServerUrls(
+              Collections.singletonList(warmupCase.getTargetInstance().getUrl()));
           String errorMsg =
               "Failed to warmup context: " + currentContext + " with case:" + warmupCase;
           LOGGER.error(errorMsg);

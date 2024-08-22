@@ -1,10 +1,8 @@
 package com.arextest.schedule.model;
 
-import com.arextest.schedule.common.RateLimiterFactory;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,7 +18,8 @@ public class ExecutionStatus {
   @Getter
   private Collection<SendSemaphoreLimiter> sendSemaphoreLimiterList;
 
-  public static ExecutionStatus buildNormal(Collection<SendSemaphoreLimiter> sendSemaphoreLimiterList) {
+  public static ExecutionStatus buildNormal(
+      Collection<SendSemaphoreLimiter> sendSemaphoreLimiterList) {
     return ExecutionStatus.builder()
         .canceled(new AtomicReference<>(false))
         .sendSemaphoreLimiterList(sendSemaphoreLimiterList)

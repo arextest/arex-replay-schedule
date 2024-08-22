@@ -37,7 +37,7 @@ public class PlanExecutionContext<T> {
 
   private List<String> warmupFailedServerUrls;
 
-  private Map<ServiceInstance,List<ServiceInstance>> bindInstanceMap;
+  private Map<ServiceInstance, List<ServiceInstance>> bindInstanceMap;
 
   private Map<String, ReplayActionItem> currentCachedActionItemsMap;
 

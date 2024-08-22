@@ -4,6 +4,8 @@ import com.arextest.schedule.model.ReplayPlan;
 import com.google.common.util.concurrent.RateLimiter;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;

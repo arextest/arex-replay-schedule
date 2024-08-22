@@ -1,6 +1,8 @@
 package com.arextest.schedule.model.deploy;
 
 import java.util.List;
+
+import com.arextest.schedule.common.SendSemaphoreLimiter;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -42,6 +44,9 @@ public class ServiceInstance {
   private String contextPath;
   private List<ServiceInstanceOperation> operationList;
   private Env metadata;
+  @Getter
+  @Setter
+  private SendSemaphoreLimiter sendSemaphoreLimiter;
 
   public String subEnv() {
     return metadata == null ? StringUtils.EMPTY : metadata.subEnv;
