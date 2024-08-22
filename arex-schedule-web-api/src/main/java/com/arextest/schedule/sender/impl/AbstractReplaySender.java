@@ -103,10 +103,10 @@ public abstract class AbstractReplaySender implements ReplaySender {
     if (CollectionUtils.isEmpty(serviceInstances)) {
       return null;
     }
-    if (isTargetInstance && Objects.nonNull(caseItem.getTargetInstance())){
+    if (isTargetInstance && Objects.nonNull(caseItem.getTargetInstance())) {
       return caseItem.getTargetInstance();
     }
-    if (!isTargetInstance && Objects.nonNull(caseItem.getSourceInstance())){
+    if (!isTargetInstance && Objects.nonNull(caseItem.getSourceInstance())) {
       return caseItem.getSourceInstance();
     }
     int index = Math.abs(caseItem.getId().hashCode() % serviceInstances.size());

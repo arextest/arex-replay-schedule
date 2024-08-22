@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.arextest.common.config.DefaultApplicationConfig;
-import com.arextest.schedule.common.RateLimiterFactory;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
@@ -12,9 +11,6 @@ import com.arextest.schedule.model.*;
 import com.arextest.schedule.model.deploy.ServiceInstance;
 import com.arextest.schedule.progress.ProgressTracer;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,9 +30,8 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import javax.validation.constraints.AssertTrue;
-
 class ReplayCaseTransmitServiceImplTest {
+
   @InjectMocks
   private ReplayCaseTransmitServiceImpl replayCaseTransmitServiceImpl;
   @Mock
@@ -64,6 +59,7 @@ class ReplayCaseTransmitServiceImplTest {
   public void setUp() throws Exception {
     MockitoAnnotations.openMocks(this);
   }
+
   @Test
   void testUpdateSendResult_WhenSendStatusTypeIsSuccess_SchedulesAsyncCompareTask() {
     ReplayActionCaseItem caseItem = new ReplayActionCaseItem();
@@ -126,11 +122,11 @@ class ReplayCaseTransmitServiceImplTest {
     SendSemaphoreLimiter sendSemaphoreLimiter = new SendSemaphoreLimiter(20, 1);
 
     Mockito.when(senderFactory.findReplaySender(replayActionCaseItem.getCaseType()))
-            .thenReturn(new DefaultHttpReplaySender());
+        .thenReturn(new DefaultHttpReplaySender());
 
     ReflectionTestUtils.invokeMethod(replayCaseTransmitServiceImpl, "doExecute",
-            replayActionCaseItem, targetServiceInstance, groupSentLatch,
-            planExecutionContext, sendSemaphoreLimiter);
+        replayActionCaseItem, targetServiceInstance, groupSentLatch,
+        planExecutionContext, sendSemaphoreLimiter);
 
     Mockito.verify(sendExecutorService).execute(Mockito.any());
   }
@@ -147,7 +143,7 @@ class ReplayCaseTransmitServiceImplTest {
     planExecutionContext.setBindInstanceMap(bindInstanceMap);
 
     ReflectionTestUtils.invokeMethod(replayCaseTransmitServiceImpl, "setServiceInstance",
-            replayActionCaseItem, targetServiceInstance, planExecutionContext);
+        replayActionCaseItem, targetServiceInstance, planExecutionContext);
 
     assertNotNull(replayActionCaseItem.getTargetInstance());
     assertNotNull(replayActionCaseItem.getSourceInstance());
@@ -155,7 +151,7 @@ class ReplayCaseTransmitServiceImplTest {
     replayActionCaseItem.setSourceInstance(null);
     planExecutionContext.setBindInstanceMap(null);
     ReflectionTestUtils.invokeMethod(replayCaseTransmitServiceImpl, "setServiceInstance",
-            replayActionCaseItem, targetServiceInstance, planExecutionContext);
+        replayActionCaseItem, targetServiceInstance, planExecutionContext);
     assertNotNull(replayActionCaseItem.getTargetInstance());
     assertNull(replayActionCaseItem.getSourceInstance());
   }
@@ -176,24 +172,27 @@ class ReplayCaseTransmitServiceImplTest {
     targetServiceInstance.setIp("127.0.0.1");
     actionItem.setTargetInstance(Lists.list(targetServiceInstance));
 
+    SendSemaphoreLimiter sendSemaphoreLimiter = new SendSemaphoreLimiter(20, 1);
+    targetServiceInstance.setSendSemaphoreLimiter(sendSemaphoreLimiter);
+
     ReplayPlan replayPlan = new ReplayPlan();
     replayPlan.setAppId("appId");
     replayPlan.setReplaySendMaxQps(1);
     replayPlan.setCaseTotalCount(100);
     replayPlan.setReplayActionItemList(Lists.list(actionItem));
-    new RateLimiterFactory(1, 2, replayPlan);
 
     PlanExecutionContext<?> planExecutionContext = new PlanExecutionContext<>();
     planExecutionContext.setPlan(replayPlan);
 
     ArrayBlockingQueue<ReplayActionCaseItem> arrayBlockingQueue =
-            new ArrayBlockingQueue<>(replayActionCaseItemList.size(), false, replayActionCaseItemList);
+        new ArrayBlockingQueue<>(replayActionCaseItemList.size(), false, replayActionCaseItemList);
     CountDownLatch groupSentLatch = new CountDownLatch(1);
 
     Mockito.when(senderFactory.findReplaySender("caseType"))
-            .thenReturn(new DefaultHttpReplaySender());
-    ReflectionTestUtils.invokeMethod(replayCaseTransmitServiceImpl, "doDistribute", arrayBlockingQueue,
-            targetServiceInstance, groupSentLatch, planExecutionContext);
+        .thenReturn(new DefaultHttpReplaySender());
+    ReflectionTestUtils.invokeMethod(replayCaseTransmitServiceImpl, "doDistribute",
+        arrayBlockingQueue,
+        targetServiceInstance, groupSentLatch, planExecutionContext);
 
     Mockito.verify(sendExecutorService).execute(Mockito.any());
 

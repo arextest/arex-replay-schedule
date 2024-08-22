@@ -58,7 +58,7 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
     headerExcludes.forEach(headers::remove);
 
     ServiceInstance instanceRunner = selectLoadBalanceInstance(caseItem,
-        replayActionItem.getTargetInstance(),true);
+        replayActionItem.getTargetInstance(), true);
     if (instanceRunner == null) {
       LOGGER.error("selectLoadBalanceInstance failed, caseItem:{}", caseItem);
       return false;
@@ -92,7 +92,7 @@ public final class DefaultHttpReplaySender extends AbstractReplaySender {
     caseItem.setTargetResultId(targetSendResult.getTraceId());
     caseItem.setSendStatus(targetSendResult.getStatusType().getValue());
     instanceRunner = selectLoadBalanceInstance(caseItem,
-        replayActionItem.getSourceInstance(),false);
+        replayActionItem.getSourceInstance(), false);
     if (instanceRunner == null) {
       return targetSendResult.success();
     }

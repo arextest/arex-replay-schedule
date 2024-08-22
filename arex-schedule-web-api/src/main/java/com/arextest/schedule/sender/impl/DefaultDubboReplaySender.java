@@ -73,7 +73,8 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
       LOGGER.error("getInterfaceNameAndMethod failed, caseItem:{}", caseItem);
       return null;
     }
-    ServiceInstance instanceRunner = selectLoadBalanceInstance(caseItem,caseItem.getParent().getTargetInstance(),true);
+    ServiceInstance instanceRunner = selectLoadBalanceInstance(caseItem,
+        caseItem.getParent().getTargetInstance(), true);
     if (instanceRunner == null) {
       LOGGER.error("selectLoadBalanceInstance failed, caseItem:{}", caseItem);
       return null;
@@ -87,10 +88,10 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
   }
 
   private String appendVersionAndGroup(String url, Map<String, String> headers) {
-    if(UrlUtil.getParamFromUrl(url, VERSION) == null && headers.containsKey(VERSION)) {
+    if (UrlUtil.getParamFromUrl(url, VERSION) == null && headers.containsKey(VERSION)) {
       url = UrlUtil.appendParamToUrl(url, VERSION, headers.get(VERSION));
     }
-    if(UrlUtil.getParamFromUrl(url, GROUP) == null && headers.containsKey(GROUP)) {
+    if (UrlUtil.getParamFromUrl(url, GROUP) == null && headers.containsKey(GROUP)) {
       url = UrlUtil.appendParamToUrl(url, GROUP, headers.get(GROUP));
     }
     return url;

@@ -3,7 +3,6 @@ package com.arextest.schedule.service;
 import com.arextest.model.replay.CaseSendScene;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
-import com.arextest.schedule.common.RateLimiterFactory;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
@@ -49,6 +48,7 @@ import org.springframework.stereotype.Service;
 @Service
 @SuppressWarnings({"rawtypes", "unchecked"})
 public final class PlanConsumeService {
+
   @Resource
   private PlanConsumePrepareService planConsumePrepareService;
   @Resource
@@ -176,7 +176,7 @@ public final class PlanConsumeService {
 
       ReplayParentBinder.setupCaseItemParent(caseItems, replayPlan);
       caseItemPostProcess(caseItems);
-      setCurrentServiceInstances(executionContext,caseItems);
+      setCurrentServiceInstances(executionContext, caseItems);
       replayCaseTransmitServiceRemoteImpl.send(caseItems, executionContext);
     }
   }
@@ -187,14 +187,15 @@ public final class PlanConsumeService {
    * @param executionContext plan execution context
    * @param caseItems        case items
    */
-  private static void setCurrentServiceInstances(PlanExecutionContext executionContext, List<ReplayActionCaseItem> caseItems) {
+  private static void setCurrentServiceInstances(PlanExecutionContext executionContext,
+      List<ReplayActionCaseItem> caseItems) {
     if (executionContext.getCurrentTargetInstances() != null) {
       return;
     }
 
     Optional<ReplayActionCaseItem> caseItemOptional = caseItems
-            .stream().filter(caseItem -> caseItem.getParent() != null)
-            .findFirst();
+        .stream().filter(caseItem -> caseItem.getParent() != null)
+        .findFirst();
     if (!caseItemOptional.isPresent()) {
       return;
     }
@@ -213,22 +214,22 @@ public final class PlanConsumeService {
       }
       // warmup failed instances should be excluded
       Set<String> warmupFailedHostSet = warmupFailedServiceUrls
-              .stream()
-              .map(ServiceUrlUtils::getHost)
-              .collect(Collectors.toSet());
+          .stream()
+          .map(ServiceUrlUtils::getHost)
+          .collect(Collectors.toSet());
 
       // if the instance warmup failed, it should be excluded on the current replay
       targetInstances = targetInstances
-              .stream()
-              .filter(instance -> !warmupFailedHostSet.contains(instance.getIp()))
-              .collect(Collectors.toList());
+          .stream()
+          .filter(instance -> !warmupFailedHostSet.contains(instance.getIp()))
+          .collect(Collectors.toList());
       executionContext.setCurrentTargetInstances(targetInstances);
 
       if (CollectionUtils.isNotEmpty(sourceInstances)) {
         sourceInstances = sourceInstances
-                .stream()
-                .filter(instance -> !warmupFailedHostSet.contains(instance.getIp()))
-                .collect(Collectors.toList());
+            .stream()
+            .filter(instance -> !warmupFailedHostSet.contains(instance.getIp()))
+            .collect(Collectors.toList());
         executionContext.setCurrentSourceInstances(sourceInstances);
       }
     } finally {
@@ -237,15 +238,16 @@ public final class PlanConsumeService {
       // bind target and source instance for build rate limiter on target instance
       bindTargetAndSource(executionContext);
 
-      String targetHosts = targetInstances.stream().map(ServiceInstance::getIp).collect(Collectors.joining(","));
+      String targetHosts = targetInstances.stream().map(ServiceInstance::getIp)
+          .collect(Collectors.joining(","));
       String sourceHosts = CollectionUtils.isNotEmpty(sourceInstances) ? sourceInstances
-              .stream()
-              .map(ServiceInstance::getIp)
-              .collect(Collectors.joining(",")) : null;
+          .stream()
+          .map(ServiceInstance::getIp)
+          .collect(Collectors.joining(",")) : null;
       BizLogger.recordCurrentServerInstances(executionContext.getPlan(), targetHosts, sourceHosts);
       LOGGER.info("set service instances for the current context," +
-                      "targetInstances: {}, sourceInstances: {}",
-              targetInstances, sourceInstances);
+              "targetInstances: {}, sourceInstances: {}",
+          targetInstances, sourceInstances);
     }
   }
 
@@ -258,8 +260,9 @@ public final class PlanConsumeService {
     List<ServiceInstance> currentTargetInstances = executionContext.getCurrentTargetInstances();
     List<ServiceInstance> currentSourceInstances = executionContext.getCurrentSourceInstances();
     if (CollectionUtils.isNotEmpty(currentSourceInstances)
-            && (currentSourceInstances.size() < currentTargetInstances.size())) {
-      currentTargetInstances.subList(currentSourceInstances.size(), currentTargetInstances.size()).clear();
+        && (currentSourceInstances.size() < currentTargetInstances.size())) {
+      currentTargetInstances.subList(currentSourceInstances.size(), currentTargetInstances.size())
+          .clear();
     }
   }
 
@@ -282,7 +285,8 @@ public final class PlanConsumeService {
       return;
     }
 
-    Map<ServiceInstance, List<ServiceInstance>> bindInstanceMap = new HashMap<>(targetInstances.size());
+    Map<ServiceInstance, List<ServiceInstance>> bindInstanceMap = new HashMap<>(
+        targetInstances.size());
     planExecutionContext.setBindInstanceMap(bindInstanceMap);
 
     for (int i = 0; i < sourceInstances.size(); i++) {
@@ -290,10 +294,10 @@ public final class PlanConsumeService {
       int sourceIndex = i % targetInstances.size();
       ServiceInstance targetServiceInstance = targetInstances.get(sourceIndex);
       bindInstanceMap.computeIfAbsent(targetServiceInstance, k -> new ArrayList<>())
-              .add(sourceServiceInstance);
+          .add(sourceServiceInstance);
     }
     LOGGER.info("bind target and source instance for build rate limiter on target instances, " +
-            "bindInstanceMap: {}", bindInstanceMap);
+        "bindInstanceMap: {}", bindInstanceMap);
   }
 
   private void caseItemPostProcess(List<ReplayActionCaseItem> cases) {
@@ -335,8 +339,8 @@ public final class PlanConsumeService {
   }
 
   /**
-   * do fail break for the failed server urls on the last context,
-   * Make it possible to determine the interruption in the end.
+   * do fail break for the failed server urls on the last context, Make it possible to determine the
+   * interruption in the end.
    *
    * @param warmupFailedServerUrls the failed server urls
    * @param replayPlan             the replay plan
@@ -346,13 +350,23 @@ public final class PlanConsumeService {
       return;
     }
     int failThreshold = continuousFailThreshold + 1;
-    warmupFailedServerUrls.forEach(serviceUrl -> {
-      String host = ServiceUrlUtils.getHost(serviceUrl);
-      SendSemaphoreLimiter sendSemaphoreLimiter = replayPlan.getRateLimiterFactory().get(host);
-      if (sendSemaphoreLimiter != null && !sendSemaphoreLimiter.failBreak()) {
-        sendSemaphoreLimiter.batchRelease(false, failThreshold);
-      }
-    });
+
+    try {
+      List<SendSemaphoreLimiter> sendSemaphoreLimiterList = replayPlan
+          .getPlanStatus()
+          .getSendSemaphoreLimiterList()
+          .stream()
+          .filter(obj -> warmupFailedServerUrls.contains(obj.getHost()))
+          .collect(Collectors.toList());
+      sendSemaphoreLimiterList.forEach(obj -> {
+        if (!obj.failBreak()) {
+          obj.batchRelease(false, failThreshold);
+        }
+      });
+    } catch (Exception exception) {
+      LOGGER.warn("doFailBreak failed, warmupFailedServerUrls: {}, replayPlan: {}",
+          warmupFailedServerUrls, replayPlan, exception);
+    }
   }
 
   private final class ReplayActionLoadingRunnableImpl extends AbstractTracedRunnable {
@@ -420,7 +434,8 @@ public final class PlanConsumeService {
       progressEvent.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.LOADING_CASE,
           StageStatusEnum.SUCCEEDED, null, end);
       if (planSavedCaseSize == 0) {
-        LOGGER.warn("No case found, please change the time range and try again. {}", replayPlan.getId());
+        LOGGER.warn("No case found, please change the time range and try again. {}",
+            replayPlan.getId());
         String message = "No case found, please change the time range and try again.";
         progressEvent.onReplayPlanTerminate(replayPlan.getId(), message);
         BizLogger.recordPlanStatusChange(replayPlan, ReplayStatusType.CANCELLED, message);
@@ -431,13 +446,46 @@ public final class PlanConsumeService {
 
     private void initReplayPlan() {
       compareConfigService.preload(replayPlan);
-
-      // init rate limiter factory for the plan, build rate limiter for each target instance
-      final RateLimiterFactory rateLimiterFactory = new RateLimiterFactory(errorBreakRatio,continuousFailThreshold,replayPlan);
-      replayPlan.setPlanStatus(ExecutionStatus.buildNormal(rateLimiterFactory.getAll()));
+      // init rate limiter for each target instance
+      List<SendSemaphoreLimiter> sendSemaphoreLimiterList = this.initRateLimiters(replayPlan);
+      replayPlan.setPlanStatus(ExecutionStatus.buildNormal(sendSemaphoreLimiterList));
       replayPlan.buildActionItemMap();
-      LOGGER.info("plan {} init with rateLimiterFactory {}", replayPlan, rateLimiterFactory);
     }
 
+    /**
+     * init the rate limiter factory
+     *
+     * @param replayPlan the replay plan
+     */
+    private List<SendSemaphoreLimiter> initRateLimiters(ReplayPlan replayPlan) {
+      if (replayPlan == null) {
+        return Collections.emptyList();
+      }
+      Optional<ReplayActionItem> optionalReplayActionItem = replayPlan.getReplayActionItemList()
+          .stream()
+          .filter(obj -> CollectionUtils.isNotEmpty(obj.getTargetInstance())).findFirst();
+      if (!optionalReplayActionItem.isPresent()) {
+        return Collections.emptyList();
+      }
+      List<ServiceInstance> targetInstances = optionalReplayActionItem.get().getTargetInstance();
+      if (CollectionUtils.isEmpty(targetInstances)) {
+        return Collections.emptyList();
+      }
+      int singleTasks = replayPlan.getCaseTotalCount() / targetInstances.size();
+
+      for (ServiceInstance targetInstance : targetInstances) {
+        SendSemaphoreLimiter sendSemaphoreLimiter = new SendSemaphoreLimiter(
+            replayPlan.getReplaySendMaxQps(), 1);
+        sendSemaphoreLimiter.setTotalTasks(singleTasks);
+        sendSemaphoreLimiter.setErrorBreakRatio(errorBreakRatio);
+        sendSemaphoreLimiter.setContinuousFailThreshold(continuousFailThreshold);
+        sendSemaphoreLimiter.setHost(targetInstance.getIp());
+        targetInstance.setSendSemaphoreLimiter(sendSemaphoreLimiter);
+      }
+      LOGGER.info("[[title=RateLimiterFactory]] init success for [{}]", replayPlan.getPlanName());
+
+      return targetInstances.stream().map(ServiceInstance::getSendSemaphoreLimiter)
+          .collect(Collectors.toList());
+    }
   }
 }

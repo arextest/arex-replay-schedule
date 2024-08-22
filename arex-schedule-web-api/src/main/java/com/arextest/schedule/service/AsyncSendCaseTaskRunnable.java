@@ -77,10 +77,11 @@ final class AsyncSendCaseTaskRunnable extends AbstractContextWithTraceRunnable {
         metricService.recordCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(),
             caseItem.getParent().getPlanId(),
             caseItem.getParent().getAppId(), DEFAULT_COUNT);
-        if (limiter.failBreak()){
-          synchronized (limiter){
-            boolean result = caseItem.getParent().getTargetInstance().remove(caseItem.getTargetInstance());
-            if (result){
+        if (limiter.failBreak()) {
+          synchronized (limiter) {
+            boolean result = caseItem.getParent().getTargetInstance()
+                .remove(caseItem.getTargetInstance());
+            if (result) {
               BizLogger.recordServerFailBreak(caseItem.getParent().getParent(), limiter.getHost());
             }
           }
