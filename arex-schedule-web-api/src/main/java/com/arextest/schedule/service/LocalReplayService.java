@@ -459,12 +459,13 @@ public class LocalReplayService {
       return Pair.of(null, CommonResponse.badResponse("save replay action error, " + replayPlan,
           new BuildReplayPlanResponse(BuildReplayFailReasonEnum.DB_ERROR)));
     }
-    progressEvent.onReplayPlanCreated(replayPlan);
 
     planConsumePrepareService.preparePlan(replayPlan);
     if (replayPlan.getCaseTotalCount() == 0) {
       return Pair.of(null, CommonResponse.badResponse("No case found in selected range"));
     }
+
+    progressEvent.onReplayPlanCreated(replayPlan);
 
     replayPlan.setExecutionContexts(planExecutionContextProvider.buildContext(replayPlan));
     if (CollectionUtils.isEmpty(replayPlan.getExecutionContexts())) {
