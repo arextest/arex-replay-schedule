@@ -1,6 +1,5 @@
 package com.arextest.schedule.model;
 
-import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
 import com.arextest.schedule.model.plan.BuildReplayPlanType;
@@ -88,14 +87,8 @@ public class ReplayPlan {
 
   private boolean resumed;
 
-  // Min(targetInstanceCount || Int.MAX, sourceInstanceCount || Int.MAX)
-  @JsonIgnore
-  private int minInstanceCount;
-
   @JsonIgnore
   private ExecutionStatus planStatus;
-  @JsonIgnore
-  private SendSemaphoreLimiter limiter;
 
   @JsonIgnore
   private long lastLogTime = System.currentTimeMillis();

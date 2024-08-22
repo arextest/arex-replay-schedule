@@ -3,6 +3,7 @@ package com.arextest.schedule.service;
 import static com.arextest.schedule.common.CommonConstant.DEFAULT_COUNT;
 
 import com.arextest.common.runnable.AbstractContextWithTraceRunnable;
+import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.mdc.AbstractTracedRunnable;
 import com.arextest.schedule.mdc.MDCTracer;
@@ -44,7 +45,7 @@ final class AsyncSendCaseTaskRunnable extends AbstractContextWithTraceRunnable {
 
       // todo: ignore this in the error counter
       // checkpoint: before sending single case
-      if (this.executionStatus.isInterrupted()) {
+      if (this.limiter.failBreak()) {
         transmitService.updateSendResult(caseItem, CaseSendStatusType.EXCEPTION_FAILED);
         return;
       }
@@ -76,6 +77,15 @@ final class AsyncSendCaseTaskRunnable extends AbstractContextWithTraceRunnable {
         metricService.recordCountEvent(LogType.CASE_EXCEPTION_NUMBER.getValue(),
             caseItem.getParent().getPlanId(),
             caseItem.getParent().getAppId(), DEFAULT_COUNT);
+        if (limiter.failBreak()) {
+          synchronized (limiter) {
+            boolean result = caseItem.getParent().getTargetInstance()
+                .remove(caseItem.getTargetInstance());
+            if (result) {
+              BizLogger.recordServerFailBreak(caseItem.getParent().getParent(), limiter.getHost());
+            }
+          }
+        }
       }
       MDCTracer.removeDetailId();
     }

@@ -4,6 +4,8 @@ import com.arextest.schedule.model.ReplayPlan;
 import com.google.common.util.concurrent.RateLimiter;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +56,9 @@ public final class SendSemaphoreLimiter implements SendLimiter {
   private volatile int currentStep = 0;
   @Setter
   private int totalTasks;
+  @Setter
+  @Getter
+  private String host;
 
   public SendSemaphoreLimiter(Integer maxQpsPerInstance, Integer instanceCount) {
     this.sendMaxRate =
@@ -220,5 +225,19 @@ public final class SendSemaphoreLimiter implements SendLimiter {
         checkCount = SUCCESS_COUNT_TO_BALANCE_NO_ERROR;
       }
     }
+  }
+
+  @Override
+  public String toString() {
+    return "SendSemaphoreLimiter{" +
+            "host=" + host +
+            "errorBreakRatio=" + errorBreakRatio +
+            ", continuousFailThreshold=" + continuousFailThreshold +
+            ", sendMaxRate=" + sendMaxRate +
+            ", sendInitialRate=" + sendInitialRate +
+            ", permits=" + permits +
+            ", currentStep=" + currentStep +
+            ", totalTasks=" + totalTasks +
+            '}';
   }
 }
