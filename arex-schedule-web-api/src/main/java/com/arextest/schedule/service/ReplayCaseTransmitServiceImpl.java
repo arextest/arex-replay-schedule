@@ -215,7 +215,8 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
         compareScheduleExecutorService.schedule(delayCompareTask,
             compareDelaySeconds, TimeUnit.SECONDS);
       }
-      LOGGER.info("Async compare task distributed, case id: {}", caseItem.getId());
+      LOGGER.info("Async compare task distributed, case id: {}, recordId: {}", caseItem.getId(),
+          caseItem.getRecordId());
     } else {
       doSendFailedAsFinish(caseItem, sendStatusType);
     }

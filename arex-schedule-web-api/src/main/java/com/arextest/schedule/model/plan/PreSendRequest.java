@@ -17,5 +17,4 @@ public class PreSendRequest {
   private int replayPlanType;
   @NotNull
   private String recordId;
-
 }
