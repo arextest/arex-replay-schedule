@@ -77,9 +77,9 @@ public class ReplayActionCaseItem {
   private CompareModeType compareMode = CompareModeType.QUiCK;
   @JsonIgnore
   private String sendErrorMessage;
-
+  @JsonIgnore
   private ServiceInstance targetInstance;
-
+  @JsonIgnore
   private ServiceInstance sourceInstance;
 
   public String replayDependency() {
