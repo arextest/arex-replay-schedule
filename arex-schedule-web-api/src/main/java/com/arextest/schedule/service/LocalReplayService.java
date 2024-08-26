@@ -198,6 +198,7 @@ public class LocalReplayService {
     progressEvent.onReplayPlanReRun(replayPlan);
     progressEvent.onUpdateFailedCases(replayPlan, failedCaseList);
     planConsumePrepareService.updateFailedActionAndCase(replayPlan, failedCaseList);
+    compareConfigService.preload(replayPlan);
     cacheReplayPlan(replayPlan);
     if (CollectionUtils.isEmpty(replayPlan.getReplayActionItemList())) {
       throw new RuntimeException("no replayActionItem!");
@@ -262,6 +263,7 @@ public class LocalReplayService {
         JsonUtils.objectToJsonString(replayPlanForCache).getBytes(StandardCharsets.UTF_8));
   }
 
+  @SuppressWarnings("java:S1181")
   private ReplayPlanForCache loadReplayPlanCache(String planId) {
     try {
       byte[] json = doWithRetry(
@@ -285,6 +287,7 @@ public class LocalReplayService {
     }
   }
 
+  @SuppressWarnings("java:S1181")
   private ReplayActionItemForCache loadReplayActionItemCache(String planItemId) {
     try {
       byte[] json = doWithRetry(
