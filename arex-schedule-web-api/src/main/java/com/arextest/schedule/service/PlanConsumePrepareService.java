@@ -93,10 +93,11 @@ public class PlanConsumePrepareService {
     }
     replayStorageService.clearReplayScenes(replayPlan.getAppId());
     int planSavedCaseSize = prepareAllActions(replayPlan.getReplayActionItemList());
-    if (!replayPlan.isReRun()) {
+    if (!replayPlan.isReRun() && planSavedCaseSize != 0) {
       replayPlan.setCaseTotalCount(planSavedCaseSize);
       replayPlanRepository.updateCaseTotal(replayPlan.getId(), planSavedCaseSize);
       replayPlan.setInitReportItem(true);
+      replayReportService.initReportInfo(replayPlan);
     }
     return planSavedCaseSize;
   }
