@@ -198,6 +198,7 @@ public class LocalReplayService {
     progressEvent.onReplayPlanReRun(replayPlan);
     progressEvent.onUpdateFailedCases(replayPlan, failedCaseList);
     planConsumePrepareService.updateFailedActionAndCase(replayPlan, failedCaseList);
+    compareConfigService.preload(replayPlan);
     cacheReplayPlan(replayPlan);
     if (CollectionUtils.isEmpty(replayPlan.getReplayActionItemList())) {
       throw new RuntimeException("no replayActionItem!");
