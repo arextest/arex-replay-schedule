@@ -263,6 +263,7 @@ public class LocalReplayService {
         JsonUtils.objectToJsonString(replayPlanForCache).getBytes(StandardCharsets.UTF_8));
   }
 
+  @SuppressWarnings("java:S1181")
   private ReplayPlanForCache loadReplayPlanCache(String planId) {
     try {
       byte[] json = doWithRetry(
@@ -286,6 +287,7 @@ public class LocalReplayService {
     }
   }
 
+  @SuppressWarnings("java:S1181")
   private ReplayActionItemForCache loadReplayActionItemCache(String planItemId) {
     try {
       byte[] json = doWithRetry(
