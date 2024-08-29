@@ -3,6 +3,7 @@ package com.arextest.schedule.service;
 import com.arextest.model.replay.CaseSendScene;
 import com.arextest.schedule.bizlog.BizLogger;
 import com.arextest.schedule.common.CommonConstant;
+import com.arextest.schedule.common.RateLimiterFactory;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
@@ -24,6 +25,7 @@ import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.utils.ReplayParentBinder;
 import com.arextest.schedule.utils.ServiceUrlUtils;
 import com.arextest.schedule.utils.StageUtils;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -245,7 +247,8 @@ public final class PlanConsumeService {
           .map(ServiceInstance::getIp)
           .collect(Collectors.joining(",")) : null;
       BizLogger.recordCurrentServerInstances(executionContext.getPlan(), targetHosts, sourceHosts);
-      LOGGER.info("set service instances for the current context," +
+      LOGGER.info(
+          "[[title=setCurrentServiceInstances]] set service instances for the current context," +
               "targetInstances: {}, sourceInstances: {}",
           targetInstances, sourceInstances);
     }
@@ -447,7 +450,7 @@ public final class PlanConsumeService {
     private void initReplayPlan() {
       compareConfigService.preload(replayPlan);
       // init rate limiter for each target instance
-      List<SendSemaphoreLimiter> sendSemaphoreLimiterList = this.initRateLimiters(replayPlan);
+      Collection<SendSemaphoreLimiter> sendSemaphoreLimiterList = this.initRateLimiters(replayPlan);
       replayPlan.setPlanStatus(ExecutionStatus.buildNormal(sendSemaphoreLimiterList));
       replayPlan.buildActionItemMap();
     }
@@ -457,35 +460,37 @@ public final class PlanConsumeService {
      *
      * @param replayPlan the replay plan
      */
-    private List<SendSemaphoreLimiter> initRateLimiters(ReplayPlan replayPlan) {
+    private Collection<SendSemaphoreLimiter> initRateLimiters(ReplayPlan replayPlan) {
       if (replayPlan == null) {
         return Collections.emptyList();
       }
-      Optional<ReplayActionItem> optionalReplayActionItem = replayPlan.getReplayActionItemList()
+      List<ReplayActionItem> replayActionItems = replayPlan.getReplayActionItemList();
+      if (CollectionUtils.isEmpty(replayActionItems)) {
+        return Collections.emptyList();
+      }
+      // distinct target instances
+      List<ServiceInstance> distinctTargetInstances = replayActionItems
           .stream()
-          .filter(obj -> CollectionUtils.isNotEmpty(obj.getTargetInstance())).findFirst();
-      if (!optionalReplayActionItem.isPresent()) {
-        return Collections.emptyList();
-      }
-      List<ServiceInstance> targetInstances = optionalReplayActionItem.get().getTargetInstance();
-      if (CollectionUtils.isEmpty(targetInstances)) {
-        return Collections.emptyList();
-      }
-      int singleTasks = replayPlan.getCaseTotalCount() / targetInstances.size();
+          .map(ReplayActionItem::getTargetInstance)
+          .flatMap(Collection::stream)
+          .distinct()
+          .collect(Collectors.toList());
 
-      for (ServiceInstance targetInstance : targetInstances) {
-        SendSemaphoreLimiter sendSemaphoreLimiter = new SendSemaphoreLimiter(
-            replayPlan.getReplaySendMaxQps(), 1);
-        sendSemaphoreLimiter.setTotalTasks(singleTasks);
-        sendSemaphoreLimiter.setErrorBreakRatio(errorBreakRatio);
-        sendSemaphoreLimiter.setContinuousFailThreshold(continuousFailThreshold);
-        sendSemaphoreLimiter.setHost(targetInstance.getIp());
-        targetInstance.setSendSemaphoreLimiter(sendSemaphoreLimiter);
+      if (CollectionUtils.isEmpty(distinctTargetInstances)) {
+        return Collections.emptyList();
       }
+      int singleTasks = replayPlan.getCaseTotalCount() / distinctTargetInstances.size();
+      RateLimiterFactory rateLimiterFactory = new RateLimiterFactory(singleTasks, errorBreakRatio,
+          continuousFailThreshold, replayPlan.getReplaySendMaxQps());
+      for (ServiceInstance targetInstance : distinctTargetInstances) {
+        rateLimiterFactory.getRateLimiter(targetInstance.getIp());
+        LOGGER.info("[[title=RateLimiterFactory]] create sendSemaphoreLimiter,ip [{}]",
+            targetInstance.getIp());
+      }
+      replayPlan.setRateLimiterFactory(rateLimiterFactory);
       LOGGER.info("[[title=RateLimiterFactory]] init success for [{}]", replayPlan.getPlanName());
 
-      return targetInstances.stream().map(ServiceInstance::getSendSemaphoreLimiter)
-          .collect(Collectors.toList());
+      return rateLimiterFactory.getAll();
     }
   }
 }

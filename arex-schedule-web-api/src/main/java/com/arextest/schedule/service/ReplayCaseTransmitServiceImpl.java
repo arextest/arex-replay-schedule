@@ -200,7 +200,11 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
       ServiceInstance targetServiceInstance,
       CountDownLatch groupSentLatch,
       PlanExecutionContext<?> planExecutionContext) {
-    SendSemaphoreLimiter currentLimiter = targetServiceInstance.getSendSemaphoreLimiter();
+
+    SendSemaphoreLimiter currentLimiter = planExecutionContext
+        .getPlan()
+        .getRateLimiterFactory()
+        .getRateLimiter(targetServiceInstance.getIp());
     if (currentLimiter == null) {
       LOGGER.warn("The current service instance - [{}],has no rate limiter,skip send.",
           targetServiceInstance.getIp());
@@ -217,10 +221,6 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
         break;
       }
       ReplayActionCaseItem caseItem = caseItemArrayBlockingQueue.poll();
-      if (caseItem == null) {
-        LOGGER.warn("The case item is empty,skip send.");
-        continue;
-      }
 
       this.doExecute(caseItem, targetServiceInstance, groupSentLatch, planExecutionContext,
           currentLimiter);
@@ -251,6 +251,11 @@ public class ReplayCaseTransmitServiceImpl implements ReplayCaseTransmitService 
       CountDownLatch groupSentLatch,
       PlanExecutionContext<?> executionContext,
       SendSemaphoreLimiter sendSemaphoreLimiter) {
+
+    if (replayActionCaseItem == null) {
+      LOGGER.warn("The current case item is null,skip send.");
+      return;
+    }
 
     ReplayActionItem actionItem = replayActionCaseItem.getParent();
     MDCTracer.addDetailId(replayActionCaseItem.getId());

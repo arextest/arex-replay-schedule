@@ -46,11 +46,6 @@ public class ServiceInstance {
   private List<ServiceInstanceOperation> operationList;
   private Env metadata;
 
-  @JsonIgnore
-  @Getter
-  @Setter
-  private SendSemaphoreLimiter sendSemaphoreLimiter;
-
   public String subEnv() {
     return metadata == null ? StringUtils.EMPTY : metadata.subEnv;
   }
@@ -61,5 +56,4 @@ public class ServiceInstance {
 
     private String subEnv;
   }
-
 }
