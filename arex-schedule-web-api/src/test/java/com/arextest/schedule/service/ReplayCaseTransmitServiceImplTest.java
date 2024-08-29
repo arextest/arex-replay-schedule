@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.arextest.common.config.DefaultApplicationConfig;
+import com.arextest.schedule.common.RateLimiterFactory;
 import com.arextest.schedule.common.SendSemaphoreLimiter;
 import com.arextest.schedule.comparer.ComparisonWriter;
 import com.arextest.schedule.dao.mongodb.ReplayActionCaseItemRepository;
@@ -172,14 +173,16 @@ class ReplayCaseTransmitServiceImplTest {
     targetServiceInstance.setIp("127.0.0.1");
     actionItem.setTargetInstance(Lists.list(targetServiceInstance));
 
-    SendSemaphoreLimiter sendSemaphoreLimiter = new SendSemaphoreLimiter(20, 1);
-    targetServiceInstance.setSendSemaphoreLimiter(sendSemaphoreLimiter);
+    RateLimiterFactory rateLimiterFactory = new RateLimiterFactory(100, 0.1,
+        20, 20);
+    rateLimiterFactory.getRateLimiter(targetServiceInstance.getIp());
 
     ReplayPlan replayPlan = new ReplayPlan();
     replayPlan.setAppId("appId");
     replayPlan.setReplaySendMaxQps(1);
     replayPlan.setCaseTotalCount(100);
     replayPlan.setReplayActionItemList(Lists.list(actionItem));
+    replayPlan.setRateLimiterFactory(rateLimiterFactory);
 
     PlanExecutionContext<?> planExecutionContext = new PlanExecutionContext<>();
     planExecutionContext.setPlan(replayPlan);
