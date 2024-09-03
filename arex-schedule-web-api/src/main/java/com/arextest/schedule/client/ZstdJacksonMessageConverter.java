@@ -29,7 +29,7 @@ final class ZstdJacksonMessageConverter extends AbstractHttpMessageConverter<Obj
 
   @Override
   protected boolean supports(Class<?> clazz) {
-    return true;
+    return !(clazz == byte[].class || clazz.isPrimitive());
   }
 
   @Override
@@ -41,6 +41,6 @@ final class ZstdJacksonMessageConverter extends AbstractHttpMessageConverter<Obj
   @Override
   protected void writeInternal(Object o, HttpOutputMessage outputMessage) throws IOException,
       HttpMessageNotWritableException {
-    zstdJacksonSerializer.serializeTo(o, outputMessage.getBody());
+    outputMessage.getBody().write(zstdJacksonSerializer.serialize(o));
   }
 }

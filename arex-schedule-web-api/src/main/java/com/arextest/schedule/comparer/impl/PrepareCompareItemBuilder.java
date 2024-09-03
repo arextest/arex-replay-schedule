@@ -1,16 +1,11 @@
 package com.arextest.schedule.comparer.impl;
 
-import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.AREXMocker;
-import com.arextest.model.mock.MockCategoryType;
-import com.arextest.model.mock.Mocker.Target;
+import com.arextest.model.replay.CompareRelationResult;
 import com.arextest.schedule.comparer.CompareItem;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import org.apache.commons.lang3.StringUtils;
+import com.arextest.schedule.comparer.converter.CompareItemConvertFactory;
+import com.arextest.schedule.comparer.converter.CompareItemConverter;
+import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 /**
@@ -18,67 +13,22 @@ import org.springframework.stereotype.Component;
  * @since 2021/11/23
  */
 @Component
-final class PrepareCompareItemBuilder {
+public class PrepareCompareItemBuilder {
 
-  CompareItem build(AREXMocker instance) {
-    MockCategoryType categoryType = instance.getCategoryType();
-    String operationKey = operationName(categoryType, instance.getTargetRequest(), instance.getOperationName());
-    if (StringUtils.isEmpty(operationKey)) {
-      operationKey = instance.getOperationName();
-    }
-    long createTime = instance.getCreationTime();
-    String body;
-    String compareKey = instance.getId();
-    boolean entryPointCategory = false;
-    if (categoryType.isEntryPoint()) {
-      body = Objects.isNull(instance.getTargetResponse()) ? null
-          : instance.getTargetResponse().getBody();
-      compareKey = null;
-      entryPointCategory = true;
-    } else if (Objects.equals(categoryType.getName(), MockCategoryType.DATABASE.getName())) {
-      body = this.buildAttributes(instance.getTargetRequest()).toString();
-    } else {
-      body = Objects.isNull(instance.getTargetRequest()) ? null
-          : instance.getTargetRequest().getBody();
-    }
-    return new CompareItemImpl(operationKey, body, compareKey, createTime, entryPointCategory);
+  @Resource
+  private CompareItemConvertFactory factory;
+
+  CompareItem build(AREXMocker mocker) {
+    CompareItemConverter converter = factory.getConvert(mocker.getCategoryType().getName());
+    return converter.convert(mocker);
   }
 
-  private String operationName(MockCategoryType categoryType, Target target, String operationName) {
-    if (Objects.equals(categoryType, MockCategoryType.DATABASE)) {
-      // The "@" in the operationName of DATABASE indicates that the SQL statement has been parsed and returned directly.
-      return StringUtils.contains(operationName, "@") ? operationName : target.attributeAsString(MockAttributeNames.DB_NAME);
-    }
-    if (Objects.equals(categoryType, MockCategoryType.REDIS)) {
-      return target.attributeAsString(MockAttributeNames.CLUSTER_NAME);
-    }
-    return operationName;
+  public CompareItem build(CompareRelationResult result, boolean recordCompareItem) {
+    CompareItemConverter converter = factory.getConvert(result.getCategoryType().getName());
+    return converter.convert(result, recordCompareItem);
   }
 
-  private ObjectNode buildAttributes(Target target) {
-    ObjectNode obj = JsonNodeFactory.instance.objectNode();
-    if (target == null) {
-      return obj;
-    }
-    Map<String, Object> attributes = target.getAttributes();
-    if (attributes != null) {
-      for (Entry<String, Object> entry : attributes.entrySet()) {
-        Object value = entry.getValue();
-        if (value instanceof String) {
-          obj.put(entry.getKey(), (String) value);
-        } else {
-          obj.putPOJO(entry.getKey(), value);
-        }
-      }
-    }
-    if (StringUtils.isNotEmpty(target.getBody())) {
-      obj.put("body", target.getBody());
-    }
-    return obj;
-  }
-
-  private final static class CompareItemImpl implements CompareItem {
-
+  public final static class CompareItemImpl implements CompareItem {
     private final String compareMessage;
     private final String compareOperation;
     private final String compareService;
@@ -86,9 +36,18 @@ final class PrepareCompareItemBuilder {
     private final long createTime;
     private final boolean entryPointCategory;
 
-    private CompareItemImpl(String compareOperation, String compareMessage, String compareKey,
+    public CompareItemImpl(String compareOperation, String compareMessage, String compareKey,
         long createTime, boolean entryPointCategory) {
       this(compareOperation, compareMessage, null, compareKey, createTime, entryPointCategory);
+    }
+
+    public CompareItemImpl(CompareRelationResult result, boolean recordCompareItem) {
+      this.compareOperation = result.getOperationName();
+      this.compareService = null;
+      this.compareKey = null;
+      this.entryPointCategory = result.getCategoryType().isEntryPoint();
+      this.compareMessage = recordCompareItem ? result.getRecordMessage() : result.getReplayMessage();
+      this.createTime = recordCompareItem ? result.getRecordTime() : result.getReplayTime();
     }
 
     private CompareItemImpl(String compareOperation, String compareMessage, String compareService,
