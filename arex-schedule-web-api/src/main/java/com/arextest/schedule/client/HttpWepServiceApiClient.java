@@ -239,6 +239,18 @@ public final class HttpWepServiceApiClient {
     }
   }
 
+  public <TRequest, TResponse> TResponse retryJsonPost(String url, TRequest request,
+      Class<TResponse> responseType, Map<String, String> headers) {
+    try {
+      return retryTemplate.execute(retryCallback -> {
+        retryCallback.setAttribute(URL, url);
+        return restTemplate.postForObject(url, wrapJsonContentType(request, headers), responseType);
+      });
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
   public <TRequest, TResponse> ResponseEntity<TResponse> retryJsonPost(String url, TRequest request,
       ParameterizedTypeReference<TResponse> responseType) {
     try {
