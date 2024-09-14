@@ -1,6 +1,7 @@
 package com.arextest.schedule.client;
 
 import static com.arextest.schedule.common.CommonConstant.URL;
+import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 
 import com.arextest.schedule.utils.SSLUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -74,6 +75,7 @@ public final class HttpWepServiceApiClient {
 
   @Autowired(required = false)
   private List<ClientHttpRequestInterceptor> clientHttpRequestInterceptors;
+  private static final String ZSTD_JSON_CONTENT_TYPE = "application/zstd-json;charset=UTF-8";
 
   @PostConstruct
   private void initTemplate() {
@@ -237,6 +239,18 @@ public final class HttpWepServiceApiClient {
     }
   }
 
+  public <TRequest, TResponse> TResponse retryJsonPost(String url, TRequest request,
+      Class<TResponse> responseType, Map<String, String> headers) {
+    try {
+      return retryTemplate.execute(retryCallback -> {
+        retryCallback.setAttribute(URL, url);
+        return restTemplate.postForObject(url, wrapJsonContentType(request, headers), responseType);
+      });
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
   public <TRequest, TResponse> ResponseEntity<TResponse> retryJsonPost(String url, TRequest request,
       ParameterizedTypeReference<TResponse> responseType) {
     try {
@@ -244,6 +258,21 @@ public final class HttpWepServiceApiClient {
         retryCallback.setAttribute(URL, url);
         return restTemplate.exchange(url, HttpMethod.POST, wrapJsonContentType(request),
             responseType);
+      });
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  public <TRequest, TResponse> TResponse retryZstdJsonPost(String url, TRequest request,
+      Class<TResponse> responseType) {
+    Map<String, String> headers = Maps.newHashMapWithExpectedSize(1);
+    headers.put(HttpHeaders.CONTENT_TYPE, ZSTD_JSON_CONTENT_TYPE);
+
+    try {
+      return retryTemplate.execute(retryCallback -> {
+        retryCallback.setAttribute(URL, url);
+        return restTemplate.postForObject(url, wrapJsonContentType(request, headers), responseType);
       });
     } catch (Exception e) {
       return null;
@@ -271,7 +300,9 @@ public final class HttpWepServiceApiClient {
       httpJsonEntity = (HttpEntity<TRequest>) request;
     } else {
       HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.APPLICATION_JSON);
+      if (!extraHeaders.containsKey(CONTENT_TYPE)) {
+        headers.setContentType(MediaType.APPLICATION_JSON);
+      }
       headers.setAll(extraHeaders);
       httpJsonEntity = new HttpEntity<>(request, headers);
     }

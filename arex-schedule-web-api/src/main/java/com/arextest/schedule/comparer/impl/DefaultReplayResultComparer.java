@@ -6,6 +6,7 @@ import com.arextest.diff.model.enumeration.DiffResultCode;
 import com.arextest.diff.sdk.CompareSDK;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.comparer.CategoryComparisonHolder;
+import com.arextest.schedule.comparer.CategoryComparisonHolder.CompareResultItem;
 import com.arextest.schedule.comparer.CompareConfigService;
 import com.arextest.schedule.comparer.CompareItem;
 import com.arextest.schedule.comparer.CompareService;
@@ -162,9 +163,38 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
   }
 
   /**
-   * compare recording and replay data. 1. record and replay data through compareKey.
+   * compare recording and replay data.
    */
   private List<ReplayCompareResult> compareReplayResult(CategoryComparisonHolder bindHolder,
+      ReplayActionCaseItem caseItem, ComparisonInterfaceConfig operationConfig) {
+    if (Boolean.TRUE.equals(bindHolder.getNeedMatch())) {
+      return matchCompareReplayResults(bindHolder, caseItem, operationConfig);
+    }
+
+    return getReplayCompareResults(bindHolder, caseItem, operationConfig);
+  }
+
+  private List<ReplayCompareResult> getReplayCompareResults(CategoryComparisonHolder bindHolder,
+      ReplayActionCaseItem caseItem, ComparisonInterfaceConfig operationConfig) {
+    CompareResultItem item = bindHolder.getCompareResultItem();
+    if (item == null) {
+      return Collections.emptyList();
+    }
+
+    List<ReplayCompareResult> compareResults = new ArrayList<>();
+    compareResults.add(compareRecordAndResult(operationConfig, caseItem, bindHolder.getCategoryName(),
+        item.getReplayItem(), item.getRecordItem()));
+    return compareResults;
+  }
+
+  /**
+   * record and replay data through compareKey.
+   * @param bindHolder
+   * @param caseItem
+   * @param operationConfig
+   * @return
+   */
+  private List<ReplayCompareResult> matchCompareReplayResults(CategoryComparisonHolder bindHolder,
       ReplayActionCaseItem caseItem, ComparisonInterfaceConfig operationConfig) {
     List<ReplayCompareResult> compareResults = new ArrayList<>();
     List<CompareItem> recordResults = bindHolder.getRecord();
