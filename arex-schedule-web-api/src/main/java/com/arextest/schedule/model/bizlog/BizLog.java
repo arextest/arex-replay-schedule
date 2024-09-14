@@ -9,6 +9,7 @@ import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
+import lombok.extern.jackson.Jacksonized;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -18,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 @Slf4j
 @FieldNameConstants
+@Jacksonized
 public class BizLog {
 
   private Date date;

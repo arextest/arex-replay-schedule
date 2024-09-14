@@ -2,6 +2,7 @@ package com.arextest.schedule.web.controller;
 
 import com.arextest.schedule.mdc.MDCTracer;
 import com.arextest.schedule.model.CommonResponse;
+import com.arextest.schedule.model.bizlog.LogUploadRequest;
 import com.arextest.schedule.model.plan.BuildReplayFailReasonEnum;
 import com.arextest.schedule.model.plan.BuildReplayPlanRequest;
 import com.arextest.schedule.model.plan.BuildReplayPlanResponse;
@@ -11,9 +12,10 @@ import com.arextest.schedule.model.plan.QueryReplaySenderParametersRequest;
 import com.arextest.schedule.model.plan.QueryReplaySenderParametersResponse;
 import com.arextest.schedule.model.plan.ReRunReplayPlanRequest;
 import com.arextest.schedule.service.LocalReplayService;
+import com.arextest.schedule.service.PlanBizLogService;
 import com.arextest.schedule.service.PlanProduceService;
-import javax.annotation.Resource;
 import javax.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.http.MediaType;
@@ -30,14 +32,14 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Slf4j
 @Controller
 @RequestMapping(path = "/api/replay/local/", produces = {MediaType.APPLICATION_JSON_VALUE})
+@RequiredArgsConstructor
 public class ReplayLocalController {
 
   private static final String SUCCESS_DESC = "success";
 
-  @Resource
-  private LocalReplayService localReplayService;
-  @Resource
-  private PlanProduceService planProduceService;
+  private final LocalReplayService localReplayService;
+  private final PlanProduceService planProduceService;
+  private final PlanBizLogService planBizLogService;
 
   @PostMapping(value = "/queryCaseId")
   @ResponseBody
@@ -97,5 +99,12 @@ public class ReplayLocalController {
       return CommonResponse.badResponse("queryReRunCaseId error！" + e.getMessage(),
           new BuildReplayPlanResponse(BuildReplayFailReasonEnum.UNKNOWN));
     }
+  }
+
+  @PostMapping(value = "/log")
+  @ResponseBody
+  public CommonResponse log(@RequestBody LogUploadRequest request) {
+    planBizLogService.upload(request.getLogs());
+    return CommonResponse.successResponse(SUCCESS_DESC, true);
   }
 }
