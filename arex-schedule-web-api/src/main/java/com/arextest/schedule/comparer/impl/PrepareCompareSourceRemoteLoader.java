@@ -119,7 +119,8 @@ public final class PrepareCompareSourceRemoteLoader {
     List<CategoryComparisonHolder> decodedListResult = new ArrayList<>(resultHolderList.size());
     for (ListResultHolder stringListResultHolder : resultHolderList) {
       MockCategoryType categoryType = stringListResultHolder.getCategoryType();
-      if (categoryType == null || categoryType.isSkipComparison()) {
+      if (categoryType == null || (categoryType.isSkipComparison() &&
+          !MockCategoryType.Q_MESSAGE_CONSUMER.getName().equalsIgnoreCase(categoryType.getName()))) {
         continue;
       }
 
