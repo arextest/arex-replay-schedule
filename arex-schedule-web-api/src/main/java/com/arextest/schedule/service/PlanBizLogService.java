@@ -1,6 +1,7 @@
 package com.arextest.schedule.service;
 
 import com.arextest.schedule.dao.mongodb.ReplayBizLogRepository;
+import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.model.bizlog.ReplayBizLogQueryCondition;
 import com.arextest.schedule.model.dao.mongodb.ReplayBizLogCollection;
 import java.util.Collections;
@@ -41,5 +42,9 @@ public class PlanBizLogService {
     }
 
     return replayBizLogRepository.countByPlanId(planId, condition);
+  }
+
+  public void upload(List<BizLog> logs) {
+    replayBizLogRepository.saveAll(logs);
   }
 }
