@@ -96,8 +96,6 @@ arex:
       excludes:
         dubbo: async
         http:
-  desensitization:
-    aesKey: OYX3PZ2BptKaG8yvs6AfuSpOeX7JLEuOhqcq+jE0G4s=
 auto:
   rerun:
     threshold: 1.0

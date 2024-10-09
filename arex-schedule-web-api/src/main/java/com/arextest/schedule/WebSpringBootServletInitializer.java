@@ -5,7 +5,6 @@ import java.awt.Desktop;
 import java.net.URI;
 import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -25,13 +24,8 @@ import org.springframework.retry.annotation.EnableRetry;
     DataSourceAutoConfiguration.class})
 public class WebSpringBootServletInitializer extends SpringBootServletInitializer {
 
-  private static final String AES_KEY_FIELD_NAME = "arex.desensitization.aesKey";
-
   @Value("${arex.prometheus.port}")
   String prometheusPort;
-
-  @Value("${arex.desensitization.aesKey:}")
-  private String aesKey;
 
   public static void main(String[] args) {
     System.setProperty("java.awt.headless", "false");
@@ -57,14 +51,5 @@ public class WebSpringBootServletInitializer extends SpringBootServletInitialize
   @PostConstruct
   public void init() {
     PrometheusConfiguration.initMetrics(prometheusPort);
-    importConfigurationToEnv();
   }
-
-  public void importConfigurationToEnv() {
-    String aesKeyProperty = System.getProperty(AES_KEY_FIELD_NAME);
-    if (StringUtils.isEmpty(aesKeyProperty) && StringUtils.isNotEmpty(aesKey)) {
-      System.setProperty(AES_KEY_FIELD_NAME, aesKey);
-    }
-  }
-
 }
