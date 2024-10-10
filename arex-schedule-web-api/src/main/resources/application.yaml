@@ -21,8 +21,6 @@ arex:
           url: ${arex.api.service.api}/api/config/comparison/summary/queryByAppId/{appId}
         queryCompareConfig:
           url: ${arex.api.service.api}/api/config/comparison/summary/queryCompareConfig
-      desensitization:
-        url: ${arex.api.service.api}/api/desensitization/listJar
       schedule:
         url: ${arex.api.service.api}/api/config/schedule/useResult/appId/{appId}
       system:

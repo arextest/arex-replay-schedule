@@ -1,18 +1,12 @@
 package com.arextest.schedule.service;
 
-import com.arextest.config.model.dto.system.DesensitizationJar;
-import com.arextest.model.response.ResponseStatusType;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Resource;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.retry.RetryException;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,8 +18,6 @@ public class ConfigurationService {
   private String applicationUrl;
   @Value("${arex.api.config.schedule.url}")
   private String scheduleUrl;
-  @Value("${arex.api.config.desensitization.url}")
-  private String desensitizationConfigUrl;
 
   public Application application(String appId) {
     ApplicationResponse applicationResponse = wepApiClientService.get(applicationUrl,
@@ -39,17 +31,6 @@ public class ConfigurationService {
         appIdUrlVariable(appId),
         ScheduleResponse.class);
     return scheduleResponse != null ? scheduleResponse.body : null;
-  }
-
-  @Retryable(value = {RetryException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000))
-  public List<DesensitizationJar> desensitization() {
-    DesensitizationResponse res = wepApiClientService.jsonPost(desensitizationConfigUrl, null,
-        DesensitizationResponse.class);
-    if (res == null) {
-      throw new RetryException("get desensitization config error");
-    } else {
-      return res.getBody();
-    }
   }
 
   private Map<String, ?> appIdUrlVariable(String appId) {
@@ -81,13 +62,6 @@ public class ConfigurationService {
   private static final class ApplicationResponse {
 
     private Application body;
-  }
-
-  @Data
-  private static final class DesensitizationResponse {
-
-    private ResponseStatusType responseStatusType;
-    private List<DesensitizationJar> body;
   }
 
   @Data
