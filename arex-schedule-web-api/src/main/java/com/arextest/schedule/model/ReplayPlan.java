@@ -1,6 +1,6 @@
 package com.arextest.schedule.model;
 
-import com.arextest.schedule.common.SendSemaphoreLimiter;
+import com.arextest.schedule.common.RateLimiterFactory;
 import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
 import com.arextest.schedule.model.plan.BuildReplayPlanType;
@@ -88,14 +88,8 @@ public class ReplayPlan {
 
   private boolean resumed;
 
-  // Min(targetInstanceCount || Int.MAX, sourceInstanceCount || Int.MAX)
-  @JsonIgnore
-  private int minInstanceCount;
-
   @JsonIgnore
   private ExecutionStatus planStatus;
-  @JsonIgnore
-  private SendSemaphoreLimiter limiter;
 
   @JsonIgnore
   private long lastLogTime = System.currentTimeMillis();
@@ -114,6 +108,8 @@ public class ReplayPlan {
   @JsonIgnore
   private Map<String, String> caseTags;
   private boolean initReportItem;
+  @JsonIgnore
+  private RateLimiterFactory rateLimiterFactory;
 
   public void enqueueBizLog(BizLog log) {
     this.bizLogs.add(log);
@@ -122,6 +118,5 @@ public class ReplayPlan {
   public void buildActionItemMap() {
     this.getReplayActionItemList().forEach(
         replayActionItem -> this.actionItemMap.put(replayActionItem.getId(), replayActionItem));
-    LOGGER.info("buildActionItemMap, planId:{}, keySet:{}", getId(), actionItemMap.keySet());
   }
 }
