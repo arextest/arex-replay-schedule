@@ -1,8 +1,8 @@
 package com.arextest.schedule.service;
 
 import com.arextest.schedule.client.HttpWepServiceApiClient;
+import jakarta.annotation.Resource;
 import java.util.HashMap;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

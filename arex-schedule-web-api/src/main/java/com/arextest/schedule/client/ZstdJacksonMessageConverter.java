@@ -2,8 +2,8 @@ package com.arextest.schedule.client;
 
 
 import com.arextest.schedule.serialization.ZstdJacksonSerializer;
+import jakarta.annotation.Resource;
 import java.io.IOException;
-import javax.annotation.Resource;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.MediaType;

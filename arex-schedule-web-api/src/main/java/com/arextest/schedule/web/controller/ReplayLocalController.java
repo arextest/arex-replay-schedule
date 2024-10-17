@@ -14,7 +14,7 @@ import com.arextest.schedule.model.plan.ReRunReplayPlanRequest;
 import com.arextest.schedule.service.LocalReplayService;
 import com.arextest.schedule.service.PlanBizLogService;
 import com.arextest.schedule.service.PlanProduceService;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;

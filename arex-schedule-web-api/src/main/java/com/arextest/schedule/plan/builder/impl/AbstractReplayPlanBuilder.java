@@ -14,12 +14,12 @@ import com.arextest.schedule.plan.builder.ReplayPlanBuilder;
 import com.arextest.schedule.service.DeployedEnvironmentService;
 import com.arextest.schedule.service.ReplayActionItemPreprocessService;
 import com.arextest.schedule.service.ReplayCaseRemoteLoadService;
+import jakarta.annotation.Resource;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
-import javax.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 

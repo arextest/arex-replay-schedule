@@ -38,7 +38,7 @@ public class FormDataHttpRequestBuilder extends AbstractHttpRequestBuilder {
       return false;
     }
 
-    if (!shouldApplyHttpBody(HttpMethod.resolve(senderParameters.getMethod()))) {
+    if (!shouldApplyHttpBody(HttpMethod.valueOf(senderParameters.getMethod()))) {
       return false;
     }
 
@@ -60,7 +60,7 @@ public class FormDataHttpRequestBuilder extends AbstractHttpRequestBuilder {
 
     // build http method
     String method = senderParameters.getMethod();
-    HttpMethod httpMethod = HttpMethod.resolve(method);
+    HttpMethod httpMethod = HttpMethod.valueOf(method);
     httpSenderContent.setHttpMethod(httpMethod);
 
     // build headers

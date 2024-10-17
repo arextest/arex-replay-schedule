@@ -1,6 +1,6 @@
 package com.arextest.schedule.model.report;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
