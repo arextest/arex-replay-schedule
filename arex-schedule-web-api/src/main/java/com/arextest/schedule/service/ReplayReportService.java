@@ -259,6 +259,8 @@ public final class ReplayReportService implements ComparisonWriter {
     UpdateReportInfoRequestType requestType = new UpdateReportInfoRequestType();
     requestType.setPlanId(replayPlan.getId());
     requestType.setTotalCaseCount(replayPlan.getCaseTotalCount());
+    requestType.setTargetHost(replayPlan.getTargetHost());
+    requestType.setSourceHost(replayPlan.getSourceHost());
     List<ReplayActionItem> actionItemList = replayPlan.getReplayActionItemList();
     if (CollectionUtils.isNotEmpty(actionItemList)) {
       List<UpdateReportInfoRequestType.UpdateReportItem> updateReportInfoList = new ArrayList<>(actionItemList.size());
