@@ -1,6 +1,7 @@
 package com.arextest.schedule.beans;
 
-import com.arextest.schedule.common.ClassLoaderUtils;
+import com.arextest.common.model.classloader.RemoteJarClassLoader;
+import com.arextest.common.utils.RemoteJarLoaderUtils;
 import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
 import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
@@ -13,7 +14,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.ServiceLoader;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,8 +52,8 @@ public class ReplaySenderConfiguration {
       } else {
         classPathResource = loadLocalInvokerJar();
       }
-      ClassLoaderUtils.loadJar(classPathResource);
-      ServiceLoader.load(ReplayExtensionInvoker.class).forEach(invokers::add);
+      RemoteJarClassLoader loader = RemoteJarLoaderUtils.loadJar(classPathResource.getPath());
+      invokers.addAll(RemoteJarLoaderUtils.loadService(ReplayExtensionInvoker.class, loader));
     } catch (Throwable t) {
       LOGGER.error("Load invoker jar failed, application startup blocked", t);
     }
