@@ -6,6 +6,10 @@ RUN --mount=type=cache,target=/root/.m2 mvn clean package -DskipTests -Pjar
 # use this if you are on docker<=18.02
 # RUN mvn clean package -DskipTests -Pjar
 
+# for dubbo invokers
+ARG JAVA_OPTS_STATIC="--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED"
+
+
 FROM eclipse-temurin:21-jre
 COPY --from=builder /usr/src/app/arex-schedule-jar/schedule.jar app.jar
-ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar /app.jar"]
+ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS_STATIC} ${JAVA_OPTS} -jar /app.jar"]

@@ -230,10 +230,6 @@
               <includeSystemScope>true</includeSystemScope>
               <mainClass>com.arextest.schedule.WebSpringBootServletInitializer</mainClass>
               <outputDirectory>../arex-schedule-jar</outputDirectory>
-              <jvmArguments>
-                --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED
-                --add-opens=java.base/java.net=ALL-UNNAMED
-              </jvmArguments>
             </configuration>
             <executions>
               <execution>
