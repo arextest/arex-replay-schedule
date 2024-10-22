@@ -16,7 +16,9 @@ import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,11 +38,9 @@ public class ReplaySenderConfiguration {
   private static final String NEW_INVOKER_PATH = "dubboInvoker.jar";
   private static final List<String> remoteProtocol = Arrays.asList("http", "https", "ftp", "sftp", "nfs");
 
-  @Bean("replayExtensionInvoker")
+  @Bean("dubboInvokerLoader")
   @ConditionalOnProperty(name = "replay.sender.extension.switch", havingValue = "true")
-  public List<ReplayExtensionInvoker> invokers() {
-    List<ReplayExtensionInvoker> invokers = new ArrayList<>();
-
+  public RemoteJarClassLoader dubboInvokerLoader() {
     try {
       URL classPathResource;
       if (StringUtils.isNotBlank(jarFilePath)) {
@@ -52,11 +52,21 @@ public class ReplaySenderConfiguration {
       } else {
         classPathResource = loadLocalInvokerJar();
       }
-      RemoteJarClassLoader loader = RemoteJarLoaderUtils.loadJar(classPathResource.getPath());
-      invokers.addAll(RemoteJarLoaderUtils.loadService(ReplayExtensionInvoker.class, loader));
+      return RemoteJarLoaderUtils.loadJar(classPathResource.getPath());
     } catch (Throwable t) {
       LOGGER.error("Load invoker jar failed, application startup blocked", t);
     }
+    LOGGER.error("No invoker found, application startup blocked");
+    throw new RuntimeException("No invoker found");
+  }
+
+  @Bean("replayExtensionInvoker")
+  @ConditionalOnBean(name = "dubboInvokerLoader")
+  public List<ReplayExtensionInvoker> invokers(
+      @Qualifier("dubboInvokerLoader") RemoteJarClassLoader loader) {
+    List<ReplayExtensionInvoker> invokers = new ArrayList<>(
+        RemoteJarLoaderUtils.loadService(ReplayExtensionInvoker.class, loader));
+
     if (invokers.isEmpty()) {
       LOGGER.error("No invoker found, application startup blocked");
       throw new RuntimeException("No invoker found");
@@ -66,12 +76,13 @@ public class ReplaySenderConfiguration {
   }
 
   @Bean
-  @ConditionalOnProperty(name = "replay.sender.extension.switch", havingValue = "true")
+  @ConditionalOnBean(name = "replayExtensionInvoker")
   public DefaultDubboReplaySender dubboReplaySender(
       @Value("#{'${arex.replay.header.excludes.dubbo}'.split(',')}") List<String> excludes,
-      List<ReplayExtensionInvoker> invokers) {
+      List<ReplayExtensionInvoker> invokers,
+      @Qualifier("dubboInvokerLoader") RemoteJarClassLoader loader) {
 
-    return new DefaultDubboReplaySender(excludes, invokers);
+    return new DefaultDubboReplaySender(excludes, invokers, loader);
   }
 
   @Bean
