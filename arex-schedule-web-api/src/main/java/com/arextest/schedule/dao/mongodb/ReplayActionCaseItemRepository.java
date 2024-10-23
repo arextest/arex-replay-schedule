@@ -11,6 +11,7 @@ import com.arextest.schedule.model.converter.ReplayRunDetailsConverter;
 import com.arextest.schedule.model.dao.mongodb.ReplayRunDetailsCollection;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
+import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,7 +20,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.annotation.Resource;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -32,6 +32,7 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.mongodb.core.query.UpdateDefinition;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
@@ -204,7 +205,7 @@ public class ReplayActionCaseItemRepository implements RepositoryWriter<ReplayAc
     }
     BulkOperations bulkOperations =
         mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, ReplayRunDetailsCollection.class);
-    List<Pair<Query, Update>> updates = new ArrayList<>();
+    List<Pair<Query, UpdateDefinition>> updates = new ArrayList<>();
     for (ReplayActionCaseItem replayActionCaseItem : replayActionCaseItemList) {
       Update update = MongoHelper.getUpdate();
       update.set(SEND_STATUS, replayActionCaseItem.getSendStatus());

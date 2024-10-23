@@ -1,10 +1,10 @@
 package com.arextest.schedule.service;
 
 import com.arextest.schedule.client.HttpWepServiceApiClient;
+import jakarta.annotation.Resource;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Resource;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

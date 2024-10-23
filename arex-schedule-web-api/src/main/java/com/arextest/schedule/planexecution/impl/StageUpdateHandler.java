@@ -6,7 +6,7 @@ import com.arextest.schedule.model.plan.PlanStageEnum;
 import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
 import com.arextest.schedule.model.plan.StageStatusEnum;
 import com.arextest.schedule.planexecution.PlanMonitorHandler;
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 

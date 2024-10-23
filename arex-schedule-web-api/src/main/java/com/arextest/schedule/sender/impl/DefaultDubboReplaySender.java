@@ -2,6 +2,7 @@ package com.arextest.schedule.sender.impl;
 
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.arextest.common.model.classloader.RemoteJarClassLoader;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.common.CommonConstant;
 import com.arextest.schedule.common.UrlUtil;
@@ -36,6 +37,7 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
 
   private final List<String> headerExcludes;
   private final List<ReplayExtensionInvoker> replayExtensionInvokers;
+  private final RemoteJarClassLoader dubboInvokerLoader;
 
   @Override
   public boolean isSupported(String categoryType) {
@@ -49,9 +51,15 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
 
   @Override
   public boolean send(ReplayActionCaseItem caseItem) {
-    before(caseItem);
-    Map<String, String> headers = createHeaders(caseItem);
-    return doSend(caseItem, headers);
+    ClassLoader old = Thread.currentThread().getContextClassLoader();
+    Thread.currentThread().setContextClassLoader(dubboInvokerLoader);
+    try {
+      before(caseItem);
+      Map<String, String> headers = createHeaders(caseItem);
+      return doSend(caseItem, headers);
+    } finally {
+      Thread.currentThread().setContextClassLoader(old);
+    }
   }
 
   @Override

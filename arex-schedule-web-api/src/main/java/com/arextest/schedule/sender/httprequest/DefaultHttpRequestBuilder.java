@@ -31,7 +31,7 @@ public class DefaultHttpRequestBuilder extends AbstractHttpRequestBuilder {
 
     // build http method
     String method = senderParameters.getMethod();
-    HttpMethod httpMethod = HttpMethod.resolve(method);
+    HttpMethod httpMethod = HttpMethod.valueOf(method);
     httpSenderContent.setHttpMethod(httpMethod);
 
     // build headers

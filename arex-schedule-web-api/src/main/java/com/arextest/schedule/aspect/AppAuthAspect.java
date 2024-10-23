@@ -1,7 +1,7 @@
 package com.arextest.schedule.aspect;
 
 import com.arextest.common.annotation.AppAuth;
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;

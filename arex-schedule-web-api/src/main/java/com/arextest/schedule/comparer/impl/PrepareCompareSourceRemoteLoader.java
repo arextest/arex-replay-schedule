@@ -1,8 +1,8 @@
 package com.arextest.schedule.comparer.impl;
 
-import com.arextest.model.replay.CompareRelationResult;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
+import com.arextest.model.replay.CompareRelationResult;
 import com.arextest.model.replay.QueryReplayResultRequestType;
 import com.arextest.model.replay.QueryReplayResultResponseType;
 import com.arextest.model.replay.holder.ListResultHolder;
@@ -13,10 +13,10 @@ import com.arextest.schedule.comparer.CompareItem;
 import com.arextest.schedule.model.ReplayActionCaseItem;
 import com.arextest.schedule.serialization.ZstdJacksonSerializer;
 import com.arextest.schedule.service.MetricService;
+import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
