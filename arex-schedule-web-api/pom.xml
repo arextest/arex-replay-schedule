@@ -64,7 +64,10 @@
       <groupId>org.mapstruct</groupId>
       <artifactId>mapstruct</artifactId>
     </dependency>
-
+    <dependency>
+      <groupId>org.mapstruct</groupId>
+      <artifactId>mapstruct-processor</artifactId>
+    </dependency>
     <dependency>
       <artifactId>commons-collections4</artifactId>
       <groupId>org.apache.commons</groupId>
@@ -136,7 +139,7 @@
   <parent>
     <artifactId>arex-schedule-parent</artifactId>
     <groupId>com.arextest</groupId>
-    <version>2.0.0</version>
+    <version>2.0.1</version>
   </parent>
 
   <profiles>
@@ -334,5 +337,5 @@
       </properties>
     </profile>
   </profiles>
-  <version>2.0.0</version>
+  <version>2.0.1</version>
 </project>
