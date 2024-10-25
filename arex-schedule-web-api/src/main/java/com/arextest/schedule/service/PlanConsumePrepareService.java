@@ -325,7 +325,7 @@ public class PlanConsumePrepareService {
     replayPlan.setReplayActionItemList(failedActionList);
 
     doResumeOperationDescriptor(replayPlan);
-
+    setHost(replayPlan);
     // filter actionItem by appId and fill exclusionOperationConfig
     List<String> excludedActionIds = replayActionItemPreprocessService.filterActionItem(
         replayPlan.getReplayActionItemList(), replayPlan.getAppId());
@@ -385,6 +385,24 @@ public class PlanConsumePrepareService {
 
     CompletableFuture.allOf(removeRecordsAndScenesTask, batchUpdateStatusTask, noiseAnalysisRecover,
         removeErrorMsgTask, updateReportTask, deletePlanItemStatisticsTask, deleteRunDetailsTask).join();
+  }
+
+  private void setHost(ReplayPlan replayPlan) {
+    if (replayPlan == null || CollectionUtils.isEmpty(replayPlan.getReplayActionItemList()) ||
+        replayPlan.getReplayActionItemList().get(0) == null || CollectionUtils.isEmpty(
+        replayPlan.getReplayActionItemList().get(0).getTargetInstance())) {
+      return;
+    }
+
+    List<ServiceInstance> targetInstance = replayPlan.getReplayActionItemList().get(0).getTargetInstance();
+    String targetHost = targetInstance.stream().map(ServiceInstance::getIp).distinct().collect(Collectors.joining(","));
+    replayPlan.setTargetHost(targetHost);
+    List<ServiceInstance> serviceInstances = replayPlan.getReplayActionItemList().get(0).getSourceInstance();
+    if (CollectionUtils.isNotEmpty(serviceInstances)) {
+      String sourceHost = serviceInstances.stream().map(ServiceInstance::getIp).distinct()
+          .collect(Collectors.joining(","));
+      replayPlan.setSourceHost(sourceHost);
+    }
   }
 
   public void doResumeOperationDescriptor(ReplayPlan replayPlan) {

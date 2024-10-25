@@ -139,7 +139,7 @@
   <parent>
     <artifactId>arex-schedule-parent</artifactId>
     <groupId>com.arextest</groupId>
-    <version>2.0.2</version>
+    <version>2.0.3</version>
   </parent>
 
   <profiles>
@@ -337,5 +337,5 @@
       </properties>
     </profile>
   </profiles>
-  <version>2.0.2</version>
+  <version>2.0.3</version>
 </project>
