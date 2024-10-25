@@ -5,7 +5,7 @@ import java.util.Base64;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpRequest;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
@@ -35,7 +35,7 @@ public class LoggingRequestInterceptor implements ClientHttpRequestInterceptor {
       throw ex;
     }
 
-    HttpStatus statusCode = response.getStatusCode();
+    HttpStatusCode statusCode = response.getStatusCode();
 
     // Log the failed request if the response status code is 4xx or 5xx
     if (statusCode.is4xxClientError() || statusCode.is5xxServerError()) {

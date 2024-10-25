@@ -6,8 +6,8 @@ import com.arextest.model.response.ResponseStatusType;
 import com.arextest.schedule.client.HttpWepServiceApiClient;
 import com.arextest.schedule.model.CaseProviderEnum;
 import com.arextest.schedule.model.ReplayActionCaseItem;
+import jakarta.annotation.Resource;
 import java.util.Optional;
-import javax.annotation.Resource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 

@@ -1,8 +1,7 @@
 package com.arextest.schedule.model.plan;
 
+import jakarta.validation.constraints.Size;
 import java.util.List;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Size;
 import lombok.Data;
 
 /**

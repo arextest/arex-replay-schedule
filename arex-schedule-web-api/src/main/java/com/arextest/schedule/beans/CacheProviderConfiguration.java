@@ -61,7 +61,7 @@ class CacheProviderConfiguration {
   @Bean
   @ConditionalOnExpression("'${arex.redis.uri:}'.isEmpty() and '${arex.redis.sentinelUrl:}'.isEmpty()")
   @ConditionalOnMissingBean(CacheProvider.class)
-  public CacheProvider redisCacheProvider(RedisTemplate redisTemplate,
+  public CacheProvider redisCacheProvider(RedisTemplate<byte[], byte[]> redisTemplate,
       RedissonClient redissonClient) {
     return new RedisTemplateCacheProvider(redisTemplate, redissonClient);
   }

@@ -9,7 +9,7 @@ import com.arextest.schedule.progress.ProgressEvent;
 import com.arextest.schedule.service.PlanProduceService;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.Subscribe;
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.annotation.Lazy;

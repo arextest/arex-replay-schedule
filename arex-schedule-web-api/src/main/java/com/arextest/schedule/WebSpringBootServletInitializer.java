@@ -1,9 +1,9 @@
 package com.arextest.schedule;
 
 import com.arextest.common.metrics.PrometheusConfiguration;
+import jakarta.annotation.PostConstruct;
 import java.awt.Desktop;
 import java.net.URI;
-import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Value;

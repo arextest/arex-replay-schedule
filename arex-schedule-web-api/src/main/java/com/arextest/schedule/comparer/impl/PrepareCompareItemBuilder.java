@@ -5,7 +5,7 @@ import com.arextest.model.replay.CompareRelationResult;
 import com.arextest.schedule.comparer.CompareItem;
 import com.arextest.schedule.comparer.converter.CompareItemConvertFactory;
 import com.arextest.schedule.comparer.converter.CompareItemConverter;
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 /**

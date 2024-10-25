@@ -4,9 +4,9 @@ import com.arextest.schedule.dao.mongodb.ReplayBizLogRepository;
 import com.arextest.schedule.model.bizlog.BizLog;
 import com.arextest.schedule.model.bizlog.ReplayBizLogQueryCondition;
 import com.arextest.schedule.model.dao.mongodb.ReplayBizLogCollection;
+import jakarta.annotation.Resource;
 import java.util.Collections;
 import java.util.List;
-import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 

@@ -3,7 +3,7 @@ package com.arextest.schedule.web.controller;
 import com.arextest.schedule.model.CommonResponse;
 import com.arextest.schedule.model.ReplayCompareRequestType;
 import com.arextest.schedule.service.ReplayCompareService;
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;

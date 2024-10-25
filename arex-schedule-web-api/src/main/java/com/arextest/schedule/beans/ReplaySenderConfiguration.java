@@ -1,6 +1,7 @@
 package com.arextest.schedule.beans;
 
-import com.arextest.schedule.common.ClassLoaderUtils;
+import com.arextest.common.model.classloader.RemoteJarClassLoader;
+import com.arextest.common.utils.RemoteJarLoaderUtils;
 import com.arextest.schedule.extension.invoker.ReplayExtensionInvoker;
 import com.arextest.schedule.sender.ReplaySender;
 import com.arextest.schedule.sender.ReplaySenderFactory;
@@ -11,12 +12,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.ServiceLoader;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,32 +32,32 @@ import org.springframework.core.io.ClassPathResource;
 public class ReplaySenderConfiguration {
   @Value("${replay.sender.extension.jarPath}")
   private String jarFilePath;
-
   private static final String LOCAL_INVOKER_PATH = "lib/dubboInvoker.jar";
   private static final String NEW_INVOKER_PATH = "dubboInvoker.jar";
-  private static final List<String> remoteProtocol = Arrays.asList("http", "https", "ftp", "sftp", "nfs");
 
-  @Bean("replayExtensionInvoker")
+  @Bean("dubboInvokerLoader")
   @ConditionalOnProperty(name = "replay.sender.extension.switch", havingValue = "true")
-  public List<ReplayExtensionInvoker> invokers() {
-    List<ReplayExtensionInvoker> invokers = new ArrayList<>();
-
+  public RemoteJarClassLoader dubboInvokerLoader() {
     try {
-      URL classPathResource;
       if (StringUtils.isNotBlank(jarFilePath)) {
-        if (isRemote(jarFilePath)) {
-          classPathResource = new URL(jarFilePath);
-        } else {
-          classPathResource = new File(jarFilePath).toURI().toURL();
-        }
+        return RemoteJarLoaderUtils.loadJar(jarFilePath);
       } else {
-        classPathResource = loadLocalInvokerJar();
+        return RemoteJarLoaderUtils.loadJar(loadLocalInvokerJar().getPath());
       }
-      ClassLoaderUtils.loadJar(classPathResource);
-      ServiceLoader.load(ReplayExtensionInvoker.class).forEach(invokers::add);
     } catch (Throwable t) {
       LOGGER.error("Load invoker jar failed, application startup blocked", t);
     }
+    LOGGER.error("No invoker found, application startup blocked");
+    throw new RuntimeException("No invoker found");
+  }
+
+  @Bean("replayExtensionInvoker")
+  @ConditionalOnBean(name = "dubboInvokerLoader")
+  public List<ReplayExtensionInvoker> invokers(
+      @Qualifier("dubboInvokerLoader") RemoteJarClassLoader loader) {
+    List<ReplayExtensionInvoker> invokers = new ArrayList<>(
+        RemoteJarLoaderUtils.loadService(ReplayExtensionInvoker.class, loader));
+
     if (invokers.isEmpty()) {
       LOGGER.error("No invoker found, application startup blocked");
       throw new RuntimeException("No invoker found");
@@ -66,26 +67,18 @@ public class ReplaySenderConfiguration {
   }
 
   @Bean
-  @ConditionalOnProperty(name = "replay.sender.extension.switch", havingValue = "true")
+  @ConditionalOnBean(name = "replayExtensionInvoker")
   public DefaultDubboReplaySender dubboReplaySender(
       @Value("#{'${arex.replay.header.excludes.dubbo}'.split(',')}") List<String> excludes,
-      List<ReplayExtensionInvoker> invokers) {
+      List<ReplayExtensionInvoker> invokers,
+      @Qualifier("dubboInvokerLoader") RemoteJarClassLoader loader) {
 
-    return new DefaultDubboReplaySender(excludes, invokers);
+    return new DefaultDubboReplaySender(excludes, invokers, loader);
   }
 
   @Bean
   public ReplaySenderFactory replaySenderFactory(List<ReplaySender> senders) {
     return new ReplaySenderFactory(senders);
-  }
-
-  private boolean isRemote(String path) {
-    for (String protocol : remoteProtocol) {
-      if (path.startsWith(protocol)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   private void inputStreamToFile(InputStream inputStream, String filePath) throws IOException {

@@ -21,9 +21,9 @@ import com.arextest.schedule.service.ReplayReportService;
 import com.arextest.schedule.utils.RedisKeyBuildUtils;
 import com.arextest.schedule.utils.StageUtils;
 import com.arextest.web.model.contract.contracts.common.PlanStatistic;
+import jakarta.annotation.Resource;
 import java.util.Date;
 import java.util.List;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 
