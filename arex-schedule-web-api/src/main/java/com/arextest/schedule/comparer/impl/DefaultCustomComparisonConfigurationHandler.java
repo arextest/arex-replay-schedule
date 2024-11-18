@@ -1,6 +1,8 @@
 package com.arextest.schedule.comparer.impl;
 
 import com.arextest.diff.model.CompareOptions;
+import com.arextest.diff.model.script.ScriptCompareConfig;
+import com.arextest.diff.model.script.ScriptCompareConfig.ScriptMethod;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.schedule.comparer.CompareItem;
 import com.arextest.schedule.comparer.CustomComparisonConfigurationHandler;
@@ -8,12 +10,18 @@ import com.arextest.schedule.model.ReplayActionItem;
 import com.arextest.schedule.model.config.ComparisonDependencyConfig;
 import com.arextest.schedule.model.config.ComparisonInterfaceConfig;
 import com.arextest.schedule.model.config.ReplayComparisonConfig;
+import com.arextest.schedule.model.converter.ScriptMethodConverter;
 import com.arextest.schedule.model.converter.TransformConfigConverter;
+import com.arextest.web.model.contract.contracts.config.replay.ComparisonSummaryConfiguration.ReplayScriptMethod;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 
 /**
  * @Author wang_yc
@@ -78,7 +86,31 @@ public class DefaultCustomComparisonConfigurationHandler implements
               .map(TransformConfigConverter.INSTANCE::toTransformConfig)
               .collect(Collectors.toList())
       );
+      options.putScriptCompareConfig(convertToScriptMethod(compareConfig.getScriptMethodMap()));
     }
     return options;
   }
+
+  protected List<ScriptCompareConfig> convertToScriptMethod(
+      Map<List<String>, ReplayScriptMethod> scriptMethodMap) {
+    if (MapUtils.isEmpty(scriptMethodMap)) {
+      return Collections.emptyList();
+    }
+
+    List<ScriptCompareConfig> result = new ArrayList<>();
+    for (Map.Entry<List<String>, ReplayScriptMethod> entry : scriptMethodMap.entrySet()) {
+      List<String> nodePath = entry.getKey();
+      ReplayScriptMethod scriptMethod = entry.getValue();
+      if (CollectionUtils.isEmpty(nodePath) || scriptMethod == null) {
+        continue;
+      }
+      ScriptCompareConfig scriptCompareConfig = new ScriptCompareConfig();
+      ScriptMethod sdkScriptMethod = ScriptMethodConverter.INSTANCE.toScriptMethod(scriptMethod);
+      scriptCompareConfig.setNodePath(nodePath);
+      scriptCompareConfig.setScriptMethod(sdkScriptMethod);
+      result.add(scriptCompareConfig);
+    }
+    return result;
+  }
+
 }

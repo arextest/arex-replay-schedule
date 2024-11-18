@@ -4,6 +4,7 @@ package com.arextest.schedule.model.config;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.web.model.contract.contracts.compare.CategoryDetail;
 import com.arextest.web.model.contract.contracts.compare.TransformDetail;
+import com.arextest.web.model.contract.contracts.config.replay.ComparisonSummaryConfiguration.ReplayScriptMethod;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -42,6 +43,10 @@ public class ReplayComparisonConfig {
   private Map<List<String>, List<List<String>>> listSortMap;
 
   private List<TransformDetail> transformDetails;
+
+  @JsonDeserialize(keyUsing = MapKeyDeserializerUtils.class)
+  @JsonSerialize(keyUsing = MapKeySerializerUtils.class)
+  private Map<List<String>, ReplayScriptMethod> scriptMethodMap;
 
   /**
    * Custom config
