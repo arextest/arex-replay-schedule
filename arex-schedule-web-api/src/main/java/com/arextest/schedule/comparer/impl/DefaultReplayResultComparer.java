@@ -27,13 +27,13 @@ import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.MetricService;
 import com.arextest.web.model.contract.contracts.compare.CategoryDetail;
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Builder;
@@ -153,20 +153,11 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     ComparisonInterfaceConfig operationConfig = compareConfigService.loadInterfaceConfig(
         caseItem.getParent());
 
-    Set<String> ignoreTypes = Optional.of(operationConfig)
-        .map(ReplayComparisonConfig::getIgnoreCategoryTypes)
-        .map(i -> i.stream().map(CategoryDetail::getOperationType).filter(Objects::nonNull)
-            .collect(Collectors.toSet()))
-        .orElse(Collections.emptySet());
-
     List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
     for (CategoryComparisonHolder bindHolder : waitCompareMap) {
-      if (ignoreTypes.contains(bindHolder.getCategoryName())) {
-        continue;
-      }
       replayCompareResults.addAll(compareReplayResult(bindHolder, caseItem, operationConfig));
     }
-    return replayCompareResults;
+    return replayCompareResults.stream().filter(Objects::nonNull).collect(Collectors.toList());
   }
 
   /**
@@ -275,7 +266,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     return compareResults;
   }
 
-  private ReplayCompareResult compareRecordAndResult(ComparisonInterfaceConfig operationConfig,
+  private @Nullable ReplayCompareResult compareRecordAndResult(
+      ComparisonInterfaceConfig operationConfig,
       ReplayActionCaseItem caseItem, String category, CompareItem target, CompareItem source) {
 
     String operation = source != null ? source.getCompareOperation() : target.getCompareOperation();
@@ -287,7 +279,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
 
     CompareResult comparedResult = new CompareResult();
     ReplayCompareResult resultNew = ReplayCompareResult.createFrom(caseItem);
-
+    if (ignoreCategory(category, operation, operationConfig.getIgnoreCategoryTypes())) {
+      return null;
+    }
     StopWatch stopWatch = new StopWatch();
     stopWatch.start(LogType.COMPARE_SDK.getValue());
     comparedResult = compareProcess(category, record, replay, compareConfig,
