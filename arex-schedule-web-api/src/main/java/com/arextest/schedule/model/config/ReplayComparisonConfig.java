@@ -1,7 +1,6 @@
 package com.arextest.schedule.model.config;
 
 
-import com.arextest.model.mock.MockCategoryType;
 import com.arextest.web.model.contract.contracts.compare.CategoryDetail;
 import com.arextest.web.model.contract.contracts.compare.TransformDetail;
 import com.arextest.web.model.contract.contracts.config.replay.ComparisonSummaryConfiguration.ReplayScriptMethod;
@@ -18,7 +17,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import lombok.Data;
 
@@ -27,7 +25,6 @@ import lombok.Data;
  */
 @Data
 public class ReplayComparisonConfig {
-
   private String operationName;
   private List<String> operationTypes;
   private List<CategoryDetail> ignoreCategoryTypes;
@@ -54,20 +51,6 @@ public class ReplayComparisonConfig {
    * @see com.arextest.schedule.comparer.CustomComparisonConfigurationHandler
    */
   private Map<String, Object> additionalConfig;
-
-  public final boolean checkIgnoreMockMessageType(String type) {
-    // [b_yu] 2022-10-11 Dynamic type does not compare
-    if (Objects.equals(type, MockCategoryType.DYNAMIC_CLASS.getName())) {
-      return true;
-    }
-    if (Objects.equals(type, MockCategoryType.REDIS.getName())) {
-      return true;
-    }
-    if (Objects.equals(type, MockCategoryType.Q_MESSAGE_CONSUMER.getName())) {
-      return true;
-    }
-    return false;
-  }
 
   public void fillCommonFields() {
     this.setExclusionList(Collections.emptySet());

@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Builder;
@@ -152,9 +153,15 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     ComparisonInterfaceConfig operationConfig = compareConfigService.loadInterfaceConfig(
         caseItem.getParent());
 
+    Set<String> ignoreTypes = Optional.of(operationConfig)
+        .map(ReplayComparisonConfig::getIgnoreCategoryTypes)
+        .map(i -> i.stream().map(CategoryDetail::getOperationType).filter(Objects::nonNull)
+            .collect(Collectors.toSet()))
+        .orElse(Collections.emptySet());
+
     List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
     for (CategoryComparisonHolder bindHolder : waitCompareMap) {
-      if (operationConfig.checkIgnoreMockMessageType(bindHolder.getCategoryName())) {
+      if (ignoreTypes.contains(bindHolder.getCategoryName())) {
         continue;
       }
       replayCompareResults.addAll(compareReplayResult(bindHolder, caseItem, operationConfig));
@@ -280,16 +287,6 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
 
     CompareResult comparedResult = new CompareResult();
     ReplayCompareResult resultNew = ReplayCompareResult.createFrom(caseItem);
-
-    // use operation config to ignore category
-    if (ignoreCategory(category, operation, operationConfig.getIgnoreCategoryTypes())) {
-      comparedResult.setCode(DiffResultCode.COMPARED_WITHOUT_DIFFERENCE);
-      comparedResult.setProcessedBaseMsg(record);
-      comparedResult.setProcessedTestMsg(replay);
-      mergeResult(operation, category, resultNew, comparedResult, source, target);
-      resultNew.setIgnore(true);
-      return resultNew;
-    }
 
     StopWatch stopWatch = new StopWatch();
     stopWatch.start(LogType.COMPARE_SDK.getValue());
