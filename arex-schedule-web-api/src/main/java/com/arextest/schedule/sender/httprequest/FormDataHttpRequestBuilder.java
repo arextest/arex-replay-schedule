@@ -66,6 +66,7 @@ public class FormDataHttpRequestBuilder extends AbstractHttpRequestBuilder {
     // build headers
     HttpHeaders httpHeaders = createRequestHeaders(senderParameters.getHeaders(),
         senderParameters.getFormat());
+    httpHeaders.remove("content-length");
 
     // build http entity
     HttpEntity<?> httpEntity = null;
