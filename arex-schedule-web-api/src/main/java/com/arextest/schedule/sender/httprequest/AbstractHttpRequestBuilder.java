@@ -35,6 +35,7 @@ public abstract class AbstractHttpRequestBuilder {
       contentType = contentType(format);
     }
     httpHeaders.setContentType(contentType);
+    httpHeaders.remove(HttpHeaders.CONTENT_LENGTH);
     return httpHeaders;
   }
 
