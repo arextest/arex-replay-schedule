@@ -17,7 +17,7 @@ public class StageUtils {
 
   public static final List<PlanStageEnum> INITIAL_STAGES = Arrays.asList(PlanStageEnum.INIT,
       PlanStageEnum.PRE_LOAD,
-      PlanStageEnum.RUN, PlanStageEnum.FINISH);
+      PlanStageEnum.RUN, PlanStageEnum.FINISH, PlanStageEnum.TASK_FINISH);
   public static final String MSG_FORMAT = "%s is %s";
   public static final String RUNNING_FORMAT = "Executed on {%s}-{%s} by {%s}";
   public static final String RUN_MSG_FORMAT_SINGLE = "Total batches:%d, %d batch has been executed.";

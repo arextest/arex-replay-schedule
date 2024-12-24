@@ -41,8 +41,10 @@ public enum PlanStageEnum {
   CANCEL(50, Collections.EMPTY_LIST, null),
 
   //FINISH and its sub-stages start with "60".
-  FINISH(60, Collections.EMPTY_LIST, null);
+  FINISH(60, Collections.EMPTY_LIST, null),
 
+  // task finished status
+  TASK_FINISH(61, Collections.EMPTY_LIST, null);
 
   private final static Map<Integer, PlanStageEnum> CODE_VALUE_MAP = Arrays.stream(
           PlanStageEnum.values())
