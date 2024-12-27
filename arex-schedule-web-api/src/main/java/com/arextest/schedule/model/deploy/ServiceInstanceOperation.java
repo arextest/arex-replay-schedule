@@ -12,8 +12,4 @@ public class ServiceInstanceOperation {
 
   @JsonAlias("Name")
   private String name;
-  @JsonAlias("RequestMessage")
-  private DefinedMessageFormatter requestMessage;
-  @JsonAlias("ResponseMessage")
-  private DefinedMessageFormatter responseMessage;
 }
