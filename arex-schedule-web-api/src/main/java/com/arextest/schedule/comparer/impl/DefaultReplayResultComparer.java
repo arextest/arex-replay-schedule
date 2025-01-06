@@ -351,7 +351,7 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     }
     for (CategoryDetail categoryDetail : ignoreCategoryTypes) {
       if (Objects.equals(categoryDetail.getOperationType(), operationType) && (
-          categoryDetail.getOperationName() == null ||
+          StringUtils.isEmpty(categoryDetail.getOperationName()) ||
               Objects.equals(categoryDetail.getOperationName(), operationName))) {
         return true;
       }
