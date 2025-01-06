@@ -27,6 +27,7 @@ import com.arextest.schedule.model.config.ReplayComparisonConfig;
 import com.arextest.schedule.progress.ProgressTracer;
 import com.arextest.schedule.service.MetricService;
 import com.arextest.web.model.contract.contracts.compare.CategoryDetail;
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -154,12 +155,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
 
     List<ReplayCompareResult> replayCompareResults = new ArrayList<>();
     for (CategoryComparisonHolder bindHolder : waitCompareMap) {
-      if (operationConfig.checkIgnoreMockMessageType(bindHolder.getCategoryName())) {
-        continue;
-      }
       replayCompareResults.addAll(compareReplayResult(bindHolder, caseItem, operationConfig));
     }
-    return replayCompareResults;
+    return replayCompareResults.stream().filter(Objects::nonNull).collect(Collectors.toList());
   }
 
   /**
@@ -268,7 +266,8 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
     return compareResults;
   }
 
-  private ReplayCompareResult compareRecordAndResult(ComparisonInterfaceConfig operationConfig,
+  private @Nullable ReplayCompareResult compareRecordAndResult(
+      ComparisonInterfaceConfig operationConfig,
       ReplayActionCaseItem caseItem, String category, CompareItem target, CompareItem source) {
 
     String operation = source != null ? source.getCompareOperation() : target.getCompareOperation();
@@ -280,17 +279,9 @@ public class DefaultReplayResultComparer implements ReplayResultComparer {
 
     CompareResult comparedResult = new CompareResult();
     ReplayCompareResult resultNew = ReplayCompareResult.createFrom(caseItem);
-
-    // use operation config to ignore category
     if (ignoreCategory(category, operation, operationConfig.getIgnoreCategoryTypes())) {
-      comparedResult.setCode(DiffResultCode.COMPARED_WITHOUT_DIFFERENCE);
-      comparedResult.setProcessedBaseMsg(record);
-      comparedResult.setProcessedTestMsg(replay);
-      mergeResult(operation, category, resultNew, comparedResult, source, target);
-      resultNew.setIgnore(true);
-      return resultNew;
+      return null;
     }
-
     StopWatch stopWatch = new StopWatch();
     stopWatch.start(LogType.COMPARE_SDK.getValue());
     comparedResult = compareProcess(category, record, replay, compareConfig,
