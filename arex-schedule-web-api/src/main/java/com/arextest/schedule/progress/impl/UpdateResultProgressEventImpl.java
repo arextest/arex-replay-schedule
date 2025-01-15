@@ -128,7 +128,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   public void onReplayPlanFinish(ReplayPlan replayPlan, ReplayStatusType reason) {
     replayPlan.setPlanFinishTime(new Date());
     String planId = replayPlan.getId();
-    boolean result = replayPlanRepository.finish(planId);
+    boolean result = replayPlanRepository.updateReplayPlanStageInfo(planId, replayPlan.getReplayPlanStageList());
     LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
     replayReportService.pushPlanStatus(planId, reason, null, replayPlan.isReRun());
     recordPlanExecutionTime(replayPlan);
