@@ -22,6 +22,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.bson.json.JsonObject;
 import org.springframework.http.HttpHeaders;
 
 /**
@@ -189,7 +190,52 @@ public class DefaultDubboReplaySender extends AbstractReplaySender {
     DubboParameters dubboParameters = new DubboParameters();
     dubboParameters.setParameterTypes(toParameterTypes(type));
     dubboParameters.setParameters(toParameters(body, type));
+    annotateParameterDataWithClass(dubboParameters, getRecordRequestGenericParameterType(caseItem));
     return dubboParameters;
+  }
+
+  private String getRecordRequestGenericParameterType(ReplayActionCaseItem caseItem) {
+    if (caseItem == null || caseItem.getTargetRequest() == null) {
+      return null;
+    }
+    String recordRequestType = (String) caseItem.getTargetRequest().getAttribute("recordRequestType");
+    if (recordRequestType == null) {
+      return null;
+    }
+    recordRequestType = recordRequestType.replaceAll("[\"\\]]+$", "");
+    String[] parts = recordRequestType.split("-");
+    return parts.length > 0 ? parts[parts.length - 1] : null;
+  }
+
+  private void annotateParameterDataWithClass(DubboParameters dubboParameters, String recordRequestGenericParameterType) {
+    if (recordRequestGenericParameterType == null) {
+      return;
+    }
+    List<Object> parameters = dubboParameters.getParameters();
+    if (parameters.isEmpty()) {
+      return;
+    }
+    Object firstParameter = parameters.get(0);
+    if (firstParameter instanceof JSONObject) {
+      JSONObject parameter = (JSONObject) firstParameter;
+      modifyJsonObjectWithClass(parameter, "data", recordRequestGenericParameterType);
+    }
+  }
+
+  private void modifyJsonObjectWithClass(JSONObject jsonObject, String key, String className) {
+    if (!jsonObject.containsKey(key)) {
+      return;
+    }
+    Object dataObject = jsonObject.get(key);
+    if (dataObject instanceof JSONObject) {
+      ((JSONObject) dataObject).put("class", className);
+    } else if (dataObject instanceof JSONArray) {
+      for (Object item : (JSONArray) dataObject) {
+        if (item instanceof JSONObject) {
+          ((JSONObject) item).put("class", className);
+        }
+      }
+    }
   }
 
   public static List<String> toParameterTypes(String type) {
