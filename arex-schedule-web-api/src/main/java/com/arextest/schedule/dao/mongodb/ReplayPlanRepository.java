@@ -59,7 +59,7 @@ public class ReplayPlanRepository implements RepositoryField {
     update.set(ReplayPlanCollection.Fields.REPLAY_PLAN_STAGE_LIST, replayPlanStageList);
     update.set(ReplayPlanCollection.Fields.PLAN_FINISH_TIME, new Date());
     UpdateResult updateResult = mongoTemplate.updateMulti(query, update,
-            ReplayPlanCollection.class);
+        ReplayPlanCollection.class);
     return updateResult.getModifiedCount() > 0;
   }
 
