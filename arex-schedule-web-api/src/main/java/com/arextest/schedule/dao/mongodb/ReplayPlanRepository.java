@@ -4,12 +4,14 @@ import com.arextest.schedule.dao.mongodb.util.MongoHelper;
 import com.arextest.schedule.model.ReplayPlan;
 import com.arextest.schedule.model.converter.ReplayPlanConverter;
 import com.arextest.schedule.model.dao.mongodb.ReplayPlanCollection;
+import com.arextest.schedule.model.plan.ReplayPlanStageInfo;
 import com.mongodb.client.result.UpdateResult;
 import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -43,9 +45,12 @@ public class ReplayPlanRepository implements RepositoryField {
     return updateResult.getModifiedCount() > 0;
   }
 
-  public boolean finish(String planId) {
+  public boolean finish(String planId, List<ReplayPlanStageInfo> replayPlanStageList) {
     Query query = Query.query(Criteria.where(DASH_ID).is(planId));
     Update update = MongoHelper.getUpdate();
+    if(CollectionUtils.isNotEmpty(replayPlanStageList)){
+      update.set(ReplayPlanCollection.Fields.REPLAY_PLAN_STAGE_LIST, replayPlanStageList);
+    }
     update.set(ReplayPlanCollection.Fields.PLAN_FINISH_TIME, new Date());
     UpdateResult updateResult = mongoTemplate.updateMulti(query, update,
         ReplayPlanCollection.class);

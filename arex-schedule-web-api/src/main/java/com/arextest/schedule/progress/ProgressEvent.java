@@ -52,6 +52,7 @@ public interface ProgressEvent {
 
   default void onReplayPlanFinish(ReplayPlan replayPlan) {
     if (this.onBeforeReplayPlanFinish(replayPlan)) {
+      this.onReplayPlanStageUpdate(replayPlan, PlanStageEnum.TASK_FINISH, StageStatusEnum.SUCCEEDED, System.currentTimeMillis(), null);
       this.onReplayPlanFinish(replayPlan, ReplayStatusType.FINISHED);
     } else {
       this.onReplayPlanAutoRerun(replayPlan);

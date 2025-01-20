@@ -140,6 +140,7 @@ public class ReplayCaseRemoteLoadService {
   private ReplayActionCaseItem toCaseItem(AREXMocker mainEntry) {
     Target targetRequest = mainEntry.getTargetRequest();
     if (targetRequest == null) {
+      LOGGER.error("target request is null, recordId:{}", mainEntry.getRecordId());
       return null;
     }
     ReplayActionCaseItem caseItem = new ReplayActionCaseItem();
@@ -213,6 +214,9 @@ public class ReplayCaseRemoteLoadService {
     List<ReplayActionCaseItem> caseItemList = new ArrayList<>(source.size());
     for (AREXMocker soa : source) {
       ReplayActionCaseItem caseItem = toCaseItem(soa);
+      if (caseItem == null) {
+        continue;
+      }
       caseItemList.add(caseItem);
     }
     return caseItemList;

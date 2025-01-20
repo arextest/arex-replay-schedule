@@ -22,6 +22,8 @@ import com.arextest.schedule.utils.RedisKeyBuildUtils;
 import com.arextest.schedule.utils.StageUtils;
 import com.arextest.web.model.contract.contracts.common.PlanStatistic;
 import jakarta.annotation.Resource;
+
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -128,7 +130,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   public void onReplayPlanFinish(ReplayPlan replayPlan, ReplayStatusType reason) {
     replayPlan.setPlanFinishTime(new Date());
     String planId = replayPlan.getId();
-    boolean result = replayPlanRepository.finish(planId);
+    boolean result = replayPlanRepository.finish(planId, replayPlan.getReplayPlanStageList());
     LOGGER.info("update the replay plan finished, plan id:{} , result: {}", planId, result);
     replayReportService.pushPlanStatus(planId, reason, null, replayPlan.isReRun());
     recordPlanExecutionTime(replayPlan);
@@ -138,7 +140,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
   public void onReplayPlanInterrupt(ReplayPlan replayPlan, ReplayStatusType reason) {
     replayPlan.setPlanFinishTime(new Date());
     String planId = replayPlan.getId();
-    replayPlanRepository.finish(planId);
+    replayPlanRepository.finish(planId, replayPlan.getReplayPlanStageList());
     LOGGER.info("The plan was interrupted, plan id:{} ,appId: {} ", replayPlan.getId(),
         replayPlan.getAppId());
     metricService.recordCountEvent(LogType.PLAN_EXCEPTION_NUMBER.getValue(), replayPlan.getId(),
@@ -152,7 +154,7 @@ public class UpdateResultProgressEventImpl implements ProgressEvent {
 
   @Override
   public void onReplayPlanTerminate(String replayId, String reason) {
-    replayPlanRepository.finish(replayId);
+    replayPlanRepository.finish(replayId, Collections.emptyList());
     replayReportService.pushPlanStatus(replayId, ReplayStatusType.CANCELLED, reason, false);
     redisCacheProvider.remove(RedisKeyBuildUtils.buildPlanRunningRedisKey(replayId));
   }
