@@ -53,7 +53,7 @@ public class ReplayPlanRepository implements RepositoryField {
     return updateResult.getModifiedCount() > 0;
   }
 
-  public boolean updateReplayPlanStageInfo(String planId,List<ReplayPlanStageInfo> replayPlanStageList ) {
+  public boolean updateReplayPlanStageInfo(String planId, List<ReplayPlanStageInfo> replayPlanStageList) {
     Query query = Query.query(Criteria.where(DASH_ID).is(planId));
     Update update = MongoHelper.getUpdate();
     update.set(ReplayPlanCollection.Fields.REPLAY_PLAN_STAGE_LIST, replayPlanStageList);
